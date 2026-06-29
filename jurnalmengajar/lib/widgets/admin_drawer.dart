@@ -69,6 +69,7 @@ class AdminDrawer extends StatelessWidget {
                 _buildMenuItem(context, Icons.access_time_outlined, 'Master Jam Pelajaran', '/admin/master-data/hours'),
                 _buildMenuItem(context, Icons.class_outlined, 'Master Kelas', '/admin/master-data/classes'),
                 _buildMenuItem(context, Icons.people_outline, 'Master Guru', '/admin/master-data/teachers'),
+                _buildMenuItem(context, Icons.manage_accounts_outlined, 'Master User & Akses', '/admin/master-data/users'),
                 _buildMenuItem(context, Icons.event_note_outlined, 'Master Jadwal', '/admin/schedules'),
                 
                 const Divider(),
@@ -78,6 +79,7 @@ class AdminDrawer extends StatelessWidget {
                 ),
                 _buildMenuItem(context, Icons.grid_view_outlined, 'Jadwal Mingguan', '/admin/weekly-schedules'),
                 _buildMenuItem(context, Icons.settings_outlined, 'Pengaturan Sistem', '/admin/settings'),
+                _buildMenuItem(context, Icons.person_outline, 'Profil Saya', '/admin/profile'),
               ],
             ),
           ),

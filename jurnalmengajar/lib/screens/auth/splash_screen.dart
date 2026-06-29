@@ -34,18 +34,28 @@ class _SplashScreenState extends State<SplashScreen>
 
     Future.delayed(const Duration(milliseconds: 2200), () {
       if (!mounted) return;
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      if (authProvider.isAuthenticated) {
-        final role = authProvider.currentUser?.role ?? 'guru';
-        if (role == 'admin') {
-          context.go('/admin/dashboard');
-        } else {
-          context.go('/guru/dashboard');
-        }
-      } else {
-        context.go('/login');
-      }
+      _navigateWhenReady();
     });
+  }
+
+  void _navigateWhenReady() {
+    if (!mounted) return;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (!authProvider.initialized) {
+      // Auth state not loaded yet — poll until ready
+      Future.delayed(const Duration(milliseconds: 200), _navigateWhenReady);
+      return;
+    }
+    if (authProvider.isAuthenticated) {
+      final role = authProvider.currentUser?.role ?? 'guru';
+      if (role == 'admin') {
+        context.go('/admin/dashboard');
+      } else {
+        context.go('/guru/dashboard');
+      }
+    } else {
+      context.go('/login');
+    }
   }
 
   @override

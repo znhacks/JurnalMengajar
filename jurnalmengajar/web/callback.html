@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Redirecting...</title>
+  <script>
+    // This page is a fallback OAuth callback handler.
+    // The primary flow uses full-page redirect directly to the app root URL.
+    // This page only gets called if `redirectTo` points here explicitly.
+    (function () {
+      // Preserve the full query string and hash so Supabase can pick up the token.
+      var search = window.location.search;
+      var hash = window.location.hash;
+
+      if (window.opener && window.opener !== window) {
+        // Popup mode: pass the URL back to the opener and close this window.
+        try {
+          window.opener.postMessage(window.location.href, window.location.origin);
+        } catch (e) {}
+        window.close();
+      } else {
+        // Full-page redirect mode: navigate to root, keeping query + fragment
+        // so Supabase SDK can exchange the code / read the access_token.
+        window.location.replace('/' + search + hash);
+      }
+    })();
+  </script>
+</head>
+<body>
+  <p style="font-family:sans-serif;text-align:center;margin-top:40px;">Redirecting, please wait...</p>
+</body>
+</html>

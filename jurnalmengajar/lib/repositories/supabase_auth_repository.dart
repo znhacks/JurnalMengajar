@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
 import 'auth_repository.dart';
@@ -14,15 +15,56 @@ class SupabaseAuthRepository implements AuthRepository {
       if (session == null) return null;
 
       final userId = session.user.id;
-      final response = await _supabase
+
+      // Try fetching existing profile first
+      var response = await _supabase
           .from('users')
           .select()
           .eq('id', userId)
-          .single();
+          .maybeSingle();
+
+      if (response == null) {
+        // No profile yet — create one (Google OAuth first-time login).
+        // Use upsert with ignoreDuplicates so that even if two concurrent
+        // calls race here, only one insert wins and no exception is thrown.
+        final email = session.user.email ?? '';
+        final fullName = session.user.userMetadata?['full_name'] as String? ??
+                         session.user.userMetadata?['name'] as String? ??
+                         email.split('@')[0];
+        final photoUrl = session.user.userMetadata?['avatar_url'] as String?;
+        final phone = session.user.phone ??
+                      session.user.userMetadata?['phone'] as String?;
+
+        final newUser = UserModel(
+          id: userId,
+          email: email,
+          fullName: fullName,
+          role: 'guru', // All Google sign-ins default to guru
+          photoUrl: photoUrl,
+          phoneNumber: phone,
+        );
+
+        await _supabase
+            .from('users')
+            .upsert(newUser.toJson(), onConflict: 'id', ignoreDuplicates: true);
+
+        // Always fetch the stored record — in case another concurrent call
+        // already inserted (and possibly with different data).
+        response = await _supabase
+            .from('users')
+            .select()
+            .eq('id', userId)
+            .maybeSingle();
+
+        // If still null for some reason, return the locally-built model
+        if (response == null) return newUser;
+      }
 
       return UserModel.fromJson(response);
     } catch (e) {
-      print('Error getting current user: $e');
+      // Log but do not rethrow — returning null causes login screen to show.
+      // We swallow so _initialized is still set to true and the router can decide.
+      debugPrint('Error getting current user: $e');
       return null;
     }
   }
@@ -55,9 +97,30 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<UserModel> loginWithGoogle() async {
     try {
-      // For mobile/web OAuth, you need to set up OAuth redirect in Supabase
-      // This is a placeholder - actual implementation depends on platform
-      throw Exception('Login dengan Google belum dikonfigurasi');
+      final String redirectTo = kIsWeb
+          ? Uri.base.origin // e.g. "http://localhost:52512"
+          : 'io.supabase.jurnalmengajar://login-callback';
+
+      if (kIsWeb) {
+        // On web: full-page redirect — the browser navigates to Google then
+        // comes back to the app URL. Supabase SDK picks up the token on reload.
+        // No authScreenLaunchMode needed (omitting it = default browser redirect).
+        await _supabase.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: redirectTo,
+        );
+      } else {
+        // On mobile: open Google in external browser and handle via deep link.
+        await _supabase.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: redirectTo,
+          authScreenLaunchMode: LaunchMode.externalApplication,
+        );
+      }
+
+      // On web the page navigates away here — code below only runs on mobile.
+      // The actual session + navigation is handled by onAuthStateChange in AuthProvider.
+      return UserModel(id: '', email: '', fullName: '', role: 'guru');
     } catch (e) {
       throw Exception('Login dengan Google gagal: $e');
     }
@@ -119,6 +182,44 @@ class SupabaseAuthRepository implements AuthRepository {
       return UserModel.fromJson(response);
     } catch (e) {
       throw Exception('Gagal memperbarui profil: $e');
+    }
+  }
+
+  @override
+  Future<List<UserModel>> getAllUsers() async {
+    try {
+      final response = await _supabase
+          .from('users')
+          .select()
+          .order('full_name', ascending: true);
+
+      return (response as List)
+          .map((json) => UserModel.fromJson(json))
+          .toList();
+    } catch (e) {
+      throw Exception('Gagal memuat semua pengguna: $e');
+    }
+  }
+
+  @override
+  Future<void> updateUserRole(String userId, String role) async {
+    try {
+      await _supabase
+          .from('users')
+          .update({'role': role})
+          .eq('id', userId);
+    } catch (e) {
+      throw Exception('Gagal memperbarui peran pengguna: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteAccount(String userId) async {
+    try {
+      await _supabase.from('users').delete().eq('id', userId);
+      await logout();
+    } catch (e) {
+      throw Exception('Gagal menghapus akun: $e');
     }
   }
 }

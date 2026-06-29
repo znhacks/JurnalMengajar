@@ -159,45 +159,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 32.h),
-
-                // Peran (Role)
-                Text(
-                  'Peran (Role)',
-                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
-                ),
-                SizedBox(height: 8.h),
-                DropdownButtonFormField<String>(
-                  value: _selectedRole,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.verified_user_outlined),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'guru',
-                      child: Text('Guru (Teacher)'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'admin',
-                      child: Text('Admin (Administrator)'),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        _selectedRole = value;
-                        // Automatically set default position based on role to be helpful
-                        if (value == 'admin' && _positionController.text.isEmpty) {
-                          _positionController.text = 'Administrator';
-                        } else if (value == 'guru' && _positionController.text == 'Administrator') {
-                          _positionController.clear();
-                        }
-                      });
-                    }
-                  },
-                ),
-                SizedBox(height: 20.h),
+                SizedBox(height: 24.h),
 
                 // Full Name
                 Text(

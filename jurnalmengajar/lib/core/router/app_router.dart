@@ -18,9 +18,11 @@ import '../../screens/admin/master/subject_screen.dart';
 import '../../screens/admin/master/hour_screen.dart';
 import '../../screens/admin/master/class_screen.dart';
 import '../../screens/admin/master/teacher_screen.dart';
+import '../../screens/admin/master/user_screen.dart';
 import '../../screens/admin/master/schedule_screen.dart';
 import '../../screens/admin/jadwal_mingguan_screen.dart';
 import '../../screens/admin/settings_screen.dart';
+import '../../screens/admin/profile_screen.dart';
 
 class AppRouter {
   static GoRouter router(BuildContext context) {
@@ -30,6 +32,7 @@ class AppRouter {
       initialLocation: '/splash',
       refreshListenable: authProvider,
       redirect: (context, state) {
+        final isInitialized = authProvider.initialized;
         final isLoggedIn = authProvider.isAuthenticated;
         final isSplash = state.matchedLocation == '/splash';
         final isAuthRoute = state.matchedLocation == '/login' ||
@@ -38,6 +41,11 @@ class AppRouter {
 
         // Don't redirect from splash — it handles its own navigation
         if (isSplash) return null;
+
+        // Wait until AuthProvider has finished loading the initial user state.
+        // This prevents false redirects to /login while getCurrentUser() is
+        // still running async (e.g. after a Google OAuth callback).
+        if (!isInitialized) return null;
 
         if (!isLoggedIn) {
           // If not logged in and not on auth pages, redirect to login
@@ -165,6 +173,14 @@ class AppRouter {
         GoRoute(
           path: '/admin/settings',
           builder: (context, state) => const AdminSettingsScreen(),
+        ),
+        GoRoute(
+          path: '/admin/master-data/users',
+          builder: (context, state) => const MasterUserScreen(),
+        ),
+        GoRoute(
+          path: '/admin/profile',
+          builder: (context, state) => const AdminProfileScreen(),
         ),
       ],
     );

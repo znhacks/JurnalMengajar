@@ -121,4 +121,28 @@ class MockAuthRepository implements AuthRepository {
 
     return user;
   }
+
+  @override
+  Future<List<UserModel>> getAllUsers() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    return _db.users;
+  }
+
+  @override
+  Future<void> updateUserRole(String userId, String role) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    final index = _db.users.indexWhere((u) => u.id == userId);
+    if (index != -1) {
+      _db.users[index] = _db.users[index].copyWith(role: role);
+    }
+  }
+
+  @override
+  Future<void> deleteAccount(String userId) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    _db.users.removeWhere((u) => u.id == userId);
+    if (_db.currentUser?.id == userId) {
+      _db.currentUser = null;
+    }
+  }
 }
