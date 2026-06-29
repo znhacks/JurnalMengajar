@@ -31,6 +31,16 @@ class MockScheduleRepository implements ScheduleRepository {
   }
 
   @override
+  Future<void> createMultiple(List<ScheduleModel> models) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    final baseTime = DateTime.now().millisecondsSinceEpoch;
+    for (int i = 0; i < models.length; i++) {
+      final id = 'sc_${baseTime}_$i';
+      _db.schedules.add(models[i].copyWith(id: id));
+    }
+  }
+
+  @override
   Future<void> update(ScheduleModel model) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final index = _db.schedules.indexWhere((s) => s.id == model.id);

@@ -32,7 +32,9 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
 
   void _showFormDialog({ScheduleModel? schedule}) {
     final noteController = TextEditingController(text: schedule?.note ?? '');
-    DateTime selectedDate = schedule?.date ?? DateTime.now();
+    DateTime startDate = schedule?.date ?? DateTime.now();
+    DateTime endDate = schedule?.date ?? DateTime.now();
+    List<int> selectedWeekdays = [startDate.weekday];
     bool isActive = schedule?.isActive ?? true;
 
     final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
@@ -52,16 +54,34 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
       ),
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          Future<void> selectDate() async {
+          Future<void> selectStartDate() async {
             final DateTime? picked = await showDatePicker(
               context: context,
-              initialDate: selectedDate,
+              initialDate: startDate,
               firstDate: DateTime.now().subtract(const Duration(days: 365)),
               lastDate: DateTime.now().add(const Duration(days: 365)),
             );
             if (picked != null) {
               setDialogState(() {
-                selectedDate = picked;
+                startDate = picked;
+                if (endDate.isBefore(startDate)) {
+                  endDate = startDate;
+                }
+                selectedWeekdays = [startDate.weekday];
+              });
+            }
+          }
+
+          Future<void> selectEndDate() async {
+            final DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: endDate.isBefore(startDate) ? startDate : endDate,
+              firstDate: startDate,
+              lastDate: DateTime.now().add(const Duration(days: 365)),
+            );
+            if (picked != null) {
+              setDialogState(() {
+                endDate = picked;
               });
             }
           }
@@ -85,17 +105,100 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                   ),
                   SizedBox(height: 16.h),
 
-                  // Date Button
-                  OutlinedButton.icon(
-                    onPressed: selectDate,
-                    icon: const Icon(Icons.calendar_today),
-                    label: Text('Tanggal: ${AppHelper.formatDateShort(selectedDate)}'),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.grey[300]!),
-                      foregroundColor: const Color(0xFF0F172A),
+                  // Date Selection
+                  if (schedule == null) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: selectStartDate,
+                            icon: const Icon(Icons.calendar_today, size: 16),
+                            label: Text('Mulai: ${AppHelper.formatDateShort(startDate)}'),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: Colors.grey[300]!),
+                              foregroundColor: const Color(0xFF0F172A),
+                              padding: EdgeInsets.symmetric(vertical: 10.h),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: selectEndDate,
+                            icon: const Icon(Icons.calendar_today, size: 16),
+                            label: Text('Selesai: ${AppHelper.formatDateShort(endDate)}'),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: Colors.grey[300]!),
+                              foregroundColor: const Color(0xFF0F172A),
+                              padding: EdgeInsets.symmetric(vertical: 10.h),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  SizedBox(height: 12.h),
+                    SizedBox(height: 12.h),
+
+                    // Weekdays selection
+                    Text(
+                      'Pilih Hari Aktif:',
+                      style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A)),
+                    ),
+                    SizedBox(height: 6.h),
+                    Wrap(
+                      spacing: 6.w,
+                      runSpacing: 6.h,
+                      children: {
+                        1: 'Senin',
+                        2: 'Selasa',
+                        3: 'Rabu',
+                        4: 'Kamis',
+                        5: 'Jumat',
+                        6: 'Sabtu',
+                        7: 'Minggu',
+                      }.entries.map((entry) {
+                        final isSelected = selectedWeekdays.contains(entry.key);
+                        return FilterChip(
+                          label: Text(
+                            entry.value,
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                          ),
+                          selected: isSelected,
+                          selectedColor: const Color(0xFF0D9488),
+                          backgroundColor: const Color(0xFFF1F5F9),
+                          checkmarkColor: Colors.white,
+                          onSelected: (selected) {
+                            setDialogState(() {
+                              if (selected) {
+                                selectedWeekdays.add(entry.key);
+                              } else {
+                                if (selectedWeekdays.length > 1) {
+                                  selectedWeekdays.remove(entry.key);
+                                } else {
+                                  AppHelper.showSnackBar(context, 'Pilih minimal satu hari', isError: true);
+                                }
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    SizedBox(height: 12.h),
+                  ] else ...[
+                    OutlinedButton.icon(
+                      onPressed: selectStartDate,
+                      icon: const Icon(Icons.calendar_today),
+                      label: Text('Tanggal: ${AppHelper.formatDateShort(startDate)}'),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.grey[300]!),
+                        foregroundColor: const Color(0xFF0F172A),
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+                  ],
 
                   // Period Dropdown
                   DropdownButtonFormField<String>(
@@ -139,21 +242,92 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                     }).toList(),
                     onChanged: (val) => setDialogState(() => selectedSubjectId = val),
                   ),
-                  SizedBox(height: 12.h),
+                  SizedBox(height: 16.h),
 
-                  // Hour Dropdown
-                  DropdownButtonFormField<int>(
-                    initialValue: selectedHour,
-                    decoration: const InputDecoration(labelText: 'Jam Ke-'),
-                    items: masterProvider.hours.map((h) {
-                      return DropdownMenuItem<int>(
-                        value: h.teachingHour,
-                        child: Text('Jam Ke-${h.teachingHour} (${h.startTime}-${h.endTime})'),
-                      );
-                    }).toList(),
-                    onChanged: (val) => setDialogState(() => selectedHour = val ?? 1),
+                  // Hour Selection Options (Interactive)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Jam Pelajaran',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF0F172A),
+                        ),
+                      ),
+                      SizedBox(height: 8.h),
+                      if (masterProvider.hours.isEmpty)
+                        Text(
+                          'Belum ada master jam pelajaran',
+                          style: TextStyle(color: Colors.red[600], fontSize: 13.sp),
+                        )
+                      else ...[
+                        Wrap(
+                          spacing: 8.w,
+                          runSpacing: 8.h,
+                          children: masterProvider.hours.map((h) {
+                            final isSelected = selectedHour == h.teachingHour;
+                            return ChoiceChip(
+                              label: Text(
+                                'Jam ${h.teachingHour}',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                                ),
+                              ),
+                              selected: isSelected,
+                              selectedColor: const Color(0xFF0D9488),
+                              backgroundColor: const Color(0xFFF1F5F9),
+                              checkmarkColor: Colors.white,
+                              onSelected: (selected) {
+                                if (selected) {
+                                  setDialogState(() {
+                                    selectedHour = h.teachingHour;
+                                  });
+                                }
+                              },
+                            );
+                          }).toList(),
+                        ),
+                        SizedBox(height: 8.h),
+                        // Display selected hour range details
+                        Builder(
+                          builder: (context) {
+                            final selectedHourObj = masterProvider.hours.firstWhere(
+                              (h) => h.teachingHour == selectedHour,
+                              orElse: () => masterProvider.hours.first,
+                            );
+                            return Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                              decoration: BoxDecoration(
+                                color: const Color(0x0D0D9488),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0x330D9488)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.access_time, color: Color(0xFF0D9488), size: 18),
+                                  SizedBox(width: 8.w),
+                                  Text(
+                                    'Waktu: Jam ke-${selectedHourObj.teachingHour} (${selectedHourObj.startTime} - ${selectedHourObj.endTime})',
+                                    style: TextStyle(
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.w500,
+                                      color: const Color(0xFF0D9488),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ],
                   ),
-                  SizedBox(height: 12.h),
+                  SizedBox(height: 16.h),
 
                   TextField(
                     controller: noteController,
@@ -179,22 +353,52 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                       final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
                       bool success;
 
-                      final newSched = ScheduleModel(
-                        id: schedule?.id ?? '',
-                        periodId: selectedPeriodId!,
-                        date: selectedDate,
-                        teachingHour: selectedHour,
-                        classId: selectedClassId!,
-                        subjectId: selectedSubjectId!,
-                        teacherId: selectedTeacherId!,
-                        note: noteController.text.trim().isEmpty ? null : noteController.text.trim(),
-                        isActive: isActive,
-                      );
-
                       if (schedule == null) {
-                        success = await scheduleProvider.createSchedule(newSched);
+                        // Generate batch schedules
+                        final List<ScheduleModel> schedulesToCreate = [];
+                        DateTime current = startDate;
+                        while (!current.isAfter(endDate)) {
+                          if (selectedWeekdays.contains(current.weekday)) {
+                            schedulesToCreate.add(
+                              ScheduleModel(
+                                id: '',
+                                periodId: selectedPeriodId!,
+                                date: current,
+                                teachingHour: selectedHour,
+                                classId: selectedClassId!,
+                                subjectId: selectedSubjectId!,
+                                teacherId: selectedTeacherId!,
+                                note: noteController.text.trim().isEmpty ? null : noteController.text.trim(),
+                                isActive: isActive,
+                              ),
+                            );
+                          }
+                          current = current.add(const Duration(days: 1));
+                        }
+
+                        if (schedulesToCreate.isEmpty) {
+                          AppHelper.showSnackBar(
+                            context,
+                            'Tidak ada jadwal yang cocok dengan hari aktif pada rentang tanggal tersebut',
+                            isError: true,
+                          );
+                          return;
+                        }
+
+                        success = await scheduleProvider.createMultipleSchedules(schedulesToCreate);
                       } else {
-                        success = await scheduleProvider.updateSchedule(newSched);
+                        final updatedSched = ScheduleModel(
+                          id: schedule.id,
+                          periodId: selectedPeriodId!,
+                          date: startDate,
+                          teachingHour: selectedHour,
+                          classId: selectedClassId!,
+                          subjectId: selectedSubjectId!,
+                          teacherId: selectedTeacherId!,
+                          note: noteController.text.trim().isEmpty ? null : noteController.text.trim(),
+                          isActive: isActive,
+                        );
+                        success = await scheduleProvider.updateSchedule(updatedSched);
                       }
 
                       if (success && mounted) {
@@ -317,9 +521,36 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                       style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
                                     ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_outlined, color: Colors.indigo, size: 20),
-                                    onPressed: () => _showFormDialog(schedule: sched),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit_outlined, color: Colors.indigo, size: 20),
+                                        onPressed: () => _showFormDialog(schedule: sched),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                        onPressed: () async {
+                                          final confirm = await showDialog<bool>(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              title: const Text('Hapus Jadwal'),
+                                              content: const Text('Apakah Anda yakin ingin menghapus jadwal mengajar ini?'),
+                                              actions: [
+                                                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(context, true),
+                                                  child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                          if (confirm == true) {
+                                            _handleDelete(sched.id);
+                                          }
+                                        },
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),

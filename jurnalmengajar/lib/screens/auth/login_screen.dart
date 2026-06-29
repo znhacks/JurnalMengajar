@@ -35,12 +35,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (success && mounted) {
         AppHelper.showSnackBar(context, 'Login Berhasil!');
-        // Navigation is handled automatically by GoRouter refreshListenable, 
+        // Navigation is handled automatically by GoRouter refreshListenable,
         // but we can also force refresh or redirect if necessary.
       } else if (mounted) {
         AppHelper.showSnackBar(
           context,
-          authProvider.errorMessage ?? 'Gagal login. Periksa kembali email dan password.',
+          authProvider.errorMessage ??
+              'Gagal login. Periksa kembali email dan password.',
           isError: true,
         );
       }
@@ -82,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // Logo Jurnal Mengajar
               Center(
                 child: Image.asset(
-                  'assets/logoJurnalMengajarLogin.png',
+                  'assets/LogoJr.png',
                   height: 90.h,
                   fit: BoxFit.contain,
                 ),
@@ -90,10 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(height: 16.h),
               Text(
                 'Silakan login untuk mengelola jurnal dan jadwal Anda',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 36.h),
@@ -120,7 +118,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Email tidak boleh kosong';
                         }
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                        if (!RegExp(
+                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        ).hasMatch(value)) {
                           return 'Format email tidak valid';
                         }
                         return null;
@@ -173,7 +173,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         prefixIcon: const Icon(Icons.lock_outlined),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                            _obscurePassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
                           ),
                           onPressed: () {
                             setState(() {
@@ -194,7 +196,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: 24.w,
                               child: const CircularProgressIndicator(
                                 strokeWidth: 2.5,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : const Text('Login'),
@@ -208,7 +212,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/24px-Google_%22G%22_logo.svg.png',
                         height: 20.w,
                         width: 20.w,
-                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata, size: 24),
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.g_mobiledata, size: 24),
                       ),
                       label: const Text('Login dengan Google'),
                       style: OutlinedButton.styleFrom(
@@ -227,10 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Text(
                     'Belum punya akun? ',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
                   ),
                   GestureDetector(
                     onTap: () => context.push('/register'),
@@ -246,11 +248,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
               SizedBox(height: 24.h),
-              
+
               // Divider
               Row(
                 children: [
-                  Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
+                  Expanded(
+                    child: Divider(color: Colors.grey[300], thickness: 1),
+                  ),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12.w),
                     child: Text(
@@ -263,7 +267,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-                  Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
+                  Expanded(
+                    child: Divider(color: Colors.grey[300], thickness: 1),
+                  ),
                 ],
               ),
               SizedBox(height: 16.h),
@@ -273,13 +279,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Expanded(
                     child: InkWell(
-                      onTap: isLoading ? null : () => _quickLogin('guru@jurnal.com', 'password123'),
+                      onTap: isLoading
+                          ? null
+                          : () => _quickLogin('guru@jurnal.com', 'password123'),
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 8.w),
+                        padding: EdgeInsets.symmetric(
+                          vertical: 14.h,
+                          horizontal: 8.w,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0x140D9488),
-                          border: Border.all(color: const Color(0x4D0D9488), width: 1.5),
+                          border: Border.all(
+                            color: const Color(0x4D0D9488),
+                            width: 1.5,
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Column(
@@ -314,13 +328,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(width: 12.w),
                   Expanded(
                     child: InkWell(
-                      onTap: isLoading ? null : () => _quickLogin('admin@jurnal.com', 'password123'),
+                      onTap: isLoading
+                          ? null
+                          : () =>
+                                _quickLogin('admin@jurnal.com', 'password123'),
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 8.w),
+                        padding: EdgeInsets.symmetric(
+                          vertical: 14.h,
+                          horizontal: 8.w,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0x0D0F172A),
-                          border: Border.all(color: const Color(0x330F172A), width: 1.5),
+                          border: Border.all(
+                            color: const Color(0x330F172A),
+                            width: 1.5,
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Column(

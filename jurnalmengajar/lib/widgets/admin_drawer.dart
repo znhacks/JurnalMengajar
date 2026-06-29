@@ -16,19 +16,22 @@ class AdminDrawer extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Drawer Header with logo
-          DrawerHeader(
-            decoration: const BoxDecoration(
-              color: Color(0xFF0F172A),
+          // Custom Container Header with logo to prevent RenderFlex overflow
+          Container(
+            color: const Color(0xFF0F172A),
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 16.h,
+              bottom: 16.h,
+              left: 16.w,
+              right: 16.w,
             ),
-            padding: EdgeInsets.all(16.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Image.asset(
                   'assets/logoApp.png',
-                  height: 52.h,
+                  height: 48.h,
                   fit: BoxFit.contain,
                 ),
                 SizedBox(height: 10.h),

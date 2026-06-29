@@ -63,6 +63,22 @@ class ScheduleProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> createMultipleSchedules(List<ScheduleModel> models) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await scheduleRepository.createMultiple(models);
+      await loadAllSchedules();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<bool> updateSchedule(ScheduleModel model) async {
     _isLoading = true;
     notifyListeners();

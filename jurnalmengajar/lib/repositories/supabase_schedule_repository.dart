@@ -66,6 +66,24 @@ class SupabaseScheduleRepository implements ScheduleRepository {
   }
 
   @override
+  Future<void> createMultiple(List<ScheduleModel> models) async {
+    try {
+      final payloads = models.map((model) {
+        final payload = model.toJson();
+        if ((payload['id'] as String?)?.isEmpty ?? true) {
+          payload['id'] = _uuid.v4();
+        }
+        return payload;
+      }).toList();
+      await _supabase
+          .from(SupabaseConstants.tableSchedules)
+          .insert(payloads);
+    } catch (e) {
+      throw Exception('Gagal menambah beberapa jadwal: $e');
+    }
+  }
+
+  @override
   Future<void> update(ScheduleModel model) async {
     try {
       await _supabase
