@@ -1,6 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'dart:typed_data';
-import 'package:gotrue/gotrue.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
 import 'auth_repository.dart';
