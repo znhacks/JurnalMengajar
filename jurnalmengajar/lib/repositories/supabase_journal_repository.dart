@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
-import 'dart:io';
+import 'dart:typed_data';
 import '../models/journal_model.dart';
 import 'journal_repository.dart';
 import '../core/constants/supabase_constants.dart';
@@ -145,20 +145,22 @@ class SupabaseJournalRepository implements JournalRepository {
     }
   }
 
-  /// Upload attachment file and return URL
-  Future<String> uploadAttachment(File file, String journalId) async {
+  /// Upload attachment file (as bytes) and return public URL
+  Future<String> uploadAttachment(
+    List<int> fileBytes,
+    String fileName,
+    String journalId,
+  ) async {
     try {
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
-      final filePath = '$journalId/$fileName';
-
-      final fileBytes = await file.readAsBytes();
+      final safeFileName = '${DateTime.now().millisecondsSinceEpoch}_$fileName';
+      final filePath = '$journalId/$safeFileName';
 
       await _supabase.storage
           .from(SupabaseConstants.bucketJournalAttachments)
           .uploadBinary(
         filePath,
-        fileBytes,
-        fileOptions: FileOptions(
+        Uint8List.fromList(fileBytes),
+        fileOptions: const FileOptions(
           cacheControl: '3600',
           upsert: true,
         ),

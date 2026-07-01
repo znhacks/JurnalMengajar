@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
 import '../models/journal_model.dart';
 import '../repositories/journal_repository.dart';
+import '../repositories/supabase_journal_repository.dart';
 
 class JournalProvider with ChangeNotifier {
   final JournalRepository journalRepository;
@@ -55,12 +57,36 @@ class JournalProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> createJournal(JournalModel model) async {
+  Future<bool> createJournal(
+    JournalModel model, {
+    Uint8List? attachmentBytes,
+    String? attachmentFileName,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
       await journalRepository.create(model);
+
+      // Upload foto lampiran jika ada (web-compatible: gunakan bytes)
+      if (attachmentBytes != null &&
+          attachmentFileName != null &&
+          journalRepository is SupabaseJournalRepository) {
+        final supabaseRepo = journalRepository as SupabaseJournalRepository;
+        // Ambil jurnal yang baru dibuat untuk mendapatkan ID-nya
+        final createdJournal = await journalRepository.getJournalForSchedule(
+          model.scheduleId,
+        );
+        if (createdJournal != null) {
+          final uploadedUrl = await supabaseRepo.uploadAttachment(
+            attachmentBytes,
+            attachmentFileName,
+            createdJournal.id,
+          );
+          await supabaseRepo.updateAttachmentUrl(createdJournal.id, uploadedUrl);
+        }
+      }
+
       await loadAllJournals();
       if (model.teacherId.isNotEmpty) {
         await loadTeacherJournals(model.teacherId);

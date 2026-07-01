@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -32,7 +32,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
   int _permissionCount = 0;
   int _alphaCount = 0;
 
-  File? _attachmentImage;
+  /// Bytes gambar yang dipilih (web-compatible, tidak menggunakan File)
+  Uint8List? _attachmentImageBytes;
+  String? _attachmentImageName;
   String? _mockPdfName;
   final ImagePicker _picker = ImagePicker();
 
@@ -45,22 +47,36 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
   Future<void> _pickImage(ImageSource source) async {
     try {
-      final XFile? image = await _picker.pickImage(source: source, imageQuality: 70);
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        imageQuality: 70,
+      );
       if (image != null) {
+        // Baca sebagai bytes agar kompatibel dengan Flutter Web
+        final bytes = await image.readAsBytes();
         setState(() {
-          _attachmentImage = File(image.path);
+          _attachmentImageBytes = bytes;
+          _attachmentImageName = image.name;
           _mockPdfName = null;
         });
       }
     } catch (e) {
-      AppHelper.showSnackBar(context, 'Gagal memilih gambar: $e', isError: true);
+      if (mounted) {
+        AppHelper.showSnackBar(
+          context,
+          'Gagal memilih gambar: $e',
+          isError: true,
+        );
+      }
     }
   }
 
   void _pickMockPdf() {
     setState(() {
-      _mockPdfName = 'surat_keterangan_sakit_${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}.pdf';
-      _attachmentImage = null;
+      _mockPdfName =
+          'surat_keterangan_sakit_${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}.pdf';
+      _attachmentImageBytes = null;
+      _attachmentImageName = null;
     });
   }
 
@@ -70,61 +86,66 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(16.w),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Pilih Lampiran Jurnal',
-                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
+      builder:
+          (context) => SafeArea(
+            child: Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Pilih Lampiran Jurnal',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 16.h),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.photo_library,
+                      color: Color(0xFF0D9488),
+                    ),
+                    title: const Text('Galeri (Foto)'),
+                    onTap: () {
+                      context.pop();
+                      _pickImage(ImageSource.gallery);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.picture_as_pdf,
+                      color: Color(0xFF0D9488),
+                    ),
+                    title: const Text('Simulasi File PDF'),
+                    onTap: () {
+                      context.pop();
+                      _pickMockPdf();
+                    },
+                  ),
+                ],
               ),
-              SizedBox(height: 16.h),
-              ListTile(
-                leading: const Icon(Icons.camera_alt, color: Color(0xFF0D9488)),
-                title: const Text('Kamera (Foto)'),
-                onTap: () {
-                  context.pop();
-                  _pickImage(ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library, color: Color(0xFF0D9488)),
-                title: const Text('Galeri (Foto)'),
-                onTap: () {
-                  context.pop();
-                  _pickImage(ImageSource.gallery);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.picture_as_pdf, color: Color(0xFF0D9488)),
-                title: const Text('Simulasi File PDF'),
-                onTap: () {
-                  context.pop();
-                  _pickMockPdf();
-                },
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
   Future<void> _submitForm(ScheduleModel schedule) async {
     if (_formKey.currentState!.validate()) {
-      final journalProvider = Provider.of<JournalProvider>(context, listen: false);
-      
+      final journalProvider = Provider.of<JournalProvider>(
+        context,
+        listen: false,
+      );
+
       JournalAttachmentModel? attachment;
-      if (_attachmentImage != null) {
+      if (_attachmentImageBytes != null && _attachmentImageName != null) {
         attachment = JournalAttachmentModel(
           id: 'ja_${DateTime.now().millisecondsSinceEpoch}',
-          filePath: _attachmentImage!.path,
+          filePath: 'pending_upload',
           fileType: 'image',
-          fileName: _attachmentImage!.path.split('/').last,
+          fileName: _attachmentImageName!,
         );
       } else if (_mockPdfName != null) {
         attachment = JournalAttachmentModel(
@@ -147,12 +168,19 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         sickCount: _sickCount,
         permissionCount: _permissionCount,
         alphaCount: _alphaCount,
-        note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
+        note:
+            _noteController.text.trim().isEmpty
+                ? null
+                : _noteController.text.trim(),
         attachment: attachment,
-        status: 'pending', // Auto-pending after submission
+        status: 'pending',
       );
 
-      final success = await journalProvider.createJournal(newJournal);
+      final success = await journalProvider.createJournal(
+        newJournal,
+        attachmentBytes: _attachmentImageBytes,
+        attachmentFileName: _attachmentImageName,
+      );
 
       if (success && mounted) {
         AppHelper.showSnackBar(context, 'Jurnal berhasil dikirim untuk verifikasi!');
@@ -175,7 +203,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
     ScheduleModel? schedule;
     try {
-      schedule = scheduleProvider.schedules.firstWhere((s) => s.id == widget.scheduleId);
+      schedule = scheduleProvider.schedules.firstWhere(
+        (s) => s.id == widget.scheduleId,
+      );
     } catch (_) {
       return Scaffold(
         appBar: AppBar(title: const Text('Isi Jurnal')),
@@ -185,7 +215,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
     final cls = masterProvider.classes.firstWhere(
       (c) => c.id == schedule?.classId,
-      orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
+      orElse:
+          () =>
+              ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
     );
 
     final subject = masterProvider.subjects.firstWhere(
@@ -195,7 +227,13 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
     final hr = masterProvider.hours.firstWhere(
       (h) => h.teachingHour == schedule?.teachingHour,
-      orElse: () => HourModel(id: '', teachingHour: schedule?.teachingHour ?? 1, startTime: '00:00', endTime: '00:00'),
+      orElse:
+          () => HourModel(
+            id: '',
+            teachingHour: schedule?.teachingHour ?? 1,
+            startTime: '00:00',
+            endTime: '00:00',
+          ),
     );
 
     final isLoading = journalProvider.isLoading;
@@ -216,7 +254,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 Card(
                   color: const Color(0xFFF1F5F9),
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Padding(
                     padding: EdgeInsets.all(16.w),
                     child: Column(
@@ -225,9 +265,15 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                         const Divider(height: 16),
                         _buildSummaryRow('Mata Pelajaran', subject.name),
                         const Divider(height: 16),
-                        _buildSummaryRow('Tanggal', AppHelper.formatDate(schedule.date)),
+                        _buildSummaryRow(
+                          'Tanggal',
+                          AppHelper.formatDate(schedule.date),
+                        ),
                         const Divider(height: 16),
-                        _buildSummaryRow('Jam Pelajaran', 'Jam Ke-${schedule.teachingHour} (${hr.startTime} - ${hr.endTime})'),
+                        _buildSummaryRow(
+                          'Jam Pelajaran',
+                          'Jam Ke-${schedule.teachingHour} (${hr.startTime} - ${hr.endTime})',
+                        ),
                       ],
                     ),
                   ),
@@ -237,7 +283,11 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 // Materi Pembelajaran (Required)
                 Text(
                   'Materi Pembelajaran *',
-                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF0F172A),
+                  ),
                 ),
                 SizedBox(height: 8.h),
                 TextFormField(
@@ -250,7 +300,8 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                     return null;
                   },
                   decoration: const InputDecoration(
-                    hintText: 'Jelaskan secara ringkas materi yang diajarkan hari ini...',
+                    hintText:
+                        'Jelaskan secara ringkas materi yang diajarkan hari ini...',
                     fillColor: Colors.white,
                   ),
                 ),
@@ -259,15 +310,31 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 // Absensi Siswa
                 Text(
                   'Absensi Siswa (Jumlah Siswa)',
-                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF0F172A),
+                  ),
                 ),
                 SizedBox(height: 12.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildCounterWidget('Sakit', _sickCount, (val) => setState(() => _sickCount = val)),
-                    _buildCounterWidget('Izin', _permissionCount, (val) => setState(() => _permissionCount = val)),
-                    _buildCounterWidget('Alpha', _alphaCount, (val) => setState(() => _alphaCount = val)),
+                    _buildCounterWidget(
+                      'Sakit',
+                      _sickCount,
+                      (val) => setState(() => _sickCount = val),
+                    ),
+                    _buildCounterWidget(
+                      'Izin',
+                      _permissionCount,
+                      (val) => setState(() => _permissionCount = val),
+                    ),
+                    _buildCounterWidget(
+                      'Alpha',
+                      _alphaCount,
+                      (val) => setState(() => _alphaCount = val),
+                    ),
                   ],
                 ),
                 SizedBox(height: 24.h),
@@ -275,14 +342,19 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 // Catatan Mengajar
                 Text(
                   'Catatan Pembelajaran',
-                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF0F172A),
+                  ),
                 ),
                 SizedBox(height: 8.h),
                 TextFormField(
                   controller: _noteController,
                   maxLines: 3,
                   decoration: const InputDecoration(
-                    hintText: 'Catatan tambahan seperti siswa yang tidak kondusif, kendala sarana, dll (Opsional)...',
+                    hintText:
+                        'Catatan tambahan seperti siswa yang tidak kondusif, kendala sarana, dll (Opsional)...',
                     fillColor: Colors.white,
                   ),
                 ),
@@ -291,14 +363,21 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 // Lampiran Jurnal
                 Text(
                   'Lampiran (Foto / PDF)',
-                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF0F172A),
+                  ),
                 ),
                 SizedBox(height: 8.h),
                 InkWell(
                   onTap: _showAttachmentBottomSheet,
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 16.w),
+                    padding: EdgeInsets.symmetric(
+                      vertical: 24.h,
+                      horizontal: 16.w,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -306,24 +385,42 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                     ),
                     child: Column(
                       children: [
-                        if (_attachmentImage == null && _mockPdfName == null) ...[
-                          Icon(Icons.cloud_upload_outlined, size: 40.w, color: Colors.grey[400]),
+                        if (_attachmentImageBytes == null &&
+                            _mockPdfName == null) ...[
+                          Icon(
+                            Icons.cloud_upload_outlined,
+                            size: 40.w,
+                            color: Colors.grey[400],
+                          ),
                           SizedBox(height: 8.h),
                           Text(
                             'Klik untuk mengunggah Lampiran',
-                            style: TextStyle(fontSize: 13.sp, color: const Color(0xFF0D9488), fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              color: const Color(0xFF0D9488),
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           SizedBox(height: 4.h),
                           Text(
-                            'Mendukung Foto (Camera/Gallery) atau File PDF',
-                            style: TextStyle(fontSize: 11.sp, color: Colors.grey[450]),
+                            'Mendukung Foto (Gallery) atau File PDF',
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: Colors.grey[450],
+                            ),
                           ),
-                        ] else if (_attachmentImage != null) ...[
+                        ] else if (_attachmentImageBytes != null) ...[
                           Row(
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                              child: Image.file(_attachmentImage!, height: 60.h, width: 60.h, fit: BoxFit.cover),
+                                // Gunakan Image.memory — kompatibel Flutter Web
+                                child: Image.memory(
+                                  _attachmentImageBytes!,
+                                  height: 60.h,
+                                  width: 60.h,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                               SizedBox(width: 12.w),
                               Expanded(
@@ -331,19 +428,36 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      _attachmentImage!.path.split('/').last,
-                                      style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                                      _attachmentImageName ?? 'Foto Lampiran',
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF0F172A),
+                                      ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                    Text('Tipe: Image (Foto)', style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+                                    Text(
+                                      'Tipe: Image (Foto)',
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                onPressed: () => setState(() => _attachmentImage = null),
-                              )
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red,
+                                ),
+                                onPressed:
+                                    () => setState(() {
+                                      _attachmentImageBytes = null;
+                                      _attachmentImageName = null;
+                                    }),
+                              ),
                             ],
                           ),
                         ] else if (_mockPdfName != null) ...[
@@ -355,7 +469,10 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                                   color: Colors.red.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Icon(Icons.picture_as_pdf, color: Colors.red),
+                                child: const Icon(
+                                  Icons.picture_as_pdf,
+                                  color: Colors.red,
+                                ),
                               ),
                               SizedBox(width: 12.w),
                               Expanded(
@@ -364,21 +481,35 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                                   children: [
                                     Text(
                                       _mockPdfName!,
-                                      style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF0F172A),
+                                      ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                    Text('Tipe: PDF Dokumen', style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+                                    Text(
+                                      'Tipe: PDF Dokumen',
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                onPressed: () => setState(() => _mockPdfName = null),
-                              )
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red,
+                                ),
+                                onPressed:
+                                    () => setState(() => _mockPdfName = null),
+                              ),
                             ],
                           ),
-                        ]
+                        ],
                       ],
                     ),
                   ),
@@ -388,16 +519,19 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 // Submit Button
                 ElevatedButton(
                   onPressed: isLoading ? null : () => _submitForm(schedule!),
-                  child: isLoading
-                      ? SizedBox(
-                          height: 24.w,
-                          width: 24.w,
-                          child: const CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : const Text('Simpan Jurnal'),
+                  child:
+                      isLoading
+                          ? SizedBox(
+                            height: 24.w,
+                            width: 24.w,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                          : const Text('Simpan Jurnal'),
                 ),
               ],
             ),
@@ -417,18 +551,30 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         ),
         Text(
           value,
-          style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF0F172A),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildCounterWidget(String title, int count, ValueChanged<int> onChanged) {
+  Widget _buildCounterWidget(
+    String title,
+    int count,
+    ValueChanged<int> onChanged,
+  ) {
     return Column(
       children: [
         Text(
           title,
-          style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600, color: Colors.grey[750]),
+          style: TextStyle(
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[750],
+          ),
         ),
         SizedBox(height: 8.h),
         Container(
@@ -445,7 +591,10 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
               ),
               Text(
                 '$count',
-                style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.add, size: 18),

@@ -4,7 +4,7 @@ import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
 
 class AuthProvider with ChangeNotifier {
-  final AuthRepository authRepository;
+  final AuthRepository _authRepository;
 
   UserModel? _currentUser;
   bool _isLoading = false;
@@ -12,7 +12,8 @@ class AuthProvider with ChangeNotifier {
   bool _isLoadingUser = false; // guard against concurrent _loadCurrentUser() calls
   String? _errorMessage;
 
-  AuthProvider({required this.authRepository}) {
+  AuthProvider({required AuthRepository authRepository})
+      : _authRepository = authRepository {
     _loadCurrentUser();
     
     // Automatically reload profile on Auth state change (e.g. OAuth Redirect Callback)
@@ -33,6 +34,7 @@ class AuthProvider with ChangeNotifier {
   bool get initialized => _initialized;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _currentUser != null;
+  AuthRepository get authRepository => _authRepository;
 
   Future<void> _loadCurrentUser() async {
     // Prevent concurrent executions to avoid race conditions with OAuth callback

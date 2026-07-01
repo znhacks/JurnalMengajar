@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +8,7 @@ import '../../providers/master_data_provider.dart';
 import '../../models/user_model.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../core/utils/helper.dart';
+import '../../repositories/supabase_auth_repository.dart';
 
 class AdminProfileScreen extends StatefulWidget {
   const AdminProfileScreen({super.key});
@@ -92,7 +93,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     final posController = TextEditingController(text: user.position ?? 'Administrator');
     final phoneController = TextEditingController(text: user.phoneNumber ?? '');
     final addrController = TextEditingController(text: user.address ?? '');
-    File? tempImage;
+    Uint8List? tempImageBytes;
+    String? tempImageName;
 
     showModalBottomSheet(
       context: context,
@@ -105,8 +107,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
           Future<void> pickDialogImage() async {
             final XFile? img = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
             if (img != null) {
+              final bytes = await img.readAsBytes();
               setDialogState(() {
-                tempImage = File(img.path);
+                tempImageBytes = bytes;
+                tempImageName = img.name;
               });
             }
           }
@@ -137,12 +141,12 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         CircleAvatar(
                           radius: 44.r,
                           backgroundColor: Colors.grey[200],
-                          backgroundImage: tempImage != null
-                              ? FileImage(tempImage!)
+                          backgroundImage: tempImageBytes != null
+                              ? MemoryImage(tempImageBytes!)
                               : (user.photoUrl != null && user.photoUrl!.startsWith('http')
                                   ? NetworkImage(user.photoUrl!)
                                   : null) as ImageProvider?,
-                          child: tempImage == null && user.photoUrl == null
+                          child: tempImageBytes == null && user.photoUrl == null
                               ? Icon(Icons.person, size: 44.r, color: Colors.grey[400])
                               : null,
                         ),
@@ -191,12 +195,31 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                       final authProvider = Provider.of<AuthProvider>(context, listen: false);
                       final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
 
+                      // Upload foto profil jika ada (web-compatible)
+                      String? uploadedPhotoUrl = user.photoUrl;
+                      if (tempImageBytes != null && tempImageName != null &&
+                          authProvider.authRepository is SupabaseAuthRepository) {
+                        try {
+                          final supabaseRepo = authProvider.authRepository as SupabaseAuthRepository;
+                          uploadedPhotoUrl = await supabaseRepo.uploadProfilePhoto(
+                            tempImageBytes!,
+                            tempImageName!,
+                            user.id,
+                          );
+                        } catch (e) {
+                          if (context.mounted) {
+                            AppHelper.showSnackBar(context, 'Gagal upload foto: $e', isError: true);
+                          }
+                          return;
+                        }
+                      }
+
                       final updatedUser = user.copyWith(
                         fullName: nameController.text.trim(),
                         position: posController.text.trim(),
                         phoneNumber: phoneController.text.trim(),
                         address: addrController.text.trim(),
-                        photoUrl: tempImage?.path ?? user.photoUrl,
+                        photoUrl: uploadedPhotoUrl,
                       );
 
                       final success = await authProvider.updateProfile(updatedUser);
@@ -283,10 +306,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         backgroundColor: const Color(0xFFF1F5F9),
                         backgroundImage: currentUser.photoUrl != null && currentUser.photoUrl!.startsWith('http')
                             ? NetworkImage(currentUser.photoUrl!)
-                            : (currentUser.photoUrl != null
-                                ? FileImage(File(currentUser.photoUrl!))
-                                : null) as ImageProvider?,
-                        child: currentUser.photoUrl == null
+                            : null,
+                        child: (currentUser.photoUrl == null || !currentUser.photoUrl!.startsWith('http'))
                             ? Icon(Icons.person, size: 54.r, color: Colors.grey[400])
                             : null,
                       ),

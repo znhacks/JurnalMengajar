@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -287,12 +286,22 @@ class DetailJurnalScreen extends StatelessWidget {
                   ? Image.network(
                       attachment.filePath,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 50),
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.broken_image, size: 50),
                     )
-                  : Image.file(
-                      File(attachment.filePath),
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.image, size: 50),
+                  : Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.image_outlined, size: 40, color: Colors.grey[400]),
+                          const SizedBox(height: 8),
+                          Text(
+                            attachment.fileName,
+                            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     ),
             ),
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
 import 'auth_repository.dart';
@@ -28,12 +29,14 @@ class SupabaseAuthRepository implements AuthRepository {
         // Use upsert with ignoreDuplicates so that even if two concurrent
         // calls race here, only one insert wins and no exception is thrown.
         final email = session.user.email ?? '';
-        final fullName = session.user.userMetadata?['full_name'] as String? ??
-                         session.user.userMetadata?['name'] as String? ??
-                         email.split('@')[0];
+        final fullName =
+            session.user.userMetadata?['full_name'] as String? ??
+            session.user.userMetadata?['name'] as String? ??
+            email.split('@')[0];
         final photoUrl = session.user.userMetadata?['avatar_url'] as String?;
-        final phone = session.user.phone ??
-                      session.user.userMetadata?['phone'] as String?;
+        final phone =
+            session.user.phone ??
+            session.user.userMetadata?['phone'] as String?;
 
         final newUser = UserModel(
           id: userId,
@@ -98,7 +101,9 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<UserModel> loginWithGoogle() async {
     try {
       final String redirectTo = kIsWeb
-          ? Uri.base.origin // e.g. "http://localhost:52512"
+          ? Uri
+                .base
+                .origin // e.g. "http://localhost:52512"
           : 'io.supabase.jurnalmengajar://login-callback';
 
       if (kIsWeb) {
@@ -167,10 +172,7 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<UserModel> updateProfile(UserModel user) async {
     try {
-      await _supabase
-          .from('users')
-          .update(user.toJson())
-          .eq('id', user.id);
+      await _supabase.from('users').update(user.toJson()).eq('id', user.id);
 
       // Get updated data
       final response = await _supabase
@@ -204,10 +206,7 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> updateUserRole(String userId, String role) async {
     try {
-      await _supabase
-          .from('users')
-          .update({'role': role})
-          .eq('id', userId);
+      await _supabase.from('users').update({'role': role}).eq('id', userId);
     } catch (e) {
       throw Exception('Gagal memperbarui peran pengguna: $e');
     }
@@ -220,6 +219,35 @@ class SupabaseAuthRepository implements AuthRepository {
       await logout();
     } catch (e) {
       throw Exception('Gagal menghapus akun: $e');
+    }
+  }
+
+  /// Upload foto profil ke Supabase Storage dan kembalikan public URL.
+  /// Web-compatible: menerima bytes bukan File.
+  Future<String> uploadProfilePhoto(
+    List<int> imageBytes,
+    String fileName,
+    String userId,
+  ) async {
+    try {
+      final ext = fileName.contains('.') ? fileName.split('.').last : 'jpg';
+      final filePath = 'avatars/$userId/profile.$ext';
+
+      await _supabase.storage
+          .from('avatars')
+          .uploadBinary(
+            filePath,
+            Uint8List.fromList(imageBytes),
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+          );
+
+      final publicUrl = _supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (e) {
+      throw Exception('Gagal mengunggah foto profil: $e');
     }
   }
 }

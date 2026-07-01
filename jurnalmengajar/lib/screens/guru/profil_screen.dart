@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +9,7 @@ import '../../providers/master_data_provider.dart';
 import '../../models/user_model.dart';
 import '../../models/teacher_model.dart';
 import '../../core/utils/helper.dart';
+import '../../repositories/supabase_auth_repository.dart';
 
 class GuruProfilScreen extends StatefulWidget {
   const GuruProfilScreen({super.key});
@@ -84,7 +85,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
     final posController = TextEditingController(text: user.position ?? teacher.position);
     final phoneController = TextEditingController(text: user.phoneNumber ?? teacher.phoneNumber);
     final addrController = TextEditingController(text: user.address ?? teacher.address);
-    File? tempImage;
+    Uint8List? tempImageBytes;
+    String? tempImageName;
 
     showModalBottomSheet(
       context: context,
@@ -97,8 +99,10 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
           Future<void> pickDialogImage() async {
             final XFile? img = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
             if (img != null) {
+              final bytes = await img.readAsBytes();
               setDialogState(() {
-                tempImage = File(img.path);
+                tempImageBytes = bytes;
+                tempImageName = img.name;
               });
             }
           }
@@ -129,12 +133,12 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         CircleAvatar(
                           radius: 44.r,
                           backgroundColor: Colors.grey[200],
-                          backgroundImage: tempImage != null
-                              ? FileImage(tempImage!)
+                          backgroundImage: tempImageBytes != null
+                              ? MemoryImage(tempImageBytes!)
                               : (user.photoUrl != null && user.photoUrl!.startsWith('http')
                                   ? NetworkImage(user.photoUrl!)
                                   : null) as ImageProvider?,
-                          child: tempImage == null && user.photoUrl == null
+                          child: tempImageBytes == null && user.photoUrl == null
                               ? Icon(Icons.person, size: 44.r, color: Colors.grey[400])
                               : null,
                         ),
@@ -183,12 +187,31 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                       final authProvider = Provider.of<AuthProvider>(context, listen: false);
                       final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
 
+                      // Upload foto profil jika ada (web-compatible)
+                      String? uploadedPhotoUrl = user.photoUrl;
+                      if (tempImageBytes != null && tempImageName != null &&
+                          authProvider.authRepository is SupabaseAuthRepository) {
+                        try {
+                          final supabaseRepo = authProvider.authRepository as SupabaseAuthRepository;
+                          uploadedPhotoUrl = await supabaseRepo.uploadProfilePhoto(
+                            tempImageBytes!,
+                            tempImageName!,
+                            user.id,
+                          );
+                        } catch (e) {
+                          if (context.mounted) {
+                            AppHelper.showSnackBar(context, 'Gagal upload foto: $e', isError: true);
+                          }
+                          return;
+                        }
+                      }
+
                       final updatedUser = user.copyWith(
                         fullName: nameController.text.trim(),
                         position: posController.text.trim(),
                         phoneNumber: phoneController.text.trim(),
                         address: addrController.text.trim(),
-                        photoUrl: tempImage?.path ?? user.photoUrl,
+                        photoUrl: uploadedPhotoUrl,
                       );
 
                       final success = await authProvider.updateProfile(updatedUser);
@@ -287,10 +310,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         backgroundColor: const Color(0xFFF1F5F9),
                         backgroundImage: teacher.photoUrl != null && teacher.photoUrl!.startsWith('http')
                             ? NetworkImage(teacher.photoUrl!)
-                            : (teacher.photoUrl != null
-                                ? FileImage(File(teacher.photoUrl!))
-                                : null) as ImageProvider?,
-                        child: teacher.photoUrl == null
+                            : null,
+                        child: (teacher.photoUrl == null || !teacher.photoUrl!.startsWith('http'))
                             ? Icon(Icons.person, size: 54.r, color: Colors.grey[400])
                             : null,
                       ),
