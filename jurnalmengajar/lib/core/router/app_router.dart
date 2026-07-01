@@ -35,9 +35,15 @@ class AppRouter {
         final isInitialized = authProvider.initialized;
         final isLoggedIn = authProvider.isAuthenticated;
         final isSplash = state.matchedLocation == '/splash';
+        final isResetPasswordRoute = state.matchedLocation == '/reset-password';
+        final isRecoveryMode = authProvider.isRecoveryMode ||
+            state.uri.queryParameters['type'] == 'recovery' ||
+            state.uri.queryParameters.containsKey('access_token') ||
+            state.uri.fragment.contains('type=recovery') ||
+            state.uri.fragment.contains('access_token=');
         final isAuthRoute = state.matchedLocation == '/login' ||
             state.matchedLocation == '/register' ||
-            state.matchedLocation == '/reset-password';
+            isResetPasswordRoute;
 
         // Don't redirect from splash — it handles its own navigation
         if (isSplash) return null;
@@ -46,6 +52,15 @@ class AppRouter {
         // This prevents false redirects to /login while getCurrentUser() is
         // still running async (e.g. after a Google OAuth callback).
         if (!isInitialized) return null;
+
+        // If recovery mode is active (either via AuthProvider or URL parameters/fragments),
+        // we must force navigation to /reset-password.
+        if (isRecoveryMode) {
+          if (state.matchedLocation != '/reset-password') {
+            return '/reset-password';
+          }
+          return null;
+        }
 
         if (!isLoggedIn) {
           // If not logged in and not on auth pages, redirect to login
@@ -60,7 +75,7 @@ class AppRouter {
         if (user == null) return '/login';
 
         // Redirect from auth routes to appropriate dashboard based on role
-        if (isAuthRoute) {
+        if (isAuthRoute && !isRecoveryMode) {
           if (user.role == 'admin') {
             return '/admin/dashboard';
           } else {
@@ -102,7 +117,9 @@ class AppRouter {
         ),
         GoRoute(
           path: '/reset-password',
-          builder: (context, state) => const ResetPasswordScreen(),
+          builder: (context, state) => ResetPasswordScreen(
+            queryParameters: state.uri.queryParameters,
+          ),
         ),
 
         // Guru Module shell (Dashboard, Jadwal, Jurnal, Profil inside MainShell bottom nav)

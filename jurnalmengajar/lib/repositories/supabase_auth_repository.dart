@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'dart:typed_data';
+import 'package:gotrue/gotrue.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
 import 'auth_repository.dart';
@@ -154,9 +155,29 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> resetPassword(String email) async {
     try {
-      await _supabase.auth.resetPasswordForEmail(email);
+      final String redirectTo = kIsWeb
+          ? '${Uri.base.origin}/reset-password'
+          : 'io.supabase.jurnalmengajar://login-callback/reset-password';
+
+      await _supabase.auth.resetPasswordForEmail(
+        email,
+        redirectTo: redirectTo,
+      );
     } catch (e) {
       throw Exception('Email tidak ditemukan atau gagal mengirim reset link!');
+    }
+  }
+
+  @override
+  Future<void> updatePassword(String newPassword) async {
+    try {
+      await _supabase.auth.updateUser(
+        UserAttributes(
+          password: newPassword,
+        ),
+      );
+    } catch (e) {
+      throw Exception('Gagal memperbarui kata sandi: $e');
     }
   }
 

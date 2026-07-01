@@ -11,6 +11,7 @@ class AuthProvider with ChangeNotifier {
   bool _initialized = false; // true once the first getCurrentUser() attempt finishes
   bool _isLoadingUser = false; // guard against concurrent _loadCurrentUser() calls
   String? _errorMessage;
+  bool _isRecoveryMode = false;
 
   AuthProvider({required AuthRepository authRepository})
       : _authRepository = authRepository {
@@ -20,10 +21,14 @@ class AuthProvider with ChangeNotifier {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
       final event = data.event;
       final session = data.session;
-      if (event == AuthChangeEvent.signedIn && session != null) {
+      if (event == AuthChangeEvent.passwordRecovery) {
+        _isRecoveryMode = true;
+        await _loadCurrentUser();
+      } else if (event == AuthChangeEvent.signedIn && session != null) {
         await _loadCurrentUser();
       } else if (event == AuthChangeEvent.signedOut) {
         _currentUser = null;
+        _isRecoveryMode = false;
         notifyListeners();
       }
     });
@@ -34,6 +39,7 @@ class AuthProvider with ChangeNotifier {
   bool get initialized => _initialized;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _currentUser != null;
+  bool get isRecoveryMode => _isRecoveryMode;
   AuthRepository get authRepository => _authRepository;
 
   Future<void> _loadCurrentUser() async {
@@ -57,6 +63,7 @@ class AuthProvider with ChangeNotifier {
   Future<bool> login(String email, String password) async {
     _isLoading = true;
     _errorMessage = null;
+    _isRecoveryMode = false;
     notifyListeners();
     try {
       _currentUser = await authRepository.login(email, password);
@@ -74,6 +81,7 @@ class AuthProvider with ChangeNotifier {
   Future<bool> loginWithGoogle() async {
     _isLoading = true;
     _errorMessage = null;
+    _isRecoveryMode = false;
     notifyListeners();
     try {
       // On web: this triggers the browser redirect to Google.
@@ -144,8 +152,27 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> updatePassword(String newPassword) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await authRepository.updatePassword(newPassword);
+      _isRecoveryMode = false;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     _isLoading = true;
+    _isRecoveryMode = false;
     notifyListeners();
     await authRepository.logout();
     _currentUser = null;
