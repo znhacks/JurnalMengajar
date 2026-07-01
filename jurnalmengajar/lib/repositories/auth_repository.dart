@@ -12,4 +12,3 @@ abstract class AuthRepository {
   Future<void> updateUserRole(String userId, String role);
   Future<void> deleteAccount(String userId);
 }
-.
