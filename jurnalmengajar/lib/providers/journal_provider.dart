@@ -78,12 +78,24 @@ class JournalProvider with ChangeNotifier {
           model.scheduleId,
         );
         if (createdJournal != null) {
-          final uploadedUrl = await supabaseRepo.uploadAttachment(
-            attachmentBytes,
-            attachmentFileName,
-            createdJournal.id,
-          );
-          await supabaseRepo.updateAttachmentUrl(createdJournal.id, uploadedUrl);
+          try {
+            final uploadedUrl = await supabaseRepo.uploadAttachment(
+              attachmentBytes,
+              attachmentFileName,
+              createdJournal.id,
+            );
+            await supabaseRepo.updateAttachmentUrl(createdJournal.id, uploadedUrl);
+          } catch (storageError) {
+            // Log error, tetapi jangan throw exception agar jurnal tetap dianggap berhasil dibuat
+            debugPrint('Gagal mengunggah lampiran: $storageError');
+            _errorMessage = 'Jurnal berhasil disimpan, namun lampiran gagal diunggah: ${storageError.toString().replaceAll('Exception: ', '')}';
+            
+            await loadAllJournals();
+            if (model.teacherId.isNotEmpty) {
+              await loadTeacherJournals(model.teacherId);
+            }
+            return true;
+          }
         }
       }
 
@@ -101,12 +113,42 @@ class JournalProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> updateJournal(JournalModel model) async {
+  Future<bool> updateJournal(
+    JournalModel model, {
+    Uint8List? attachmentBytes,
+    String? attachmentFileName,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
       await journalRepository.update(model);
+
+      // Upload foto lampiran jika ada (web-compatible: gunakan bytes)
+      if (attachmentBytes != null &&
+          attachmentFileName != null &&
+          journalRepository is SupabaseJournalRepository) {
+        final supabaseRepo = journalRepository as SupabaseJournalRepository;
+        try {
+          final uploadedUrl = await supabaseRepo.uploadAttachment(
+            attachmentBytes,
+            attachmentFileName,
+            model.id,
+          );
+          await supabaseRepo.updateAttachmentUrl(model.id, uploadedUrl);
+        } catch (storageError) {
+          // Log error, tetapi jangan throw exception agar jurnal tetap dianggap berhasil diperbarui
+          debugPrint('Gagal mengunggah lampiran saat update: $storageError');
+          _errorMessage = 'Jurnal berhasil diperbarui, namun lampiran gagal diunggah: ${storageError.toString().replaceAll('Exception: ', '')}';
+          
+          await loadAllJournals();
+          if (model.teacherId.isNotEmpty) {
+            await loadTeacherJournals(model.teacherId);
+          }
+          return true;
+        }
+      }
+
       await loadAllJournals();
       if (model.teacherId.isNotEmpty) {
         await loadTeacherJournals(model.teacherId);

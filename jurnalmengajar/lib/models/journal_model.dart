@@ -36,6 +36,24 @@ class JournalModel {
   });
 
   factory JournalModel.fromJson(Map<String, dynamic> json) {
+    final attachmentUrl = json['attachment_url'] as String? ?? json['attachmentUrl'] as String?;
+    
+    JournalAttachmentModel? attachment;
+    if (json['attachment'] != null) {
+      attachment = JournalAttachmentModel.fromJson(
+          json['attachment'] as Map<String, dynamic>);
+    } else if (attachmentUrl != null && attachmentUrl.isNotEmpty) {
+      final uri = Uri.parse(attachmentUrl);
+      final fileName = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : 'attachment';
+      final fileType = fileName.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image';
+      attachment = JournalAttachmentModel(
+        id: 'ja_remote',
+        filePath: attachmentUrl,
+        fileType: fileType,
+        fileName: fileName,
+      );
+    }
+
     return JournalModel(
       id: json['id'] as String,
       scheduleId: json['schedule_id'] as String? ?? json['scheduleId'] as String,
@@ -49,12 +67,9 @@ class JournalModel {
       permissionCount: json['permission_count'] as int? ?? json['permissionCount'] as int? ?? 0,
       alphaCount: json['alpha_count'] as int? ?? json['alphaCount'] as int? ?? 0,
       note: json['note'] as String?,
-      attachment: json['attachment'] != null
-          ? JournalAttachmentModel.fromJson(
-              json['attachment'] as Map<String, dynamic>)
-          : null,
+      attachment: attachment,
       status: json['status'] as String,
-      attachmentUrl: json['attachment_url'] as String?,
+      attachmentUrl: attachmentUrl,
     );
   }
 

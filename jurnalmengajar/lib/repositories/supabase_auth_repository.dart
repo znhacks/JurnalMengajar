@@ -261,7 +261,9 @@ class SupabaseAuthRepository implements AuthRepository {
           .from('avatars')
           .getPublicUrl(filePath);
 
-      return publicUrl;
+      // Append cache buster query param to bypass client-side cached image loading
+      final cacheBuster = DateTime.now().millisecondsSinceEpoch;
+      return '$publicUrl?t=$cacheBuster';
     } catch (e) {
       throw Exception('Gagal mengunggah foto profil: $e');
     }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/user_model.dart';
 import '../models/period_model.dart';
 import '../models/subject_model.dart';
 import '../models/hour_model.dart';
@@ -312,6 +313,20 @@ class MasterDataProvider with ChangeNotifier {
       return false;
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void updateTeacherFromUser(UserModel user) {
+    final index = _teachers.indexWhere((t) => t.email.toLowerCase() == user.email.toLowerCase());
+    if (index != -1) {
+      _teachers[index] = _teachers[index].copyWith(
+        name: user.fullName,
+        position: user.position ?? _teachers[index].position,
+        address: user.address ?? _teachers[index].address,
+        phoneNumber: user.phoneNumber ?? _teachers[index].phoneNumber,
+        photoUrl: user.photoUrl,
+      );
       notifyListeners();
     }
   }

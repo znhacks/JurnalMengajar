@@ -336,8 +336,12 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               updatedUser,
                             );
                             if (success) {
-                              // Reload master data to update corresponding teacher details cache
-                              await masterProvider.loadAllData();
+                              // Optimistically update local teacher details cache without reloading everything
+                              if (authProvider.currentUser != null) {
+                                masterProvider.updateTeacherFromUser(authProvider.currentUser!);
+                              } else {
+                                masterProvider.updateTeacherFromUser(updatedUser);
+                              }
                               if (context.mounted) {
                                 AppHelper.showSnackBar(
                                   context,
@@ -497,12 +501,12 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                           child: CircleAvatar(
                             radius: 54.r,
                             backgroundColor: Colors.white.withValues(alpha: 0.2),
-                            backgroundImage: teacher.photoUrl != null &&
-                                    teacher.photoUrl!.startsWith('http')
-                                ? CachedNetworkImageProvider(teacher.photoUrl!)
+                            backgroundImage: currentUser.photoUrl != null &&
+                                    currentUser.photoUrl!.startsWith('http')
+                                ? CachedNetworkImageProvider(currentUser.photoUrl!)
                                 : null,
-                            child: (teacher.photoUrl == null ||
-                                    !teacher.photoUrl!.startsWith('http'))
+                            child: (currentUser.photoUrl == null ||
+                                    !currentUser.photoUrl!.startsWith('http'))
                                 ? Icon(
                                     Icons.person,
                                     size: 54.r,
@@ -541,7 +545,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     ),
                     SizedBox(height: 16.h),
                     Text(
-                      teacher.name,
+                      currentUser.fullName,
                       style: TextStyle(
                         fontSize: 20.sp,
                         fontWeight: FontWeight.bold,
@@ -552,7 +556,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     ),
                     SizedBox(height: 6.h),
                     Text(
-                      teacher.position,
+                      currentUser.position ?? teacher.position,
                       style: TextStyle(
                         fontSize: 14.sp,
                         color: const Color(0xFF2DD4BF), // Light Teal
@@ -643,31 +647,31 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   borderRadius: BorderRadius.circular(16.r),
                   side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
                 ),
-                child: Column(
+                 child: Column(
                   children: [
                     _buildProfileDetailItem(
                       Icons.badge_outlined,
                       'NIP / Jabatan',
-                      teacher.position,
+                      currentUser.position ?? teacher.position,
                     ),
                     const Divider(height: 1, color: Color(0xFFF1F5F9)),
                     _buildProfileDetailItem(
                       Icons.email_outlined,
                       'Email',
-                      teacher.email,
+                      currentUser.email,
                       isEmail: true,
                     ),
                     const Divider(height: 1, color: Color(0xFFF1F5F9)),
                     _buildProfileDetailItem(
                       Icons.phone_outlined,
                       'No. Telepon',
-                      teacher.phoneNumber,
+                      currentUser.phoneNumber ?? teacher.phoneNumber,
                     ),
                     const Divider(height: 1, color: Color(0xFFF1F5F9)),
                     _buildProfileDetailItem(
                       Icons.home_outlined,
                       'Alamat Lengkap',
-                      teacher.address,
+                      currentUser.address ?? teacher.address,
                     ),
                   ],
                 ),

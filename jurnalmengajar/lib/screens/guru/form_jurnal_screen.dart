@@ -38,14 +38,38 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
   String? _mockPdfName;
   final ImagePicker _picker = ImagePicker();
 
+  JournalModel? _existingJournal;
+  bool _isEditing = false;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
       if (scheduleProvider.schedules.isEmpty &&
           scheduleProvider.teacherSchedulesForSelectedDate.isEmpty) {
         scheduleProvider.loadAllSchedules();
+      }
+
+      final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+      final existing = await journalProvider.getJournalForSchedule(widget.scheduleId);
+      if (existing != null && mounted) {
+        setState(() {
+          _existingJournal = existing;
+          _isEditing = true;
+          _materialController.text = existing.material;
+          _noteController.text = existing.note ?? '';
+          _sickCount = existing.sickCount;
+          _permissionCount = existing.permissionCount;
+          _alphaCount = existing.alphaCount;
+          if (existing.attachment != null) {
+            if (existing.attachment!.fileType == 'pdf') {
+              _mockPdfName = existing.attachment!.fileName;
+            } else {
+              _attachmentImageName = existing.attachment!.fileName;
+            }
+          }
+        });
       }
     });
   }
@@ -152,58 +176,110 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
       );
       _formKey.currentState!.save();
 
-      JournalAttachmentModel? attachment;
+      JournalAttachmentModel? attachment = _existingJournal?.attachment;
       if (_attachmentImageBytes != null && _attachmentImageName != null) {
         attachment = JournalAttachmentModel(
-          id: 'ja_${DateTime.now().millisecondsSinceEpoch}',
-          filePath: 'pending_upload',
+          id: _existingJournal?.attachment?.id ?? 'ja_${DateTime.now().millisecondsSinceEpoch}',
+          filePath: _existingJournal?.attachment?.filePath ?? 'pending_upload',
           fileType: 'image',
           fileName: _attachmentImageName!,
         );
       } else if (_mockPdfName != null) {
         attachment = JournalAttachmentModel(
-          id: 'ja_${DateTime.now().millisecondsSinceEpoch}',
-          filePath: 'mock_pdf_directory/$_mockPdfName',
+          id: _existingJournal?.attachment?.id ?? 'ja_${DateTime.now().millisecondsSinceEpoch}',
+          filePath: _existingJournal?.attachment?.filePath ?? 'mock_pdf_directory/$_mockPdfName',
           fileType: 'pdf',
           fileName: _mockPdfName!,
         );
+      } else if (_attachmentImageBytes == null && _attachmentImageName == null && _mockPdfName == null) {
+        attachment = null;
       }
 
-      final newJournal = JournalModel(
-        id: '', // Will be generated in repository
-        scheduleId: schedule.id,
-        date: schedule.date,
-        teachingHour: schedule.teachingHour,
-        classId: schedule.classId,
-        subjectId: schedule.subjectId,
-        teacherId: schedule.teacherId,
-        material: _materialController.text.trim(),
-        sickCount: _sickCount,
-        permissionCount: _permissionCount,
-        alphaCount: _alphaCount,
-        note:
-            _noteController.text.trim().isEmpty
-                ? null
-                : _noteController.text.trim(),
-        attachment: attachment,
-        status: 'pending',
-      );
-
-      final success = await journalProvider.createJournal(
-        newJournal,
-        attachmentBytes: _attachmentImageBytes,
-        attachmentFileName: _attachmentImageName,
-      );
-
-      if (success && mounted) {
-        AppHelper.showSnackBar(context, 'Jurnal berhasil dikirim untuk verifikasi!');
-        context.pop();
-      } else if (mounted) {
-        AppHelper.showSnackBar(
-          context,
-          journalProvider.errorMessage ?? 'Gagal menyimpan jurnal.',
-          isError: true,
+      if (_isEditing) {
+        final updatedJournal = JournalModel(
+          id: _existingJournal!.id,
+          scheduleId: schedule.id,
+          date: schedule.date,
+          teachingHour: schedule.teachingHour,
+          classId: schedule.classId,
+          subjectId: schedule.subjectId,
+          teacherId: schedule.teacherId,
+          material: _materialController.text.trim(),
+          sickCount: _sickCount,
+          permissionCount: _permissionCount,
+          alphaCount: _alphaCount,
+          note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
+          attachment: attachment,
+          status: 'pending', // Reset status to pending when revised!
+          attachmentUrl: attachment == null ? null : _existingJournal!.attachmentUrl,
         );
+
+        final success = await journalProvider.updateJournal(
+          updatedJournal,
+          attachmentBytes: _attachmentImageBytes,
+          attachmentFileName: _attachmentImageName,
+        );
+
+        if (success && mounted) {
+          if (journalProvider.errorMessage != null) {
+            AppHelper.showSnackBar(
+              context,
+              journalProvider.errorMessage!,
+              isError: true,
+            );
+          } else {
+            AppHelper.showSnackBar(context, 'Revisi jurnal berhasil dikirim!');
+          }
+          context.pop();
+        } else if (mounted) {
+          AppHelper.showSnackBar(
+            context,
+            journalProvider.errorMessage ?? 'Gagal menyimpan revisi jurnal.',
+            isError: true,
+          );
+        }
+      } else {
+        final newJournal = JournalModel(
+          id: '', // Will be generated in repository
+          scheduleId: schedule.id,
+          date: schedule.date,
+          teachingHour: schedule.teachingHour,
+          classId: schedule.classId,
+          subjectId: schedule.subjectId,
+          teacherId: schedule.teacherId,
+          material: _materialController.text.trim(),
+          sickCount: _sickCount,
+          permissionCount: _permissionCount,
+          alphaCount: _alphaCount,
+          note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
+          attachment: attachment,
+          status: 'pending',
+        );
+
+        final success = await journalProvider.createJournal(
+          newJournal,
+          attachmentBytes: _attachmentImageBytes,
+          attachmentFileName: _attachmentImageName,
+        );
+
+        if (success && mounted) {
+          if (journalProvider.errorMessage != null) {
+            AppHelper.showSnackBar(
+              context,
+              journalProvider.errorMessage!,
+              isError: true,
+            );
+          } else {
+            AppHelper.showSnackBar(context, 'Jurnal berhasil dikirim untuk verifikasi!');
+          }
+          context.pop();
+        } else if (mounted) {
+          AppHelper.showSnackBar(
+            context,
+            journalProvider.errorMessage ?? 'Gagal menyimpan jurnal.',
+            isError: true,
+          );
+        }
       }
     }
   }
@@ -224,7 +300,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
       );
     } catch (_) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Isi Jurnal')),
+        appBar: AppBar(title: Text(_isEditing ? 'Revisi Jurnal' : 'Isi Jurnal')),
         body: const Center(child: Text('Jadwal tidak ditemukan')),
       );
     }
@@ -256,7 +332,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Isi Jurnal Mengajar'),
+        title: Text(_isEditing ? 'Revisi Jurnal Mengajar' : 'Isi Jurnal Mengajar'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -402,6 +478,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                     child: Column(
                       children: [
                         if (_attachmentImageBytes == null &&
+                            _attachmentImageName == null &&
                             _mockPdfName == null) ...[
                           Icon(
                             Icons.cloud_upload_outlined,
@@ -425,18 +502,34 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                               color: Colors.grey[450],
                             ),
                           ),
-                        ] else if (_attachmentImageBytes != null) ...[
+                        ] else if (_attachmentImageBytes != null || _attachmentImageName != null) ...[
                           Row(
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                // Gunakan Image.memory — kompatibel Flutter Web
-                                child: Image.memory(
-                                  _attachmentImageBytes!,
-                                  height: 60.h,
-                                  width: 60.h,
-                                  fit: BoxFit.cover,
-                                ),
+                                child: _attachmentImageBytes != null
+                                    ? Image.memory(
+                                        _attachmentImageBytes!,
+                                        height: 60.h,
+                                        width: 60.h,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : (_existingJournal?.attachment?.filePath != null &&
+                                            _existingJournal!.attachment!.filePath.startsWith('http')
+                                        ? Image.network(
+                                            _existingJournal!.attachment!.filePath,
+                                            height: 60.h,
+                                            width: 60.h,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) =>
+                                                const Icon(Icons.image, size: 30),
+                                          )
+                                        : Container(
+                                            height: 60.h,
+                                            width: 60.h,
+                                            color: Colors.grey[200],
+                                            child: const Icon(Icons.image),
+                                          )),
                               ),
                               SizedBox(width: 12.w),
                               Expanded(
@@ -468,11 +561,10 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                                   Icons.delete_outline,
                                   color: Colors.red,
                                 ),
-                                onPressed:
-                                    () => setState(() {
-                                      _attachmentImageBytes = null;
-                                      _attachmentImageName = null;
-                                    }),
+                                onPressed: () => setState(() {
+                                  _attachmentImageBytes = null;
+                                  _attachmentImageName = null;
+                                }),
                               ),
                             ],
                           ),
@@ -547,7 +639,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                               ),
                             ),
                           )
-                          : const Text('Simpan Jurnal'),
+                          : Text(_isEditing ? 'Kirim Revisi Jurnal' : 'Simpan Jurnal'),
                 ),
               ],
             ),

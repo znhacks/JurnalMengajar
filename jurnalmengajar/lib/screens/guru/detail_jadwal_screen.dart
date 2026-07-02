@@ -149,15 +149,37 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
               child: _checkingJournal
                   ? const Center(child: CircularProgressIndicator())
                   : _existingJournal != null
-                      ? ElevatedButton.icon(
-                          onPressed: () {
-                            context.push('/guru/journal/${_existingJournal!.id}');
-                          },
-                          icon: const Icon(Icons.assignment),
-                          label: const Text('Lihat Jurnal'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0F172A), // Dark slate
-                          ),
+                      ? Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  context.push('/guru/journal/${_existingJournal!.id}');
+                                },
+                                icon: const Icon(Icons.assignment),
+                                label: const Text('Lihat Jurnal'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0F172A), // Dark slate
+                                ),
+                              ),
+                            ),
+                            if (_existingJournal!.status == 'rejected') ...[
+                              SizedBox(width: 12.w),
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    context.push('/guru/journal-form?scheduleId=${schedule!.id}');
+                                  },
+                                  icon: const Icon(Icons.edit_note),
+                                  label: const Text('Revisi Jurnal'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFEA580C),
+                                    foregroundColor: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         )
                       : ElevatedButton.icon(
                           onPressed: () {

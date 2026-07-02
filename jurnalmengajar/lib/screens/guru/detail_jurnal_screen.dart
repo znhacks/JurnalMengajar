@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/journal_provider.dart';
 import '../../models/journal_model.dart';
@@ -212,6 +213,25 @@ class DetailJurnalScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              if (journal.status == 'rejected') ...[
+                SizedBox(height: 24.h),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    context.push('/guru/journal-form?scheduleId=${journal.scheduleId}');
+                  },
+                  icon: const Icon(Icons.edit_note),
+                  label: const Text('Revisi Jurnal'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEA580C),
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 14.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ],
               SizedBox(height: 24.h),
             ],
           ),
