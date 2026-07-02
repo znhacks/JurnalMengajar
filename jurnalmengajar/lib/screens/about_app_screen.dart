@@ -7,9 +7,7 @@ class AboutAppScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tentang Aplikasi'),
-      ),
+      appBar: AppBar(title: const Text('Tentang Aplikasi')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
@@ -39,10 +37,7 @@ class AboutAppScreen extends StatelessWidget {
               SizedBox(height: 6.h),
               Text(
                 'Versi 1.0.0',
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  color: Colors.grey[500],
-                ),
+                style: TextStyle(fontSize: 13.sp, color: Colors.grey[500]),
               ),
               SizedBox(height: 24.h),
 
@@ -89,11 +84,26 @@ class AboutAppScreen extends StatelessWidget {
                     children: [
                       _buildSectionTitle('Fitur Utama'),
                       SizedBox(height: 12.h),
-                      _buildFeatureItem(Icons.assignment_outlined, 'Pencatatan jurnal mengajar harian'),
-                      _buildFeatureItem(Icons.calendar_month_outlined, 'Manajemen jadwal pelajaran'),
-                      _buildFeatureItem(Icons.people_outline, 'Pengelolaan data guru & kelas'),
-                      _buildFeatureItem(Icons.check_circle_outline, 'Persetujuan jurnal oleh admin'),
-                      _buildFeatureItem(Icons.bar_chart_outlined, 'Rekap & laporan kegiatan'),
+                      _buildFeatureItem(
+                        Icons.assignment_outlined,
+                        'Pencatatan jurnal mengajar harian',
+                      ),
+                      _buildFeatureItem(
+                        Icons.calendar_month_outlined,
+                        'Manajemen jadwal pelajaran',
+                      ),
+                      _buildFeatureItem(
+                        Icons.people_outline,
+                        'Pengelolaan data guru & kelas',
+                      ),
+                      _buildFeatureItem(
+                        Icons.check_circle_outline,
+                        'Persetujuan jurnal oleh admin',
+                      ),
+                      _buildFeatureItem(
+                        Icons.bar_chart_outlined,
+                        'Rekap & laporan kegiatan',
+                      ),
                     ],
                   ),
                 ),
@@ -113,11 +123,23 @@ class AboutAppScreen extends StatelessWidget {
                     children: [
                       _buildSectionTitle('Pengembang'),
                       SizedBox(height: 8.h),
-                      _buildInfoRow(Icons.code_outlined, 'Tim Pengembang', 'Jurnal Mengajar Dev Team'),
+                      _buildInfoRow(
+                        Icons.code_outlined,
+                        'Tim Pengembang',
+                        'JoeDevs',
+                      ),
                       SizedBox(height: 8.h),
-                      _buildInfoRow(Icons.phone_android_outlined, 'Platform', 'Android & iOS'),
+                      _buildInfoRow(
+                        Icons.phone_android_outlined,
+                        'Platform',
+                        'Mobile',
+                      ),
                       SizedBox(height: 8.h),
-                      _buildInfoRow(Icons.language_outlined, 'Teknologi', 'Flutter + Supabase'),
+                      _buildInfoRow(
+                        Icons.language_outlined,
+                        'Teknologi',
+                        'Flutter + Supabase',
+                      ),
                     ],
                   ),
                 ),
