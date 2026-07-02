@@ -153,9 +153,13 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> resetPassword(String email) async {
     try {
-      final String redirectTo = kIsWeb
-          ? '${Uri.base.origin}/reset-password'
-          : 'io.supabase.jurnalmengajar://login-callback/reset-password';
+      // Always redirect back into the app via the registered custom scheme.
+      // On Android the OS intercepts this URL and opens the app via the intent
+      // filter registered in AndroidManifest.xml. Avoid using Uri.base.origin
+      // because during development that resolves to http://localhost:<port>,
+      // which would cause the reset link in the email to open the desktop browser
+      // instead of the mobile app.
+      const redirectTo = 'io.supabase.jurnalmengajar://login-callback/reset-password';
 
       await _supabase.auth.resetPasswordForEmail(email, redirectTo: redirectTo);
     } catch (e) {

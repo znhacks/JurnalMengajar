@@ -51,9 +51,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         if (success && mounted) {
           AppHelper.showSnackBar(
             context,
-            'Password berhasil diubah. Silakan login kembali.',
+            'Password berhasil diubah!',
           );
-          context.go('/login');
+          // After password is updated the recovery session is still valid;
+          // navigate directly to the user's dashboard based on their role.
+          final user = authProvider.currentUser;
+          if (user != null && user.role == 'admin') {
+            context.go('/admin/dashboard');
+          } else {
+            context.go('/guru/dashboard');
+          }
         } else if (mounted) {
           AppHelper.showSnackBar(
             context,
@@ -97,7 +104,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
           child: Form(
             key: _formKey,
