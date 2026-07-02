@@ -23,10 +23,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   }
 
   Future<void> _loadSettings() async {
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    final settingsProvider = Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    );
     await settingsProvider.loadSettings();
     if (settingsProvider.settings != null) {
-      _daysController.text = '${settingsProvider.settings!.maxJournalInputDays}';
+      _daysController.text =
+          '${settingsProvider.settings!.maxJournalInputDays}';
     }
   }
 
@@ -40,20 +44,34 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     if (_formKey.currentState!.validate()) {
       final days = int.tryParse(_daysController.text.trim());
       if (days == null || days < 0) {
-        AppHelper.showSnackBar(context, 'Batas hari harus berupa angka positif', isError: true);
+        AppHelper.showSnackBar(
+          context,
+          'Batas hari harus berupa angka positif',
+          isError: true,
+        );
         return;
       }
 
-      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      final settingsProvider = Provider.of<SettingsProvider>(
+        context,
+        listen: false,
+      );
       final currentSettings = settingsProvider.settings;
       if (currentSettings != null) {
         final newSettings = currentSettings.copyWith(maxJournalInputDays: days);
         final success = await settingsProvider.saveSettings(newSettings);
 
         if (success && mounted) {
-          AppHelper.showSnackBar(context, 'Pengaturan sistem berhasil disimpan!');
+          AppHelper.showSnackBar(
+            context,
+            'Pengaturan sistem berhasil disimpan!',
+          );
         } else if (mounted) {
-          AppHelper.showSnackBar(context, settingsProvider.errorMessage ?? 'Gagal menyimpan pengaturan.', isError: true);
+          AppHelper.showSnackBar(
+            context,
+            settingsProvider.errorMessage ?? 'Gagal menyimpan pengaturan.',
+            isError: true,
+          );
         }
       }
     }
@@ -65,9 +83,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     final isLoading = settingsProvider.isLoading;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pengaturan Sistem'),
-      ),
+      appBar: AppBar(title: const Text('Pengaturan Sistem')),
       drawer: const AdminDrawer(currentRoute: '/admin/settings'),
       body: SafeArea(
         child: isLoading
@@ -104,10 +120,13 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                 ),
                               ),
                               const Divider(height: 28),
-                              
+
                               Text(
                                 'Batas Waktu Input (Hari) *',
-                                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                               SizedBox(height: 8.h),
                               TextFormField(
@@ -130,7 +149,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                         ),
                       ),
                       const Spacer(),
-                      
+
                       ElevatedButton.icon(
                         onPressed: isLoading ? null : _handleSave,
                         icon: const Icon(Icons.save),

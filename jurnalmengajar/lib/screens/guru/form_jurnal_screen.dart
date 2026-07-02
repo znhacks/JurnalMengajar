@@ -39,6 +39,18 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
   final ImagePicker _picker = ImagePicker();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+      if (scheduleProvider.schedules.isEmpty &&
+          scheduleProvider.teacherSchedulesForSelectedDate.isEmpty) {
+        scheduleProvider.loadAllSchedules();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _materialController.dispose();
     _noteController.dispose();
@@ -138,6 +150,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         context,
         listen: false,
       );
+      _formKey.currentState!.save();
 
       JournalAttachmentModel? attachment;
       if (_attachmentImageBytes != null && _attachmentImageName != null) {
@@ -205,6 +218,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     try {
       schedule = scheduleProvider.schedules.firstWhere(
         (s) => s.id == widget.scheduleId,
+        orElse: () => scheduleProvider.teacherSchedulesForSelectedDate.firstWhere(
+          (s) => s.id == widget.scheduleId,
+        ),
       );
     } catch (_) {
       return Scaffold(

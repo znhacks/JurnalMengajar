@@ -24,10 +24,7 @@ class _GuruMainShellState extends State<GuruMainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -39,8 +36,14 @@ class _GuruMainShellState extends State<GuruMainShell> {
         selectedItemColor: const Color(0xFF0D9488),
         unselectedItemColor: Colors.grey[500],
         showUnselectedLabels: true,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 12),
+        selectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.normal,
+          fontSize: 12,
+        ),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),

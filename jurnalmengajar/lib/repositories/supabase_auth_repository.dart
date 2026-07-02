@@ -157,10 +157,7 @@ class SupabaseAuthRepository implements AuthRepository {
           ? '${Uri.base.origin}/reset-password'
           : 'io.supabase.jurnalmengajar://login-callback/reset-password';
 
-      await _supabase.auth.resetPasswordForEmail(
-        email,
-        redirectTo: redirectTo,
-      );
+      await _supabase.auth.resetPasswordForEmail(email, redirectTo: redirectTo);
     } catch (e) {
       throw Exception('Email tidak ditemukan atau gagal mengirim reset link!');
     }
@@ -169,11 +166,7 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> updatePassword(String newPassword) async {
     try {
-      await _supabase.auth.updateUser(
-        UserAttributes(
-          password: newPassword,
-        ),
-      );
+      await _supabase.auth.updateUser(UserAttributes(password: newPassword));
     } catch (e) {
       throw Exception('Gagal memperbarui kata sandi: $e');
     }

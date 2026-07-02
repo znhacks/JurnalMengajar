@@ -35,84 +35,93 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-              top: 20.h,
-              left: 20.w,
-              right: 20.w,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    period == null ? 'Tambah Periode Baru' : 'Edit Periode',
-                    style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 16.h),
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nama Periode',
-                      hintText: 'Contoh: 2025/2026 Ganjil',
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                  SwitchListTile(
-                    title: const Text('Status Aktif'),
-                    subtitle: const Text('Hanya boleh ada satu periode aktif dalam satu waktu'),
-                    value: isActive,
-                    activeThumbColor: const Color(0xFF0D9488),
-                    onChanged: (val) {
-                      setDialogState(() {
-                        isActive = val;
-                      });
-                    },
-                  ),
-                  SizedBox(height: 24.h),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (nameController.text.trim().isEmpty) {
-                        AppHelper.showSnackBar(context, 'Nama periode tidak boleh kosong', isError: true);
-                        return;
-                      }
-
-                      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-                      bool success;
-
-                      if (period == null) {
-                        success = await masterProvider.createPeriod(PeriodModel(
-                          id: '',
-                          name: nameController.text.trim(),
-                          isActive: isActive,
-                        ));
-                      } else {
-                        success = await masterProvider.updatePeriod(period.copyWith(
-                          name: nameController.text.trim(),
-                          isActive: isActive,
-                        ));
-                      }
-
-                      if (success && mounted) {
-                        AppHelper.showSnackBar(context, 'Periode berhasil disimpan!');
-                        Navigator.pop(context);
-                      } else if (mounted) {
-                        AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menyimpan periode.', isError: true);
-                      }
-                    },
-                    child: const Text('Simpan'),
-                  ),
-                  SizedBox(height: 20.h),
-                ],
+      builder: (context) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                top: 20.h,
+                left: 20.w,
+                right: 20.w,
               ),
-            ),
-          );
-        },
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        period == null ? 'Tambah Periode Baru' : 'Edit Periode',
+                        style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 16.h),
+                      TextField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Nama Periode',
+                          hintText: 'Contoh: 2025/2026 Ganjil',
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        title: const Text('Status Aktif'),
+                        subtitle: const Text('Hanya boleh ada satu periode aktif dalam satu waktu'),
+                        value: isActive,
+                        activeThumbColor: const Color(0xFF0D9488),
+                        onChanged: (val) {
+                          setDialogState(() {
+                            isActive = val;
+                          });
+                        },
+                      ),
+                      SizedBox(height: 24.h),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (nameController.text.trim().isEmpty) {
+                            AppHelper.showSnackBar(context, 'Nama periode tidak boleh kosong', isError: true);
+                            return;
+                          }
+
+                          final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+                          bool success;
+
+                          if (period == null) {
+                            success = await masterProvider.createPeriod(PeriodModel(
+                              id: '',
+                              name: nameController.text.trim(),
+                              isActive: isActive,
+                            ));
+                          } else {
+                            success = await masterProvider.updatePeriod(period.copyWith(
+                              name: nameController.text.trim(),
+                              isActive: isActive,
+                            ));
+                          }
+
+                          if (success && mounted) {
+                            AppHelper.showSnackBar(context, 'Periode berhasil disimpan!');
+                            Navigator.pop(context);
+                          } else if (mounted) {
+                            AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menyimpan periode.', isError: true);
+                          }
+                        },
+                        child: const Text('Simpan'),
+                      ),
+                      SizedBox(height: 20.h),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

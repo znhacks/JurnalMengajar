@@ -43,6 +43,8 @@ class AppRouter {
             state.uri.fragment.contains('access_token=');
         final isAuthRoute = state.matchedLocation == '/login' ||
             state.matchedLocation == '/register' ||
+            state.matchedLocation == '/login-callback' ||
+            state.matchedLocation == '/' ||
             isResetPasswordRoute;
 
         // Don't redirect from splash — it handles its own navigation
@@ -96,6 +98,19 @@ class AppRouter {
         return null;
       },
       routes: [
+        // Root / Callback Routes
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const SplashScreen(),
+        ),
+        GoRoute(
+          path: '/login-callback',
+          builder: (context, state) => const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        ),
         // Splash Route
         GoRoute(
           path: '/splash',

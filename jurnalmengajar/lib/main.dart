@@ -28,7 +28,7 @@ import 'core/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Indonesian date formatting for intl
   await initializeDateFormatting('id_ID', null);
 

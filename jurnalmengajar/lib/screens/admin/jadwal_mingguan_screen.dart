@@ -99,11 +99,15 @@ class _JadwalMingguanScreenState extends State<JadwalMingguanScreen> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String?>(
+                            isExpanded: true,
                             initialValue: _selectedPeriodId,
                             decoration: const InputDecoration(labelText: 'Periode', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
                             items: [
-                              const DropdownMenuItem<String?>(value: null, child: Text('Semua Periode')),
-                              ...masterProvider.periods.map((p) => DropdownMenuItem<String?>(value: p.id, child: Text(p.name))),
+                              const DropdownMenuItem<String?>(value: null, child: Text('Semua Periode', overflow: TextOverflow.ellipsis)),
+                              ...masterProvider.periods.map((p) => DropdownMenuItem<String?>(
+                                value: p.id,
+                                child: Text(p.name, overflow: TextOverflow.ellipsis),
+                              )),
                             ],
                             onChanged: (val) => setState(() => _selectedPeriodId = val),
                           ),
@@ -111,11 +115,15 @@ class _JadwalMingguanScreenState extends State<JadwalMingguanScreen> {
                         SizedBox(width: 8.w),
                         Expanded(
                           child: DropdownButtonFormField<String?>(
+                            isExpanded: true,
                             initialValue: _selectedClassId,
                             decoration: const InputDecoration(labelText: 'Kelas', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
                             items: [
-                              const DropdownMenuItem<String?>(value: null, child: Text('Semua Kelas')),
-                              ...masterProvider.classes.map((c) => DropdownMenuItem<String?>(value: c.id, child: Text(c.name))),
+                              const DropdownMenuItem<String?>(value: null, child: Text('Semua Kelas', overflow: TextOverflow.ellipsis)),
+                              ...masterProvider.classes.map((c) => DropdownMenuItem<String?>(
+                                value: c.id,
+                                child: Text(c.name, overflow: TextOverflow.ellipsis),
+                              )),
                             ],
                             onChanged: (val) => setState(() => _selectedClassId = val),
                           ),
@@ -129,11 +137,15 @@ class _JadwalMingguanScreenState extends State<JadwalMingguanScreen> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String?>(
+                            isExpanded: true,
                             initialValue: _selectedTeacherId,
                             decoration: const InputDecoration(labelText: 'Guru', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
                             items: [
-                              const DropdownMenuItem<String?>(value: null, child: Text('Semua Guru')),
-                              ...masterProvider.teachers.map((t) => DropdownMenuItem<String?>(value: t.id, child: Text(t.name))),
+                              const DropdownMenuItem<String?>(value: null, child: Text('Semua Guru', overflow: TextOverflow.ellipsis)),
+                              ...masterProvider.teachers.map((t) => DropdownMenuItem<String?>(
+                                value: t.id,
+                                child: Text(t.name, overflow: TextOverflow.ellipsis),
+                              )),
                             ],
                             onChanged: (val) => setState(() => _selectedTeacherId = val),
                           ),
@@ -141,10 +153,14 @@ class _JadwalMingguanScreenState extends State<JadwalMingguanScreen> {
                         SizedBox(width: 8.w),
                         Expanded(
                           child: DropdownButtonFormField<int?>(
+                            isExpanded: true,
                             initialValue: _selectedWeekday,
                             decoration: const InputDecoration(labelText: 'Hari', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
                             items: _daysOfWeek.map((d) {
-                              return DropdownMenuItem<int?>(value: d['value'] as int?, child: Text(d['label'] as String));
+                              return DropdownMenuItem<int?>(
+                                value: d['value'] as int?,
+                                child: Text(d['label'] as String, overflow: TextOverflow.ellipsis),
+                              );
                             }).toList(),
                             onChanged: (val) => setState(() => _selectedWeekday = val),
                           ),

@@ -30,6 +30,13 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
   void initState() {
     super.initState();
     _checkExistingJournal();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+      if (scheduleProvider.schedules.isEmpty &&
+          scheduleProvider.teacherSchedulesForSelectedDate.isEmpty) {
+        scheduleProvider.loadAllSchedules();
+      }
+    });
   }
 
   Future<void> _checkExistingJournal() async {
@@ -51,7 +58,12 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
     // Find schedule
     ScheduleModel? schedule;
     try {
-      schedule = scheduleProvider.schedules.firstWhere((s) => s.id == widget.scheduleId);
+      schedule = scheduleProvider.schedules.firstWhere(
+        (s) => s.id == widget.scheduleId,
+        orElse: () => scheduleProvider.teacherSchedulesForSelectedDate.firstWhere(
+          (s) => s.id == widget.scheduleId,
+        ),
+      );
     } catch (_) {
       return Scaffold(
         appBar: AppBar(title: const Text('Detail Jadwal')),

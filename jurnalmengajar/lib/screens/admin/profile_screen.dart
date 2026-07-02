@@ -29,9 +29,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     // Safety check for main admin
     if (user.email.toLowerCase() == 'admin@jurnal.com') {
       AppHelper.showSnackBar(
-        context, 
-        'Akun admin utama (admin@jurnal.com) tidak dapat dihapus.', 
-        isError: true
+        context,
+        'Akun admin utama (admin@jurnal.com) tidak dapat dihapus.',
+        isError: true,
       );
       return;
     }
@@ -39,16 +39,25 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     final confirmed1 = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('HAPUS AKUN ANDA', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'HAPUS AKUN ANDA',
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+        ),
         content: const Text(
           'Apakah Anda yakin ingin menghapus akun administrator Anda secara permanen? '
-          'Seluruh data Anda akan terhapus dan Anda akan langsung dikeluarkan dari aplikasi.'
+          'Seluruh data Anda akan terhapus dan Anda akan langsung dikeluarkan dari aplikasi.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Lanjutkan', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Lanjutkan',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -58,15 +67,27 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       final confirmed2 = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Konfirmasi Terakhir', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          title: const Text(
+            'Konfirmasi Terakhir',
+            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          ),
           content: const Text(
-            'TINDAKAN INI TIDAK BISA DIBATALKAN. Apakah Anda benar-benar yakin ingin menghapus akun Anda sekarang?'
+            'TINDAKAN INI TIDAK BISA DIBATALKAN. Apakah Anda benar-benar yakin ingin menghapus akun Anda sekarang?',
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Kembali')),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Kembali'),
+            ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('HAPUS AKUN SAYA', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'HAPUS AKUN SAYA',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ),
@@ -79,9 +100,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
           AppHelper.showSnackBar(context, 'Akun Anda berhasil dihapus.');
         } else if (mounted) {
           AppHelper.showSnackBar(
-            context, 
-            authProvider.errorMessage ?? 'Gagal menghapus akun.', 
-            isError: true
+            context,
+            authProvider.errorMessage ?? 'Gagal menghapus akun.',
+            isError: true,
           );
         }
       }
@@ -90,7 +111,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
 
   void _showEditProfileDialog(UserModel user) {
     final nameController = TextEditingController(text: user.fullName);
-    final posController = TextEditingController(text: user.position ?? 'Administrator');
+    final posController = TextEditingController(
+      text: user.position ?? 'Administrator',
+    );
     final phoneController = TextEditingController(text: user.phoneNumber ?? '');
     final addrController = TextEditingController(text: user.address ?? '');
     Uint8List? tempImageBytes;
@@ -105,7 +128,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           Future<void> pickDialogImage() async {
-            final XFile? img = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+            final XFile? img = await _picker.pickImage(
+              source: ImageSource.gallery,
+              imageQuality: 70,
+            );
             if (img != null) {
               final bytes = await img.readAsBytes();
               setDialogState(() {
@@ -129,11 +155,14 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                 children: [
                   Text(
                     'Edit Profil Admin',
-                    style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 16.h),
-                  
+
                   // Avatar edit
                   Center(
                     child: Stack(
@@ -143,11 +172,17 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                           backgroundColor: Colors.grey[200],
                           backgroundImage: tempImageBytes != null
                               ? MemoryImage(tempImageBytes!)
-                              : (user.photoUrl != null && user.photoUrl!.startsWith('http')
-                                  ? NetworkImage(user.photoUrl!)
-                                  : null) as ImageProvider?,
+                              : (user.photoUrl != null &&
+                                            user.photoUrl!.startsWith('http')
+                                        ? NetworkImage(user.photoUrl!)
+                                        : null)
+                                    as ImageProvider?,
                           child: tempImageBytes == null && user.photoUrl == null
-                              ? Icon(Icons.person, size: 44.r, color: Colors.grey[400])
+                              ? Icon(
+                                  Icons.person,
+                                  size: 44.r,
+                                  color: Colors.grey[400],
+                                )
                               : null,
                         ),
                         Positioned(
@@ -157,8 +192,15 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                             onTap: pickDialogImage,
                             child: Container(
                               padding: EdgeInsets.all(6.w),
-                              decoration: const BoxDecoration(color: Color(0xFF0D9488), shape: BoxShape.circle),
-                              child: Icon(Icons.camera_alt, size: 14.r, color: Colors.white),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF0D9488),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.camera_alt,
+                                size: 14.r,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -170,45 +212,72 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   // Fields
                   TextField(
                     controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Nama Lengkap', hintText: 'Masukkan nama lengkap'),
+                    decoration: const InputDecoration(
+                      labelText: 'Nama Lengkap',
+                      hintText: 'Masukkan nama lengkap',
+                    ),
                   ),
                   SizedBox(height: 12.h),
                   TextField(
                     controller: posController,
-                    decoration: const InputDecoration(labelText: 'Jabatan', hintText: 'Masukkan jabatan'),
+                    decoration: const InputDecoration(
+                      labelText: 'Jabatan',
+                      hintText: 'Masukkan jabatan',
+                    ),
                   ),
                   SizedBox(height: 12.h),
                   TextField(
                     controller: phoneController,
                     keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(labelText: 'Nomor Telepon', hintText: 'Masukkan nomor telepon'),
+                    decoration: const InputDecoration(
+                      labelText: 'Nomor Telepon',
+                      hintText: 'Masukkan nomor telepon',
+                    ),
                   ),
                   SizedBox(height: 12.h),
                   TextField(
                     controller: addrController,
-                    decoration: const InputDecoration(labelText: 'Alamat', hintText: 'Masukkan alamat rumah'),
+                    decoration: const InputDecoration(
+                      labelText: 'Alamat',
+                      hintText: 'Masukkan alamat rumah',
+                    ),
                   ),
                   SizedBox(height: 24.h),
 
                   ElevatedButton(
                     onPressed: () async {
-                      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+                      final authProvider = Provider.of<AuthProvider>(
+                        context,
+                        listen: false,
+                      );
+                      final masterProvider = Provider.of<MasterDataProvider>(
+                        context,
+                        listen: false,
+                      );
 
                       // Upload foto profil jika ada (web-compatible)
                       String? uploadedPhotoUrl = user.photoUrl;
-                      if (tempImageBytes != null && tempImageName != null &&
-                          authProvider.authRepository is SupabaseAuthRepository) {
+                      if (tempImageBytes != null &&
+                          tempImageName != null &&
+                          authProvider.authRepository
+                              is SupabaseAuthRepository) {
                         try {
-                          final supabaseRepo = authProvider.authRepository as SupabaseAuthRepository;
-                          uploadedPhotoUrl = await supabaseRepo.uploadProfilePhoto(
-                            tempImageBytes!,
-                            tempImageName!,
-                            user.id,
-                          );
+                          final supabaseRepo =
+                              authProvider.authRepository
+                                  as SupabaseAuthRepository;
+                          uploadedPhotoUrl = await supabaseRepo
+                              .uploadProfilePhoto(
+                                tempImageBytes!,
+                                tempImageName!,
+                                user.id,
+                              );
                         } catch (e) {
                           if (context.mounted) {
-                            AppHelper.showSnackBar(context, 'Gagal upload foto: $e', isError: true);
+                            AppHelper.showSnackBar(
+                              context,
+                              'Gagal upload foto: $e',
+                              isError: true,
+                            );
                           }
                           return;
                         }
@@ -222,16 +291,26 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         photoUrl: uploadedPhotoUrl,
                       );
 
-                      final success = await authProvider.updateProfile(updatedUser);
+                      final success = await authProvider.updateProfile(
+                        updatedUser,
+                      );
                       if (success) {
                         await masterProvider.loadAllData();
                         if (context.mounted) {
-                          AppHelper.showSnackBar(context, 'Profil berhasil diperbarui!');
+                          AppHelper.showSnackBar(
+                            context,
+                            'Profil berhasil diperbarui!',
+                          );
                           Navigator.pop(context);
                         }
                       } else {
                         if (context.mounted) {
-                          AppHelper.showSnackBar(context, authProvider.errorMessage ?? 'Gagal memperbarui profil.', isError: true);
+                          AppHelper.showSnackBar(
+                            context,
+                            authProvider.errorMessage ??
+                                'Gagal memperbarui profil.',
+                            isError: true,
+                          );
                         }
                       }
                     },
@@ -269,15 +348,23 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                 context: context,
                 builder: (context) => AlertDialog(
                   title: const Text('Konfirmasi Logout'),
-                  content: const Text('Apakah Anda yakin ingin keluar dari halaman Administrator?'),
+                  content: const Text(
+                    'Apakah Anda yakin ingin keluar dari halaman Administrator?',
+                  ),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Batal'),
+                    ),
                     TextButton(
                       onPressed: () {
                         Navigator.pop(context);
                         _handleLogout();
                       },
-                      child: const Text('Logout', style: TextStyle(color: Colors.red)),
+                      child: const Text(
+                        'Logout',
+                        style: TextStyle(color: Colors.red),
+                      ),
                     ),
                   ],
                 ),
@@ -298,41 +385,67 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                 elevation: 0,
                 color: Colors.white,
                 child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 16.w),
+                  padding: EdgeInsets.symmetric(
+                    vertical: 24.h,
+                    horizontal: 16.w,
+                  ),
                   child: Column(
                     children: [
                       CircleAvatar(
                         radius: 54.r,
                         backgroundColor: const Color(0xFFF1F5F9),
-                        backgroundImage: currentUser.photoUrl != null && currentUser.photoUrl!.startsWith('http')
+                        backgroundImage:
+                            currentUser.photoUrl != null &&
+                                currentUser.photoUrl!.startsWith('http')
                             ? NetworkImage(currentUser.photoUrl!)
                             : null,
-                        child: (currentUser.photoUrl == null || !currentUser.photoUrl!.startsWith('http'))
-                            ? Icon(Icons.person, size: 54.r, color: Colors.grey[400])
+                        child:
+                            (currentUser.photoUrl == null ||
+                                !currentUser.photoUrl!.startsWith('http'))
+                            ? Icon(
+                                Icons.person,
+                                size: 54.r,
+                                color: Colors.grey[400],
+                              )
                             : null,
                       ),
                       SizedBox(height: 16.h),
                       Text(
                         currentUser.fullName,
-                        style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                        style: TextStyle(
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF0F172A),
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       SizedBox(height: 6.h),
                       Text(
                         currentUser.position ?? 'Administrator',
-                        style: TextStyle(fontSize: 14.sp, color: const Color(0xFF4F46E5), fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: const Color(0xFF4F46E5),
+                          fontWeight: FontWeight.w600,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       SizedBox(height: 4.h),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10.w,
+                          vertical: 4.h,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           'ROLE: ADMIN',
-                          style: TextStyle(fontSize: 10.sp, fontWeight: FontWeight.bold, color: const Color(0xFF4F46E5)),
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF4F46E5),
+                          ),
                         ),
                       ),
                     ],
@@ -348,13 +461,29 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   padding: EdgeInsets.all(16.w),
                   child: Column(
                     children: [
-                      _buildProfileDetailItem(Icons.badge_outlined, 'Jabatan / Posisi', currentUser.position ?? 'Administrator'),
+                      _buildProfileDetailItem(
+                        Icons.badge_outlined,
+                        'Jabatan / Posisi',
+                        currentUser.position ?? 'Administrator',
+                      ),
                       const Divider(height: 24),
-                      _buildProfileDetailItem(Icons.email_outlined, 'Email', currentUser.email),
+                      _buildProfileDetailItem(
+                        Icons.email_outlined,
+                        'Email',
+                        currentUser.email,
+                      ),
                       const Divider(height: 24),
-                      _buildProfileDetailItem(Icons.phone_outlined, 'No. Telepon', currentUser.phoneNumber ?? 'Belum Diisi'),
+                      _buildProfileDetailItem(
+                        Icons.phone_outlined,
+                        'No. Telepon',
+                        currentUser.phoneNumber ?? 'Belum Diisi',
+                      ),
                       const Divider(height: 24),
-                      _buildProfileDetailItem(Icons.home_outlined, 'Alamat', currentUser.address ?? 'Belum Diisi'),
+                      _buildProfileDetailItem(
+                        Icons.home_outlined,
+                        'Alamat',
+                        currentUser.address ?? 'Belum Diisi',
+                      ),
                     ],
                   ),
                 ),
@@ -387,7 +516,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.red,
+                          ),
                           SizedBox(width: 8.w),
                           Text(
                             'Zona Bahaya (Danger Zone)',
@@ -401,16 +533,22 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                       ),
                       SizedBox(height: 8.h),
                       Text(
-                        isSuperAdmin 
-                          ? 'Akun administrator utama (admin@jurnal.com) dilindungi sistem dan tidak dapat dihapus.'
-                          : 'Tindakan berikut akan menghapus akun administrator Anda secara permanen. Seluruh data autentikasi dan profil Anda akan terhapus.',
-                        style: TextStyle(fontSize: 12.sp, color: Colors.red[700], height: 1.4),
+                        isSuperAdmin
+                            ? 'Akun administrator utama (admin@jurnal.com) dilindungi sistem dan tidak dapat dihapus.'
+                            : 'Tindakan berikut akan menghapus akun administrator Anda secara permanen. Seluruh data autentikasi dan profil Anda akan terhapus.',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Colors.red[700],
+                          height: 1.4,
+                        ),
                       ),
                       SizedBox(height: 16.h),
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
-                          onPressed: isSuperAdmin ? null : () => _handleDeleteAccount(currentUser),
+                          onPressed: isSuperAdmin
+                              ? null
+                              : () => _handleDeleteAccount(currentUser),
                           icon: const Icon(Icons.delete_forever),
                           label: const Text('Hapus Akun Saya'),
                           style: OutlinedButton.styleFrom(
@@ -443,12 +581,20 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
             children: [
               Text(
                 title,
-                style: TextStyle(fontSize: 12.sp, color: Colors.grey[500], fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: Colors.grey[500],
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               SizedBox(height: 4.h),
               Text(
                 value,
-                style: TextStyle(fontSize: 14.sp, color: const Color(0xFF0F172A), fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: const Color(0xFF0F172A),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
