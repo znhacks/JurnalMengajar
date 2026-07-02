@@ -147,7 +147,7 @@ class AboutAppScreen extends StatelessWidget {
 
               SizedBox(height: 40.h),
               Text(
-                '© 2025 Jurnal Mengajar. All rights reserved.',
+                '© 2025 Jurnal Mengajar - JDEVS. All rights reserved.',
                 style: TextStyle(fontSize: 11.sp, color: Colors.grey[400]),
                 textAlign: TextAlign.center,
               ),
