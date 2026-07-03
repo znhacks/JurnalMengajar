@@ -184,7 +184,7 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                                   child: OutlinedButton(
                                     onPressed: () {
                                       // Reuse the Guru journal details view for simplicity
-                                      context.push('/guru/journal/${journal.id}');
+                                      context.push('/admin/journal/${journal.id}');
                                     },
                                     style: OutlinedButton.styleFrom(
                                       minimumSize: Size(0, 36.h),

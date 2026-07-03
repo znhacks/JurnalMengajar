@@ -175,6 +175,13 @@ class AppRouter {
           builder: (context, state) => const ApprovalJurnalScreen(),
         ),
         GoRoute(
+          path: '/admin/journal/:id',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            return DetailJurnalScreen(journalId: id);
+          },
+        ),
+        GoRoute(
           path: '/admin/master-data/periods',
           builder: (context, state) => const MasterPeriodScreen(),
         ),

@@ -141,13 +141,13 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                   SizedBox(height: 16.h),
                   ListTile(
                     leading: const Icon(
-                      Icons.photo_library,
+                      Icons.photo_camera,
                       color: Color(0xFF0D9488),
                     ),
-                    title: const Text('Galeri (Foto)'),
+                    title: const Text('Kamera (Ambil Foto)'),
                     onTap: () {
                       context.pop();
-                      _pickImage(ImageSource.gallery);
+                      _pickImage(ImageSource.camera);
                     },
                   ),
                   ListTile(
@@ -496,7 +496,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                           ),
                           SizedBox(height: 4.h),
                           Text(
-                            'Mendukung Foto (Gallery) atau File PDF',
+                            'Mendukung Foto (Kamera) atau File PDF',
                             style: TextStyle(
                               fontSize: 11.sp,
                               color: Colors.grey[450],
