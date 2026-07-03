@@ -24,7 +24,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
   bool _obscurePassword = true;
@@ -56,7 +56,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (mounted) {
-        AppHelper.showSnackBar(context, 'Gagal memilih gambar: $e', isError: true);
+        AppHelper.showSnackBar(
+          context,
+          'Gagal memilih gambar: $e',
+          isError: true,
+        );
       }
     }
   }
@@ -64,7 +68,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
       if (_passwordController.text != _confirmPasswordController.text) {
-        AppHelper.showSnackBar(context, 'Konfirmasi password tidak cocok', isError: true);
+        AppHelper.showSnackBar(
+          context,
+          'Konfirmasi password tidak cocok',
+          isError: true,
+        );
         return;
       }
 
@@ -102,8 +110,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF0D9488),
-              Color(0xFF7C3AED),
+              Color.fromARGB(255, 22, 163, 149),
+              Color.fromARGB(255, 134, 239, 225),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -136,8 +144,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               decoration: const BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    Color(0xFF0D9488),
-                                    Color(0xFF6D28D9),
+                                    Color.fromARGB(255, 31, 99, 92),
+                                    Color.fromARGB(255, 32, 128, 115),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -147,7 +155,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           Positioned.fill(
                             child: Padding(
-                              padding: EdgeInsets.only(bottom: 20.h, left: 16.w, right: 16.w),
+                              padding: EdgeInsets.only(
+                                bottom: 20.h,
+                                left: 16.w,
+                                right: 16.w,
+                              ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -215,7 +227,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         child: Container(
                                           padding: EdgeInsets.all(6.w),
                                           decoration: const BoxDecoration(
-                                            color: Color(0xFF0D9488),
+                                            color: Color.fromARGB(255, 22, 163, 149),
                                             shape: BoxShape.circle,
                                           ),
                                           child: Icon(
@@ -303,7 +315,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   if (value == null || value.isEmpty) {
                                     return 'Email tidak boleh kosong';
                                   }
-                                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                                  if (!RegExp(
+                                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                  ).hasMatch(value)) {
                                     return 'Format email tidak valid';
                                   }
                                   return null;
@@ -316,7 +330,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               TextFormField(
                                 controller: _passwordController,
                                 obscureText: _obscurePassword,
-                                style: TextStyle(fontSize: 14.sp, color: const Color(0xFF1E293B)),
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: const Color(0xFF1E293B),
+                                ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return 'Password tidak boleh kosong';
@@ -331,8 +348,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   prefixIcon: Icons.lock_outline,
                                   suffixIcon: IconButton(
                                     icon: Icon(
-                                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                                      color: const Color(0xFF94A3B8),
+                                      _obscurePassword
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined,
+                                      color: const Color.fromARGB(255, 22, 163, 149),
                                     ),
                                     onPressed: () {
                                       setState(() {
@@ -349,7 +368,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               TextFormField(
                                 controller: _confirmPasswordController,
                                 obscureText: _obscureConfirmPassword,
-                                style: TextStyle(fontSize: 14.sp, color: const Color(0xFF1E293B)),
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: const Color(0xFF1E293B),
+                                ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return 'Konfirmasi password tidak boleh kosong';
@@ -361,12 +383,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   prefixIcon: Icons.lock_clock_outlined,
                                   suffixIcon: IconButton(
                                     icon: Icon(
-                                      _obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                                      color: const Color(0xFF94A3B8),
+                                      _obscureConfirmPassword
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined,
+                                      color: const Color.fromARGB(255, 22, 163, 149),
                                     ),
                                     onPressed: () {
                                       setState(() {
-                                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                                        _obscureConfirmPassword =
+                                            !_obscureConfirmPassword;
                                       });
                                     },
                                   ),
@@ -378,10 +403,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ElevatedButton(
                                 onPressed: isLoading ? null : _handleRegister,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0D9488),
+                                  backgroundColor: const Color.fromARGB(255, 22, 163, 149),
                                   foregroundColor: Colors.white,
                                   elevation: 4,
-                                  shadowColor: const Color(0xFF0D9488).withValues(alpha: 0.4),
+                                  shadowColor: const Color.fromARGB(255, 22, 163, 149).withValues(alpha: 0.4),
                                   padding: EdgeInsets.symmetric(vertical: 16.h),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16.r),
@@ -393,7 +418,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         width: 20.w,
                                         child: const CircularProgressIndicator(
                                           strokeWidth: 2.5,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                Colors.white,
+                                              ),
                                         ),
                                       )
                                     : Text(
@@ -424,7 +452,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       style: TextStyle(
                                         fontSize: 13.sp,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF0D9488),
+                                        color: const Color.fromARGB(255, 22, 163, 149),
                                       ),
                                     ),
                                   ),
@@ -484,10 +512,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return InputDecoration(
       hintText: hintText,
       hintStyle: TextStyle(color: Colors.grey[400]),
-      prefixIcon: Icon(
-        prefixIcon,
-        color: const Color(0xFF0D9488),
-      ),
+      prefixIcon: Icon(prefixIcon, color: const Color.fromARGB(255, 22, 163, 149)),
       suffixIcon: suffixIcon,
       filled: true,
       fillColor: const Color(0xFFF0FDF4).withValues(alpha: 0.5),
@@ -497,15 +522,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16.r),
-        borderSide: const BorderSide(
-          color: Color(0xFF0D9488),
-          width: 2,
-        ),
+        borderSide: const BorderSide(color: Color.fromARGB(255, 22, 163, 149), width: 2),
       ),
-      contentPadding: EdgeInsets.symmetric(
-        vertical: 14.h,
-        horizontal: 16.w,
-      ),
+      contentPadding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 16.w),
     );
   }
 }
