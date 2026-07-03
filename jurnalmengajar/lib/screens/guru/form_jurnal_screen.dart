@@ -27,6 +27,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
   final _formKey = GlobalKey<FormState>();
   final _materialController = TextEditingController();
   final _noteController = TextEditingController();
+  final _sickNamesController = TextEditingController();
+  final _permissionNamesController = TextEditingController();
+  final _alphaNamesController = TextEditingController();
 
   int _sickCount = 0;
   int _permissionCount = 0;
@@ -66,7 +69,58 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           _existingJournal = existing;
           _isEditing = true;
           _materialController.text = existing.material;
-          _noteController.text = existing.note ?? '';
+
+          // Parse structured note if it exists
+          final fullNote = existing.note;
+          String parsedSickNames = '';
+          String parsedPermissionNames = '';
+          String parsedAlphaNames = '';
+          String parsedGeneralNote = '';
+
+          if (fullNote != null) {
+            if (fullNote.contains('Keterangan Absensi:')) {
+              final parts = fullNote.split('\n\nCatatan Pembelajaran:\n');
+              final absencePart = parts[0];
+              if (parts.length > 1) {
+                parsedGeneralNote = parts[1];
+              } else {
+                if (fullNote.contains('Catatan Pembelajaran:')) {
+                  final notesParts = fullNote.split('Catatan Pembelajaran:\n');
+                  if (notesParts.length > 1) {
+                    parsedGeneralNote = notesParts[1];
+                  }
+                }
+              }
+
+              final lines = absencePart.split('\n');
+              for (final line in lines) {
+                if (line.startsWith('Sakit (')) {
+                  final colonIndex = line.indexOf('): ');
+                  if (colonIndex != -1) {
+                    parsedSickNames = line.substring(colonIndex + 3);
+                  }
+                } else if (line.startsWith('Izin (')) {
+                  final colonIndex = line.indexOf('): ');
+                  if (colonIndex != -1) {
+                    parsedPermissionNames = line.substring(colonIndex + 3);
+                  }
+                } else if (line.startsWith('Alfa (')) {
+                  final colonIndex = line.indexOf('): ');
+                  if (colonIndex != -1) {
+                    parsedAlphaNames = line.substring(colonIndex + 3);
+                  }
+                }
+              }
+            } else {
+              parsedGeneralNote = fullNote;
+            }
+          }
+
+          _noteController.text = parsedGeneralNote;
+          _sickNamesController.text = parsedSickNames;
+          _permissionNamesController.text = parsedPermissionNames;
+          _alphaNamesController.text = parsedAlphaNames;
+
           _sickCount = existing.sickCount;
           _permissionCount = existing.permissionCount;
           _alphaCount = existing.alphaCount;
@@ -86,6 +140,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
   void dispose() {
     _materialController.dispose();
     _noteController.dispose();
+    _sickNamesController.dispose();
+    _permissionNamesController.dispose();
+    _alphaNamesController.dispose();
     super.dispose();
   }
 
@@ -187,6 +244,29 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         attachment = null;
       }
 
+      // Construct structured note
+      String? combinedNote;
+      final absenceDetails = <String>[];
+      if (_sickCount > 0 && _sickNamesController.text.trim().isNotEmpty) {
+        absenceDetails.add('Sakit ($_sickCount siswa): ${_sickNamesController.text.trim()}');
+      }
+      if (_permissionCount > 0 && _permissionNamesController.text.trim().isNotEmpty) {
+        absenceDetails.add('Izin ($_permissionCount siswa): ${_permissionNamesController.text.trim()}');
+      }
+      if (_alphaCount > 0 && _alphaNamesController.text.trim().isNotEmpty) {
+        absenceDetails.add('Alfa ($_alphaCount siswa): ${_alphaNamesController.text.trim()}');
+      }
+
+      final generalNote = _noteController.text.trim();
+      if (absenceDetails.isNotEmpty) {
+        combinedNote = 'Keterangan Absensi:\n${absenceDetails.join('\n')}';
+        if (generalNote.isNotEmpty) {
+          combinedNote = '$combinedNote\n\nCatatan Pembelajaran:\n$generalNote';
+        }
+      } else {
+        combinedNote = generalNote.isEmpty ? null : generalNote;
+      }
+
       if (_isEditing) {
         final updatedJournal = JournalModel(
           id: _existingJournal!.id,
@@ -200,9 +280,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           sickCount: _sickCount,
           permissionCount: _permissionCount,
           alphaCount: _alphaCount,
-          note: _noteController.text.trim().isEmpty
-              ? null
-              : _noteController.text.trim(),
+          note: combinedNote,
           attachment: attachment,
           status: 'pending', // Reset status to pending when revised!
           attachmentUrl: attachment == null
@@ -247,9 +325,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           sickCount: _sickCount,
           permissionCount: _permissionCount,
           alphaCount: _alphaCount,
-          note: _noteController.text.trim().isEmpty
-              ? null
-              : _noteController.text.trim(),
+          note: combinedNote,
           attachment: attachment,
           status: 'pending',
         );
@@ -431,6 +507,81 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                     ),
                   ],
                 ),
+                if (_sickCount > 0) ...[
+                  SizedBox(height: 16.h),
+                  Text(
+                    'Siapa yang Sakit?',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  TextFormField(
+                    controller: _sickNamesController,
+                    validator: (value) {
+                      if (_sickCount > 0 && (value == null || value.trim().isEmpty)) {
+                        return 'Nama siswa yang sakit tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      hintText: 'Nama siswa yang sakit (misal: Budi, Ani)',
+                      fillColor: Colors.white,
+                    ),
+                  ),
+                ],
+                if (_permissionCount > 0) ...[
+                  SizedBox(height: 16.h),
+                  Text(
+                    'Siapa yang Izin?',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  TextFormField(
+                    controller: _permissionNamesController,
+                    validator: (value) {
+                      if (_permissionCount > 0 && (value == null || value.trim().isEmpty)) {
+                        return 'Nama siswa yang izin tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      hintText: 'Nama siswa yang izin (misal: Candra, Dedi)',
+                      fillColor: Colors.white,
+                    ),
+                  ),
+                ],
+                if (_alphaCount > 0) ...[
+                  SizedBox(height: 16.h),
+                  Text(
+                    'Siapa yang Alfa?',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  TextFormField(
+                    controller: _alphaNamesController,
+                    validator: (value) {
+                      if (_alphaCount > 0 && (value == null || value.trim().isEmpty)) {
+                        return 'Nama siswa yang alfa tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      hintText: 'Nama siswa yang alfa (misal: Eki, Fani)',
+                      fillColor: Colors.white,
+                    ),
+                  ),
+                ],
                 SizedBox(height: 24.h),
 
                 // Catatan Mengajar
