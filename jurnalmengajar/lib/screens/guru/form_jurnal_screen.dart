@@ -45,14 +45,22 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+      final scheduleProvider = Provider.of<ScheduleProvider>(
+        context,
+        listen: false,
+      );
       if (scheduleProvider.schedules.isEmpty &&
           scheduleProvider.teacherSchedulesForSelectedDate.isEmpty) {
         scheduleProvider.loadAllSchedules();
       }
 
-      final journalProvider = Provider.of<JournalProvider>(context, listen: false);
-      final existing = await journalProvider.getJournalForSchedule(widget.scheduleId);
+      final journalProvider = Provider.of<JournalProvider>(
+        context,
+        listen: false,
+      );
+      final existing = await journalProvider.getJournalForSchedule(
+        widget.scheduleId,
+      );
       if (existing != null && mounted) {
         setState(() {
           _existingJournal = existing;
@@ -107,64 +115,40 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     }
   }
 
-  void _pickMockPdf() {
-    setState(() {
-      _mockPdfName =
-          'surat_keterangan_sakit_${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}.pdf';
-      _attachmentImageBytes = null;
-      _attachmentImageName = null;
-    });
-  }
-
   void _showAttachmentBottomSheet() {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder:
-          (context) => SafeArea(
-            child: Padding(
-              padding: EdgeInsets.all(16.w),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Pilih Lampiran Jurnal',
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 16.h),
-                  ListTile(
-                    leading: const Icon(
-                      Icons.photo_camera,
-                      color: Color(0xFF0D9488),
-                    ),
-                    title: const Text('Kamera (Ambil Foto)'),
-                    onTap: () {
-                      context.pop();
-                      _pickImage(ImageSource.camera);
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(
-                      Icons.picture_as_pdf,
-                      color: Color(0xFF0D9488),
-                    ),
-                    title: const Text('Simulasi File PDF'),
-                    onTap: () {
-                      context.pop();
-                      _pickMockPdf();
-                    },
-                  ),
-                ],
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(16.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Pilih Lampiran Jurnal',
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
               ),
-            ),
+              SizedBox(height: 16.h),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_camera,
+                  color: Color(0xFF0D9488),
+                ),
+                title: const Text('Kamera (Ambil Foto)'),
+                onTap: () {
+                  context.pop();
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+            ],
           ),
+        ),
+      ),
     );
   }
 
@@ -179,19 +163,27 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
       JournalAttachmentModel? attachment = _existingJournal?.attachment;
       if (_attachmentImageBytes != null && _attachmentImageName != null) {
         attachment = JournalAttachmentModel(
-          id: _existingJournal?.attachment?.id ?? 'ja_${DateTime.now().millisecondsSinceEpoch}',
+          id:
+              _existingJournal?.attachment?.id ??
+              'ja_${DateTime.now().millisecondsSinceEpoch}',
           filePath: _existingJournal?.attachment?.filePath ?? 'pending_upload',
           fileType: 'image',
           fileName: _attachmentImageName!,
         );
       } else if (_mockPdfName != null) {
         attachment = JournalAttachmentModel(
-          id: _existingJournal?.attachment?.id ?? 'ja_${DateTime.now().millisecondsSinceEpoch}',
-          filePath: _existingJournal?.attachment?.filePath ?? 'mock_pdf_directory/$_mockPdfName',
+          id:
+              _existingJournal?.attachment?.id ??
+              'ja_${DateTime.now().millisecondsSinceEpoch}',
+          filePath:
+              _existingJournal?.attachment?.filePath ??
+              'mock_pdf_directory/$_mockPdfName',
           fileType: 'pdf',
           fileName: _mockPdfName!,
         );
-      } else if (_attachmentImageBytes == null && _attachmentImageName == null && _mockPdfName == null) {
+      } else if (_attachmentImageBytes == null &&
+          _attachmentImageName == null &&
+          _mockPdfName == null) {
         attachment = null;
       }
 
@@ -208,10 +200,14 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           sickCount: _sickCount,
           permissionCount: _permissionCount,
           alphaCount: _alphaCount,
-          note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
+          note: _noteController.text.trim().isEmpty
+              ? null
+              : _noteController.text.trim(),
           attachment: attachment,
           status: 'pending', // Reset status to pending when revised!
-          attachmentUrl: attachment == null ? null : _existingJournal!.attachmentUrl,
+          attachmentUrl: attachment == null
+              ? null
+              : _existingJournal!.attachmentUrl,
         );
 
         final success = await journalProvider.updateJournal(
@@ -251,7 +247,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           sickCount: _sickCount,
           permissionCount: _permissionCount,
           alphaCount: _alphaCount,
-          note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
+          note: _noteController.text.trim().isEmpty
+              ? null
+              : _noteController.text.trim(),
           attachment: attachment,
           status: 'pending',
         );
@@ -270,7 +268,10 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
               isError: true,
             );
           } else {
-            AppHelper.showSnackBar(context, 'Jurnal berhasil dikirim untuk verifikasi!');
+            AppHelper.showSnackBar(
+              context,
+              'Jurnal berhasil dikirim untuk verifikasi!',
+            );
           }
           context.pop();
         } else if (mounted) {
@@ -294,22 +295,22 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     try {
       schedule = scheduleProvider.schedules.firstWhere(
         (s) => s.id == widget.scheduleId,
-        orElse: () => scheduleProvider.teacherSchedulesForSelectedDate.firstWhere(
-          (s) => s.id == widget.scheduleId,
-        ),
+        orElse: () => scheduleProvider.teacherSchedulesForSelectedDate
+            .firstWhere((s) => s.id == widget.scheduleId),
       );
     } catch (_) {
       return Scaffold(
-        appBar: AppBar(title: Text(_isEditing ? 'Revisi Jurnal' : 'Isi Jurnal')),
+        appBar: AppBar(
+          title: Text(_isEditing ? 'Revisi Jurnal' : 'Isi Jurnal'),
+        ),
         body: const Center(child: Text('Jadwal tidak ditemukan')),
       );
     }
 
     final cls = masterProvider.classes.firstWhere(
       (c) => c.id == schedule?.classId,
-      orElse:
-          () =>
-              ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
+      orElse: () =>
+          ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
     );
 
     final subject = masterProvider.subjects.firstWhere(
@@ -319,20 +320,21 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
     final hr = masterProvider.hours.firstWhere(
       (h) => h.teachingHour == schedule?.teachingHour,
-      orElse:
-          () => HourModel(
-            id: '',
-            teachingHour: schedule?.teachingHour ?? 1,
-            startTime: '00:00',
-            endTime: '00:00',
-          ),
+      orElse: () => HourModel(
+        id: '',
+        teachingHour: schedule?.teachingHour ?? 1,
+        startTime: '00:00',
+        endTime: '00:00',
+      ),
     );
 
     final isLoading = journalProvider.isLoading;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Revisi Jurnal Mengajar' : 'Isi Jurnal Mengajar'),
+        title: Text(
+          _isEditing ? 'Revisi Jurnal Mengajar' : 'Isi Jurnal Mengajar',
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -454,7 +456,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
                 // Lampiran Jurnal
                 Text(
-                  'Lampiran (Foto / PDF)',
+                  'Lampiran (Foto)',
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
@@ -496,13 +498,14 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                           ),
                           SizedBox(height: 4.h),
                           Text(
-                            'Mendukung Foto (Kamera) atau File PDF',
+                            'Mendukung Foto (Kamera)',
                             style: TextStyle(
                               fontSize: 11.sp,
                               color: Colors.grey[450],
                             ),
                           ),
-                        ] else if (_attachmentImageBytes != null || _attachmentImageName != null) ...[
+                        ] else if (_attachmentImageBytes != null ||
+                            _attachmentImageName != null) ...[
                           Row(
                             children: [
                               ClipRRect(
@@ -514,22 +517,35 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                                         width: 60.h,
                                         fit: BoxFit.cover,
                                       )
-                                    : (_existingJournal?.attachment?.filePath != null &&
-                                            _existingJournal!.attachment!.filePath.startsWith('http')
-                                        ? Image.network(
-                                            _existingJournal!.attachment!.filePath,
-                                            height: 60.h,
-                                            width: 60.h,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) =>
-                                                const Icon(Icons.image, size: 30),
-                                          )
-                                        : Container(
-                                            height: 60.h,
-                                            width: 60.h,
-                                            color: Colors.grey[200],
-                                            child: const Icon(Icons.image),
-                                          )),
+                                    : (_existingJournal?.attachment?.filePath !=
+                                                  null &&
+                                              _existingJournal!
+                                                  .attachment!
+                                                  .filePath
+                                                  .startsWith('http')
+                                          ? Image.network(
+                                              _existingJournal!
+                                                  .attachment!
+                                                  .filePath,
+                                              height: 60.h,
+                                              width: 60.h,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (
+                                                    context,
+                                                    error,
+                                                    stackTrace,
+                                                  ) => const Icon(
+                                                    Icons.image,
+                                                    size: 30,
+                                                  ),
+                                            )
+                                          : Container(
+                                              height: 60.h,
+                                              width: 60.h,
+                                              color: Colors.grey[200],
+                                              child: const Icon(Icons.image),
+                                            )),
                               ),
                               SizedBox(width: 12.w),
                               Expanded(
@@ -612,8 +628,8 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                                   Icons.delete_outline,
                                   color: Colors.red,
                                 ),
-                                onPressed:
-                                    () => setState(() => _mockPdfName = null),
+                                onPressed: () =>
+                                    setState(() => _mockPdfName = null),
                               ),
                             ],
                           ),
@@ -627,19 +643,20 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 // Submit Button
                 ElevatedButton(
                   onPressed: isLoading ? null : () => _submitForm(schedule!),
-                  child:
-                      isLoading
-                          ? SizedBox(
-                            height: 24.w,
-                            width: 24.w,
-                            child: const CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
+                  child: isLoading
+                      ? SizedBox(
+                          height: 24.w,
+                          width: 24.w,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
                             ),
-                          )
-                          : Text(_isEditing ? 'Kirim Revisi Jurnal' : 'Simpan Jurnal'),
+                          ),
+                        )
+                      : Text(
+                          _isEditing ? 'Kirim Revisi Jurnal' : 'Simpan Jurnal',
+                        ),
                 ),
               ],
             ),
@@ -699,10 +716,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
               ),
               Text(
                 '$count',
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold),
               ),
               IconButton(
                 icon: const Icon(Icons.add, size: 18),
