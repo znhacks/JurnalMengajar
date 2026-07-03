@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../core/theme/app_theme.dart';
 
 class AdminDrawer extends StatelessWidget {
   final String currentRoute;
@@ -13,56 +15,90 @@ class AdminDrawer extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     return Drawer(
+      backgroundColor: Colors.white,
+      shadowColor: Colors.transparent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Custom Container Header with logo to prevent RenderFlex overflow
+          // ── Header Gradient ────────────────────────────────────────────────
           Container(
-            color: const Color(0xFF0F172A),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF00685F), Color(0xFF0D9488)],
+              ),
+            ),
             padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 16.h,
-              bottom: 16.h,
-              left: 16.w,
-              right: 16.w,
+              top: MediaQuery.of(context).padding.top + 20.h,
+              bottom: 20.h,
+              left: 20.w,
+              right: 20.w,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Image.asset(
-                  'assets/logoApp.png',
-                  height: 48.h,
-                  fit: BoxFit.contain,
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(6.w),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.admin_panel_settings_outlined, color: Colors.white, size: 24),
+                    ),
+                    SizedBox(width: 10.w),
+                    Image.asset(
+                      'assets/logoApp.png',
+                      height: 36.h,
+                      fit: BoxFit.contain,
+                    ),
+                  ],
                 ),
-                SizedBox(height: 10.h),
+                SizedBox(height: 14.h),
                 Text(
                   authProvider.currentUser?.fullName ?? 'Administrator',
-                  style: const TextStyle(
+                  style: GoogleFonts.hankenGrotesk(
                     color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16.sp,
                   ),
                 ),
+                SizedBox(height: 2.h),
                 Text(
                   authProvider.currentUser?.email ?? 'admin@jurnal.com',
-                  style: TextStyle(color: Colors.white70, fontSize: 12.sp),
+                  style: GoogleFonts.hankenGrotesk(
+                    color: Colors.white.withValues(alpha: 0.75),
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
           ),
 
-          // Drawer Menu List
+          // ── Menu List ──────────────────────────────────────────────────────
           Expanded(
             child: ListView(
-              padding: EdgeInsets.zero,
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
               children: [
                 _buildMenuItem(context, Icons.dashboard_outlined, 'Dashboard', '/admin/dashboard'),
                 _buildMenuItem(context, Icons.rate_review_outlined, 'Approval Jurnal', '/admin/approvals'),
                 
                 const Divider(),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text('MASTER DATA', style: TextStyle(color: Colors.grey[500], fontSize: 12, fontWeight: FontWeight.bold)),
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  child: Text(
+                    'MASTER DATA',
+                    style: GoogleFonts.hankenGrotesk(
+                      color: AppTheme.outline,
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.05,
+                    ),
+                  ),
                 ),
                 _buildMenuItem(context, Icons.date_range_outlined, 'Master Periode', '/admin/master-data/periods'),
                 _buildMenuItem(context, Icons.menu_book_outlined, 'Master Pelajaran', '/admin/master-data/subjects'),
@@ -74,8 +110,16 @@ class AdminDrawer extends StatelessWidget {
                 
                 const Divider(),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text('LAPORAN & SISTEM', style: TextStyle(color: Colors.grey[500], fontSize: 12, fontWeight: FontWeight.bold)),
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  child: Text(
+                    'LAPORAN & SISTEM',
+                    style: GoogleFonts.hankenGrotesk(
+                      color: AppTheme.outline,
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.05,
+                    ),
+                  ),
                 ),
                 _buildMenuItem(context, Icons.grid_view_outlined, 'Jadwal Mingguan', '/admin/weekly-schedules'),
                 _buildMenuItem(context, Icons.settings_outlined, 'Pengaturan Sistem', '/admin/settings'),
@@ -84,34 +128,65 @@ class AdminDrawer extends StatelessWidget {
             ),
           ),
 
-          // Logout Item
+          // ── Footer / Logout ───────────────────────────────────────────────
           const Divider(),
           _buildMenuItem(context, Icons.info_outline, 'Tentang Aplikasi', '/about'),
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Logout', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              Navigator.pop(context); // Close Drawer
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Konfirmasi Logout'),
-                  content: const Text('Apakah Anda yakin ingin keluar dari halaman Administrator?'),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        authProvider.logout();
-                      },
-                      child: const Text('Logout', style: TextStyle(color: Colors.red)),
-                    ),
-                  ],
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+            child: ListTile(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              leading: const Icon(Icons.logout_outlined, color: AppTheme.errorColor),
+              title: Text(
+                'Logout',
+                style: GoogleFonts.hankenGrotesk(
+                  color: AppTheme.errorColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14.sp,
                 ),
-              );
-            },
+              ),
+              onTap: () {
+                Navigator.pop(context); // Close Drawer
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text(
+                      'Konfirmasi Logout',
+                      style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w700),
+                    ),
+                    content: Text(
+                      'Apakah Anda yakin ingin keluar dari halaman Administrator?',
+                      style: GoogleFonts.hankenGrotesk(color: AppTheme.onSurfaceVariant),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          'Batal',
+                          style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          authProvider.logout();
+                        },
+                        child: Text(
+                          'Logout',
+                          style: GoogleFonts.hankenGrotesk(
+                            color: AppTheme.errorColor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
         ],
       ),
     );
@@ -119,23 +194,34 @@ class AdminDrawer extends StatelessWidget {
 
   Widget _buildMenuItem(BuildContext context, IconData icon, String title, String route) {
     final isSelected = currentRoute == route;
-    return ListTile(
-      leading: Icon(icon, color: isSelected ? const Color(0xFF0D9488) : Colors.grey[700]),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: isSelected ? const Color(0xFF0D9488) : const Color(0xFF0F172A),
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 2.h),
+      child: ListTile(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
+        leading: Icon(
+          icon,
+          color: isSelected ? AppTheme.primaryColor : AppTheme.outline,
+          size: 22,
+        ),
+        title: Text(
+          title,
+          style: GoogleFonts.hankenGrotesk(
+            color: isSelected ? AppTheme.primaryColor : AppTheme.onBackground,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 14.sp,
+          ),
+        ),
+        selected: isSelected,
+        selectedTileColor: AppTheme.primaryColor.withValues(alpha: 0.08),
+        onTap: () {
+          Navigator.pop(context); // Close drawer
+          if (!isSelected) {
+            context.go(route);
+          }
+        },
       ),
-      selected: isSelected,
-      selectedTileColor: const Color(0xFF0D9488).withValues(alpha: 0.05),
-      onTap: () {
-        Navigator.pop(context); // Close drawer
-        if (!isSelected) {
-          context.go(route);
-        }
-      },
     );
   }
 }

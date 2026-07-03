@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/journal_provider.dart';
@@ -10,6 +11,7 @@ import '../../models/teacher_model.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../widgets/state_widgets.dart';
 import '../../core/utils/helper.dart';
+import '../../core/theme/app_theme.dart';
 
 class ApprovalJurnalScreen extends StatefulWidget {
   const ApprovalJurnalScreen({super.key});
@@ -61,13 +63,17 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
     final isLoading = journalProvider.isLoading || masterProvider.isLoading;
 
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
         title: const Text('Persetujuan Jurnal'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppTheme.onBackground),
       ),
       drawer: const AdminDrawer(currentRoute: '/admin/approvals'),
       body: RefreshIndicator(
         onRefresh: _refreshData,
-        color: const Color(0xFF0D9488),
+        color: AppTheme.primaryColor,
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : pendingJournals.isEmpty
@@ -79,7 +85,7 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                 : ListView.separated(
                     padding: EdgeInsets.all(16.w),
                     itemCount: pendingJournals.length,
-                    separatorBuilder: (context, index) => SizedBox(height: 16.h),
+                    separatorBuilder: (context, _) => SizedBox(height: 16.h),
                     itemBuilder: (context, index) {
                       final journal = pendingJournals[index];
 
@@ -98,130 +104,195 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                         orElse: () => TeacherModel(id: '', name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''),
                       );
 
+                      final statusColor = const Color(0xFF825100); // Amber pending
+
                       return Container(
-                        padding: EdgeInsets.all(16.w),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.01),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                          border: Border.all(color: AppTheme.outlineVariant),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    cls.name,
-                                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                        child: IntrinsicHeight(
+                          child: Row(
+                            children: [
+                              // Left border accent
+                              Container(
+                                width: 4.w,
+                                decoration: BoxDecoration(
+                                  color: statusColor,
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(16),
+                                    bottomLeft: Radius.circular(16),
                                   ),
                                 ),
-                                Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    'MENUNGGU',
-                                    style: TextStyle(fontSize: 10.sp, color: Colors.amber[800], fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 4.h),
-                            Text(
-                              subject.name,
-                              style: TextStyle(fontSize: 14.sp, color: Colors.grey[750], fontWeight: FontWeight.w500),
-                            ),
-                            SizedBox(height: 8.h),
-                            
-                            // Meta Row
-                            Row(
-                              children: [
-                                Icon(Icons.person_outline, size: 14.w, color: Colors.grey),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  'Oleh: ${teacher.name}',
-                                  style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
-                                ),
-                                const Spacer(),
-                                Icon(Icons.calendar_today_outlined, size: 12.w, color: Colors.grey),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  AppHelper.formatDateShort(journal.date),
-                                  style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
-                                ),
-                              ],
-                            ),
-                            const Divider(height: 24),
+                              ),
+                              Expanded(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.w),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              cls.name,
+                                              style: GoogleFonts.hankenGrotesk(
+                                                  fontSize: 16.sp,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AppTheme.onBackground),
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                                            decoration: BoxDecoration(
+                                              color: statusColor.withValues(alpha: 0.1),
+                                              borderRadius: BorderRadius.circular(999),
+                                            ),
+                                            child: Text(
+                                              'MENUNGGU',
+                                              style: GoogleFonts.hankenGrotesk(
+                                                  fontSize: 10.sp,
+                                                  color: statusColor,
+                                                  fontWeight: FontWeight.w700,
+                                                  letterSpacing: 0.2),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 2.h),
+                                      Text(
+                                        subject.name,
+                                        style: GoogleFonts.hankenGrotesk(
+                                            fontSize: 14.sp,
+                                            color: AppTheme.onSurfaceVariant,
+                                            fontWeight: FontWeight.w500),
+                                      ),
+                                      SizedBox(height: 10.h),
 
-                            Text(
-                              'Materi Diajarkan:',
-                              style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
-                            ),
-                            SizedBox(height: 4.h),
-                            Text(
-                              journal.material,
-                              style: TextStyle(fontSize: 13.sp, color: Colors.grey[700]),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const Divider(height: 24),
+                                      // Meta Row
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.person_outline, size: 14, color: AppTheme.outline),
+                                          SizedBox(width: 4.w),
+                                          Text(
+                                            'Oleh: ${teacher.name}',
+                                            style: GoogleFonts.hankenGrotesk(
+                                                fontSize: 12.sp, color: AppTheme.outline, fontWeight: FontWeight.w500),
+                                          ),
+                                          const Spacer(),
+                                          const Icon(Icons.calendar_today_outlined, size: 12, color: AppTheme.outline),
+                                          SizedBox(width: 4.w),
+                                          Text(
+                                            AppHelper.formatDateShort(journal.date),
+                                            style: GoogleFonts.hankenGrotesk(
+                                                fontSize: 12.sp, color: AppTheme.outline, fontWeight: FontWeight.w500),
+                                          ),
+                                        ],
+                                      ),
+                                      const Divider(height: 24),
 
-                            // Action Buttons
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: OutlinedButton(
-                                    onPressed: () {
-                                      // Reuse the Guru journal details view for simplicity
-                                      context.push('/admin/journal/${journal.id}');
-                                    },
-                                    style: OutlinedButton.styleFrom(
-                                      minimumSize: Size(0, 36.h),
-                                      side: const BorderSide(color: Color(0xFF0F172A)),
-                                      foregroundColor: const Color(0xFF0F172A),
-                                      padding: EdgeInsets.symmetric(vertical: 8.h),
-                                    ),
-                                    child: const Text('Detail'),
+                                      Text(
+                                        'Materi Diajarkan:',
+                                        style: GoogleFonts.hankenGrotesk(
+                                            fontSize: 12.sp,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppTheme.onBackground),
+                                      ),
+                                      SizedBox(height: 6.h),
+                                      Container(
+                                        width: double.infinity,
+                                        padding: EdgeInsets.all(10.w),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.surfaceContainerLow,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          journal.material,
+                                          style: GoogleFonts.hankenGrotesk(
+                                              fontSize: 13.sp, color: AppTheme.onSurfaceVariant, height: 1.4),
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const Divider(height: 24),
+
+                                      // Action Buttons
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: OutlinedButton(
+                                              onPressed: () {
+                                                context.push('/admin/journal/${journal.id}');
+                                              },
+                                              style: OutlinedButton.styleFrom(
+                                                minimumSize: Size(0, 38.h),
+                                                padding: EdgeInsets.symmetric(vertical: 6.h),
+                                                side: const BorderSide(color: AppTheme.outlineVariant),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                              child: Text(
+                                                'Detail',
+                                                style: GoogleFonts.hankenGrotesk(
+                                                    fontSize: 13.sp,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: AppTheme.onBackground),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 8.w),
+                                          Expanded(
+                                            child: ElevatedButton(
+                                              onPressed: () => _handleApprove(journal.id, journal.teacherId),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: const Color(0xFF00685F),
+                                                minimumSize: Size(0, 38.h),
+                                                padding: EdgeInsets.symmetric(vertical: 6.h),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                              child: Text(
+                                                'Setujui',
+                                                style: GoogleFonts.hankenGrotesk(
+                                                    fontSize: 13.sp,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.white),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 8.w),
+                                          Expanded(
+                                            child: ElevatedButton(
+                                              onPressed: () => _handleReject(journal.id, journal.teacherId),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: const Color(0xFFBA1A1A),
+                                                minimumSize: Size(0, 38.h),
+                                                padding: EdgeInsets.symmetric(vertical: 6.h),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                              child: Text(
+                                                'Tolak',
+                                                style: GoogleFonts.hankenGrotesk(
+                                                    fontSize: 13.sp,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.white),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                SizedBox(width: 8.w),
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: () => _handleApprove(journal.id, journal.teacherId),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF10B981), // Emerald Green
-                                      minimumSize: Size(0, 36.h),
-                                      padding: EdgeInsets.symmetric(vertical: 8.h),
-                                    ),
-                                    child: const Text('Setujui'),
-                                  ),
-                                ),
-                                SizedBox(width: 8.w),
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: () => _handleReject(journal.id, journal.teacherId),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red[600],
-                                      minimumSize: Size(0, 36.h),
-                                      padding: EdgeInsets.symmetric(vertical: 8.h),
-                                    ),
-                                    child: const Text('Tolak'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
