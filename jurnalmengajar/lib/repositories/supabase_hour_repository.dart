@@ -1,6 +1,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../models/hour_model.dart';
 import 'hour_repository.dart';
+
+const _uuid = Uuid();
 
 class SupabaseHourRepository implements HourRepository {
   final SupabaseClient _supabase;
@@ -26,7 +29,11 @@ class SupabaseHourRepository implements HourRepository {
   @override
   Future<void> create(HourModel model) async {
     try {
-      await _supabase.from('lesson_hours').insert(model.toJson());
+      final payload = model.toJson();
+      if ((payload['id'] as String?)?.isEmpty ?? true) {
+        payload['id'] = _uuid.v4();
+      }
+      await _supabase.from('lesson_hours').insert(payload);
     } catch (e) {
       throw Exception('Gagal menambah jam pelajaran: $e');
     }

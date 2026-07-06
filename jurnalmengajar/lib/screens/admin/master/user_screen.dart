@@ -25,7 +25,9 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchUsers();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchUsers();
+    });
     _searchController.addListener(_onSearchChanged);
   }
 

@@ -19,7 +19,9 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
   @override
   void initState() {
     super.initState();
-    _refreshData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshData();
+    });
   }
 
   Future<void> _refreshData() async {

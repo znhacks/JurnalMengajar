@@ -1,6 +1,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../models/period_model.dart';
 import 'period_repository.dart';
+
+const _uuid = Uuid();
 
 class SupabasePeriodRepository implements PeriodRepository {
   final SupabaseClient _supabase;
@@ -26,7 +29,11 @@ class SupabasePeriodRepository implements PeriodRepository {
   @override
   Future<void> create(PeriodModel model) async {
     try {
-      await _supabase.from('periods').insert(model.toJson());
+      final payload = model.toJson();
+      if ((payload['id'] as String?)?.isEmpty ?? true) {
+        payload['id'] = _uuid.v4();
+      }
+      await _supabase.from('periods').insert(payload);
     } catch (e) {
       throw Exception('Gagal menambah periode: $e');
     }

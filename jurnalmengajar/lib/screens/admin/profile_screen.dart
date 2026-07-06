@@ -2,7 +2,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
@@ -11,6 +10,7 @@ import '../../providers/journal_provider.dart';
 import '../../models/user_model.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../core/utils/helper.dart';
+import '../../core/utils/image_crop_helper.dart';
 import '../../repositories/supabase_auth_repository.dart';
 
 class AdminProfileScreen extends StatefulWidget {
@@ -21,7 +21,6 @@ class AdminProfileScreen extends StatefulWidget {
 }
 
 class _AdminProfileScreenState extends State<AdminProfileScreen> {
-  final ImagePicker _picker = ImagePicker();
 
   Future<void> _handleLogout() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -134,18 +133,71 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       ),
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          Future<void> pickDialogImage() async {
-            final XFile? img = await _picker.pickImage(
-              source: ImageSource.gallery,
-              imageQuality: 70,
+          Future<void> pickDialogImage({ImageSource source = ImageSource.gallery}) async {
+            final result = await pickAndCropImage(
+              context: context,
+              source: source,
             );
-            if (img != null) {
-              final bytes = await img.readAsBytes();
+            if (result != null) {
               setDialogState(() {
-                tempImageBytes = bytes;
-                tempImageName = img.name;
+                tempImageBytes = result.bytes;
+                tempImageName = result.name;
               });
             }
+          }
+
+          Future<void> showImageSourceSheet() async {
+            await showModalBottomSheet<void>(
+              context: context,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+              ),
+              builder: (sheetCtx) => SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(height: 8.h),
+                    Container(
+                      width: 40.w,
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2.r),
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+                    Text(
+                      'Pilih Sumber Foto',
+                      style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600),
+                    ),
+                    SizedBox(height: 8.h),
+                    ListTile(
+                      leading: const CircleAvatar(
+                        backgroundColor: Color(0xFFE0F2F1),
+                        child: Icon(Icons.photo_library_outlined, color: Color(0xFF0D9488)),
+                      ),
+                      title: const Text('Galeri Foto'),
+                      onTap: () {
+                        Navigator.pop(sheetCtx);
+                        pickDialogImage(source: ImageSource.gallery);
+                      },
+                    ),
+                    ListTile(
+                      leading: const CircleAvatar(
+                        backgroundColor: Color(0xFFE0F2F1),
+                        child: Icon(Icons.camera_alt_outlined, color: Color(0xFF0D9488)),
+                      ),
+                      title: const Text('Kamera'),
+                      onTap: () {
+                        Navigator.pop(sheetCtx);
+                        pickDialogImage(source: ImageSource.camera);
+                      },
+                    ),
+                    SizedBox(height: 8.h),
+                  ],
+                ),
+              ),
+            );
           }
 
           return Padding(
@@ -217,7 +269,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                           bottom: 0,
                           right: 0,
                           child: GestureDetector(
-                            onTap: pickDialogImage,
+                            onTap: showImageSourceSheet,
                             child: Container(
                               padding: EdgeInsets.all(8.w),
                               decoration: const BoxDecoration(

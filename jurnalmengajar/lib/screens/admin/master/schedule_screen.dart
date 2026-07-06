@@ -24,7 +24,9 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
   @override
   void initState() {
     super.initState();
-    _refreshData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshData();
+    });
   }
 
   Future<void> _refreshData() async {

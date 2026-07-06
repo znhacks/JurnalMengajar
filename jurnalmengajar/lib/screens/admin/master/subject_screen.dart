@@ -18,7 +18,9 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
   @override
   void initState() {
     super.initState();
-    _refreshData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshData();
+    });
   }
 
   Future<void> _refreshData() async {

@@ -1,6 +1,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../models/class_model.dart';
 import 'class_repository.dart';
+
+const _uuid = Uuid();
 
 class SupabaseClassRepository implements ClassRepository {
   final SupabaseClient _supabase;
@@ -26,7 +29,11 @@ class SupabaseClassRepository implements ClassRepository {
   @override
   Future<void> create(ClassModel model) async {
     try {
-      await _supabase.from('classes').insert(model.toJson());
+      final payload = model.toJson();
+      if ((payload['id'] as String?)?.isEmpty ?? true) {
+        payload['id'] = _uuid.v4();
+      }
+      await _supabase.from('classes').insert(payload);
     } catch (e) {
       throw Exception('Gagal menambah kelas: $e');
     }

@@ -1,6 +1,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../models/subject_model.dart';
 import 'subject_repository.dart';
+
+const _uuid = Uuid();
 
 class SupabaseSubjectRepository implements SubjectRepository {
   final SupabaseClient _supabase;
@@ -26,7 +29,11 @@ class SupabaseSubjectRepository implements SubjectRepository {
   @override
   Future<void> create(SubjectModel model) async {
     try {
-      await _supabase.from('subjects').insert(model.toJson());
+      final payload = model.toJson();
+      if ((payload['id'] as String?)?.isEmpty ?? true) {
+        payload['id'] = _uuid.v4();
+      }
+      await _supabase.from('subjects').insert(payload);
     } catch (e) {
       throw Exception('Gagal menambah mata pelajaran: $e');
     }

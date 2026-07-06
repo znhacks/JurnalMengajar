@@ -18,7 +18,9 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
   @override
   void initState() {
     super.initState();
-    _refreshData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshData();
+    });
   }
 
   Future<void> _refreshData() async {
