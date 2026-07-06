@@ -30,9 +30,16 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
   }
 
   Future<void> _refreshData() async {
-    await Provider.of<MasterDataProvider>(context, listen: false).loadAllData();
-    await Provider.of<ScheduleProvider>(context, listen: false).loadAllSchedules();
-    await Provider.of<JournalProvider>(context, listen: false).loadAllJournals();
+    if (!mounted) return;
+    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+
+    await Future.wait([
+      masterProvider.loadAllData(),
+      scheduleProvider.loadAllSchedules(),
+      journalProvider.loadAllJournals(),
+    ]);
   }
 
   String getWeekdayName(int weekday) {
@@ -470,6 +477,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                         } else {
                           // Safe edit: delete old and recreate
                           final bool deleteSuccess = await scheduleProvider.deleteMultipleSchedules(groupedSchedule.scheduleIds);
+                          if (!dialogContext.mounted) return;
                           if (!deleteSuccess) {
                             await showDialog(
                               context: dialogContext,
@@ -516,15 +524,16 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                             );
                             return;
                           }
-                          
-                          success = await scheduleProvider.createMultipleSchedules(schedulesToCreate);
+                                                   success = await scheduleProvider.createMultipleSchedules(schedulesToCreate);
                         }
                       }
 
-                      if (success && mounted) {
+                      if (!context.mounted || !dialogContext.mounted) return;
+
+                      if (success) {
                         Navigator.pop(dialogContext);
                         AppHelper.showSnackBar(context, 'Jadwal berhasil disimpan!');
-                      } else if (mounted) {
+                      } else {
                         // Show error inside the bottom sheet as a dialog so it's visible above the form
                         final errMsg = scheduleProvider.errorMessage ?? 'Gagal menyimpan jadwal.';
                         await showDialog(
@@ -570,9 +579,10 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
     }
 
     final success = await scheduleProvider.deleteMultipleSchedules(ids);
-    if (success && mounted) {
+    if (!mounted) return;
+    if (success) {
       AppHelper.showSnackBar(context, 'Jadwal berhasil dihapus');
-    } else if (mounted) {
+    } else {
       AppHelper.showSnackBar(context, scheduleProvider.errorMessage ?? 'Gagal menghapus jadwal.', isError: true);
     }
   }

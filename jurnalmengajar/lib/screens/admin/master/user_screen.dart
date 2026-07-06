@@ -125,6 +125,8 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
 
       final success = await authProvider.updateUserRole(user.id, newRole);
 
+      if (!mounted) return;
+
       if (success) {
         AppHelper.showSnackBar(context, 'Peran ${user.fullName} berhasil diperbarui menjadi ${newRole.toUpperCase()}!');
         _fetchUsers();
@@ -184,6 +186,9 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
       });
 
       final success = await authProvider.deleteAccount(user.id);
+      
+      if (!mounted) return;
+
       if (success) {
         AppHelper.showSnackBar(context, 'Akun ${user.fullName} berhasil dihapus!');
         _fetchUsers();

@@ -177,10 +177,10 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                         ));
                       }
 
-                      if (success && mounted) {
+                      if (success && context.mounted) {
                         AppHelper.showSnackBar(context, 'Data guru berhasil disimpan!');
                         Navigator.pop(context);
-                      } else if (mounted) {
+                      } else if (context.mounted) {
                         AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menyimpan data guru.', isError: true);
                       }
                     },

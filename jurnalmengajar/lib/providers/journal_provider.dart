@@ -12,9 +12,7 @@ class JournalProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  JournalProvider({required this.journalRepository}) {
-    loadAllJournals();
-  }
+  JournalProvider({required this.journalRepository});
 
   List<JournalModel> get journals => _journals;
   List<JournalModel> get teacherJournals => _teacherJournals;

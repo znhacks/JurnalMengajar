@@ -59,8 +59,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       );
 
       if (teacher.id.isNotEmpty) {
-        await scheduleProvider.loadTeacherSchedules(teacher.id, _selectedDay);
-        await journalProvider.loadTeacherJournals(teacher.id);
+        await Future.wait([
+          scheduleProvider.loadTeacherSchedules(teacher.id, _selectedDay),
+          journalProvider.loadTeacherJournals(teacher.id),
+        ]);
       }
     }
   }

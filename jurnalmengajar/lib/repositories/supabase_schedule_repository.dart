@@ -28,18 +28,22 @@ class SupabaseScheduleRepository implements ScheduleRepository {
   }
 
   @override
-  Future<List<ScheduleModel>> getSchedulesForTeacher(String teacherId, DateTime date) async {
+  Future<List<ScheduleModel>> getSchedulesForTeacher(String teacherId, {DateTime? date}) async {
     try {
-      final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      final nextDateStr = '${date.add(Duration(days: 1)).year}-${date.add(Duration(days: 1)).month.toString().padLeft(2, '0')}-${date.add(Duration(days: 1)).day.toString().padLeft(2, '0')}';
-      
-      final response = await _supabase
+      var query = _supabase
           .from(SupabaseConstants.tableSchedules)
           .select()
-          .eq(SupabaseConstants.fieldTeacherId, teacherId)
-          .gte(SupabaseConstants.fieldDate, dateStr)
-          .lt(SupabaseConstants.fieldDate, nextDateStr)
-          .order(SupabaseConstants.fieldDate, ascending: true);
+          .eq(SupabaseConstants.fieldTeacherId, teacherId);
+
+      if (date != null) {
+        final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        final nextDateStr = '${date.add(const Duration(days: 1)).year}-${date.add(const Duration(days: 1)).month.toString().padLeft(2, '0')}-${date.add(const Duration(days: 1)).day.toString().padLeft(2, '0')}';
+        query = query
+            .gte(SupabaseConstants.fieldDate, dateStr)
+            .lt(SupabaseConstants.fieldDate, nextDateStr);
+      }
+
+      final response = await query.order(SupabaseConstants.fieldDate, ascending: true);
 
       return (response as List)
           .map((json) => ScheduleModel.fromJson(json))

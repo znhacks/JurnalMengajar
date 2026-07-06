@@ -7,17 +7,23 @@ class ScheduleProvider with ChangeNotifier {
 
   List<ScheduleModel> _schedules = [];
   List<ScheduleModel> _teacherSchedulesForSelectedDate = [];
+  List<ScheduleModel> _cachedTeacherSchedules = [];
+  String? _cachedTeacherId;
   bool _isLoading = false;
   String? _errorMessage;
 
-  ScheduleProvider({required this.scheduleRepository}) {
-    loadAllSchedules();
-  }
+  ScheduleProvider({required this.scheduleRepository});
 
   List<ScheduleModel> get schedules => _schedules;
   List<ScheduleModel> get teacherSchedulesForSelectedDate => _teacherSchedulesForSelectedDate;
+  List<ScheduleModel> get cachedTeacherSchedules => _cachedTeacherSchedules;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+
+  void clearTeacherSchedulesCache() {
+    _cachedTeacherId = null;
+    _cachedTeacherSchedules.clear();
+  }
 
   Future<void> loadAllSchedules() async {
     _isLoading = true;
@@ -33,18 +39,30 @@ class ScheduleProvider with ChangeNotifier {
     }
   }
 
-  Future<void> loadTeacherSchedules(String teacherId, DateTime date) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-    try {
-      _teacherSchedulesForSelectedDate = await scheduleRepository.getSchedulesForTeacher(teacherId, date);
-    } catch (e) {
-      _errorMessage = e.toString();
-    } finally {
-      _isLoading = false;
+  Future<void> loadTeacherSchedules(String teacherId, DateTime date, {bool forceRefresh = false}) async {
+    if (forceRefresh || _cachedTeacherId != teacherId || _cachedTeacherSchedules.isEmpty) {
+      _isLoading = true;
+      _errorMessage = null;
       notifyListeners();
+      try {
+        _cachedTeacherSchedules = await scheduleRepository.getSchedulesForTeacher(teacherId);
+        _cachedTeacherId = teacherId;
+      } catch (e) {
+        _errorMessage = e.toString();
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
     }
+
+    _teacherSchedulesForSelectedDate = _cachedTeacherSchedules.where((s) {
+      return s.date.year == date.year &&
+          s.date.month == date.month &&
+          s.date.day == date.day;
+    }).toList();
+
+    _isLoading = false;
+    notifyListeners();
   }
 
   void _validateNoActiveOverlap(ScheduleModel proposed, {String? excludeId}) {
@@ -69,6 +87,7 @@ class ScheduleProvider with ChangeNotifier {
     try {
       _validateNoActiveOverlap(model);
       await scheduleRepository.create(model);
+      clearTeacherSchedulesCache();
       await loadAllSchedules();
       return true;
     } catch (e) {
@@ -88,6 +107,7 @@ class ScheduleProvider with ChangeNotifier {
         _validateNoActiveOverlap(m);
       }
       await scheduleRepository.createMultiple(models);
+      clearTeacherSchedulesCache();
       await loadAllSchedules();
       return true;
     } catch (e) {
@@ -105,6 +125,7 @@ class ScheduleProvider with ChangeNotifier {
     try {
       _validateNoActiveOverlap(model, excludeId: model.id);
       await scheduleRepository.update(model);
+      clearTeacherSchedulesCache();
       await loadAllSchedules();
       return true;
     } catch (e) {
@@ -121,6 +142,7 @@ class ScheduleProvider with ChangeNotifier {
     notifyListeners();
     try {
       await scheduleRepository.delete(id);
+      clearTeacherSchedulesCache();
       await loadAllSchedules();
       return true;
     } catch (e) {
@@ -137,6 +159,7 @@ class ScheduleProvider with ChangeNotifier {
     notifyListeners();
     try {
       await scheduleRepository.deleteMultiple(ids);
+      clearTeacherSchedulesCache();
       await loadAllSchedules();
       return true;
     } catch (e) {

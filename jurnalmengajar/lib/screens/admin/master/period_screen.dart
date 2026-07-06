@@ -107,10 +107,10 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                             ));
                           }
 
-                          if (success && mounted) {
+                          if (success && context.mounted) {
                             AppHelper.showSnackBar(context, 'Periode berhasil disimpan!');
                             Navigator.pop(context);
-                          } else if (mounted) {
+                          } else if (context.mounted) {
                             AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menyimpan periode.', isError: true);
                           }
                         },

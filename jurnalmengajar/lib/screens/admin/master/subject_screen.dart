@@ -100,10 +100,10 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                         ));
                       }
 
-                      if (success && mounted) {
+                      if (success && context.mounted) {
                         AppHelper.showSnackBar(context, 'Mata pelajaran berhasil disimpan!');
                         Navigator.pop(context);
-                      } else if (mounted) {
+                      } else if (context.mounted) {
                         AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menyimpan mata pelajaran.', isError: true);
                       }
                     },

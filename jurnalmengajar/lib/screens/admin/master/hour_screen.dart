@@ -144,10 +144,10 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                         ));
                       }
 
-                      if (success && mounted) {
+                      if (success && context.mounted) {
                         AppHelper.showSnackBar(context, 'Jam pelajaran berhasil disimpan!');
                         Navigator.pop(context);
-                      } else if (mounted) {
+                      } else if (context.mounted) {
                         AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menyimpan jam pelajaran.', isError: true);
                       }
                     },

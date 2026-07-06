@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
-import 'dart:typed_data';
 import '../models/journal_model.dart';
 import 'journal_repository.dart';
 import '../core/constants/supabase_constants.dart';
@@ -119,7 +119,7 @@ class SupabaseJournalRepository implements JournalRepository {
                 .remove([filePath]);
           }
         } catch (e) {
-          print('Error deleting attachment file: $e');
+          debugPrint('Error deleting attachment file: $e');
         }
       }
 
@@ -218,7 +218,7 @@ class SupabaseJournalRepository implements JournalRepository {
       }
       return '';
     } catch (e) {
-      print('Error extracting file path: $e');
+      debugPrint('Error extracting file path: $e');
       return '';
     }
   }

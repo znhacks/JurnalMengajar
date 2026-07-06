@@ -12,10 +12,11 @@ class MockScheduleRepository implements ScheduleRepository {
   }
 
   @override
-  Future<List<ScheduleModel>> getSchedulesForTeacher(String teacherId, DateTime date) async {
+  Future<List<ScheduleModel>> getSchedulesForTeacher(String teacherId, {DateTime? date}) async {
     await Future.delayed(const Duration(milliseconds: 300));
     return _db.schedules.where((s) {
       final sameTeacher = s.teacherId == teacherId;
+      if (date == null) return sameTeacher;
       final sameDate = s.date.year == date.year &&
           s.date.month == date.month &&
           s.date.day == date.day;

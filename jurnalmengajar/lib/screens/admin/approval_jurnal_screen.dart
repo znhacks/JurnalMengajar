@@ -30,8 +30,14 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
   }
 
   Future<void> _refreshData() async {
-    await Provider.of<JournalProvider>(context, listen: false).loadAllJournals();
-    await Provider.of<MasterDataProvider>(context, listen: false).loadAllData();
+    if (!mounted) return;
+    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+
+    await Future.wait([
+      journalProvider.loadAllJournals(),
+      masterProvider.loadAllData(),
+    ]);
   }
 
   Future<void> _handleApprove(String journalId, String teacherId) async {

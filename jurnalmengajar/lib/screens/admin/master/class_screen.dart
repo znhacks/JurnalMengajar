@@ -134,10 +134,10 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                         ));
                       }
 
-                      if (success && mounted) {
+                      if (success && context.mounted) {
                         AppHelper.showSnackBar(context, 'Kelas berhasil disimpan!');
                         Navigator.pop(context);
-                      } else if (mounted) {
+                      } else if (context.mounted) {
                         AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menyimpan kelas.', isError: true);
                       }
                     },

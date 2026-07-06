@@ -35,9 +35,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Future<void> _refreshData() async {
-    await Provider.of<MasterDataProvider>(context, listen: false).loadAllData();
-    await Provider.of<ScheduleProvider>(context, listen: false).loadAllSchedules();
-    await Provider.of<JournalProvider>(context, listen: false).loadAllJournals();
+    if (!mounted) return;
+    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+
+    await Future.wait([
+      masterProvider.loadAllData(),
+      scheduleProvider.loadAllSchedules(),
+      journalProvider.loadAllJournals(),
+    ]);
   }
 
   @override

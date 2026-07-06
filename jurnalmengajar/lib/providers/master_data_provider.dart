@@ -59,11 +59,18 @@ class MasterDataProvider with ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
-      _periods = await periodRepository.getAll();
-      _subjects = await subjectRepository.getAll();
-      _hours = await hourRepository.getAll();
-      _classes = await classRepository.getAll();
-      _teachers = await teacherRepository.getAll();
+      final results = await Future.wait([
+        periodRepository.getAll(),
+        subjectRepository.getAll(),
+        hourRepository.getAll(),
+        classRepository.getAll(),
+        teacherRepository.getAll(),
+      ]);
+      _periods = results[0] as List<PeriodModel>;
+      _subjects = results[1] as List<SubjectModel>;
+      _hours = results[2] as List<HourModel>;
+      _classes = results[3] as List<ClassModel>;
+      _teachers = results[4] as List<TeacherModel>;
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
