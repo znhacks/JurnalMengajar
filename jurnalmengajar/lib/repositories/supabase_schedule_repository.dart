@@ -106,4 +106,16 @@ class SupabaseScheduleRepository implements ScheduleRepository {
       throw Exception('Gagal menghapus jadwal: $e');
     }
   }
+
+  @override
+  Future<void> deleteMultiple(List<String> ids) async {
+    try {
+      await _supabase
+          .from(SupabaseConstants.tableSchedules)
+          .delete()
+          .inFilter(SupabaseConstants.fieldId, ids);
+    } catch (e) {
+      throw Exception('Gagal menghapus beberapa jadwal: $e');
+    }
+  }
 }

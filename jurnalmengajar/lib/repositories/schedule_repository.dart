@@ -7,4 +7,5 @@ abstract class ScheduleRepository {
   Future<void> createMultiple(List<ScheduleModel> models);
   Future<void> update(ScheduleModel model);
   Future<void> delete(String id);
+  Future<void> deleteMultiple(List<String> ids);
 }

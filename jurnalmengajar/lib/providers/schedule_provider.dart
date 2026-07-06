@@ -47,15 +47,32 @@ class ScheduleProvider with ChangeNotifier {
     }
   }
 
+  void _validateNoActiveOverlap(ScheduleModel proposed, {String? excludeId}) {
+    if (!proposed.isActive) return;
+
+    for (final s in _schedules) {
+      if (s.id == excludeId) continue;
+      if (s.isActive &&
+          s.classId == proposed.classId &&
+          s.teachingHour == proposed.teachingHour &&
+          s.date.year == proposed.date.year &&
+          s.date.month == proposed.date.month &&
+          s.date.day == proposed.date.day) {
+        throw Exception('Terdapat Jadwal Aktif, Ambil jam atau tanggal yang berbeda');
+      }
+    }
+  }
+
   Future<bool> createSchedule(ScheduleModel model) async {
     _isLoading = true;
     notifyListeners();
     try {
+      _validateNoActiveOverlap(model);
       await scheduleRepository.create(model);
       await loadAllSchedules();
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = e.toString().replaceFirst('Exception: ', '');
       return false;
     } finally {
       _isLoading = false;
@@ -67,11 +84,14 @@ class ScheduleProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
+      for (final m in models) {
+        _validateNoActiveOverlap(m);
+      }
       await scheduleRepository.createMultiple(models);
       await loadAllSchedules();
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = e.toString().replaceFirst('Exception: ', '');
       return false;
     } finally {
       _isLoading = false;
@@ -83,11 +103,12 @@ class ScheduleProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
+      _validateNoActiveOverlap(model, excludeId: model.id);
       await scheduleRepository.update(model);
       await loadAllSchedules();
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = e.toString().replaceFirst('Exception: ', '');
       return false;
     } finally {
       _isLoading = false;
@@ -100,6 +121,22 @@ class ScheduleProvider with ChangeNotifier {
     notifyListeners();
     try {
       await scheduleRepository.delete(id);
+      await loadAllSchedules();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> deleteMultipleSchedules(List<String> ids) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await scheduleRepository.deleteMultiple(ids);
       await loadAllSchedules();
       return true;
     } catch (e) {

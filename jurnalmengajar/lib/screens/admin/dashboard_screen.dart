@@ -12,6 +12,8 @@ import '../../core/theme/app_theme.dart';
 import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
 import '../../models/teacher_model.dart';
+import '../../models/schedule_model.dart';
+import '../../core/utils/schedule_grouper.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -414,13 +416,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       );
     }
 
+    final groupedSchedules = groupDailySchedules(schedulesForDay.cast<ScheduleModel>());
+
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: schedulesForDay.length,
+      itemCount: groupedSchedules.length,
       separatorBuilder: (context, _) => SizedBox(height: 10.h),
       itemBuilder: (context, index) {
-        final sched = schedulesForDay[index];
+        final scheduleGroup = groupedSchedules[index];
+        final sched = scheduleGroup.primarySchedule;
+        
         final cls = masterProvider.classes.firstWhere(
           (c) => c.id == sched.classId,
           orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
@@ -434,8 +440,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           orElse: () => TeacherModel(id: '', name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''),
         );
 
-        final hasJournal = journalProvider.journals.any((j) => j.scheduleId == sched.id);
+        final hasJournal = journalProvider.journals.any((j) => scheduleGroup.scheduleIds.contains(j.scheduleId));
         final statusColor = hasJournal ? AppTheme.primaryColor : const Color(0xFFBA1A1A);
+        final hoursStr = scheduleGroup.teachingHours.join(', ');
 
         return Container(
           decoration: BoxDecoration(
@@ -476,7 +483,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                '${cls.name} • ${subj.name}',
+                                '${cls.name} • ${subj.name} (Jam $hoursStr)',
                                 style: GoogleFonts.hankenGrotesk(
                                     fontSize: 14.sp,
                                     fontWeight: FontWeight.w700,

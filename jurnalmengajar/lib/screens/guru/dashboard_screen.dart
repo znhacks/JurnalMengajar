@@ -9,13 +9,12 @@ import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/journal_provider.dart';
 import '../../models/teacher_model.dart';
-import '../../models/schedule_model.dart';
 import '../../models/journal_model.dart';
 import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
-import '../../models/hour_model.dart';
 import '../../core/utils/helper.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/schedule_grouper.dart';
 
 class GuruDashboardScreen extends StatefulWidget {
   const GuruDashboardScreen({super.key});
@@ -426,14 +425,15 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         subtitle: 'Tidak ada jadwal mengajar pada tanggal ini.',
       );
     }
+    final groupedSchedules = groupDailySchedules(scheduleProvider.teacherSchedulesForSelectedDate);
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: scheduleProvider.teacherSchedulesForSelectedDate.length,
+      itemCount: groupedSchedules.length,
       separatorBuilder: (context, _) => SizedBox(height: 10.h),
       itemBuilder: (context, index) {
-        final schedule = scheduleProvider.teacherSchedulesForSelectedDate[index];
-        return _buildScheduleCard(schedule, master, journalProvider);
+        final scheduleGroup = groupedSchedules[index];
+        return _buildScheduleCard(scheduleGroup, master, journalProvider);
       },
     );
   }
@@ -500,10 +500,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
   // ─── Schedule Card ─────────────────────────────────────────────────────────
   Widget _buildScheduleCard(
-    ScheduleModel schedule,
+    GroupedDailySchedule scheduleGroup,
     MasterDataProvider master,
     JournalProvider journalProvider,
   ) {
+    final schedule = scheduleGroup.primarySchedule;
     final cls = master.classes.firstWhere(
       (c) => c.id == schedule.classId,
       orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
@@ -512,11 +513,15 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       (s) => s.id == schedule.subjectId,
       orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
     );
-    final hr = master.hours.firstWhere(
-      (h) => h.teachingHour == schedule.teachingHour,
-      orElse: () => HourModel(
-          id: '', teachingHour: schedule.teachingHour, startTime: '--', endTime: '--'),
-    );
+    
+    final matchedHours = master.hours
+        .where((h) => scheduleGroup.teachingHours.contains(h.teachingHour))
+        .toList()
+      ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
+
+    final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '00:00';
+    final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '00:00';
+    final hoursStr = scheduleGroup.teachingHours.join(', ');
 
     return InkWell(
       onTap: () => context.push('/guru/schedule/${schedule.id}'),
@@ -565,14 +570,14 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                   fontWeight: FontWeight.w600),
                             ),
                             Text(
-                              '#${schedule.teachingHour}',
+                              '#$hoursStr',
                               style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 20.sp,
+                                  fontSize: 16.sp,
                                   color: AppTheme.primaryColor,
                                   fontWeight: FontWeight.w800),
                             ),
                             Text(
-                              hr.startTime,
+                              hrStart,
                               style: GoogleFonts.hankenGrotesk(
                                   fontSize: 9.sp,
                                   color: AppTheme.primaryColor),
@@ -618,7 +623,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                     size: 12, color: AppTheme.outline),
                                 SizedBox(width: 3.w),
                                 Text(
-                                  '${hr.startTime}–${hr.endTime}',
+                                  '$hrStart–$hrEnd',
                                   style: GoogleFonts.hankenGrotesk(
                                       fontSize: 11.sp, color: AppTheme.outline),
                                 ),

@@ -6,9 +6,9 @@ import '../../providers/schedule_provider.dart';
 import '../../models/teacher_model.dart';
 import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
-import '../../models/hour_model.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../widgets/state_widgets.dart';
+import '../../core/utils/schedule_grouper.dart';
 
 class JadwalMingguanScreen extends StatefulWidget {
   const JadwalMingguanScreen({super.key});
@@ -176,18 +176,23 @@ class _JadwalMingguanScreenState extends State<JadwalMingguanScreen> {
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : filteredSchedules.isEmpty
-                      ? const AppEmptyWidget(
-                          title: 'Jadwal Tidak Ditemukan',
-                          subtitle: 'Tidak ada jadwal mengajar yang cocok dengan filter di atas.',
-                          icon: Icons.search_off_rounded,
-                        )
-                      : ListView.separated(
+                  : Builder(
+                      builder: (context) {
+                        final groupedSchedules = groupDailySchedules(filteredSchedules);
+                        if (groupedSchedules.isEmpty) {
+                          return const AppEmptyWidget(
+                            title: 'Jadwal Tidak Ditemukan',
+                            subtitle: 'Tidak ada jadwal mengajar yang cocok dengan filter di atas.',
+                            icon: Icons.search_off_rounded,
+                          );
+                        }
+                        return ListView.separated(
                           padding: EdgeInsets.symmetric(horizontal: 16.w),
-                          itemCount: filteredSchedules.length,
+                          itemCount: groupedSchedules.length,
                           separatorBuilder: (context, index) => SizedBox(height: 10.h),
                           itemBuilder: (context, index) {
-                            final sched = filteredSchedules[index];
+                            final scheduleGroup = groupedSchedules[index];
+                            final sched = scheduleGroup.primarySchedule;
 
                             final teacher = masterProvider.teachers.firstWhere(
                               (t) => t.id == sched.teacherId,
@@ -204,10 +209,14 @@ class _JadwalMingguanScreenState extends State<JadwalMingguanScreen> {
                               orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
                             );
 
-                            final hr = masterProvider.hours.firstWhere(
-                              (h) => h.teachingHour == sched.teachingHour,
-                              orElse: () => HourModel(id: '', teachingHour: sched.teachingHour, startTime: '00:00', endTime: '00:00'),
-                            );
+                            final matchedHours = masterProvider.hours
+                                .where((h) => scheduleGroup.teachingHours.contains(h.teachingHour))
+                                .toList()
+                              ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
+
+                            final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '00:00';
+                            final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '00:00';
+                            final hoursStr = scheduleGroup.teachingHours.join(', ');
 
                             // Resolve weekday label
                             String dayLabel = 'Hari';
@@ -245,11 +254,11 @@ class _JadwalMingguanScreenState extends State<JadwalMingguanScreen> {
                                         ),
                                         SizedBox(height: 2.h),
                                         Text(
-                                          'Jam Ke-${sched.teachingHour}',
+                                          'Jam Ke-$hoursStr',
                                           style: TextStyle(fontSize: 10.sp, color: Colors.grey[600]),
                                         ),
                                         Text(
-                                          '${hr.startTime}-${hr.endTime}',
+                                          '$hrStart-$hrEnd',
                                           style: TextStyle(fontSize: 9.sp, color: Colors.grey[500]),
                                         ),
                                       ],
@@ -283,7 +292,9 @@ class _JadwalMingguanScreenState extends State<JadwalMingguanScreen> {
                               ),
                             );
                           },
-                        ),
+                        );
+                      }
+                    ),
             ),
           ],
         ),

@@ -7,11 +7,10 @@ import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../models/teacher_model.dart';
-import '../../models/schedule_model.dart';
 import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
-import '../../models/hour_model.dart';
 import '../../models/period_model.dart';
+import '../../core/utils/schedule_grouper.dart';
 
 class GuruJadwalScreen extends StatefulWidget {
   const GuruJadwalScreen({super.key});
@@ -123,14 +122,19 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                     ? const Center(child: CircularProgressIndicator())
                     : scheduleProvider.teacherSchedulesForSelectedDate.isEmpty
                         ? _buildEmptyState()
-                        : ListView.separated(
-                            padding: EdgeInsets.all(16.w),
-                            itemCount: scheduleProvider.teacherSchedulesForSelectedDate.length,
-                            separatorBuilder: (context, index) => SizedBox(height: 12.h),
-                            itemBuilder: (context, index) {
-                              final schedule = scheduleProvider.teacherSchedulesForSelectedDate[index];
-                              return _buildScheduleItem(schedule, masterProvider);
-                            },
+                        : Builder(
+                            builder: (context) {
+                              final groupedSchedules = groupDailySchedules(scheduleProvider.teacherSchedulesForSelectedDate);
+                              return ListView.separated(
+                                padding: EdgeInsets.all(16.w),
+                                itemCount: groupedSchedules.length,
+                                separatorBuilder: (context, index) => SizedBox(height: 12.h),
+                                itemBuilder: (context, index) {
+                                  final scheduleGroup = groupedSchedules[index];
+                                  return _buildScheduleItem(scheduleGroup, masterProvider);
+                                },
+                              );
+                            }
                           ),
               ),
             ),
@@ -167,7 +171,8 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     );
   }
 
-  Widget _buildScheduleItem(ScheduleModel schedule, MasterDataProvider master) {
+  Widget _buildScheduleItem(GroupedDailySchedule scheduleGroup, MasterDataProvider master) {
+    final schedule = scheduleGroup.primarySchedule;
     final cls = master.classes.firstWhere(
       (c) => c.id == schedule.classId,
       orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
@@ -178,10 +183,14 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
     );
 
-    final hr = master.hours.firstWhere(
-      (h) => h.teachingHour == schedule.teachingHour,
-      orElse: () => HourModel(id: '', teachingHour: schedule.teachingHour, startTime: '00:00', endTime: '00:00'),
-    );
+    final matchedHours = master.hours
+        .where((h) => scheduleGroup.teachingHours.contains(h.teachingHour))
+        .toList()
+      ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
+
+    final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '00:00';
+    final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '00:00';
+    final hoursStr = scheduleGroup.teachingHours.join(', ');
 
     final period = master.periods.firstWhere(
       (p) => p.id == schedule.periodId,
@@ -209,11 +218,11 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                   style: TextStyle(fontSize: 11.sp, color: Colors.grey[500]),
                 ),
                 Text(
-                  '${schedule.teachingHour}',
-                  style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                  hoursStr,
+                  style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
                 ),
                 Text(
-                  '${hr.startTime} - ${hr.endTime}',
+                  '$hrStart - $hrEnd',
                   style: TextStyle(fontSize: 11.sp, color: const Color(0xFF0D9488), fontWeight: FontWeight.w500),
                 ),
               ],

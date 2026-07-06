@@ -9,7 +9,6 @@ import '../../models/schedule_model.dart';
 import '../../models/journal_model.dart';
 import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
-import '../../models/hour_model.dart';
 import '../../models/period_model.dart';
 import '../../models/teacher_model.dart';
 import '../../core/utils/helper.dart';
@@ -41,12 +40,58 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
 
   Future<void> _checkExistingJournal() async {
     final journalProvider = Provider.of<JournalProvider>(context, listen: false);
-    final journal = await journalProvider.getJournalForSchedule(widget.scheduleId);
-    if (mounted) {
-      setState(() {
-        _existingJournal = journal;
-        _checkingJournal = false;
-      });
+    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+
+    // Let's first wait for a tiny delay or wait for frames to ensure schedules are loaded
+    await Future.delayed(Duration.zero);
+    
+    // Find schedule
+    ScheduleModel? schedule;
+    try {
+      schedule = scheduleProvider.schedules.firstWhere(
+        (s) => s.id == widget.scheduleId,
+        orElse: () => scheduleProvider.teacherSchedulesForSelectedDate.firstWhere(
+          (s) => s.id == widget.scheduleId,
+        ),
+      );
+    } catch (_) {}
+
+    if (schedule != null) {
+      final allSchedules = scheduleProvider.schedules.isNotEmpty 
+          ? scheduleProvider.schedules 
+          : scheduleProvider.teacherSchedulesForSelectedDate;
+          
+      final groupSchedules = allSchedules.where((s) {
+        return s.date.year == schedule!.date.year &&
+            s.date.month == schedule.date.month &&
+            s.date.day == schedule.date.day &&
+            s.classId == schedule.classId &&
+            s.subjectId == schedule.subjectId &&
+            s.teacherId == schedule.teacherId &&
+            s.periodId == schedule.periodId;
+      }).toList();
+
+      JournalModel? foundJournal;
+      for (final s in groupSchedules) {
+        final journal = await journalProvider.getJournalForSchedule(s.id);
+        if (journal != null) {
+          foundJournal = journal;
+          break;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _existingJournal = foundJournal;
+          _checkingJournal = false;
+        });
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _checkingJournal = false;
+        });
+      }
     }
   }
 
@@ -71,6 +116,29 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
       );
     }
 
+    // Find all schedule IDs in same group
+    final allSchedules = scheduleProvider.schedules.isNotEmpty 
+        ? scheduleProvider.schedules 
+        : scheduleProvider.teacherSchedulesForSelectedDate;
+        
+    final groupSchedules = allSchedules.where((s) {
+      return s.date.year == schedule!.date.year &&
+          s.date.month == schedule.date.month &&
+          s.date.day == schedule.date.day &&
+          s.classId == schedule.classId &&
+          s.subjectId == schedule.subjectId &&
+          s.teacherId == schedule.teacherId &&
+          s.periodId == schedule.periodId;
+    }).toList()..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
+
+    final hoursStr = groupSchedules.map((s) => s.teachingHour).join(', ');
+    final matchedHours = masterProvider.hours
+        .where((h) => groupSchedules.map((s) => s.teachingHour).contains(h.teachingHour))
+        .toList()
+      ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
+    final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '00:00';
+    final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '00:00';
+
     // Resolve entities
     final teacher = masterProvider.teachers.firstWhere(
       (t) => t.id == schedule?.teacherId,
@@ -85,11 +153,6 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
     final subject = masterProvider.subjects.firstWhere(
       (s) => s.id == schedule?.subjectId,
       orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
-    );
-
-    final hr = masterProvider.hours.firstWhere(
-      (h) => h.teachingHour == schedule?.teachingHour,
-      orElse: () => HourModel(id: '', teachingHour: schedule?.teachingHour ?? 1, startTime: '00:00', endTime: '00:00'),
     );
 
     final period = masterProvider.periods.firstWhere(
@@ -132,7 +195,7 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                         _buildDetailRow(
                           Icons.access_time,
                           'Jam Pelajaran',
-                          'Jam Ke-${schedule.teachingHour} (${hr.startTime} - ${hr.endTime})',
+                          'Jam Ke-$hoursStr ($hrStart - $hrEnd)',
                         ),
                         _buildDetailRow(Icons.date_range, 'Periode Akademik', period.name),
                         _buildDetailRow(Icons.description, 'Catatan Jadwal', schedule.note ?? 'Tidak ada catatan khusus.'),

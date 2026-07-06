@@ -56,4 +56,10 @@ class MockScheduleRepository implements ScheduleRepository {
     await Future.delayed(const Duration(milliseconds: 400));
     _db.schedules.removeWhere((s) => s.id == id);
   }
+
+  @override
+  Future<void> deleteMultiple(List<String> ids) async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    _db.schedules.removeWhere((s) => ids.contains(s.id));
+  }
 }
