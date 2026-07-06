@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import '../../widgets/image_viewer.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/journal_provider.dart';
 import '../../models/journal_model.dart';
@@ -208,7 +209,7 @@ class DetailJurnalScreen extends StatelessWidget {
                         style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
                       ),
                       SizedBox(height: 12.h),
-                      _buildAttachmentPreview(journal),
+                      _buildAttachmentPreview(context, journal),
                     ],
                   ),
                 ),
@@ -281,7 +282,7 @@ class DetailJurnalScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAttachmentPreview(JournalModel journal) {
+  Widget _buildAttachmentPreview(BuildContext context, JournalModel journal) {
     final attachment = journal.attachment;
     if (attachment == null) {
       return Text(
@@ -303,11 +304,23 @@ class DetailJurnalScreen extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: attachment.filePath.startsWith('http')
-                  ? Image.network(
-                      attachment.filePath,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.broken_image, size: 50),
+                  ? GestureDetector(
+                      onTap: () {
+                        FullScreenImageViewer.show(
+                          context,
+                          attachment.filePath,
+                          'journal_attachment_${attachment.id}',
+                        );
+                      },
+                      child: Hero(
+                        tag: 'journal_attachment_${attachment.id}',
+                        child: Image.network(
+                          attachment.filePath,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Icons.broken_image, size: 50),
+                        ),
+                      ),
                     )
                   : Center(
                       child: Column(

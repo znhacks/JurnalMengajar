@@ -12,6 +12,7 @@ import '../../widgets/admin_drawer.dart';
 import '../../core/utils/helper.dart';
 import '../../core/utils/image_crop_helper.dart';
 import '../../repositories/supabase_auth_repository.dart';
+import '../../widgets/image_viewer.dart';
 
 class AdminProfileScreen extends StatefulWidget {
   const AdminProfileScreen({super.key});
@@ -521,33 +522,48 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                     Stack(
                       alignment: Alignment.center,
                       children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 4.r),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.15),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+                        GestureDetector(
+                          onTap: currentUser.photoUrl != null &&
+                                  currentUser.photoUrl!.startsWith('http')
+                              ? () {
+                                  FullScreenImageViewer.show(
+                                    context,
+                                    currentUser.photoUrl!,
+                                    'admin_profile_avatar',
+                                  );
+                                }
+                              : null,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 4.r),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.15),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Hero(
+                              tag: 'admin_profile_avatar',
+                              child: CircleAvatar(
+                                radius: 54.r,
+                                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                                backgroundImage: currentUser.photoUrl != null &&
+                                        currentUser.photoUrl!.startsWith('http')
+                                    ? CachedNetworkImageProvider(currentUser.photoUrl!)
+                                    : null,
+                                child: (currentUser.photoUrl == null ||
+                                        !currentUser.photoUrl!.startsWith('http'))
+                                    ? Icon(
+                                        Icons.person,
+                                        size: 54.r,
+                                        color: Colors.white,
+                                      )
+                                    : null,
                               ),
-                            ],
-                          ),
-                          child: CircleAvatar(
-                            radius: 54.r,
-                            backgroundColor: Colors.white.withValues(alpha: 0.2),
-                            backgroundImage: currentUser.photoUrl != null &&
-                                    currentUser.photoUrl!.startsWith('http')
-                                ? CachedNetworkImageProvider(currentUser.photoUrl!)
-                                : null,
-                            child: (currentUser.photoUrl == null ||
-                                    !currentUser.photoUrl!.startsWith('http'))
-                                ? Icon(
-                                    Icons.person,
-                                    size: 54.r,
-                                    color: Colors.white,
-                                  )
-                                : null,
+                            ),
                           ),
                         ),
                         Positioned(
