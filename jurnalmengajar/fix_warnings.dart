@@ -35,6 +35,6 @@ void main() {
     }
   }
   
-  print('Fixed withOpacity in $opacityCount files');
-  print('Fixed activeColor in $colorCount files');
+  stdout.writeln('Fixed withOpacity in $opacityCount files');
+  stdout.writeln('Fixed activeColor in $colorCount files');
 }
