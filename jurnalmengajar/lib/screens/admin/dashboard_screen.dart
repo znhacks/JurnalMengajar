@@ -16,7 +16,8 @@ import '../../models/schedule_model.dart';
 import '../../core/utils/schedule_grouper.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
-  const AdminDashboardScreen({super.key});
+  final String? selectedTeacherId;
+  const AdminDashboardScreen({super.key, this.selectedTeacherId});
 
   @override
   State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
@@ -30,9 +31,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedTeacherId = widget.selectedTeacherId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshData();
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant AdminDashboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedTeacherId != oldWidget.selectedTeacherId) {
+      setState(() {
+        _selectedTeacherId = widget.selectedTeacherId;
+      });
+    }
   }
 
   Future<void> _refreshData() async {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../models/teacher_model.dart';
@@ -9,6 +10,8 @@ import '../../models/subject_model.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../widgets/state_widgets.dart';
 import '../../core/utils/schedule_grouper.dart';
+
+import '../../core/utils/helper.dart';
 
 class JadwalMingguanScreen extends StatefulWidget {
   const JadwalMingguanScreen({super.key});
@@ -255,195 +258,265 @@ class _JadwalMingguanScreenState extends State<JadwalMingguanScreen> {
                   ? const Center(child: CircularProgressIndicator())
                   : Builder(
                       builder: (context) {
-                        final groupedSchedules = groupDailySchedules(
-                          filteredSchedules,
-                        );
-                        if (groupedSchedules.isEmpty) {
+                        // 1. Group the flat schedules into weekly master schedules
+                        final masterGroups = groupMasterSchedules(filteredSchedules);
+
+                        // 2. Distribute into weekdays (1 to 7)
+                        final Map<int, List<GroupedMasterSchedule>> weekdayGroups = {};
+                        for (final g in masterGroups) {
+                          for (final day in g.weekdays) {
+                            weekdayGroups.putIfAbsent(day, () => []).add(g);
+                          }
+                        }
+
+                        // Get sorted weekdays that have schedules
+                        final activeDays = weekdayGroups.keys.toList()..sort();
+
+                        if (activeDays.isEmpty) {
                           return const AppEmptyWidget(
                             title: 'Jadwal Tidak Ditemukan',
-                            subtitle:
-                                'Tidak ada jadwal mengajar yang cocok dengan filter di atas.',
+                            subtitle: 'Tidak ada jadwal mengajar yang cocok dengan filter di atas.',
                             icon: Icons.search_off_rounded,
                           );
                         }
+
                         return ListView.separated(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w),
-                          itemCount: groupedSchedules.length,
-                          separatorBuilder: (context, index) =>
-                              SizedBox(height: 10.h),
+                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                          itemCount: activeDays.length,
+                          separatorBuilder: (context, index) => SizedBox(height: 18.h),
                           itemBuilder: (context, index) {
-                            final scheduleGroup = groupedSchedules[index];
-                            final sched = scheduleGroup.primarySchedule;
+                            final day = activeDays[index];
+                            final daySchedules = weekdayGroups[day]!;
+                            
+                            // Sort day schedules by their first teaching hour
+                            daySchedules.sort((a, b) {
+                              final hourA = a.teachingHours.isNotEmpty ? a.teachingHours.first : 0;
+                              final hourB = b.teachingHours.isNotEmpty ? b.teachingHours.first : 0;
+                              return hourA.compareTo(hourB);
+                            });
 
-                            final teacher = masterProvider.teachers.firstWhere(
-                              (t) => t.id == sched.teacherId,
-                              orElse: () => TeacherModel(
-                                id: '',
-                                name: 'Guru--',
-                                position: '',
-                                address: '',
-                                phoneNumber: '',
-                                email: '',
-                              ),
-                            );
+                            String dayName = 'Hari';
+                            Color dayColor = const Color(0xFF0D9488);
+                            switch (day) {
+                              case 1: dayName = 'SENIN'; dayColor = const Color(0xFF0D9488); break;
+                              case 2: dayName = 'SELASA'; dayColor = const Color(0xFF3B82F6); break;
+                              case 3: dayName = 'RABU'; dayColor = const Color(0xFF8B5CF6); break;
+                              case 4: dayName = 'KAMIS'; dayColor = const Color(0xFFF59E0B); break;
+                              case 5: dayName = 'JUMAT'; dayColor = const Color(0xFF10B981); break;
+                              case 6: dayName = 'SABTU'; dayColor = const Color(0xFFEC4899); break;
+                              case 7: dayName = 'MINGGU'; dayColor = const Color(0xFFEF4444); break;
+                            }
 
-                            final cls = masterProvider.classes.firstWhere(
-                              (c) => c.id == sched.classId,
-                              orElse: () => ClassModel(
-                                id: '',
-                                name: 'Kelas--',
-                                periodId: '',
-                                studentCount: 0,
-                              ),
-                            );
-
-                            final subject = masterProvider.subjects.firstWhere(
-                              (s) => s.id == sched.subjectId,
-                              orElse: () => SubjectModel(
-                                id: '',
-                                name: 'Mapel--',
-                                isActive: false,
-                              ),
-                            );
-
-                            final matchedHours =
-                                masterProvider.hours
-                                    .where(
-                                      (h) => scheduleGroup.teachingHours
-                                          .contains(h.teachingHour),
-                                    )
-                                    .toList()
-                                  ..sort(
-                                    (a, b) => a.teachingHour.compareTo(
-                                      b.teachingHour,
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Day Header Badge
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                                  decoration: BoxDecoration(
+                                    color: dayColor.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: dayColor.withValues(alpha: 0.3)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.calendar_today, size: 14.sp, color: dayColor),
+                                      SizedBox(width: 6.w),
+                                      Text(
+                                        dayName,
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
+                                          fontWeight: FontWeight.bold,
+                                          color: dayColor,
+                                          letterSpacing: 1.2,
+                                        ),
+                                      ),
+                                      SizedBox(width: 8.w),
+                                      Text(
+                                        '(${daySchedules.length} Jadwal)',
+                                        style: TextStyle(
+                                          fontSize: 11.sp,
+                                          color: Colors.grey[700],
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(height: 8.h),
+                                
+                                // Schedules under this day
+                                ...daySchedules.map((item) {
+                                  final teacher = masterProvider.teachers.firstWhere(
+                                    (t) => t.id == item.teacherId,
+                                    orElse: () => TeacherModel(
+                                      id: '', name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''
                                     ),
                                   );
 
-                            final hrStart = matchedHours.isNotEmpty
-                                ? matchedHours.first.startTime
-                                : '00:00';
-                            final hrEnd = matchedHours.isNotEmpty
-                                ? matchedHours.last.endTime
-                                : '00:00';
-                            final hoursStr = scheduleGroup.teachingHours.join(
-                              ', ',
-                            );
+                                  final cls = masterProvider.classes.firstWhere(
+                                    (c) => c.id == item.classId,
+                                    orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
+                                  );
 
-                            // Resolve weekday label
-                            String dayLabel = 'Hari';
-                            switch (sched.date.weekday) {
-                              case 1:
-                                dayLabel = 'Senin';
-                                break;
-                              case 2:
-                                dayLabel = 'Selasa';
-                                break;
-                              case 3:
-                                dayLabel = 'Rabu';
-                                break;
-                              case 4:
-                                dayLabel = 'Kamis';
-                                break;
-                              case 5:
-                                dayLabel = 'Jumat';
-                                break;
-                              case 6:
-                                dayLabel = 'Sabtu';
-                                break;
-                              case 7:
-                                dayLabel = 'Minggu';
-                                break;
-                            }
+                                  final subject = masterProvider.subjects.firstWhere(
+                                    (s) => s.id == item.subjectId,
+                                    orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
+                                  );
 
-                            return Container(
-                              padding: EdgeInsets.all(12.w),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: const Color(0xFFE2E8F0),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  // Left side Day / Time Badge
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 10.w,
-                                      vertical: 8.h,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(
-                                        0xFF0F172A,
-                                      ).withValues(alpha: 0.05),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        Text(
-                                          dayLabel,
-                                          style: TextStyle(
-                                            fontSize: 12.sp,
-                                            fontWeight: FontWeight.bold,
-                                            color: const Color(0xFF0F172A),
-                                          ),
-                                        ),
-                                        SizedBox(height: 2.h),
-                                        Text(
-                                          'Jam Ke-$hoursStr',
-                                          style: TextStyle(
-                                            fontSize: 10.sp,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                        Text(
-                                          '$hrStart-$hrEnd',
-                                          style: TextStyle(
-                                            fontSize: 9.sp,
-                                            color: Colors.grey[500],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(width: 16.w),
+                                  final matchedHours = masterProvider.hours
+                                      .where((h) => item.teachingHours.contains(h.teachingHour))
+                                      .toList()
+                                    ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
 
-                                  // Details
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          cls.name,
-                                          style: TextStyle(
-                                            fontSize: 15.sp,
-                                            fontWeight: FontWeight.bold,
-                                            color: const Color(0xFF0F172A),
+                                  final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '00:00';
+                                  final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '00:00';
+                                  final hoursStr = item.teachingHours.join(', ');
+
+                                  final startStr = AppHelper.formatDateShort(item.startDate);
+                                  final endStr = AppHelper.formatDateShort(item.endDate);
+
+                                  return InkWell(
+                                    onTap: () {
+                                      context.go('/admin/dashboard?teacherId=${item.teacherId}');
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      margin: EdgeInsets.only(bottom: 8.h),
+                                      padding: EdgeInsets.all(12.w),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.01),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
                                           ),
+                                        ],
+                                      ),
+                                      child: IntrinsicHeight(
+                                        child: Row(
+                                          children: [
+                                            // Time & Hour Indicator
+                                            SizedBox(
+                                              width: 84.w,
+                                              child: Column(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Jam $hoursStr',
+                                                    style: TextStyle(
+                                                      fontSize: 13.sp,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: const Color(0xFF0F172A),
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 2.h),
+                                                  Text(
+                                                    '$hrStart - $hrEnd',
+                                                    style: TextStyle(
+                                                      fontSize: 11.sp,
+                                                      color: Colors.grey[600],
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            VerticalDivider(
+                                              color: const Color(0xFFE2E8F0),
+                                              thickness: 1.2,
+                                              width: 16.w,
+                                            ),
+                                            
+                                            // Details
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: Text(
+                                                          cls.name,
+                                                          style: TextStyle(
+                                                            fontSize: 14.sp,
+                                                            fontWeight: FontWeight.bold,
+                                                            color: const Color(0xFF0F172A),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      // Status Active Badge
+                                                      Container(
+                                                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                                                        decoration: BoxDecoration(
+                                                          color: item.isActive 
+                                                              ? const Color(0xFFECFDF5) 
+                                                              : const Color(0xFFFEF2F2),
+                                                          borderRadius: BorderRadius.circular(6),
+                                                        ),
+                                                        child: Text(
+                                                          item.isActive ? 'Aktif' : 'Nonaktif',
+                                                          style: TextStyle(
+                                                            fontSize: 8.sp,
+                                                            fontWeight: FontWeight.bold,
+                                                            color: item.isActive 
+                                                              ? const Color(0xFF059669) 
+                                                              : const Color(0xFFDC2626),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: 2.h),
+                                                  Text(
+                                                    subject.name,
+                                                    style: TextStyle(
+                                                      fontSize: 12.sp,
+                                                      color: Colors.grey[700],
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 2.h),
+                                                  Text(
+                                                    'Guru: ${teacher.name}',
+                                                    style: TextStyle(
+                                                      fontSize: 12.sp,
+                                                      color: const Color(0xFF0D9488),
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 4.h),
+                                                  // Effective Date range badge
+                                                  Row(
+                                                    children: [
+                                                      Icon(Icons.date_range, size: 10.sp, color: Colors.grey[500]),
+                                                      SizedBox(width: 4.w),
+                                                      Text(
+                                                        'Efektif: $startStr s/d $endStr',
+                                                        style: TextStyle(
+                                                          fontSize: 10.sp,
+                                                          color: Colors.grey[500],
+                                                          fontStyle: FontStyle.italic,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        SizedBox(height: 2.h),
-                                        Text(
-                                          subject.name,
-                                          style: TextStyle(
-                                            fontSize: 13.sp,
-                                            color: Colors.grey[700],
-                                          ),
-                                        ),
-                                        SizedBox(height: 2.h),
-                                        Text(
-                                          'Guru: ${teacher.name}',
-                                          style: TextStyle(
-                                            fontSize: 12.sp,
-                                            color: const Color(0xFF0D9488),
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
+                                  );
+                                }),
+                              ],
                             );
                           },
                         );

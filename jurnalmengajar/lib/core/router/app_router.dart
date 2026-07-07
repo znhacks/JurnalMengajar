@@ -168,7 +168,10 @@ class AppRouter {
         // Admin Module Routes
         GoRoute(
           path: '/admin/dashboard',
-          builder: (context, state) => const AdminDashboardScreen(),
+          builder: (context, state) {
+            final teacherId = state.uri.queryParameters['teacherId'];
+            return AdminDashboardScreen(selectedTeacherId: teacherId);
+          },
         ),
         GoRoute(
           path: '/admin/approvals',
