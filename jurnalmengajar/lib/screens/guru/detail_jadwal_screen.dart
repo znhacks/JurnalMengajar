@@ -244,16 +244,76 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                             ],
                           ],
                         )
-                      : ElevatedButton.icon(
-                          onPressed: () {
-                            context.push('/guru/journal-form?scheduleId=${schedule!.id}');
-                          },
-                          icon: const Icon(Icons.edit_note),
-                          label: const Text('Isi Jurnal'),
-                        ),
+                      : _isFutureDate(schedule.date)
+                          ? _buildFutureDateBanner(schedule.date)
+                          : ElevatedButton.icon(
+                              onPressed: () {
+                                context.push('/guru/journal-form?scheduleId=${schedule!.id}');
+                              },
+                              icon: const Icon(Icons.edit_note),
+                              label: const Text('Isi Jurnal'),
+                            ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ─── Future-date helpers ───────────────────────────────────────────────────
+
+  /// Returns true when [date] is strictly after today (date comparison only).
+  bool _isFutureDate(DateTime date) {
+    final today = DateTime.now();
+    final todayOnly = DateTime(today.year, today.month, today.day);
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    return dateOnly.isAfter(todayOnly);
+  }
+
+  Widget _buildFutureDateBanner(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFDE7),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF59E0B), width: 1.5),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.lock_clock_outlined,
+              color: Color(0xFFF59E0B), size: 22),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Belum bisa mengisi jurnal',
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF92400E),
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  'Tidak bisa mengisi jurnal sekarang, tunggu sampai hari tersebut tiba ($day/$month/$year).',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: const Color(0xFF78350F),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

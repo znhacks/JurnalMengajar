@@ -25,6 +25,7 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
+  String? _selectedTeacherId;
 
   @override
   void initState() {
@@ -36,9 +37,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Future<void> _refreshData() async {
     if (!mounted) return;
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+    final masterProvider = Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    );
+    final scheduleProvider = Provider.of<ScheduleProvider>(
+      context,
+      listen: false,
+    );
+    final journalProvider = Provider.of<JournalProvider>(
+      context,
+      listen: false,
+    );
 
     await Future.wait([
       masterProvider.loadAllData(),
@@ -55,20 +65,51 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     final totalJournals = journalProvider.journals.length;
     final totalSchedules = scheduleProvider.schedules.length;
-    final totalPending = journalProvider.journals.where((j) => j.status == 'pending').length;
+    final totalPending = journalProvider.journals
+        .where((j) => j.status == 'pending')
+        .length;
 
     // Calculate unsubmitted schedules for selected day
-    final schedulesForDay = scheduleProvider.schedules.where((s) =>
-        s.date.year == _selectedDay.year &&
-        s.date.month == _selectedDay.month &&
-        s.date.day == _selectedDay.day).toList();
+    final schedulesForDay = scheduleProvider.schedules
+        .where(
+          (s) =>
+              s.date.year == _selectedDay.year &&
+              s.date.month == _selectedDay.month &&
+              s.date.day == _selectedDay.day,
+        )
+        .toList();
 
-    final unsubmittedCount = schedulesForDay.where((s) {
-      final hasJournal = journalProvider.journals.any((j) => j.scheduleId == s.id);
+    final filteredSchedulesForDay = _selectedTeacherId == null
+        ? schedulesForDay
+        : schedulesForDay
+              .where((s) => s.teacherId == _selectedTeacherId)
+              .toList();
+
+    final unsubmittedCount = filteredSchedulesForDay.where((s) {
+      final hasJournal = journalProvider.journals.any(
+        (j) => j.scheduleId == s.id,
+      );
       return !hasJournal;
     }).length;
 
-    final isLoading = masterProvider.isLoading || scheduleProvider.isLoading || journalProvider.isLoading;
+    final selectedTeacher = _selectedTeacherId == null
+        ? null
+        : masterProvider.teachers.firstWhere(
+            (t) => t.id == _selectedTeacherId,
+            orElse: () => TeacherModel(
+              id: '',
+              name: 'Guru--',
+              position: '',
+              address: '',
+              phoneNumber: '',
+              email: '',
+            ),
+          );
+
+    final isLoading =
+        masterProvider.isLoading ||
+        scheduleProvider.isLoading ||
+        journalProvider.isLoading;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -94,7 +135,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       _buildHeroHeader(totalPending),
 
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 16.h,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -139,14 +183,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             // ── Calendar Card ─────────────────────────────────────
                             _buildSectionTitle('Kalender Pemantauan'),
                             SizedBox(height: 12.h),
-                            _buildCalendarCard(),
+                            _buildCalendarCard(scheduleProvider.schedules),
+                            SizedBox(height: 24.h),
+
+                            // ── Opsi Lihat Jadwal Guru ────────────────────────────
+                            _buildTeacherSelectorCard(masterProvider.teachers),
                             SizedBox(height: 24.h),
 
                             // ── Today's Schedule ─────────────────────────────────
                             _buildSectionTitle(
-                                'Jadwal Mengajar — ${AppHelper.formatDateShort(_selectedDay)}'),
+                              _selectedTeacherId == null
+                                  ? 'Jadwal Mengajar — ${AppHelper.formatDateShort(_selectedDay)}'
+                                  : 'Jadwal ${selectedTeacher?.name} — ${AppHelper.formatDateShort(_selectedDay)}',
+                            ),
                             SizedBox(height: 12.h),
-                            _buildScheduleSection(schedulesForDay, masterProvider, journalProvider),
+                            _buildScheduleSection(
+                              filteredSchedulesForDay,
+                              masterProvider,
+                              journalProvider,
+                            ),
                             SizedBox(height: 24.h),
                           ],
                         ),
@@ -178,12 +233,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.4), width: 2.5),
+                color: Colors.white.withValues(alpha: 0.4),
+                width: 2.5,
+              ),
             ),
             child: CircleAvatar(
               radius: 28.r,
               backgroundColor: Colors.white.withValues(alpha: 0.15),
-              child: const Icon(Icons.admin_panel_settings, size: 28, color: Colors.white),
+              child: const Icon(
+                Icons.admin_panel_settings,
+                size: 28,
+                color: Colors.white,
+              ),
             ),
           ),
           SizedBox(width: 14.w),
@@ -227,19 +288,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(999),
                 border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.3), width: 1),
+                  color: Colors.white.withValues(alpha: 0.3),
+                  width: 1,
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.pending_actions,
-                      color: Colors.white, size: 14),
+                  const Icon(
+                    Icons.pending_actions,
+                    color: Colors.white,
+                    size: 14,
+                  ),
                   SizedBox(width: 4.w),
                   Text(
                     '$pendingCount',
                     style: GoogleFonts.hankenGrotesk(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13.sp),
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13.sp,
+                    ),
                   ),
                 ],
               ),
@@ -262,7 +329,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   // ─── Stat Card ─────────────────────────────────────────────────────────────
-  Widget _buildStatCard(String title, String count, IconData icon, Color color, {String? subtitle}) {
+  Widget _buildStatCard(
+    String title,
+    String count,
+    IconData icon,
+    Color color, {
+    String? subtitle,
+  }) {
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
@@ -295,7 +368,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   child: Text(
                     subtitle,
                     style: GoogleFonts.hankenGrotesk(
-                        fontSize: 8.sp, color: color, fontWeight: FontWeight.w600),
+                      fontSize: 8.sp,
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
             ],
@@ -328,7 +404,68 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   // ─── Calendar Card ─────────────────────────────────────────────────────────
-  Widget _buildCalendarCard() {
+
+  bool _hasTeacherScheduleOnDay(List<ScheduleModel> schedules, DateTime day) {
+    if (_selectedTeacherId == null) return false;
+    return schedules.any(
+      (s) =>
+          s.isActive &&
+          s.teacherId == _selectedTeacherId &&
+          s.date.year == day.year &&
+          s.date.month == day.month &&
+          s.date.day == day.day,
+    );
+  }
+
+  Widget _buildScheduledDayCell(
+    DateTime day,
+    bool isSelected,
+    bool isToday,
+    bool isOutside,
+    List<ScheduleModel> schedules,
+  ) {
+    final hasSchedule = _hasTeacherScheduleOnDay(schedules, day);
+
+    Color bgColor = Colors.transparent;
+    Color textColor = isOutside ? AppTheme.outline : AppTheme.onBackground;
+    FontWeight fontWeight = FontWeight.w500;
+
+    if (isSelected) {
+      bgColor = AppTheme.primaryColor;
+      textColor = Colors.white;
+      fontWeight = FontWeight.w700;
+    } else if (isToday) {
+      bgColor = AppTheme.primaryColor.withValues(alpha: 0.15);
+      textColor = AppTheme.primaryColor;
+      fontWeight = FontWeight.w700;
+    } else if (hasSchedule) {
+      bgColor = const Color(0xFFFFEB3B).withValues(alpha: 0.35);
+      textColor = isOutside ? AppTheme.outline : AppTheme.onBackground;
+      fontWeight = FontWeight.w700;
+    }
+
+    return Container(
+      margin: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: bgColor,
+        shape: BoxShape.circle,
+        border: hasSchedule && !isSelected && !isToday
+            ? Border.all(color: const Color(0xFFF59E0B), width: 1.5)
+            : null,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '${day.day}',
+        style: GoogleFonts.hankenGrotesk(
+          fontSize: 13.sp,
+          fontWeight: fontWeight,
+          color: textColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCalendarCard(List<ScheduleModel> schedules) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -336,50 +473,264 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         border: Border.all(color: AppTheme.outlineVariant),
       ),
       clipBehavior: Clip.antiAlias,
-      child: TableCalendar(
-        firstDay: DateTime.now().subtract(const Duration(days: 365)),
-        lastDay: DateTime.now().add(const Duration(days: 365)),
-        focusedDay: _focusedDay,
-        calendarFormat: CalendarFormat.month,
-        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-        onDaySelected: (selectedDay, focusedDay) {
-          setState(() {
-            _selectedDay = selectedDay;
-            _focusedDay = focusedDay;
-          });
-        },
-        onPageChanged: (focusedDay) {
-          _focusedDay = focusedDay;
-        },
-        headerStyle: HeaderStyle(
-          formatButtonVisible: false,
-          titleTextStyle: GoogleFonts.hankenGrotesk(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: AppTheme.onBackground,
+      child: Column(
+        children: [
+          TableCalendar(
+            firstDay: DateTime.now().subtract(const Duration(days: 365)),
+            lastDay: DateTime.now().add(const Duration(days: 365)),
+            focusedDay: _focusedDay,
+            calendarFormat: CalendarFormat.month,
+            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                _selectedDay = selectedDay;
+                _focusedDay = focusedDay;
+              });
+            },
+            onPageChanged: (focusedDay) {
+              _focusedDay = focusedDay;
+            },
+            calendarBuilders: CalendarBuilders(
+              defaultBuilder: (context, day, focusedDay) {
+                return _buildScheduledDayCell(
+                  day,
+                  false,
+                  false,
+                  false,
+                  schedules,
+                );
+              },
+              outsideBuilder: (context, day, focusedDay) {
+                return _buildScheduledDayCell(
+                  day,
+                  false,
+                  false,
+                  true,
+                  schedules,
+                );
+              },
+              todayBuilder: (context, day, focusedDay) {
+                return _buildScheduledDayCell(
+                  day,
+                  false,
+                  true,
+                  false,
+                  schedules,
+                );
+              },
+              selectedBuilder: (context, day, focusedDay) {
+                return _buildScheduledDayCell(
+                  day,
+                  true,
+                  false,
+                  false,
+                  schedules,
+                );
+              },
+            ),
+            headerStyle: HeaderStyle(
+              formatButtonVisible: false,
+              titleTextStyle: GoogleFonts.hankenGrotesk(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.onBackground,
+              ),
+              leftChevronIcon: const Icon(
+                Icons.chevron_left,
+                color: AppTheme.onSurfaceVariant,
+              ),
+              rightChevronIcon: const Icon(
+                Icons.chevron_right,
+                color: AppTheme.onSurfaceVariant,
+              ),
+            ),
+            calendarStyle: CalendarStyle(
+              selectedDecoration: const BoxDecoration(
+                color: AppTheme.primaryColor,
+                shape: BoxShape.circle,
+              ),
+              selectedTextStyle: GoogleFonts.hankenGrotesk(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+              todayDecoration: BoxDecoration(
+                color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              todayTextStyle: GoogleFonts.hankenGrotesk(
+                color: AppTheme.primaryColor,
+                fontWeight: FontWeight.w700,
+              ),
+              weekendTextStyle: GoogleFonts.hankenGrotesk(
+                color: const Color(0xFF825100),
+              ),
+              defaultTextStyle: GoogleFonts.hankenGrotesk(
+                color: AppTheme.onBackground,
+              ),
+              outsideTextStyle: GoogleFonts.hankenGrotesk(
+                color: AppTheme.outline,
+              ),
+            ),
           ),
-          leftChevronIcon: const Icon(Icons.chevron_left, color: AppTheme.onSurfaceVariant),
-          rightChevronIcon: const Icon(Icons.chevron_right, color: AppTheme.onSurfaceVariant),
-        ),
-        calendarStyle: CalendarStyle(
-          selectedDecoration: const BoxDecoration(
-            color: AppTheme.primaryColor,
-            shape: BoxShape.circle,
+          if (_selectedTeacherId != null)
+            Padding(
+              padding: EdgeInsets.only(
+                left: 16.w,
+                right: 16.w,
+                bottom: 12.h,
+                top: 4.h,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 12.w,
+                    height: 12.w,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEB3B).withValues(alpha: 0.35),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFFF59E0B),
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 6.w),
+                  Text(
+                    'Jadwal guru terpilih',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 11.sp,
+                      color: AppTheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTeacherSelectorCard(List<TeacherModel> teachers) {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.person_search_outlined,
+                color: AppTheme.primaryColor,
+                size: 20.w,
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                'Lihat Jadwal Guru',
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.onBackground,
+                ),
+              ),
+              if (_selectedTeacherId != null) ...[
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _selectedTeacherId = null;
+                    });
+                  },
+                  icon: const Icon(
+                    Icons.clear,
+                    size: 14,
+                    color: AppTheme.outline,
+                  ),
+                  label: Text(
+                    'Reset',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 12.sp,
+                      color: AppTheme.outline,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(50, 30),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
+            ],
           ),
-          selectedTextStyle: GoogleFonts.hankenGrotesk(
-              color: Colors.white, fontWeight: FontWeight.w700),
-          todayDecoration: BoxDecoration(
-            color: AppTheme.primaryColor.withValues(alpha: 0.15),
-            shape: BoxShape.circle,
+          SizedBox(height: 12.h),
+          DropdownButtonFormField<String>(
+            value: _selectedTeacherId,
+            isExpanded: true,
+            hint: Text(
+              'Pilih guru untuk dipantau...',
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 13.sp,
+                color: AppTheme.onSurfaceVariant,
+              ),
+            ),
+            decoration: InputDecoration(
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 14.w,
+                vertical: 10.h,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppTheme.outlineVariant),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppTheme.outlineVariant),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppTheme.primaryColor,
+                  width: 1.5,
+                ),
+              ),
+              filled: true,
+              fillColor: AppTheme.surfaceContainerLow,
+            ),
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 14.sp,
+              color: AppTheme.onBackground,
+              fontWeight: FontWeight.w600,
+            ),
+            items: [
+              DropdownMenuItem<String>(
+                value: null,
+                child: Text(
+                  'Pilih Guru',
+                  style: GoogleFonts.hankenGrotesk(
+                    color: AppTheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              ...teachers.map((teacher) {
+                return DropdownMenuItem<String>(
+                  value: teacher.id,
+                  child: Text(teacher.name),
+                );
+              }),
+            ],
+            onChanged: (value) {
+              setState(() {
+                _selectedTeacherId = value;
+              });
+            },
           ),
-          todayTextStyle: GoogleFonts.hankenGrotesk(
-            color: AppTheme.primaryColor,
-            fontWeight: FontWeight.w700,
-          ),
-          weekendTextStyle: GoogleFonts.hankenGrotesk(color: const Color(0xFF825100)),
-          defaultTextStyle: GoogleFonts.hankenGrotesk(color: AppTheme.onBackground),
-          outsideTextStyle: GoogleFonts.hankenGrotesk(color: AppTheme.outline),
-        ),
+        ],
       ),
     );
   }
@@ -401,7 +752,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
         child: Column(
           children: [
-            Icon(Icons.event_available_outlined, color: AppTheme.outlineVariant, size: 44.w),
+            Icon(
+              Icons.event_available_outlined,
+              color: AppTheme.outlineVariant,
+              size: 44.w,
+            ),
             SizedBox(height: 10.h),
             Text(
               'Tidak ada jadwal',
@@ -415,7 +770,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             SizedBox(height: 4.h),
             Text(
               'Tidak ada jadwal terdaftar untuk hari ini.',
-              style: GoogleFonts.hankenGrotesk(fontSize: 12.sp, color: AppTheme.outline),
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 12.sp,
+                color: AppTheme.outline,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -423,7 +781,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       );
     }
 
-    final groupedSchedules = groupDailySchedules(schedulesForDay.cast<ScheduleModel>());
+    final groupedSchedules = groupDailySchedules(
+      schedulesForDay.cast<ScheduleModel>(),
+    );
 
     return ListView.separated(
       shrinkWrap: true,
@@ -433,10 +793,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       itemBuilder: (context, index) {
         final scheduleGroup = groupedSchedules[index];
         final sched = scheduleGroup.primarySchedule;
-        
+
         final cls = masterProvider.classes.firstWhere(
           (c) => c.id == sched.classId,
-          orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
+          orElse: () => ClassModel(
+            id: '',
+            name: 'Kelas--',
+            periodId: '',
+            studentCount: 0,
+          ),
         );
         final subj = masterProvider.subjects.firstWhere(
           (s) => s.id == sched.subjectId,
@@ -444,11 +809,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         );
         final teacher = masterProvider.teachers.firstWhere(
           (t) => t.id == sched.teacherId,
-          orElse: () => TeacherModel(id: '', name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''),
+          orElse: () => TeacherModel(
+            id: '',
+            name: 'Guru--',
+            position: '',
+            address: '',
+            phoneNumber: '',
+            email: '',
+          ),
         );
 
-        final hasJournal = journalProvider.journals.any((j) => scheduleGroup.scheduleIds.contains(j.scheduleId));
-        final statusColor = hasJournal ? AppTheme.primaryColor : const Color(0xFFBA1A1A);
+        final hasJournal = journalProvider.journals.any(
+          (j) => scheduleGroup.scheduleIds.contains(j.scheduleId),
+        );
+        final statusColor = hasJournal
+            ? AppTheme.primaryColor
+            : const Color(0xFFBA1A1A);
         final hoursStr = scheduleGroup.teachingHours.join(', ');
 
         return Container(
@@ -479,7 +855,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         CircleAvatar(
                           backgroundColor: statusColor.withValues(alpha: 0.1),
                           child: Icon(
-                            hasJournal ? Icons.check_circle_outline : Icons.pending_actions,
+                            hasJournal
+                                ? Icons.check_circle_outline
+                                : Icons.pending_actions,
                             color: statusColor,
                           ),
                         ),
@@ -492,23 +870,28 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               Text(
                                 '${cls.name} • ${subj.name} (Jam $hoursStr)',
                                 style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppTheme.onBackground),
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.onBackground,
+                                ),
                               ),
                               SizedBox(height: 3.h),
                               Text(
                                 'Guru: ${teacher.name}',
                                 style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 12.sp,
-                                    color: AppTheme.onSurfaceVariant,
-                                    fontWeight: FontWeight.w500),
+                                  fontSize: 12.sp,
+                                  color: AppTheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ],
                           ),
                         ),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10.w,
+                            vertical: 4.h,
+                          ),
                           decoration: BoxDecoration(
                             color: statusColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(999),
