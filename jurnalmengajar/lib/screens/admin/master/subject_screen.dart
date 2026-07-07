@@ -220,9 +220,36 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                                   ],
                                 ),
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.edit_outlined, color: Colors.indigo),
-                                onPressed: () => _showFormDialog(subject: subject),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined, color: Colors.indigo),
+                                    onPressed: () => _showFormDialog(subject: subject),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                    onPressed: () async {
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text('Hapus Pelajaran'),
+                                          content: const Text('Apakah Anda yakin ingin menghapus mata pelajaran ini?'),
+                                          actions: [
+                                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context, true),
+                                              child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirm == true) {
+                                        _handleDelete(subject.id);
+                                      }
+                                    },
+                                  ),
+                                ],
                               ),
                             ],
                           ),
