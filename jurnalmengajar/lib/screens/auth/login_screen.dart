@@ -20,6 +20,35 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.errorMessage != null) {
+        final errMsg = authProvider.errorMessage!;
+        if (errMsg.contains('menunggu persetujuan') || errMsg.contains('verifikasi')) {
+          showDialog(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Akun Belum Aktif'),
+              content: Text(errMsg),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          AppHelper.showSnackBar(context, errMsg, isError: true);
+        }
+        authProvider.clearError();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -37,12 +66,24 @@ class _LoginScreenState extends State<LoginScreen> {
       if (success && mounted) {
         AppHelper.showSnackBar(context, 'Login Berhasil!');
       } else if (mounted) {
-        AppHelper.showSnackBar(
-          context,
-          authProvider.errorMessage ??
-              'Gagal login. Periksa kembali email dan password.',
-          isError: true,
-        );
+        final errMsg = authProvider.errorMessage ?? 'Gagal login. Periksa kembali email dan password.';
+        if (errMsg.contains('menunggu persetujuan') || errMsg.contains('verifikasi')) {
+          showDialog(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Akun Belum Aktif'),
+              content: Text(errMsg),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          AppHelper.showSnackBar(context, errMsg, isError: true);
+        }
       }
     }
   }
@@ -53,11 +94,24 @@ class _LoginScreenState extends State<LoginScreen> {
     if (success && mounted) {
       AppHelper.showSnackBar(context, 'Login Google Berhasil!');
     } else if (mounted) {
-      AppHelper.showSnackBar(
-        context,
-        authProvider.errorMessage ?? 'Gagal login dengan Google.',
-        isError: true,
-      );
+      final errMsg = authProvider.errorMessage ?? 'Gagal login dengan Google.';
+      if (errMsg.contains('menunggu persetujuan') || errMsg.contains('verifikasi')) {
+        showDialog(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Akun Belum Aktif'),
+            content: Text(errMsg),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        AppHelper.showSnackBar(context, errMsg, isError: true);
+      }
     }
   }
 

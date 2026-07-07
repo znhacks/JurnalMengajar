@@ -41,7 +41,7 @@ class SupabaseAuthRepository implements AuthRepository {
           id: userId,
           email: email,
           fullName: fullName,
-          role: 'guru', // All Google sign-ins default to guru
+          role: 'pending_guru', // All Google sign-ins default to pending_guru
           photoUrl: photoUrl,
           phoneNumber: phone,
         );
@@ -133,6 +133,27 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> register(UserModel user, String password) async {
     try {
+      // Check if email already exists in users table first
+      Map<String, dynamic>? checkUser;
+      try {
+        checkUser = await _supabase
+            .from('users')
+            .select('role')
+            .eq('email', user.email)
+            .maybeSingle();
+      } catch (_) {
+        // Ignore RLS check errors and let signUp handle duplicate detection
+      }
+
+      if (checkUser != null) {
+        final role = checkUser['role'] as String;
+        if (role == 'pending_guru') {
+          throw Exception('Pendaftaran Anda sedang menunggu persetujuan Admin. Silakan hubungi Admin untuk konfirmasi.');
+        } else {
+          throw Exception('Email ini sudah terdaftar.');
+        }
+      }
+
       // 1. Create auth account
       final authResponse = await _supabase.auth.signUp(
         email: user.email,
@@ -146,6 +167,9 @@ class SupabaseAuthRepository implements AuthRepository {
       final userData = user.copyWith(id: userId).toJson();
       await _supabase.from('users').insert(userData);
     } catch (e) {
+      if (e.toString().contains('Pendaftaran Anda sedang menunggu') || e.toString().contains('Email ini sudah terdaftar')) {
+        rethrow;
+      }
       throw Exception('Registrasi gagal: $e');
     }
   }
@@ -232,7 +256,6 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> deleteAccount(String userId) async {
     try {
       await _supabase.from('users').delete().eq('id', userId);
-      await logout();
     } catch (e) {
       throw Exception('Gagal menghapus akun: $e');
     }

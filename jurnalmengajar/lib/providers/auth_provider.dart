@@ -15,7 +15,7 @@ class AuthProvider with ChangeNotifier {
 
   AuthProvider({required AuthRepository authRepository})
       : _authRepository = authRepository {
-    _loadCurrentUser();
+    _loadCurrentUser(isInitialBoot: true);
     
     // Automatically reload profile on Auth state change (e.g. OAuth Redirect Callback)
     Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
@@ -42,14 +42,23 @@ class AuthProvider with ChangeNotifier {
   bool get isRecoveryMode => _isRecoveryMode;
   AuthRepository get authRepository => _authRepository;
 
-  Future<void> _loadCurrentUser() async {
+  Future<void> _loadCurrentUser({bool isInitialBoot = false}) async {
     // Prevent concurrent executions to avoid race conditions with OAuth callback
     if (_isLoadingUser) return;
     _isLoadingUser = true;
     _isLoading = true;
     notifyListeners();
     try {
-      _currentUser = await authRepository.getCurrentUser();
+      final user = await authRepository.getCurrentUser();
+      if (user?.role == 'pending_guru') {
+        _currentUser = null;
+        await authRepository.logout();
+        if (!isInitialBoot) {
+          _errorMessage = 'Pendaftaran Anda sedang menunggu persetujuan Admin. Silakan hubungi Admin untuk konfirmasi.';
+        }
+      } else {
+        _currentUser = user;
+      }
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -66,7 +75,12 @@ class AuthProvider with ChangeNotifier {
     _isRecoveryMode = false;
     notifyListeners();
     try {
-      _currentUser = await authRepository.login(email, password);
+      final loggedInUser = await authRepository.login(email, password);
+      if (loggedInUser.role == 'pending_guru') {
+        await authRepository.logout();
+        throw Exception('Pendaftaran Anda sedang menunggu persetujuan Admin. Silakan hubungi Admin untuk konfirmasi.');
+      }
+      _currentUser = loggedInUser;
       _isLoading = false;
       notifyListeners();
       return true;

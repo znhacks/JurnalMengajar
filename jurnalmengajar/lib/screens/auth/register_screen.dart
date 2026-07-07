@@ -29,7 +29,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final ImagePicker _picker = ImagePicker();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  final String _selectedRole = 'guru';
+  final String _selectedRole = 'pending_guru';
 
   @override
   void dispose() {
@@ -89,8 +89,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (success && mounted) {
-        AppHelper.showSnackBar(context, 'Registrasi Berhasil! Silakan login.');
-        context.pop();
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Registrasi Berhasil'),
+            content: const Text(
+              'Akun Anda telah berhasil didaftarkan.\n\nHarap tunggu verifikasi dan persetujuan dari Administrator sebelum Anda dapat masuk ke aplikasi.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  if (mounted) {
+                    context.pop();
+                  }
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
       } else if (mounted) {
         AppHelper.showSnackBar(
           context,

@@ -51,8 +51,14 @@ class MockAuthRepository implements AuthRepository {
     await Future.delayed(const Duration(seconds: 1));
     
     // Check if email already exists
-    if (_db.users.any((u) => u.email.toLowerCase() == user.email.toLowerCase())) {
-      throw Exception('Email sudah terdaftar!');
+    final checkIndex = _db.users.indexWhere((u) => u.email.toLowerCase() == user.email.toLowerCase());
+    if (checkIndex != -1) {
+      final existingUser = _db.users[checkIndex];
+      if (existingUser.role == 'pending_guru') {
+        throw Exception('Pendaftaran Anda sedang menunggu persetujuan Admin. Silakan hubungi Admin untuk konfirmasi.');
+      } else {
+        throw Exception('Email sudah terdaftar!');
+      }
     }
 
     final id = 'u_${DateTime.now().millisecondsSinceEpoch}';
