@@ -375,6 +375,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                   ElevatedButton(
                     onPressed: () async {
                       if (selectedPeriodId == null || selectedTeacherId == null || selectedClassId == null || selectedSubjectId == null) {
+                        FocusScope.of(context).unfocus();
                         await showDialog(
                           context: context,
                           builder: (ctx) => AlertDialog(
@@ -387,12 +388,11 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                       }
 
                       final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-                      // dialogContext is the bottom sheet's context — keep a ref so we can show dialogs INSIDE it
                       final dialogContext = context;
                       bool success = false;
 
                       if (groupedSchedule == null) {
-                        // Generate batch schedules
+                        // Generate batch schedules (Create Mode)
                         final List<ScheduleModel> schedulesToCreate = [];
                         DateTime current = startDate;
                         while (!current.isAfter(endDate)) {
@@ -417,8 +417,9 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                         }
 
                         if (schedulesToCreate.isEmpty) {
+                          FocusScope.of(context).unfocus();
                           await showDialog(
-                            context: dialogContext,
+                            context: context,
                             builder: (ctx) => AlertDialog(
                               title: const Text('Tidak Ada Jadwal'),
                               content: const Text('Tidak ada jadwal yang cocok dengan hari aktif pada rentang tanggal tersebut.'),
@@ -434,53 +435,77 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                         final journalProvider = Provider.of<JournalProvider>(context, listen: false);
                         final hasJournal = journalProvider.journals.any((j) => groupedSchedule.scheduleIds.contains(j.scheduleId));
                         
-                        if (hasJournal) {
-                          final sameDates = startDate.year == groupedSchedule.startDate.year &&
-                              startDate.month == groupedSchedule.startDate.month &&
-                              startDate.day == groupedSchedule.startDate.day &&
-                              endDate.year == groupedSchedule.endDate.year &&
-                              endDate.month == groupedSchedule.endDate.month &&
-                              endDate.day == groupedSchedule.endDate.day;
-                          final sameWeekdays = selectedWeekdays.length == groupedSchedule.weekdays.length && selectedWeekdays.every(groupedSchedule.weekdays.contains);
-                          final sameHours = selectedHours.length == groupedSchedule.teachingHours.length && selectedHours.every(groupedSchedule.teachingHours.contains);
-                          
-                          if (sameDates && sameWeekdays && sameHours) {
-                            bool allSuccess = true;
-                            for (final id in groupedSchedule.scheduleIds) {
-                              final original = scheduleProvider.schedules.firstWhere((s) => s.id == id);
-                              final updatedSched = ScheduleModel(
-                                id: id,
-                                periodId: selectedPeriodId!,
-                                date: original.date,
-                                teachingHour: original.teachingHour,
-                                classId: selectedClassId!,
-                                subjectId: selectedSubjectId!,
-                                teacherId: selectedTeacherId!,
-                                note: noteController.text.trim().isEmpty ? null : noteController.text.trim(),
-                                isActive: isActive,
-                              );
-                              final res = await scheduleProvider.updateSchedule(updatedSched);
-                              if (!res) allSuccess = false;
-                            }
-                            success = allSuccess;
-                          } else {
-                            await showDialog(
-                              context: dialogContext,
-                              builder: (ctx) => AlertDialog(
-                                title: const Text('Tidak Bisa Diubah'),
-                                content: const Text('Tidak dapat mengubah tanggal, hari, atau jam karena terdapat jurnal yang sudah diisi pada jadwal ini. Silakan hapus jurnal terlebih dahulu.'),
-                                actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Oke'))],
+                        final sameDates = startDate.year == groupedSchedule.startDate.year &&
+                            startDate.month == groupedSchedule.startDate.month &&
+                            startDate.day == groupedSchedule.startDate.day &&
+                            endDate.year == groupedSchedule.endDate.year &&
+                            endDate.month == groupedSchedule.endDate.month &&
+                            endDate.day == groupedSchedule.endDate.day;
+                        final sameWeekdays = selectedWeekdays.length == groupedSchedule.weekdays.length && selectedWeekdays.every(groupedSchedule.weekdays.contains);
+                        final sameHours = selectedHours.length == groupedSchedule.teachingHours.length && selectedHours.every(groupedSchedule.teachingHours.contains);
+
+                        if (hasJournal && !(sameDates && sameWeekdays && sameHours)) {
+                          FocusScope.of(context).unfocus();
+                          final confirmChange = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+                              title: const Row(
+                                children: [
+                                  Icon(Icons.warning_amber_rounded, color: Color(0xFFBA1A1A), size: 28),
+                                  SizedBox(width: 8),
+                                  Text('Konfirmasi Ubah Hari/Jam'),
+                                ],
                               ),
+                              content: const Text(
+                                'Mengubah tanggal, hari, atau jam akan menghapus seluruh jurnal mengajar yang sudah diisi pada jadwal ini secara permanen.\n\n'
+                                'Apakah Anda yakin ingin melanjutkan?',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: const Text('Batal'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: const Text(
+                                    'Lanjutkan',
+                                    style: TextStyle(color: Color(0xFFBA1A1A), fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirmChange != true) return;
+                        }
+
+                        if (hasJournal && sameDates && sameWeekdays && sameHours) {
+                          bool allSuccess = true;
+                          for (final id in groupedSchedule.scheduleIds) {
+                            final original = scheduleProvider.schedules.firstWhere((s) => s.id == id);
+                            final updatedSched = ScheduleModel(
+                              id: id,
+                              periodId: selectedPeriodId!,
+                              date: original.date,
+                              teachingHour: original.teachingHour,
+                              classId: selectedClassId!,
+                              subjectId: selectedSubjectId!,
+                              teacherId: selectedTeacherId!,
+                              note: noteController.text.trim().isEmpty ? null : noteController.text.trim(),
+                              isActive: isActive,
                             );
-                            return;
+                            final res = await scheduleProvider.updateSchedule(updatedSched);
+                            if (!res) allSuccess = false;
                           }
+                          success = allSuccess;
                         } else {
                           // Safe edit: delete old and recreate
                           final bool deleteSuccess = await scheduleProvider.deleteMultipleSchedules(groupedSchedule.scheduleIds);
                           if (!dialogContext.mounted) return;
                           if (!deleteSuccess) {
+                            FocusScope.of(context).unfocus();
                             await showDialog(
-                              context: dialogContext,
+                              context: context,
                               builder: (ctx) => AlertDialog(
                                 title: const Text('Gagal Memperbarui'),
                                 content: const Text('Gagal memperbarui jadwal (Gagal menghapus jadwal lama).'),
@@ -514,8 +539,9 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           }
                           
                           if (schedulesToCreate.isEmpty) {
+                            FocusScope.of(context).unfocus();
                             await showDialog(
-                              context: dialogContext,
+                              context: context,
                               builder: (ctx) => AlertDialog(
                                 title: const Text('Tidak Ada Jadwal'),
                                 content: const Text('Tidak ada jadwal yang cocok dengan hari aktif pada rentang tanggal tersebut.'),
@@ -524,7 +550,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                             );
                             return;
                           }
-                                                   success = await scheduleProvider.createMultipleSchedules(schedulesToCreate);
+                          success = await scheduleProvider.createMultipleSchedules(schedulesToCreate);
                         }
                       }
 
@@ -534,10 +560,11 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                         Navigator.pop(dialogContext);
                         AppHelper.showSnackBar(context, 'Jadwal berhasil disimpan!');
                       } else {
-                        // Show error inside the bottom sheet as a dialog so it's visible above the form
+                        // Dismiss keyboard first
+                        FocusScope.of(context).unfocus();
                         final errMsg = scheduleProvider.errorMessage ?? 'Gagal menyimpan jadwal.';
                         await showDialog(
-                          context: dialogContext,
+                          context: context,
                           builder: (ctx) => AlertDialog(
                             icon: const Icon(Icons.warning_amber_rounded, color: Color(0xFFB45309), size: 40),
                             title: const Text('Tidak Dapat Menyimpan', textAlign: TextAlign.center),
@@ -570,12 +597,38 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
     final hasJournal = journalProvider.journals.any((j) => ids.contains(j.scheduleId));
     
     if (hasJournal) {
-      AppHelper.showSnackBar(
-        context,
-        'Tidak dapat menghapus jadwal karena terdapat jurnal yang sudah diisi pada jadwal ini. Silakan hapus jurnal terlebih dahulu.',
-        isError: true
+      final confirmForce = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Color(0xFFBA1A1A), size: 28),
+              SizedBox(width: 8),
+              Text('Hapus Jadwal & Jurnal'),
+            ],
+          ),
+          content: const Text(
+            'Jadwal ini memiliki jurnal mengajar yang sudah diisi. '
+            'Menghapus jadwal ini juga akan menghapus seluruh jurnal mengajar terkait secara permanen.\n\n'
+            'Apakah Anda yakin ingin menghapus?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text(
+                'Hapus Permanen',
+                style: TextStyle(color: Color(0xFFBA1A1A), fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
       );
-      return;
+      if (confirmForce != true) return;
     }
 
     final success = await scheduleProvider.deleteMultipleSchedules(ids);

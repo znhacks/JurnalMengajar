@@ -27,6 +27,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.twoWeeks;
+  bool _hasCheckedReminder = false;
 
   @override
   void initState() {
@@ -63,8 +64,209 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           scheduleProvider.loadTeacherSchedules(teacher.id, _selectedDay),
           journalProvider.loadTeacherJournals(teacher.id),
         ]);
+
+        if (!_hasCheckedReminder) {
+          _hasCheckedReminder = true;
+          _checkAndShowReminder(
+            teacher,
+            scheduleProvider,
+            journalProvider,
+            masterProvider,
+          );
+        }
       }
     }
+  }
+
+  void _checkAndShowReminder(
+    TeacherModel teacher,
+    ScheduleProvider scheduleProvider,
+    JournalProvider journalProvider,
+    MasterDataProvider masterProvider,
+  ) {
+    final today = DateTime.now();
+    final activeSchedulesToday = scheduleProvider.cachedTeacherSchedules.where((s) {
+      return s.isActive &&
+          s.date.year == today.year &&
+          s.date.month == today.month &&
+          s.date.day == today.day;
+    }).toList();
+
+    if (activeSchedulesToday.isEmpty) return;
+
+    final unfinishedSchedules = activeSchedulesToday.where((schedule) {
+      return !journalProvider.teacherJournals.any((j) => j.scheduleId == schedule.id);
+    }).toList();
+
+    if (unfinishedSchedules.isEmpty) return;
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24.r),
+          ),
+          elevation: 8,
+          child: Padding(
+            padding: EdgeInsets.all(24.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Stylized Warning/Calendar Icon
+                Container(
+                  padding: EdgeInsets.all(16.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF7ED),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFFED7AA),
+                      width: 2,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.assignment_late_rounded,
+                    color: Color(0xFFEA580C),
+                    size: 36,
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                // Title
+                Text(
+                  'Pengingat Jurnal Mengajar',
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1E293B),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 10.h),
+                // Subtitle
+                Text(
+                  'Halo ${teacher.name}, Anda memiliki ${unfinishedSchedules.length} jadwal mengajar hari ini yang belum diisi jurnalnya. Silakan segera melengkapi:',
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 13.sp,
+                    color: const Color(0xFF475569),
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 16.h),
+                // List of Unfinished Schedules
+                Flexible(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(16.r),
+                      border: Border.all(
+                        color: const Color(0xFFE2E8F0),
+                        width: 1,
+                      ),
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.all(12.w),
+                      itemCount: unfinishedSchedules.length,
+                      separatorBuilder: (context, _) => const Divider(
+                        color: Color(0xFFE2E8F0),
+                        height: 12,
+                      ),
+                      itemBuilder: (context, index) {
+                        final schedule = unfinishedSchedules[index];
+                        final cls = masterProvider.classes.firstWhere(
+                          (c) => c.id == schedule.classId,
+                          orElse: () => ClassModel(
+                            id: '',
+                            name: 'Kelas--',
+                            periodId: '',
+                            studentCount: 0,
+                          ),
+                        );
+                        final subject = masterProvider.subjects.firstWhere(
+                          (s) => s.id == schedule.subjectId,
+                          orElse: () => SubjectModel(
+                            id: '',
+                            name: 'Mapel--',
+                            isActive: false,
+                          ),
+                        );
+                        return Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8.w,
+                                vertical: 4.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6.r),
+                              ),
+                              child: Text(
+                                'Jam ${schedule.teachingHour}',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 10.sp,
+                                  color: AppTheme.primaryColor,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 10.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    cls.name,
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                  Text(
+                                    subject.name,
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontSize: 11.sp,
+                                      color: const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                // Action Buttons
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
+                  child: Text(
+                    'Oke, Saya Isi Jurnal',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
