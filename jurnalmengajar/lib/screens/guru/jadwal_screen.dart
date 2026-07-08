@@ -33,14 +33,27 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
 
   Future<void> _loadData() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+    final masterProvider = Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    );
+    final scheduleProvider = Provider.of<ScheduleProvider>(
+      context,
+      listen: false,
+    );
 
     final currentUser = authProvider.currentUser;
     if (currentUser != null) {
       final teacher = masterProvider.teachers.firstWhere(
         (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
-        orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
+        orElse: () => TeacherModel(
+          id: '',
+          name: '',
+          position: '',
+          address: '',
+          phoneNumber: '',
+          email: '',
+        ),
       );
 
       if (teacher.id.isNotEmpty) {
@@ -58,13 +71,18 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     final currentUser = authProvider.currentUser;
     final teacher = masterProvider.teachers.firstWhere(
       (t) => t.email.toLowerCase() == (currentUser?.email ?? '').toLowerCase(),
-      orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
+      orElse: () => TeacherModel(
+        id: '',
+        name: '',
+        position: '',
+        address: '',
+        phoneNumber: '',
+        email: '',
+      ),
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Jadwal Mengajar'),
-      ),
+      appBar: AppBar(title: const Text('Jadwal Mengajar')),
       body: SafeArea(
         child: Column(
           children: [
@@ -83,7 +101,10 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                   _focusedDay = focusedDay;
                 });
                 if (teacher.id.isNotEmpty) {
-                  scheduleProvider.loadTeacherSchedules(teacher.id, selectedDay);
+                  scheduleProvider.loadTeacherSchedules(
+                    teacher.id,
+                    selectedDay,
+                  );
                 }
               },
               onPageChanged: (focusedDay) {
@@ -121,21 +142,27 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                 child: scheduleProvider.isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : scheduleProvider.teacherSchedulesForSelectedDate.isEmpty
-                        ? _buildEmptyState()
-                        : Builder(
-                            builder: (context) {
-                              final groupedSchedules = groupDailySchedules(scheduleProvider.teacherSchedulesForSelectedDate);
-                              return ListView.separated(
-                                padding: EdgeInsets.all(16.w),
-                                itemCount: groupedSchedules.length,
-                                separatorBuilder: (context, index) => SizedBox(height: 12.h),
-                                itemBuilder: (context, index) {
-                                  final scheduleGroup = groupedSchedules[index];
-                                  return _buildScheduleItem(scheduleGroup, masterProvider);
-                                },
+                    ? _buildEmptyState()
+                    : Builder(
+                        builder: (context) {
+                          final groupedSchedules = groupDailySchedules(
+                            scheduleProvider.teacherSchedulesForSelectedDate,
+                          );
+                          return ListView.separated(
+                            padding: EdgeInsets.all(16.w),
+                            itemCount: groupedSchedules.length,
+                            separatorBuilder: (context, index) =>
+                                SizedBox(height: 12.h),
+                            itemBuilder: (context, index) {
+                              final scheduleGroup = groupedSchedules[index];
+                              return _buildScheduleItem(
+                                scheduleGroup,
+                                masterProvider,
                               );
-                            }
-                          ),
+                            },
+                          );
+                        },
+                      ),
               ),
             ),
           ],
@@ -152,11 +179,19 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
           padding: EdgeInsets.all(24.w),
           child: Column(
             children: [
-              Icon(Icons.calendar_today_outlined, size: 60.w, color: Colors.grey[350]),
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 60.w,
+                color: Colors.grey[350],
+              ),
               SizedBox(height: 16.h),
               Text(
                 'Tidak Ada Jadwal',
-                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[700],
+                ),
               ),
               SizedBox(height: 4.h),
               Text(
@@ -171,11 +206,15 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     );
   }
 
-  Widget _buildScheduleItem(GroupedDailySchedule scheduleGroup, MasterDataProvider master) {
+  Widget _buildScheduleItem(
+    GroupedDailySchedule scheduleGroup,
+    MasterDataProvider master,
+  ) {
     final schedule = scheduleGroup.primarySchedule;
     final cls = master.classes.firstWhere(
       (c) => c.id == schedule.classId,
-      orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
+      orElse: () =>
+          ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
     );
 
     final subject = master.subjects.firstWhere(
@@ -183,12 +222,15 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
     );
 
-    final matchedHours = master.hours
-        .where((h) => scheduleGroup.teachingHours.contains(h.teachingHour))
-        .toList()
-      ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
+    final matchedHours =
+        master.hours
+            .where((h) => scheduleGroup.teachingHours.contains(h.teachingHour))
+            .toList()
+          ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
 
-    final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '00:00';
+    final hrStart = matchedHours.isNotEmpty
+        ? matchedHours.first.startTime
+        : '00:00';
     final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '00:00';
     final hoursStr = scheduleGroup.teachingHours.join(', ');
 
@@ -219,21 +261,25 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                 ),
                 Text(
                   hoursStr,
-                  style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                  style: TextStyle(
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF0F172A),
+                  ),
                 ),
                 Text(
                   '$hrStart - $hrEnd',
-                  style: TextStyle(fontSize: 11.sp, color: const Color(0xFF0D9488), fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: const Color(0xFF0D9488),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
             SizedBox(width: 16.w),
             // Divider
-            Container(
-              height: 50.h,
-              width: 1,
-              color: Colors.grey[200],
-            ),
+            Container(height: 50.h, width: 1, color: Colors.grey[200]),
             SizedBox(width: 16.w),
             // Right block (Class & Mapel details)
             Expanded(
@@ -242,12 +288,20 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                 children: [
                   Text(
                     cls.name,
-                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF0F172A),
+                    ),
                   ),
                   SizedBox(height: 2.h),
                   Text(
                     subject.name,
-                    style: TextStyle(fontSize: 14.sp, color: Colors.grey[600], fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   SizedBox(height: 4.h),
                   Text(

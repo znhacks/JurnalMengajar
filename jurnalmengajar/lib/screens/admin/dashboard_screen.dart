@@ -74,11 +74,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     // Run Warning Letters Check & Issue if late
     if (mounted) {
-      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      final settingsProvider = Provider.of<SettingsProvider>(
+        context,
+        listen: false,
+      );
       await settingsProvider.loadSettings();
       final maxDays = settingsProvider.settings?.maxJournalInputDays ?? 3;
 
-      final warningProvider = Provider.of<WarningLetterProvider>(context, listen: false);
+      final warningProvider = Provider.of<WarningLetterProvider>(
+        context,
+        listen: false,
+      );
       await warningProvider.checkAndIssueWarnings(
         schedules: scheduleProvider.schedules,
         journals: journalProvider.journals,
@@ -120,28 +126,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         .length;
 
     // Calculate start and end of week in UTC using component year/month/day directly to avoid local timezone shifts
-    final startOfWeek = DateTime.utc(_focusedDay.year, _focusedDay.month, _focusedDay.day)
-        .subtract(Duration(days: _focusedDay.weekday - 1));
-    final endOfWeek = DateTime.utc(startOfWeek.year, startOfWeek.month, startOfWeek.day, 23, 59, 59)
-        .add(const Duration(days: 6));
+    final startOfWeek = DateTime.utc(
+      _focusedDay.year,
+      _focusedDay.month,
+      _focusedDay.day,
+    ).subtract(Duration(days: _focusedDay.weekday - 1));
+    final endOfWeek = DateTime.utc(
+      startOfWeek.year,
+      startOfWeek.month,
+      startOfWeek.day,
+      23,
+      59,
+      59,
+    ).add(const Duration(days: 6));
 
     final weekSchedules = scheduleProvider.schedules.where((s) {
-      if (_selectedTeacherId != null && s.teacherId != _selectedTeacherId) return false;
+      if (_selectedTeacherId != null && s.teacherId != _selectedTeacherId)
+        return false;
       final sDate = DateTime.utc(s.date.year, s.date.month, s.date.day);
       return !sDate.isBefore(startOfWeek) && !sDate.isAfter(endOfWeek);
     }).toList();
     final totalSchedulesInWeek = groupDailySchedules(weekSchedules).length;
 
     // Calculate unsubmitted schedules for selected day using UTC calendar date comparison to avoid timezone shifts
-    final schedulesForDay = scheduleProvider.schedules
-        .where(
-          (s) {
-            return s.date.year == _selectedDay.year &&
-                s.date.month == _selectedDay.month &&
-                s.date.day == _selectedDay.day;
-          },
-        )
-        .toList();
+    final schedulesForDay = scheduleProvider.schedules.where((s) {
+      return s.date.year == _selectedDay.year &&
+          s.date.month == _selectedDay.month &&
+          s.date.day == _selectedDay.day;
+    }).toList();
 
     final filteredSchedulesForDay = _selectedTeacherId == null
         ? schedulesForDay
@@ -271,7 +283,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
     );
   }
-
 
   // ─── Section Title ─────────────────────────────────────────────────────────
   Widget _buildSectionTitle(String title) {
@@ -440,10 +451,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.chevron_left, color: AppTheme.onSurfaceVariant),
+                  icon: const Icon(
+                    Icons.chevron_left,
+                    color: AppTheme.onSurfaceVariant,
+                  ),
                   onPressed: () {
                     setState(() {
-                      _focusedDay = _focusedDay.subtract(const Duration(days: 7));
+                      _focusedDay = _focusedDay.subtract(
+                        const Duration(days: 7),
+                      );
                     });
                   },
                 ),
@@ -452,7 +468,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     final DateTime? picked = await showDatePicker(
                       context: context,
                       initialDate: _focusedDay,
-                      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                      firstDate: DateTime.now().subtract(
+                        const Duration(days: 365),
+                      ),
                       lastDate: DateTime.now().add(const Duration(days: 365)),
                       builder: (context, child) {
                         return Theme(
@@ -474,7 +492,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       });
                     }
                   },
-                  icon: const Icon(Icons.calendar_month, color: AppTheme.primaryColor, size: 18),
+                  icon: const Icon(
+                    Icons.calendar_month,
+                    color: AppTheme.primaryColor,
+                    size: 18,
+                  ),
                   label: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -486,12 +508,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           color: AppTheme.onBackground,
                         ),
                       ),
-                      const Icon(Icons.arrow_drop_down, color: AppTheme.onSurfaceVariant),
+                      const Icon(
+                        Icons.arrow_drop_down,
+                        color: AppTheme.onSurfaceVariant,
+                      ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.chevron_right, color: AppTheme.onSurfaceVariant),
+                  icon: const Icon(
+                    Icons.chevron_right,
+                    color: AppTheme.onSurfaceVariant,
+                  ),
                   onPressed: () {
                     setState(() {
                       _focusedDay = _focusedDay.add(const Duration(days: 7));
@@ -629,7 +657,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget _buildTeacherSelectorCompact(List<TeacherModel> teachers) {
     return Row(
       children: [
-        Icon(Icons.person_search_outlined, color: AppTheme.primaryColor, size: 18.w),
+        Icon(
+          Icons.person_search_outlined,
+          color: AppTheme.primaryColor,
+          size: 18.w,
+        ),
         SizedBox(width: 8.w),
         Expanded(
           child: DropdownButtonFormField<String>(
@@ -645,7 +677,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
             decoration: InputDecoration(
               isDense: true,
-              contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 12.w,
+                vertical: 8.h,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(color: AppTheme.outlineVariant),
@@ -656,7 +691,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
+                borderSide: const BorderSide(
+                  color: AppTheme.primaryColor,
+                  width: 1.5,
+                ),
               ),
               filled: true,
               fillColor: Colors.white,
@@ -671,11 +709,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 value: null,
                 child: Text(
                   'Semua Guru',
-                  style: GoogleFonts.hankenGrotesk(color: AppTheme.onSurfaceVariant),
+                  style: GoogleFonts.hankenGrotesk(
+                    color: AppTheme.onSurfaceVariant,
+                  ),
                 ),
               ),
-              ...teachers.map((teacher) =>
-                DropdownMenuItem<String>(value: teacher.id, child: Text(teacher.name)),
+              ...teachers.map(
+                (teacher) => DropdownMenuItem<String>(
+                  value: teacher.id,
+                  child: Text(teacher.name),
+                ),
               ),
             ],
             onChanged: (value) => setState(() => _selectedTeacherId = value),
@@ -696,7 +739,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.event_available_outlined, color: AppTheme.outlineVariant, size: 36.w),
+            Icon(
+              Icons.event_available_outlined,
+              color: AppTheme.outlineVariant,
+              size: 36.w,
+            ),
             SizedBox(height: 8.h),
             Text(
               'Tidak ada jadwal untuk hari ini',
@@ -800,7 +847,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         child: Row(
                           children: [
                             CircleAvatar(
-                              backgroundColor: statusColor.withValues(alpha: 0.1),
+                              backgroundColor: statusColor.withValues(
+                                alpha: 0.1,
+                              ),
                               child: Icon(
                                 hasJournal
                                     ? Icons.check_circle_outline

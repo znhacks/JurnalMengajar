@@ -41,9 +41,18 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
   Future<void> _refreshData() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+    final masterProvider = Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    );
+    final scheduleProvider = Provider.of<ScheduleProvider>(
+      context,
+      listen: false,
+    );
+    final journalProvider = Provider.of<JournalProvider>(
+      context,
+      listen: false,
+    );
 
     final currentUser = authProvider.currentUser;
     if (currentUser != null) {
@@ -68,11 +77,17 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         ]);
 
         // Run Warning Letters Check & Issue if late
-        final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+        final settingsProvider = Provider.of<SettingsProvider>(
+          context,
+          listen: false,
+        );
         await settingsProvider.loadSettings();
         final maxDays = settingsProvider.settings?.maxJournalInputDays ?? 3;
 
-        final warningProvider = Provider.of<WarningLetterProvider>(context, listen: false);
+        final warningProvider = Provider.of<WarningLetterProvider>(
+          context,
+          listen: false,
+        );
         await warningProvider.checkAndIssueWarnings(
           schedules: scheduleProvider.cachedTeacherSchedules,
           journals: journalProvider.teacherJournals,
@@ -101,7 +116,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     MasterDataProvider masterProvider,
   ) {
     final today = DateTime.now();
-    final activeSchedulesToday = scheduleProvider.cachedTeacherSchedules.where((s) {
+    final activeSchedulesToday = scheduleProvider.cachedTeacherSchedules.where((
+      s,
+    ) {
       return s.isActive &&
           s.date.year == today.year &&
           s.date.month == today.month &&
@@ -111,7 +128,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     if (activeSchedulesToday.isEmpty) return;
 
     final unfinishedSchedules = activeSchedulesToday.where((schedule) {
-      return !journalProvider.teacherJournals.any((j) => j.scheduleId == schedule.id);
+      return !journalProvider.teacherJournals.any(
+        (j) => j.scheduleId == schedule.id,
+      );
     }).toList();
 
     if (unfinishedSchedules.isEmpty) return;
@@ -187,10 +206,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       shrinkWrap: true,
                       padding: EdgeInsets.all(12.w),
                       itemCount: unfinishedSchedules.length,
-                      separatorBuilder: (context, _) => const Divider(
-                        color: Color(0xFFE2E8F0),
-                        height: 12,
-                      ),
+                      separatorBuilder: (context, _) =>
+                          const Divider(color: Color(0xFFE2E8F0), height: 12),
                       itemBuilder: (context, index) {
                         final schedule = unfinishedSchedules[index];
                         final cls = masterProvider.classes.firstWhere(
@@ -218,7 +235,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                 vertical: 4.h,
                               ),
                               decoration: BoxDecoration(
-                                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                color: AppTheme.primaryColor.withValues(
+                                  alpha: 0.1,
+                                ),
                                 borderRadius: BorderRadius.circular(6.r),
                               ),
                               child: Text(
@@ -294,7 +313,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
     final currentUser = authProvider.currentUser;
     if (currentUser == null) {
-      return const Scaffold(body: Center(child: Text('User session not found')));
+      return const Scaffold(
+        body: Center(child: Text('User session not found')),
+      );
     }
 
     final teacher = masterProvider.teachers.firstWhere(
@@ -310,9 +331,12 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       ),
     );
 
-    final totalSchedulesToday = scheduleProvider.teacherSchedulesForSelectedDate.length;
+    final totalSchedulesToday =
+        scheduleProvider.teacherSchedulesForSelectedDate.length;
     final totalJournals = journalProvider.teacherJournals.length;
-    final pendingJournals = journalProvider.teacherJournals.where((j) => j.status == 'pending').length;
+    final pendingJournals = journalProvider.teacherJournals
+        .where((j) => j.status == 'pending')
+        .length;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -329,7 +353,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 _buildHeroHeader(teacher, pendingJournals),
 
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 16.h,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -345,9 +372,14 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
                       // ── Today's Schedule ─────────────────────────────────
                       _buildSectionTitle(
-                          'Jadwal — ${AppHelper.formatDateShort(_selectedDay)}'),
+                        'Jadwal — ${AppHelper.formatDateShort(_selectedDay)}',
+                      ),
                       SizedBox(height: 12.h),
-                      _buildScheduleSection(masterProvider, scheduleProvider, journalProvider),
+                      _buildScheduleSection(
+                        masterProvider,
+                        scheduleProvider,
+                        journalProvider,
+                      ),
                       SizedBox(height: 24.h),
 
                       // ── Recent Journals ───────────────────────────────────
@@ -386,12 +418,15 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.4), width: 2.5),
+                color: Colors.white.withValues(alpha: 0.4),
+                width: 2.5,
+              ),
             ),
             child: CircleAvatar(
               radius: 28.r,
               backgroundColor: Colors.white.withValues(alpha: 0.15),
-              backgroundImage: teacher.photoUrl != null &&
+              backgroundImage:
+                  teacher.photoUrl != null &&
                       teacher.photoUrl!.startsWith('http')
                   ? NetworkImage(teacher.photoUrl!)
                   : null,
@@ -443,19 +478,25 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(999),
                 border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.3), width: 1),
+                  color: Colors.white.withValues(alpha: 0.3),
+                  width: 1,
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.pending_actions,
-                      color: Colors.white, size: 14),
+                  const Icon(
+                    Icons.pending_actions,
+                    color: Colors.white,
+                    size: 14,
+                  ),
                   SizedBox(width: 4.w),
                   Text(
                     '$pendingCount',
                     style: GoogleFonts.hankenGrotesk(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13.sp),
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13.sp,
+                    ),
                   ),
                 ],
               ),
@@ -521,16 +562,18 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 Text(
                   value,
                   style: GoogleFonts.hankenGrotesk(
-                      fontSize: 20.sp,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.onBackground),
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.onBackground,
+                  ),
                 ),
                 Text(
                   label,
                   style: GoogleFonts.hankenGrotesk(
-                      fontSize: 10.sp,
-                      color: AppTheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w500),
+                    fontSize: 10.sp,
+                    color: AppTheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -556,16 +599,23 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
   /// Returns true if [day] has at least one active schedule in the cache.
   bool _hasScheduleOnDay(ScheduleProvider scheduleProvider, DateTime day) {
-    return scheduleProvider.cachedTeacherSchedules.any((s) =>
-        s.isActive &&
-        s.date.year == day.year &&
-        s.date.month == day.month &&
-        s.date.day == day.day);
+    return scheduleProvider.cachedTeacherSchedules.any(
+      (s) =>
+          s.isActive &&
+          s.date.year == day.year &&
+          s.date.month == day.month &&
+          s.date.day == day.day,
+    );
   }
 
   /// Builds a calendar day cell with yellow highlight when it has a schedule.
-  Widget _buildScheduledDayCell(DateTime day, bool isSelected, bool isToday,
-      bool isOutside, ScheduleProvider scheduleProvider) {
+  Widget _buildScheduledDayCell(
+    DateTime day,
+    bool isSelected,
+    bool isToday,
+    bool isOutside,
+    ScheduleProvider scheduleProvider,
+  ) {
     final hasSchedule = _hasScheduleOnDay(scheduleProvider, day);
 
     Color bgColor = Colors.transparent;
@@ -607,7 +657,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     );
   }
 
-  Widget _buildCalendarCard(TeacherModel teacher, ScheduleProvider scheduleProvider) {
+  Widget _buildCalendarCard(
+    TeacherModel teacher,
+    ScheduleProvider scheduleProvider,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -643,19 +696,39 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
             calendarBuilders: CalendarBuilders(
               defaultBuilder: (context, day, focusedDay) {
                 return _buildScheduledDayCell(
-                    day, false, false, false, scheduleProvider);
+                  day,
+                  false,
+                  false,
+                  false,
+                  scheduleProvider,
+                );
               },
               outsideBuilder: (context, day, focusedDay) {
                 return _buildScheduledDayCell(
-                    day, false, false, true, scheduleProvider);
+                  day,
+                  false,
+                  false,
+                  true,
+                  scheduleProvider,
+                );
               },
               todayBuilder: (context, day, focusedDay) {
                 return _buildScheduledDayCell(
-                    day, false, true, false, scheduleProvider);
+                  day,
+                  false,
+                  true,
+                  false,
+                  scheduleProvider,
+                );
               },
               selectedBuilder: (context, day, focusedDay) {
                 return _buildScheduledDayCell(
-                    day, true, false, false, scheduleProvider);
+                  day,
+                  true,
+                  false,
+                  false,
+                  scheduleProvider,
+                );
               },
             ),
             headerStyle: HeaderStyle(
@@ -674,10 +747,14 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 fontWeight: FontWeight.w700,
                 color: AppTheme.onBackground,
               ),
-              leftChevronIcon: const Icon(Icons.chevron_left,
-                  color: AppTheme.onSurfaceVariant),
-              rightChevronIcon: const Icon(Icons.chevron_right,
-                  color: AppTheme.onSurfaceVariant),
+              leftChevronIcon: const Icon(
+                Icons.chevron_left,
+                color: AppTheme.onSurfaceVariant,
+              ),
+              rightChevronIcon: const Icon(
+                Icons.chevron_right,
+                color: AppTheme.onSurfaceVariant,
+              ),
             ),
             calendarStyle: CalendarStyle(
               selectedDecoration: const BoxDecoration(
@@ -685,7 +762,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 shape: BoxShape.circle,
               ),
               selectedTextStyle: GoogleFonts.hankenGrotesk(
-                  color: Colors.white, fontWeight: FontWeight.w700),
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
               todayDecoration: BoxDecoration(
                 color: AppTheme.primaryColor.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
@@ -695,16 +774,24 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 fontWeight: FontWeight.w700,
               ),
               weekendTextStyle: GoogleFonts.hankenGrotesk(
-                  color: const Color(0xFF825100)),
+                color: const Color(0xFF825100),
+              ),
               defaultTextStyle: GoogleFonts.hankenGrotesk(
-                  color: AppTheme.onBackground),
-              outsideTextStyle:
-                  GoogleFonts.hankenGrotesk(color: AppTheme.outline),
+                color: AppTheme.onBackground,
+              ),
+              outsideTextStyle: GoogleFonts.hankenGrotesk(
+                color: AppTheme.outline,
+              ),
             ),
           ),
           // ── Legend ────────────────────────────────────────────────────────
           Padding(
-            padding: EdgeInsets.only(left: 16.w, right: 16.w, bottom: 12.h, top: 4.h),
+            padding: EdgeInsets.only(
+              left: 16.w,
+              right: 16.w,
+              bottom: 12.h,
+              top: 4.h,
+            ),
             child: Row(
               children: [
                 Container(
@@ -713,7 +800,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFEB3B).withValues(alpha: 0.35),
                     shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFF59E0B), width: 1.5),
+                    border: Border.all(
+                      color: const Color(0xFFF59E0B),
+                      width: 1.5,
+                    ),
                   ),
                 ),
                 SizedBox(width: 6.w),
@@ -734,11 +824,18 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   }
 
   // ─── Schedule Section ──────────────────────────────────────────────────────
-  Widget _buildScheduleSection(MasterDataProvider master,
-      ScheduleProvider scheduleProvider, JournalProvider journalProvider) {
+  Widget _buildScheduleSection(
+    MasterDataProvider master,
+    ScheduleProvider scheduleProvider,
+    JournalProvider journalProvider,
+  ) {
     if (scheduleProvider.isLoading) {
       return const Center(
-          child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()));
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: CircularProgressIndicator(),
+        ),
+      );
     }
     if (scheduleProvider.teacherSchedulesForSelectedDate.isEmpty) {
       return _buildEmptyState(
@@ -747,7 +844,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         subtitle: 'Tidak ada jadwal mengajar pada tanggal ini.',
       );
     }
-    final groupedSchedules = groupDailySchedules(scheduleProvider.teacherSchedulesForSelectedDate);
+    final groupedSchedules = groupDailySchedules(
+      scheduleProvider.teacherSchedulesForSelectedDate,
+    );
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -762,7 +861,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
   // ─── Journal Section ───────────────────────────────────────────────────────
   Widget _buildJournalSection(
-      JournalProvider journalProvider, MasterDataProvider masterProvider) {
+    JournalProvider journalProvider,
+    MasterDataProvider masterProvider,
+  ) {
     if (journalProvider.teacherJournals.isEmpty) {
       return _buildEmptyState(
         icon: Icons.assignment_outlined,
@@ -786,8 +887,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   }
 
   // ─── Empty State ───────────────────────────────────────────────────────────
-  Widget _buildEmptyState(
-      {required IconData icon, required String title, required String subtitle}) {
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 28.h),
@@ -812,7 +916,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           Text(
             subtitle,
             style: GoogleFonts.hankenGrotesk(
-                fontSize: 12.sp, color: AppTheme.outline),
+              fontSize: 12.sp,
+              color: AppTheme.outline,
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -829,19 +935,23 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     final schedule = scheduleGroup.primarySchedule;
     final cls = master.classes.firstWhere(
       (c) => c.id == schedule.classId,
-      orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
+      orElse: () =>
+          ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
     );
     final subject = master.subjects.firstWhere(
       (s) => s.id == schedule.subjectId,
       orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
     );
-    
-    final matchedHours = master.hours
-        .where((h) => scheduleGroup.teachingHours.contains(h.teachingHour))
-        .toList()
-      ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
 
-    final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '00:00';
+    final matchedHours =
+        master.hours
+            .where((h) => scheduleGroup.teachingHours.contains(h.teachingHour))
+            .toList()
+          ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
+
+    final hrStart = matchedHours.isNotEmpty
+        ? matchedHours.first.startTime
+        : '00:00';
     final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '00:00';
     final hoursStr = scheduleGroup.teachingHours.join(', ');
 
@@ -876,7 +986,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       // Hour chip
                       Container(
                         padding: EdgeInsets.symmetric(
-                            horizontal: 10.w, vertical: 8.h),
+                          horizontal: 10.w,
+                          vertical: 8.h,
+                        ),
                         decoration: BoxDecoration(
                           color: AppTheme.primaryColor.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(10),
@@ -887,22 +999,25 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             Text(
                               'Jam',
                               style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 9.sp,
-                                  color: AppTheme.primaryColor,
-                                  fontWeight: FontWeight.w600),
+                                fontSize: 9.sp,
+                                color: AppTheme.primaryColor,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             Text(
                               '#$hoursStr',
                               style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 16.sp,
-                                  color: AppTheme.primaryColor,
-                                  fontWeight: FontWeight.w800),
+                                fontSize: 16.sp,
+                                color: AppTheme.primaryColor,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                             Text(
                               hrStart,
                               style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 9.sp,
-                                  color: AppTheme.primaryColor),
+                                fontSize: 9.sp,
+                                color: AppTheme.primaryColor,
+                              ),
                             ),
                           ],
                         ),
@@ -917,45 +1032,60 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             Text(
                               cls.name,
                               style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 15.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.onBackground),
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.onBackground,
+                              ),
                             ),
                             SizedBox(height: 3.h),
                             Text(
                               subject.name,
                               style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 13.sp,
-                                  color: AppTheme.onSurfaceVariant,
-                                  fontWeight: FontWeight.w500),
+                                fontSize: 13.sp,
+                                color: AppTheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                             SizedBox(height: 4.h),
                             Row(
                               children: [
-                                const Icon(Icons.people_outline,
-                                    size: 12, color: AppTheme.outline),
+                                const Icon(
+                                  Icons.people_outline,
+                                  size: 12,
+                                  color: AppTheme.outline,
+                                ),
                                 SizedBox(width: 3.w),
                                 Text(
                                   '${cls.studentCount} Siswa',
                                   style: GoogleFonts.hankenGrotesk(
-                                      fontSize: 11.sp, color: AppTheme.outline),
+                                    fontSize: 11.sp,
+                                    color: AppTheme.outline,
+                                  ),
                                 ),
                                 SizedBox(width: 8.w),
-                                const Icon(Icons.access_time_outlined,
-                                    size: 12, color: AppTheme.outline),
+                                const Icon(
+                                  Icons.access_time_outlined,
+                                  size: 12,
+                                  color: AppTheme.outline,
+                                ),
                                 SizedBox(width: 3.w),
                                 Text(
                                   '$hrStart–$hrEnd',
                                   style: GoogleFonts.hankenGrotesk(
-                                      fontSize: 11.sp, color: AppTheme.outline),
+                                    fontSize: 11.sp,
+                                    color: AppTheme.outline,
+                                  ),
                                 ),
                               ],
                             ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right,
-                          color: AppTheme.outline, size: 20),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: AppTheme.outline,
+                        size: 20,
+                      ),
                     ],
                   ),
                 ),
@@ -971,7 +1101,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   Widget _buildJournalCard(JournalModel journal, MasterDataProvider master) {
     final cls = master.classes.firstWhere(
       (c) => c.id == journal.classId,
-      orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
+      orElse: () =>
+          ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
     );
     final subject = master.subjects.firstWhere(
       (s) => s.id == journal.subjectId,
@@ -1016,16 +1147,19 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             child: Text(
                               '${cls.name} · ${subject.name}',
                               style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.onBackground),
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.onBackground,
+                              ),
                             ),
                           ),
                           SizedBox(width: 8.w),
                           // Pill status badge
                           Container(
                             padding: EdgeInsets.symmetric(
-                                horizontal: 10.w, vertical: 4.h),
+                              horizontal: 10.w,
+                              vertical: 4.h,
+                            ),
                             decoration: BoxDecoration(
                               color: statusColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(999),
@@ -1033,10 +1167,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             child: Text(
                               AppHelper.getStatusLabel(journal.status),
                               style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 10.sp,
-                                  color: statusColor,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.2),
+                                fontSize: 10.sp,
+                                color: statusColor,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.2,
+                              ),
                             ),
                           ),
                         ],
@@ -1045,28 +1180,36 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       Text(
                         journal.material,
                         style: GoogleFonts.hankenGrotesk(
-                            fontSize: 12.sp, color: AppTheme.onSurfaceVariant),
+                          fontSize: 12.sp,
+                          color: AppTheme.onSurfaceVariant,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(height: 8.h),
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today_outlined,
-                              size: 11, color: AppTheme.outline),
+                          const Icon(
+                            Icons.calendar_today_outlined,
+                            size: 11,
+                            color: AppTheme.outline,
+                          ),
                           SizedBox(width: 4.w),
                           Text(
                             AppHelper.formatDateShort(journal.date),
                             style: GoogleFonts.hankenGrotesk(
-                                fontSize: 11.sp, color: AppTheme.outline),
+                              fontSize: 11.sp,
+                              color: AppTheme.outline,
+                            ),
                           ),
                           const Spacer(),
                           Text(
                             'S:${journal.sickCount} I:${journal.permissionCount} A:${journal.alphaCount}',
                             style: GoogleFonts.hankenGrotesk(
-                                fontSize: 11.sp,
-                                color: AppTheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w600),
+                              fontSize: 11.sp,
+                              color: AppTheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                       ),
