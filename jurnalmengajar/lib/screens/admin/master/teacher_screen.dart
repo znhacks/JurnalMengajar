@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../providers/master_data_provider.dart';
 import '../../../models/teacher_model.dart';
 import '../../../widgets/admin_drawer.dart';
@@ -206,6 +207,30 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
     }
   }
 
+  Future<void> _launchWhatsApp(String phone) async {
+    if (phone.trim().isEmpty) {
+      AppHelper.showSnackBar(context, 'Nomor WhatsApp belum terdaftar', isError: true);
+      return;
+    }
+
+    String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = '62${cleanPhone.substring(1)}';
+    }
+
+    final url = Uri.parse('https://wa.me/$cleanPhone');
+    try {
+      final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        AppHelper.showSnackBar(context, 'Tidak dapat membuka WhatsApp', isError: true);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppHelper.showSnackBar(context, 'Gagal membuka link WhatsApp', isError: true);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final masterProvider = context.watch<MasterDataProvider>();
@@ -303,6 +328,13 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                                     ),
                                   ],
                                 ),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  Icons.chat,
+                                  color: t.phoneNumber.trim().isEmpty ? Colors.grey[400] : const Color(0xFF25D366),
+                                ),
+                                onPressed: () => _launchWhatsApp(t.phoneNumber),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.edit_outlined, color: Colors.indigo),

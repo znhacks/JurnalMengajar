@@ -22,7 +22,7 @@ class SupabaseTeacherRepository implements TeacherRepository {
                 name: json['full_name'] as String,
                 position: json['position'] as String? ?? 'Guru Bidang Studi',
                 address: json['address'] as String? ?? '',
-                phoneNumber: json['phone_number'] as String? ?? '',
+                phoneNumber: json['phone'] as String? ?? '',
                 email: json['email'] as String,
                 photoUrl: json['photo_url'] as String?,
               ))
@@ -51,7 +51,7 @@ class SupabaseTeacherRepository implements TeacherRepository {
             'full_name': model.name,
             'position': model.position,
             'address': model.address,
-            'phone_number': model.phoneNumber,
+            'phone': model.phoneNumber,
             'photo_url': model.photoUrl,
           })
           .eq('id', model.id);
