@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/journal_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../models/schedule_model.dart';
 import '../../models/journal_model.dart';
 import '../../models/class_model.dart';
@@ -99,6 +100,8 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
   Widget build(BuildContext context) {
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
+    final authProvider = context.watch<AuthProvider>();
+    final isAdmin = authProvider.currentUser?.role == 'admin';
 
     // Find schedule
     ScheduleModel? schedule;
@@ -198,7 +201,13 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                           'Jam Ke-$hoursStr ($hrStart - $hrEnd)',
                         ),
                         _buildDetailRow(Icons.date_range, 'Periode Akademik', period.name),
-                        _buildDetailRow(Icons.description, 'Catatan Jadwal', schedule.note ?? 'Tidak ada catatan khusus.'),
+                        _buildDetailRow(
+                          Icons.description,
+                          'Catatan Jadwal',
+                          (schedule.note != null && schedule.note!.trim().isNotEmpty)
+                              ? schedule.note!
+                              : 'Tidak Ada',
+                        ),
                       ],
                     ),
                   ),
@@ -211,48 +220,91 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
               padding: EdgeInsets.all(20.w),
               child: _checkingJournal
                   ? const Center(child: CircularProgressIndicator())
-                  : _existingJournal != null
-                      ? Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: () {
-                                  context.push('/guru/journal/${_existingJournal!.id}');
-                                },
-                                icon: const Icon(Icons.assignment),
-                                label: const Text('Lihat Jurnal'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0F172A), // Dark slate
+                  : isAdmin
+                      ? (_existingJournal != null
+                          ? Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      context.push('/admin/journal/${_existingJournal!.id}');
+                                    },
+                                    icon: const Icon(Icons.assignment),
+                                    label: const Text('Lihat Jurnal'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF0F172A),
+                                    ),
+                                  ),
                                 ),
+                              ],
+                            )
+                          : Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFEE2E2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFFCA5A5), width: 1.5),
                               ),
-                            ),
-                            if (_existingJournal!.status == 'rejected') ...[
-                              SizedBox(width: 12.w),
-                              Expanded(
-                                child: ElevatedButton.icon(
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.info_outline, color: Color(0xFFDC2626)),
+                                  SizedBox(width: 12.w),
+                                  Expanded(
+                                    child: Text(
+                                      'Jurnal belum diinput oleh guru pengampu.',
+                                      style: TextStyle(
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF991B1B),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ))
+                      : _existingJournal != null
+                          ? Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      context.push('/guru/journal/${_existingJournal!.id}');
+                                    },
+                                    icon: const Icon(Icons.assignment),
+                                    label: const Text('Lihat Jurnal'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                ),
+                                if (_existingJournal!.status == 'rejected') ...[
+                                  SizedBox(width: 12.w),
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        context.push('/guru/journal-form?scheduleId=${schedule!.id}');
+                                      },
+                                      icon: const Icon(Icons.edit_note),
+                                      label: const Text('Revisi Jurnal'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFFEA580C),
+                                        foregroundColor: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            )
+                          : _isFutureDate(schedule.date)
+                              ? _buildFutureDateBanner(schedule.date)
+                              : ElevatedButton.icon(
                                   onPressed: () {
                                     context.push('/guru/journal-form?scheduleId=${schedule!.id}');
                                   },
                                   icon: const Icon(Icons.edit_note),
-                                  label: const Text('Revisi Jurnal'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFEA580C),
-                                    foregroundColor: Colors.white,
-                                  ),
+                                  label: const Text('Isi Jurnal'),
                                 ),
-                              ),
-                            ],
-                          ],
-                        )
-                      : _isFutureDate(schedule.date)
-                          ? _buildFutureDateBanner(schedule.date)
-                          : ElevatedButton.icon(
-                              onPressed: () {
-                                context.push('/guru/journal-form?scheduleId=${schedule!.id}');
-                              },
-                              icon: const Icon(Icons.edit_note),
-                              label: const Text('Isi Jurnal'),
-                            ),
             ),
           ],
         ),

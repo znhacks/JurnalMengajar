@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../providers/master_data_provider.dart';
@@ -75,19 +77,51 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final scheduleProvider = context.watch<ScheduleProvider>();
     final journalProvider = context.watch<JournalProvider>();
 
-    final totalJournals = journalProvider.journals.length;
-    final totalSchedules = scheduleProvider.schedules.length;
-    final totalPending = journalProvider.journals
+    final filteredJournals = _selectedTeacherId == null
+        ? journalProvider.journals
+        : journalProvider.journals.where((j) {
+            final sched = scheduleProvider.schedules.firstWhere(
+              (s) => s.id == j.scheduleId,
+              orElse: () => ScheduleModel(
+                id: '',
+                periodId: '',
+                date: DateTime.now(),
+                teachingHour: 0,
+                classId: '',
+                subjectId: '',
+                teacherId: '',
+                isActive: false,
+              ),
+            );
+            return sched.teacherId == _selectedTeacherId;
+          }).toList();
+
+    final totalJournals = filteredJournals.length;
+    final totalPending = filteredJournals
         .where((j) => j.status == 'pending')
         .length;
 
-    // Calculate unsubmitted schedules for selected day
+    // Calculate start and end of week in UTC using component year/month/day directly to avoid local timezone shifts
+    final startOfWeek = DateTime.utc(_focusedDay.year, _focusedDay.month, _focusedDay.day)
+        .subtract(Duration(days: _focusedDay.weekday - 1));
+    final endOfWeek = DateTime.utc(startOfWeek.year, startOfWeek.month, startOfWeek.day, 23, 59, 59)
+        .add(const Duration(days: 6));
+
+    final weekSchedules = scheduleProvider.schedules.where((s) {
+      if (_selectedTeacherId != null && s.teacherId != _selectedTeacherId) return false;
+      final sDate = DateTime.utc(s.date.year, s.date.month, s.date.day);
+      return !sDate.isBefore(startOfWeek) && !sDate.isAfter(endOfWeek);
+    }).toList();
+    final totalSchedulesInWeek = weekSchedules.length;
+
+    // Calculate unsubmitted schedules for selected day using UTC calendar date comparison to avoid timezone shifts
     final schedulesForDay = scheduleProvider.schedules
         .where(
-          (s) =>
-              s.date.year == _selectedDay.year &&
-              s.date.month == _selectedDay.month &&
-              s.date.day == _selectedDay.day,
+          (s) {
+            return s.date.year == _selectedDay.year &&
+                s.date.month == _selectedDay.month &&
+                s.date.day == _selectedDay.day;
+          },
         )
         .toList();
 
@@ -97,9 +131,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               .where((s) => s.teacherId == _selectedTeacherId)
               .toList();
 
-    final unsubmittedCount = filteredSchedulesForDay.where((s) {
+    final groupedSchedulesForDay = groupDailySchedules(filteredSchedulesForDay);
+    final unsubmittedCount = groupedSchedulesForDay.where((group) {
       final hasJournal = journalProvider.journals.any(
-        (j) => j.scheduleId == s.id,
+        (j) => group.scheduleIds.contains(j.scheduleId),
       );
       return !hasJournal;
     }).length;
@@ -171,9 +206,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 ),
                                 _buildStatCard(
                                   'Total Jadwal',
-                                  '$totalSchedules',
+                                  '$totalSchedulesInWeek',
                                   Icons.calendar_month_outlined,
                                   const Color(0xFF565E74),
+                                  subtitle: 'Minggu terpilih',
                                 ),
                                 _buildStatCard(
                                   'Butuh Approval',
@@ -487,11 +523,80 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left, color: AppTheme.onSurfaceVariant),
+                  onPressed: () {
+                    setState(() {
+                      _focusedDay = _focusedDay.subtract(const Duration(days: 7));
+                    });
+                  },
+                ),
+                TextButton.icon(
+                  onPressed: () async {
+                    final DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: _focusedDay,
+                      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: const ColorScheme.light(
+                              primary: AppTheme.primaryColor,
+                              onPrimary: Colors.white,
+                              onSurface: AppTheme.onBackground,
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _focusedDay = picked;
+                        _selectedDay = picked;
+                      });
+                    }
+                  },
+                  icon: const Icon(Icons.calendar_month, color: AppTheme.primaryColor, size: 18),
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        DateFormat('MMMM yyyy', 'id_ID').format(_focusedDay),
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.onBackground,
+                        ),
+                      ),
+                      const Icon(Icons.arrow_drop_down, color: AppTheme.onSurfaceVariant),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right, color: AppTheme.onSurfaceVariant),
+                  onPressed: () {
+                    setState(() {
+                      _focusedDay = _focusedDay.add(const Duration(days: 7));
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
           TableCalendar(
+            headerVisible: false,
             firstDay: DateTime.now().subtract(const Duration(days: 365)),
             lastDay: DateTime.now().add(const Duration(days: 365)),
             focusedDay: _focusedDay,
-            calendarFormat: CalendarFormat.month,
+            calendarFormat: CalendarFormat.week,
+            startingDayOfWeek: StartingDayOfWeek.monday,
             selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
             onDaySelected: (selectedDay, focusedDay) {
               setState(() {
@@ -500,7 +605,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               });
             },
             onPageChanged: (focusedDay) {
-              _focusedDay = focusedDay;
+              setState(() {
+                _focusedDay = focusedDay;
+              });
             },
             calendarBuilders: CalendarBuilders(
               defaultBuilder: (context, day, focusedDay) {
@@ -540,22 +647,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 );
               },
             ),
-            headerStyle: HeaderStyle(
-              formatButtonVisible: false,
-              titleTextStyle: GoogleFonts.hankenGrotesk(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.onBackground,
-              ),
-              leftChevronIcon: const Icon(
-                Icons.chevron_left,
-                color: AppTheme.onSurfaceVariant,
-              ),
-              rightChevronIcon: const Icon(
-                Icons.chevron_right,
-                color: AppTheme.onSurfaceVariant,
-              ),
-            ),
+
             calendarStyle: CalendarStyle(
               selectedDecoration: const BoxDecoration(
                 color: AppTheme.primaryColor,
@@ -839,89 +931,109 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             : const Color(0xFFBA1A1A);
         final hoursStr = scheduleGroup.teachingHours.join(', ');
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              if (hasJournal) {
+                try {
+                  final journal = journalProvider.journals.firstWhere(
+                    (j) => scheduleGroup.scheduleIds.contains(j.scheduleId),
+                  );
+                  context.push('/admin/journal/${journal.id}');
+                } catch (_) {
+                  context.push('/admin/schedule/${sched.id}');
+                }
+              } else {
+                context.push('/admin/schedule/${sched.id}');
+              }
+            },
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.outlineVariant),
-          ),
-          child: IntrinsicHeight(
-            child: Row(
-              children: [
-                // Left border accent
-                Container(
-                  width: 4.w,
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      bottomLeft: Radius.circular(16),
+            child: Ink(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.outlineVariant),
+              ),
+              child: IntrinsicHeight(
+                child: Row(
+                  children: [
+                    // Left border accent
+                    Container(
+                      width: 4.w,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          bottomLeft: Radius.circular(16),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.all(14.w),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: statusColor.withValues(alpha: 0.1),
-                          child: Icon(
-                            hasJournal
-                                ? Icons.check_circle_outline
-                                : Icons.pending_actions,
-                            color: statusColor,
-                          ),
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '${cls.name} • ${subj.name} (Jam $hoursStr)',
-                                style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.onBackground,
-                                ),
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.all(14.w),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: statusColor.withValues(alpha: 0.1),
+                              child: Icon(
+                                hasJournal
+                                    ? Icons.check_circle_outline
+                                    : Icons.pending_actions,
+                                color: statusColor,
                               ),
-                              SizedBox(height: 3.h),
-                              Text(
-                                'Guru: ${teacher.name}',
-                                style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 12.sp,
-                                  color: AppTheme.onSurfaceVariant,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 10.w,
-                            vertical: 4.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            hasJournal ? 'Sudah Input' : 'Belum Input',
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 10.sp,
-                              fontWeight: FontWeight.w700,
-                              color: statusColor,
                             ),
-                          ),
+                            SizedBox(width: 12.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '${cls.name} • ${subj.name} (Jam $hoursStr)',
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.onBackground,
+                                    ),
+                                  ),
+                                  SizedBox(height: 3.h),
+                                  Text(
+                                    'Guru: ${teacher.name}',
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontSize: 12.sp,
+                                      color: AppTheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 10.w,
+                                vertical: 4.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                hasJournal ? 'Sudah Input' : 'Belum Input',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );

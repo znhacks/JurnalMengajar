@@ -297,13 +297,34 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     ),
                   ),
                   SizedBox(height: 16.h),
-                  TextField(
-                    controller: posController,
-                    enabled: !isSaving,
-                    decoration: const InputDecoration(
-                      labelText: 'Jabatan',
-                      hintText: 'Masukkan jabatan',
-                      prefixIcon: Icon(Icons.badge_outlined),
+                  GestureDetector(
+                    onTap: isSaving
+                        ? null
+                        : () {
+                            final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+                            final subjectNames = masterProvider.subjects.map((s) => s.name).toList();
+                            _showPositionSelector(
+                              context,
+                              subjectNames,
+                              posController.text,
+                              (selected) {
+                                setDialogState(() {
+                                  posController.text = selected;
+                                });
+                              },
+                            );
+                          },
+                    child: AbsorbPointer(
+                      child: TextField(
+                        controller: posController,
+                        enabled: !isSaving,
+                        decoration: const InputDecoration(
+                          labelText: 'Jabatan',
+                          hintText: 'Ketuk untuk memilih jabatan / guru mapel...',
+                          prefixIcon: Icon(Icons.badge_outlined),
+                          suffixIcon: Icon(Icons.arrow_drop_down),
+                        ),
+                      ),
                     ),
                   ),
                   SizedBox(height: 16.h),
@@ -333,6 +354,15 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     onPressed: isSaving
                         ? null
                         : () async {
+                            if (nameController.text.trim().isEmpty) {
+                              AppHelper.showSnackBar(context, 'Nama lengkap tidak boleh kosong', isError: true);
+                              return;
+                            }
+                            if (posController.text.trim().isEmpty) {
+                              AppHelper.showSnackBar(context, 'Jabatan/guru mapel tidak boleh kosong', isError: true);
+                              return;
+                            }
+
                             setDialogState(() {
                               isSaving = true;
                             });
@@ -994,6 +1024,91 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  void _showPositionSelector(
+    BuildContext context,
+    List<String> subjects,
+    String currentPosition,
+    Function(String) onSelect,
+  ) {
+    final searchController = TextEditingController();
+    List<String> options = subjects.map((s) => 'Guru $s').toSet().toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          final query = searchController.text.toLowerCase();
+          final filteredOptions = options
+              .where((opt) => opt.toLowerCase().contains(query))
+              .toList();
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              top: 20.h,
+              left: 20.w,
+              right: 20.w,
+            ),
+            child: SizedBox(
+              height: 400.h,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Pilih Jabatan / Guru Mapel',
+                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 12.h),
+                  TextField(
+                    controller: searchController,
+                    decoration: const InputDecoration(
+                      hintText: 'Cari mata pelajaran / jabatan...',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  SizedBox(height: 12.h),
+                  Expanded(
+                    child: filteredOptions.isEmpty
+                        ? const Center(child: Text('Tidak ada pilihan ditemukan'))
+                        : ListView.builder(
+                            itemCount: filteredOptions.length,
+                            itemBuilder: (context, index) {
+                              final opt = filteredOptions[index];
+                              final isSelected = opt.toLowerCase() == currentPosition.toLowerCase();
+                              return ListTile(
+                                title: Text(
+                                  opt,
+                                  style: TextStyle(
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected ? const Color(0xFF0D9488) : null,
+                                  ),
+                                ),
+                                trailing: isSelected
+                                    ? const Icon(Icons.check, color: Color(0xFF0D9488))
+                                    : null,
+                                onTap: () {
+                                  onSelect(opt);
+                                  Navigator.pop(context);
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
