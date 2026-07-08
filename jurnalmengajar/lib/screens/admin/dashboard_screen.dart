@@ -112,7 +112,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       final sDate = DateTime.utc(s.date.year, s.date.month, s.date.day);
       return !sDate.isBefore(startOfWeek) && !sDate.isAfter(endOfWeek);
     }).toList();
-    final totalSchedulesInWeek = weekSchedules.length;
+    final totalSchedulesInWeek = groupDailySchedules(weekSchedules).length;
 
     // Calculate unsubmitted schedules for selected day using UTC calendar date comparison to avoid timezone shifts
     final schedulesForDay = scheduleProvider.schedules
