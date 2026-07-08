@@ -79,6 +79,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         listen: false,
       );
       await settingsProvider.loadSettings();
+      if (!mounted) return;
       final maxDays = settingsProvider.settings?.maxJournalInputDays ?? 3;
 
       final warningProvider = Provider.of<WarningLetterProvider>(
@@ -141,12 +142,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     ).add(const Duration(days: 6));
 
     final weekSchedules = scheduleProvider.schedules.where((s) {
-      if (_selectedTeacherId != null && s.teacherId != _selectedTeacherId)
+      if (_selectedTeacherId != null && s.teacherId != _selectedTeacherId) {
         return false;
+      }
       final sDate = DateTime.utc(s.date.year, s.date.month, s.date.day);
       return !sDate.isBefore(startOfWeek) && !sDate.isAfter(endOfWeek);
     }).toList();
     final totalSchedulesInWeek = groupDailySchedules(weekSchedules).length;
+
+    final hasHighlightBefore = _selectedTeacherId != null &&
+        scheduleProvider.schedules.any((s) {
+          if (!s.isActive || s.teacherId != _selectedTeacherId) return false;
+          final sDate = DateTime.utc(s.date.year, s.date.month, s.date.day);
+          return sDate.isBefore(startOfWeek);
+        });
+
+    final hasHighlightAfter = _selectedTeacherId != null &&
+        scheduleProvider.schedules.any((s) {
+          if (!s.isActive || s.teacherId != _selectedTeacherId) return false;
+          final sDate = DateTime.utc(s.date.year, s.date.month, s.date.day);
+          return sDate.isAfter(endOfWeek);
+        });
 
     // Calculate unsubmitted schedules for selected day using UTC calendar date comparison to avoid timezone shifts
     final schedulesForDay = scheduleProvider.schedules.where((s) {
@@ -259,7 +275,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         SizedBox(height: 12.h),
 
                         // ── Calendar Card ──────────────────────────────────────────
-                        _buildCalendarCard(scheduleProvider.schedules),
+                        _buildCalendarCard(
+                          scheduleProvider.schedules,
+                          hasHighlightBefore,
+                          hasHighlightAfter,
+                        ),
                         SizedBox(height: 12.h),
 
                         // ── Jadwal hari ini ────────────────────────────────────────
@@ -404,13 +424,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       bgColor = AppTheme.primaryColor;
       textColor = Colors.white;
       fontWeight = FontWeight.w700;
-    } else if (isToday) {
-      bgColor = AppTheme.primaryColor.withValues(alpha: 0.15);
-      textColor = AppTheme.primaryColor;
-      fontWeight = FontWeight.w700;
     } else if (hasSchedule) {
       bgColor = const Color(0xFFFFEB3B).withValues(alpha: 0.35);
       textColor = isOutside ? AppTheme.outline : AppTheme.onBackground;
+      fontWeight = FontWeight.w700;
+    } else if (isToday) {
+      bgColor = AppTheme.primaryColor.withValues(alpha: 0.15);
+      textColor = AppTheme.primaryColor;
       fontWeight = FontWeight.w700;
     }
 
@@ -419,7 +439,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,
-        border: hasSchedule && !isSelected && !isToday
+        border: hasSchedule && !isSelected
             ? Border.all(color: const Color(0xFFF59E0B), width: 1.5)
             : null,
       ),
@@ -435,7 +455,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildCalendarCard(List<ScheduleModel> schedules) {
+  Widget _buildCalendarCard(
+    List<ScheduleModel> schedules,
+    bool hasHighlightBefore,
+    bool hasHighlightAfter,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -450,18 +474,37 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.chevron_left,
-                    color: AppTheme.onSurfaceVariant,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _focusedDay = _focusedDay.subtract(
-                        const Duration(days: 7),
-                      );
-                    });
-                  },
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.chevron_left,
+                        color: AppTheme.onSurfaceVariant,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _focusedDay = _focusedDay.subtract(
+                            const Duration(days: 7),
+                          );
+                        });
+                      },
+                    ),
+                    if (hasHighlightBefore)
+                      Positioned(
+                        left: 8.w,
+                        top: 8.h,
+                        child: Container(
+                          width: 8.w,
+                          height: 8.w,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF59E0B),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 TextButton.icon(
                   onPressed: () async {
@@ -515,16 +558,35 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.chevron_right,
-                    color: AppTheme.onSurfaceVariant,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _focusedDay = _focusedDay.add(const Duration(days: 7));
-                    });
-                  },
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.chevron_right,
+                        color: AppTheme.onSurfaceVariant,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _focusedDay = _focusedDay.add(const Duration(days: 7));
+                        });
+                      },
+                    ),
+                    if (hasHighlightAfter)
+                      Positioned(
+                        right: 8.w,
+                        top: 8.h,
+                        child: Container(
+                          width: 8.w,
+                          height: 8.w,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF59E0B),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),

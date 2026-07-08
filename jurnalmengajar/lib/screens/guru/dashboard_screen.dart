@@ -76,12 +76,15 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           journalProvider.loadTeacherJournals(teacher.id),
         ]);
 
+        if (!mounted) return;
+
         // Run Warning Letters Check & Issue if late
         final settingsProvider = Provider.of<SettingsProvider>(
           context,
           listen: false,
         );
         await settingsProvider.loadSettings();
+        if (!mounted) return;
         final maxDays = settingsProvider.settings?.maxJournalInputDays ?? 3;
 
         final warningProvider = Provider.of<WarningLetterProvider>(

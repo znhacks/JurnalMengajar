@@ -182,12 +182,16 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                                         children: [
                                           const Icon(Icons.person_outline, size: 14, color: AppTheme.outline),
                                           SizedBox(width: 4.w),
-                                          Text(
-                                            'Oleh: ${teacher.name}',
-                                            style: GoogleFonts.hankenGrotesk(
-                                                fontSize: 12.sp, color: AppTheme.outline, fontWeight: FontWeight.w500),
+                                          Expanded(
+                                            child: Text(
+                                              'Oleh: ${teacher.name}',
+                                              style: GoogleFonts.hankenGrotesk(
+                                                  fontSize: 12.sp, color: AppTheme.outline, fontWeight: FontWeight.w500),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
-                                          const Spacer(),
+                                          SizedBox(width: 16.w),
                                           const Icon(Icons.calendar_today_outlined, size: 12, color: AppTheme.outline),
                                           SizedBox(width: 4.w),
                                           Text(
