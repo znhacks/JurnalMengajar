@@ -682,7 +682,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           SizedBox(height: 12.h),
           DropdownButtonFormField<String>(
-            value: _selectedTeacherId,
+            initialValue: _selectedTeacherId,
             isExpanded: true,
             hint: Text(
               'Pilih guru untuk dipantau...',
