@@ -15,6 +15,8 @@ import '../../models/subject_model.dart';
 import '../../core/utils/helper.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/schedule_grouper.dart';
+import '../../providers/settings_provider.dart';
+import '../../providers/warning_letter_provider.dart';
 
 class GuruDashboardScreen extends StatefulWidget {
   const GuruDashboardScreen({super.key});
@@ -64,6 +66,20 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           scheduleProvider.loadTeacherSchedules(teacher.id, _selectedDay),
           journalProvider.loadTeacherJournals(teacher.id),
         ]);
+
+        // Run Warning Letters Check & Issue if late
+        final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+        await settingsProvider.loadSettings();
+        final maxDays = settingsProvider.settings?.maxJournalInputDays ?? 3;
+
+        final warningProvider = Provider.of<WarningLetterProvider>(context, listen: false);
+        await warningProvider.checkAndIssueWarnings(
+          schedules: scheduleProvider.cachedTeacherSchedules,
+          journals: journalProvider.teacherJournals,
+          maxDays: maxDays,
+          masterProvider: masterProvider,
+        );
+        await warningProvider.loadTeacherWarningLetters(teacher.id);
 
         if (!_hasCheckedReminder) {
           _hasCheckedReminder = true;

@@ -13,6 +13,7 @@ import '../../models/subject_model.dart';
 import '../../models/period_model.dart';
 import '../../models/teacher_model.dart';
 import '../../core/utils/helper.dart';
+import 'form_jurnal_screen.dart';
 
 class DetailJadwalScreen extends StatefulWidget {
   final String scheduleId;
@@ -163,6 +164,18 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
       orElse: () => PeriodModel(id: '', name: 'Periode--', isActive: false),
     );
 
+    if (_checkingJournal) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (!isAdmin && _existingJournal == null && !_isFutureDate(schedule.date)) {
+      return FormJurnalScreen(scheduleId: widget.scheduleId);
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Jadwal'),
@@ -218,93 +231,83 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
             // Floating Bottom Button
             Padding(
               padding: EdgeInsets.all(20.w),
-              child: _checkingJournal
-                  ? const Center(child: CircularProgressIndicator())
-                  : isAdmin
-                      ? (_existingJournal != null
-                          ? Row(
-                              children: [
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: () {
-                                      context.push('/admin/journal/${_existingJournal!.id}');
-                                    },
-                                    icon: const Icon(Icons.assignment),
-                                    label: const Text('Lihat Jurnal'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF0F172A),
-                                    ),
+              child: isAdmin
+                  ? (_existingJournal != null
+                      ? Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  context.push('/admin/journal/${_existingJournal!.id}');
+                                },
+                                icon: const Icon(Icons.assignment),
+                                label: const Text('Lihat Jurnal'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0F172A),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEE2E2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFCA5A5), width: 1.5),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.info_outline, color: Color(0xFFDC2626)),
+                              SizedBox(width: 12.w),
+                              Expanded(
+                                child: Text(
+                                  'Jurnal belum diinput oleh guru pengampu.',
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF991B1B),
                                   ),
                                 ),
-                              ],
-                            )
-                          : Container(
-                              width: double.infinity,
-                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFEE2E2),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFFFCA5A5), width: 1.5),
                               ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.info_outline, color: Color(0xFFDC2626)),
-                                  SizedBox(width: 12.w),
-                                  Expanded(
-                                    child: Text(
-                                      'Jurnal belum diinput oleh guru pengampu.',
-                                      style: TextStyle(
-                                        fontSize: 13.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF991B1B),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ))
-                      : _existingJournal != null
-                          ? Row(
-                              children: [
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: () {
-                                      context.push('/guru/journal/${_existingJournal!.id}');
-                                    },
-                                    icon: const Icon(Icons.assignment),
-                                    label: const Text('Lihat Jurnal'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF0F172A),
-                                    ),
-                                  ),
+                            ],
+                          ),
+                        ))
+                  : _existingJournal != null
+                      ? Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  context.push('/guru/journal/${_existingJournal!.id}');
+                                },
+                                icon: const Icon(Icons.assignment),
+                                label: const Text('Lihat Jurnal'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0F172A),
                                 ),
-                                if (_existingJournal!.status == 'rejected') ...[
-                                  SizedBox(width: 12.w),
-                                  Expanded(
-                                    child: ElevatedButton.icon(
-                                      onPressed: () {
-                                        context.push('/guru/journal-form?scheduleId=${schedule!.id}');
-                                      },
-                                      icon: const Icon(Icons.edit_note),
-                                      label: const Text('Revisi Jurnal'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFFEA580C),
-                                        foregroundColor: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            )
-                          : _isFutureDate(schedule.date)
-                              ? _buildFutureDateBanner(schedule.date)
-                              : ElevatedButton.icon(
+                              ),
+                            ),
+                            if (_existingJournal!.status == 'rejected') ...[
+                              SizedBox(width: 12.w),
+                              Expanded(
+                                child: ElevatedButton.icon(
                                   onPressed: () {
                                     context.push('/guru/journal-form?scheduleId=${schedule!.id}');
                                   },
                                   icon: const Icon(Icons.edit_note),
-                                  label: const Text('Isi Jurnal'),
+                                  label: const Text('Revisi Jurnal'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFEA580C),
+                                    foregroundColor: Colors.white,
+                                  ),
                                 ),
+                              ),
+                            ],
+                          ],
+                        )
+                      : _buildFutureDateBanner(schedule.date),
             ),
           ],
         ),

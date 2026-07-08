@@ -122,6 +122,7 @@ class AdminDrawer extends StatelessWidget {
                   ),
                 ),
                 _buildMenuItem(context, Icons.grid_view_outlined, 'Jadwal Mingguan', '/admin/weekly-schedules'),
+                _buildMenuItem(context, Icons.mail_outline_rounded, 'Surat Peringatan (SP)', '/admin/warning-letters'),
                 _buildMenuItem(context, Icons.settings_outlined, 'Pengaturan Sistem', '/admin/settings'),
                 _buildMenuItem(context, Icons.person_outline, 'Profil Saya', '/admin/profile'),
               ],

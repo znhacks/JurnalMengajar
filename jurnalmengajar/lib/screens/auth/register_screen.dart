@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/master_data_provider.dart';
 import '../../core/utils/helper.dart';
 import '../../widgets/wave_clipper.dart';
 
@@ -30,6 +31,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   final String _selectedRole = 'pending_guru';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<MasterDataProvider>(context, listen: false).loadAllData();
+    });
+  }
 
   @override
   void dispose() {
@@ -123,6 +132,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoading = context.watch<AuthProvider>().isLoading;
+    final masterProvider = context.watch<MasterDataProvider>();
 
     return Scaffold(
       body: Container(
@@ -279,16 +289,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                               // Jabatan
                               _buildFieldLabel('JABATAN'),
-                              _buildTextField(
-                                controller: _positionController,
-                                hintText: 'Contoh: Guru Matematika',
-                                icon: Icons.work_outline,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Jabatan tidak boleh kosong';
-                                  }
-                                  return null;
+                              GestureDetector(
+                                onTap: () {
+                                  final subjectNames = masterProvider.subjects.map((s) => s.name).toList();
+                                  _showPositionSelector(
+                                    context,
+                                    subjectNames,
+                                    _positionController.text,
+                                    (selected) {
+                                      setState(() {
+                                        _positionController.text = selected;
+                                      });
+                                    },
+                                  );
                                 },
+                                child: AbsorbPointer(
+                                  child: _buildTextField(
+                                    controller: _positionController,
+                                    hintText: 'Ketuk untuk memilih jabatan / guru mapel...',
+                                    icon: Icons.work_outline,
+                                    suffixIcon: const Icon(
+                                      Icons.arrow_drop_down,
+                                      color: Color.fromARGB(255, 22, 163, 149),
+                                    ),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Jabatan tidak boleh kosong';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
                               ),
                               SizedBox(height: 16.h),
 
@@ -513,13 +544,103 @@ class _RegisterScreenState extends State<RegisterScreen> {
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     required FormFieldValidator<String> validator,
+    Widget? suffixIcon,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       style: TextStyle(fontSize: 14.sp, color: const Color(0xFF1E293B)),
       validator: validator,
-      decoration: _getInputDecoration(hintText: hintText, prefixIcon: icon),
+      decoration: _getInputDecoration(
+        hintText: hintText,
+        prefixIcon: icon,
+        suffixIcon: suffixIcon,
+      ),
+    );
+  }
+
+  void _showPositionSelector(
+    BuildContext context,
+    List<String> subjects,
+    String currentPosition,
+    Function(String) onSelect,
+  ) {
+    final searchController = TextEditingController();
+    List<String> options = subjects.map((s) => 'Guru $s').toSet().toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          final query = searchController.text.toLowerCase();
+          final filteredOptions = options
+              .where((opt) => opt.toLowerCase().contains(query))
+              .toList();
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              top: 20.h,
+              left: 20.w,
+              right: 20.w,
+            ),
+            child: SizedBox(
+              height: 400.h,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Pilih Jabatan / Guru Mapel',
+                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 12.h),
+                  TextField(
+                    controller: searchController,
+                    decoration: const InputDecoration(
+                      hintText: 'Cari mata pelajaran / jabatan...',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  SizedBox(height: 12.h),
+                  Expanded(
+                    child: filteredOptions.isEmpty
+                        ? const Center(child: Text('Tidak ada pilihan ditemukan'))
+                        : ListView.builder(
+                            itemCount: filteredOptions.length,
+                            itemBuilder: (context, index) {
+                              final opt = filteredOptions[index];
+                              final isSelected = opt.toLowerCase() == currentPosition.toLowerCase();
+                              return ListTile(
+                                title: Text(
+                                  opt,
+                                  style: TextStyle(
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected ? const Color.fromARGB(255, 22, 163, 149) : null,
+                                  ),
+                                ),
+                                trailing: isSelected
+                                    ? const Icon(Icons.check, color: Color.fromARGB(255, 22, 163, 149))
+                                    : null,
+                                onTap: () {
+                                  onSelect(opt);
+                                  Navigator.pop(context);
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 

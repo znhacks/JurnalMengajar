@@ -23,6 +23,8 @@ import '../../screens/admin/master/schedule_screen.dart';
 import '../../screens/admin/jadwal_mingguan_screen.dart';
 import '../../screens/admin/settings_screen.dart';
 import '../../screens/admin/profile_screen.dart';
+import '../../screens/admin/warning_letter_list_screen.dart';
+import '../../screens/guru/warning_letter_list_screen.dart';
 
 class AppRouter {
   static GoRouter router(BuildContext context) {
@@ -164,6 +166,10 @@ class AppRouter {
             return DetailJurnalScreen(journalId: id);
           },
         ),
+        GoRoute(
+          path: '/guru/warning-letters',
+          builder: (context, state) => const GuruWarningLetterListScreen(),
+        ),
 
         // Admin Module Routes
         GoRoute(
@@ -183,6 +189,17 @@ class AppRouter {
             final id = state.pathParameters['id']!;
             return DetailJurnalScreen(journalId: id);
           },
+        ),
+        GoRoute(
+          path: '/admin/schedule/:id',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            return DetailJadwalScreen(scheduleId: id);
+          },
+        ),
+        GoRoute(
+          path: '/admin/warning-letters',
+          builder: (context, state) => const AdminWarningLetterListScreen(),
         ),
         GoRoute(
           path: '/admin/master-data/periods',

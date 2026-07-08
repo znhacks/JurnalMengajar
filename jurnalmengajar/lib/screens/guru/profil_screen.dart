@@ -14,6 +14,7 @@ import '../../core/utils/helper.dart';
 import '../../core/utils/image_crop_helper.dart';
 import '../../repositories/supabase_auth_repository.dart';
 import '../../widgets/image_viewer.dart';
+import '../../providers/warning_letter_provider.dart';
 
 class GuruProfilScreen extends StatefulWidget {
   const GuruProfilScreen({super.key});
@@ -23,6 +24,27 @@ class GuruProfilScreen extends StatefulWidget {
 }
 
 class _GuruProfilScreenState extends State<GuruProfilScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+      final warningProvider = Provider.of<WarningLetterProvider>(context, listen: false);
+
+      final currentUser = authProvider.currentUser;
+      if (currentUser != null) {
+        await masterProvider.loadAllData();
+        final teacher = masterProvider.teachers.firstWhere(
+          (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
+          orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
+        );
+        if (teacher.id.isNotEmpty) {
+          await warningProvider.loadTeacherWarningLetters(teacher.id);
+        }
+      }
+    });
+  }
 
   Future<void> _handleLogout() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -792,6 +814,62 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                 ),
               ),
               SizedBox(height: 12.h),
+
+              // Warning Letters Button (SP)
+              Consumer<WarningLetterProvider>(
+                builder: (context, warningProvider, child) {
+                  final unreadCount = warningProvider.warningLetters.where((w) => w.status == 'unread').length;
+
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: 12.h),
+                    child: ElevatedButton(
+                      onPressed: () => context.push('/guru/warning-letters'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: unreadCount > 0 ? const Color(0xFFBA1A1A) : Colors.white,
+                        foregroundColor: unreadCount > 0 ? Colors.white : const Color(0xFFBA1A1A),
+                        side: BorderSide(color: const Color(0xFFBA1A1A), width: 1.5.r),
+                        elevation: 0,
+                        minimumSize: Size.fromHeight(50.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14.r),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            unreadCount > 0 ? Icons.mail_rounded : Icons.mail_outline_rounded,
+                            size: 18,
+                          ),
+                          SizedBox(width: 8.w),
+                          Text(
+                            'Surat Peringatan Saya',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp),
+                          ),
+                          if (unreadCount > 0) ...[
+                            SizedBox(width: 8.w),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                '$unreadCount',
+                                style: TextStyle(
+                                  color: const Color(0xFFBA1A1A),
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
 
               // About App Button
               OutlinedButton.icon(

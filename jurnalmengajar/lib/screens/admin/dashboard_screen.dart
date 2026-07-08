@@ -16,6 +16,8 @@ import '../../models/subject_model.dart';
 import '../../models/teacher_model.dart';
 import '../../models/schedule_model.dart';
 import '../../core/utils/schedule_grouper.dart';
+import '../../providers/settings_provider.dart';
+import '../../providers/warning_letter_provider.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final String? selectedTeacherId;
@@ -69,6 +71,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       scheduleProvider.loadAllSchedules(),
       journalProvider.loadAllJournals(),
     ]);
+
+    // Run Warning Letters Check & Issue if late
+    if (mounted) {
+      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      await settingsProvider.loadSettings();
+      final maxDays = settingsProvider.settings?.maxJournalInputDays ?? 3;
+
+      final warningProvider = Provider.of<WarningLetterProvider>(context, listen: false);
+      await warningProvider.checkAndIssueWarnings(
+        schedules: scheduleProvider.schedules,
+        journals: journalProvider.journals,
+        maxDays: maxDays,
+        masterProvider: masterProvider,
+      );
+      await warningProvider.loadAllWarningLetters();
+    }
   }
 
   @override
@@ -167,202 +185,93 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         iconTheme: const IconThemeData(color: AppTheme.onBackground),
       ),
       drawer: const AdminDrawer(currentRoute: '/admin/dashboard'),
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        color: AppTheme.primaryColor,
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SafeArea(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _refreshData,
+              color: AppTheme.primaryColor,
+              child: SafeArea(
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ── Hero Header Card ──────────────────────────────────────
-                      _buildHeroHeader(totalPending),
-
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 16.h,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── Stat Cards Row ──────────────────────────────────────────
+                        Row(
                           children: [
-                            // ── Counter Grid Layout ─────────────────────────────────
-                            GridView.count(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 12.w,
-                              mainAxisSpacing: 12.h,
-                              childAspectRatio: 1.35,
-                              children: [
-                                _buildStatCard(
-                                  'Total Jurnal',
-                                  '$totalJournals',
-                                  Icons.assignment_outlined,
-                                  AppTheme.primaryColor,
-                                ),
-                                _buildStatCard(
-                                  'Total Jadwal',
-                                  '$totalSchedulesInWeek',
-                                  Icons.calendar_month_outlined,
-                                  const Color(0xFF565E74),
-                                  subtitle: 'Minggu terpilih',
-                                ),
-                                _buildStatCard(
-                                  'Butuh Approval',
-                                  '$totalPending',
-                                  Icons.rate_review_outlined,
-                                  const Color(0xFF825100),
-                                ),
-                                _buildStatCard(
-                                  'Belum Input',
-                                  '$unsubmittedCount',
-                                  Icons.pending_actions_outlined,
-                                  const Color(0xFFBA1A1A),
-                                  subtitle: 'Hari terpilih',
-                                ),
-                              ],
+                            Expanded(
+                              child: _buildStatCard(
+                                'Total Jurnal',
+                                '$totalJournals',
+                                Icons.assignment_outlined,
+                                AppTheme.primaryColor,
+                              ),
                             ),
-                            SizedBox(height: 24.h),
-
-                            // ── Calendar Card ─────────────────────────────────────
-                            _buildSectionTitle('Kalender Pemantauan'),
-                            SizedBox(height: 12.h),
-                            _buildCalendarCard(scheduleProvider.schedules),
-                            SizedBox(height: 24.h),
-
-                            // ── Opsi Lihat Jadwal Guru ────────────────────────────
-                            _buildTeacherSelectorCard(masterProvider.teachers),
-                            SizedBox(height: 24.h),
-
-                            // ── Today's Schedule ─────────────────────────────────
-                            _buildSectionTitle(
-                              _selectedTeacherId == null
-                                  ? 'Jadwal Mengajar — ${AppHelper.formatDateShort(_selectedDay)}'
-                                  : 'Jadwal ${selectedTeacher?.name} — ${AppHelper.formatDateShort(_selectedDay)}',
+                            SizedBox(width: 10.w),
+                            Expanded(
+                              child: _buildStatCard(
+                                'Total Jadwal',
+                                '$totalSchedulesInWeek',
+                                Icons.calendar_month_outlined,
+                                const Color(0xFF565E74),
+                                subtitle: 'Minggu ini',
+                              ),
                             ),
-                            SizedBox(height: 12.h),
-                            _buildScheduleSection(
-                              filteredSchedulesForDay,
-                              masterProvider,
-                              journalProvider,
+                            SizedBox(width: 10.w),
+                            Expanded(
+                              child: _buildStatCard(
+                                'Approval',
+                                '$totalPending',
+                                Icons.rate_review_outlined,
+                                const Color(0xFF825100),
+                              ),
                             ),
-                            SizedBox(height: 24.h),
+                            SizedBox(width: 10.w),
+                            Expanded(
+                              child: _buildStatCard(
+                                'Blm Input',
+                                '$unsubmittedCount',
+                                Icons.pending_actions_outlined,
+                                const Color(0xFFBA1A1A),
+                                subtitle: 'Hari ini',
+                              ),
+                            ),
                           ],
                         ),
-                      ),
-                    ],
+                        SizedBox(height: 12.h),
+
+                        // ── Teacher Selector + Calendar ─────────────────────────────
+                        _buildTeacherSelectorCompact(masterProvider.teachers),
+                        SizedBox(height: 12.h),
+
+                        // ── Calendar Card ──────────────────────────────────────────
+                        _buildCalendarCard(scheduleProvider.schedules),
+                        SizedBox(height: 12.h),
+
+                        // ── Jadwal hari ini ────────────────────────────────────────
+                        _buildSectionTitle(
+                          _selectedTeacherId == null
+                              ? 'Jadwal — ${AppHelper.formatDateShort(_selectedDay)}'
+                              : '${selectedTeacher?.name} — ${AppHelper.formatDateShort(_selectedDay)}',
+                        ),
+                        SizedBox(height: 8.h),
+
+                        _buildScheduleSection(
+                          filteredSchedulesForDay,
+                          masterProvider,
+                          journalProvider,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-      ),
+            ),
     );
   }
 
-  // ─── Hero Header ───────────────────────────────────────────────────────────
-  Widget _buildHeroHeader(int pendingCount) {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF00685F), Color(0xFF0D9488)],
-        ),
-      ),
-      padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 28.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.4),
-                width: 2.5,
-              ),
-            ),
-            child: CircleAvatar(
-              radius: 28.r,
-              backgroundColor: Colors.white.withValues(alpha: 0.15),
-              child: const Icon(
-                Icons.admin_panel_settings,
-                size: 28,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          SizedBox(width: 14.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Halo, Selamat Datang 👋',
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 12.sp,
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  'Administrator',
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 19.sp,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  'Portal Kontrol & Rekapitulasi Sekolah',
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 12.sp,
-                    color: Colors.white.withValues(alpha: 0.75),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (pendingCount > 0)
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.pending_actions,
-                    color: Colors.white,
-                    size: 14,
-                  ),
-                  SizedBox(width: 4.w),
-                  Text(
-                    '$pendingCount',
-                    style: GoogleFonts.hankenGrotesk(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13.sp,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
 
   // ─── Section Title ─────────────────────────────────────────────────────────
   Widget _buildSectionTitle(String title) {
@@ -385,66 +294,68 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     String? subtitle,
   }) {
     return Container(
-      padding: EdgeInsets.all(12.w),
+      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 8.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: EdgeInsets.all(6.w),
+                padding: EdgeInsets.all(4.w),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                child: Icon(icon, color: color, size: 18.w),
+                child: Icon(icon, color: color, size: 12.w),
               ),
               if (subtitle != null)
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    subtitle,
-                    style: GoogleFonts.hankenGrotesk(
-                      fontSize: 8.sp,
-                      color: color,
-                      fontWeight: FontWeight.w600,
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      subtitle,
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 7.sp,
+                        color: color,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
             ],
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                count,
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.onBackground,
-                ),
+          SizedBox(height: 4.h),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              count,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.onBackground,
               ),
-              SizedBox(height: 2.h),
-              Text(
-                title,
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 11.sp,
-                  color: AppTheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
+            ),
+          ),
+          SizedBox(height: 2.h),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              title,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 9.sp,
+                color: AppTheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
               ),
-            ],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
@@ -715,99 +626,43 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildTeacherSelectorCard(List<TeacherModel> teachers) {
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.person_search_outlined,
-                color: AppTheme.primaryColor,
-                size: 20.w,
-              ),
-              SizedBox(width: 8.w),
-              Text(
-                'Lihat Jadwal Guru',
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.onBackground,
-                ),
-              ),
-              if (_selectedTeacherId != null) ...[
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _selectedTeacherId = null;
-                    });
-                  },
-                  icon: const Icon(
-                    Icons.clear,
-                    size: 14,
-                    color: AppTheme.outline,
-                  ),
-                  label: Text(
-                    'Reset',
-                    style: GoogleFonts.hankenGrotesk(
-                      fontSize: 12.sp,
-                      color: AppTheme.outline,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: const Size(50, 30),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
-              ],
-            ],
-          ),
-          SizedBox(height: 12.h),
-          DropdownButtonFormField<String>(
+  Widget _buildTeacherSelectorCompact(List<TeacherModel> teachers) {
+    return Row(
+      children: [
+        Icon(Icons.person_search_outlined, color: AppTheme.primaryColor, size: 18.w),
+        SizedBox(width: 8.w),
+        Expanded(
+          child: DropdownButtonFormField<String>(
+            key: ValueKey(_selectedTeacherId),
             initialValue: _selectedTeacherId,
             isExpanded: true,
             hint: Text(
-              'Pilih guru untuk dipantau...',
+              'Filter guru...',
               style: GoogleFonts.hankenGrotesk(
-                fontSize: 13.sp,
+                fontSize: 12.sp,
                 color: AppTheme.onSurfaceVariant,
               ),
             ),
             decoration: InputDecoration(
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 14.w,
-                vertical: 10.h,
-              ),
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(color: AppTheme.outlineVariant),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(color: AppTheme.outlineVariant),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: AppTheme.primaryColor,
-                  width: 1.5,
-                ),
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
               ),
               filled: true,
-              fillColor: AppTheme.surfaceContainerLow,
+              fillColor: Colors.white,
             ),
             style: GoogleFonts.hankenGrotesk(
-              fontSize: 14.sp,
+              fontSize: 13.sp,
               color: AppTheme.onBackground,
               fontWeight: FontWeight.w600,
             ),
@@ -815,27 +670,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               DropdownMenuItem<String>(
                 value: null,
                 child: Text(
-                  'Pilih Guru',
-                  style: GoogleFonts.hankenGrotesk(
-                    color: AppTheme.onSurfaceVariant,
-                  ),
+                  'Semua Guru',
+                  style: GoogleFonts.hankenGrotesk(color: AppTheme.onSurfaceVariant),
                 ),
               ),
-              ...teachers.map((teacher) {
-                return DropdownMenuItem<String>(
-                  value: teacher.id,
-                  child: Text(teacher.name),
-                );
-              }),
+              ...teachers.map((teacher) =>
+                DropdownMenuItem<String>(value: teacher.id, child: Text(teacher.name)),
+              ),
             ],
-            onChanged: (value) {
-              setState(() {
-                _selectedTeacherId = value;
-              });
-            },
+            onChanged: (value) => setState(() => _selectedTeacherId = value),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -846,39 +692,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     JournalProvider journalProvider,
   ) {
     if (schedulesForDay.isEmpty) {
-      return Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 28.h),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.outlineVariant),
-        ),
+      return Center(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.event_available_outlined,
-              color: AppTheme.outlineVariant,
-              size: 44.w,
-            ),
-            SizedBox(height: 10.h),
+            Icon(Icons.event_available_outlined, color: AppTheme.outlineVariant, size: 36.w),
+            SizedBox(height: 8.h),
             Text(
-              'Tidak ada jadwal',
+              'Tidak ada jadwal untuk hari ini',
               style: GoogleFonts.hankenGrotesk(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w700,
+                fontSize: 13.sp,
                 color: AppTheme.onSurfaceVariant,
               ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 4.h),
-            Text(
-              'Tidak ada jadwal terdaftar untuk hari ini.',
-              style: GoogleFonts.hankenGrotesk(
-                fontSize: 12.sp,
-                color: AppTheme.outline,
-              ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),

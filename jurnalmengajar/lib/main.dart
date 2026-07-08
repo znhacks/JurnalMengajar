@@ -14,6 +14,7 @@ import 'repositories/supabase_teacher_repository.dart';
 import 'repositories/supabase_schedule_repository.dart';
 import 'repositories/supabase_journal_repository.dart';
 import 'repositories/supabase_settings_repository.dart';
+import 'repositories/supabase_warning_letter_repository.dart';
 
 // Providers
 import 'providers/auth_provider.dart';
@@ -21,6 +22,7 @@ import 'providers/master_data_provider.dart';
 import 'providers/schedule_provider.dart';
 import 'providers/journal_provider.dart';
 import 'providers/settings_provider.dart';
+import 'providers/warning_letter_provider.dart';
 
 // Router & Theme
 import 'core/router/app_router.dart';
@@ -50,6 +52,7 @@ void main() async {
   final scheduleRepo = SupabaseScheduleRepository(supabaseClient);
   final journalRepo = SupabaseJournalRepository(supabaseClient);
   final settingsRepo = SupabaseSettingsRepository(supabaseClient);
+  final warningRepo = SupabaseWarningLetterRepository(supabaseClient);
 
   runApp(
     MultiProvider(
@@ -74,6 +77,9 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => SettingsProvider(settingsRepository: settingsRepo),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => WarningLetterProvider(warningLetterRepository: warningRepo),
         ),
       ],
       child: const JurnalMengajarApp(),
