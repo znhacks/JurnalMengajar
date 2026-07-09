@@ -1,4 +1,4 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -22,6 +22,7 @@ class AdminProfileScreen extends StatefulWidget {
 }
 
 class _AdminProfileScreenState extends State<AdminProfileScreen> {
+  bool _showFullName = false;
 
   Future<void> _handleLogout() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -498,7 +499,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
               // Profile Card Header with Gradient
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 28.h, horizontal: 20.w),
+                padding: EdgeInsets.all(16.w),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [
@@ -508,16 +509,16 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(24.r),
+                  borderRadius: BorderRadius.circular(16.r),
                   boxShadow: [
                     BoxShadow(
                       color: const Color(0xFF2563EB).withValues(alpha: 0.15),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
                     ),
                   ],
                 ),
-                child: Column(
+                child: Row(
                   children: [
                     Stack(
                       alignment: Alignment.center,
@@ -536,19 +537,12 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                           child: Container(
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 4.r),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.15),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
+                              border: Border.all(color: Colors.white, width: 2.5.r),
                             ),
                             child: Hero(
                               tag: 'admin_profile_avatar',
                               child: CircleAvatar(
-                                radius: 54.r,
+                                radius: 36.r,
                                 backgroundColor: Colors.white.withValues(alpha: 0.2),
                                 backgroundImage: currentUser.photoUrl != null &&
                                         currentUser.photoUrl!.startsWith('http')
@@ -558,7 +552,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                         !currentUser.photoUrl!.startsWith('http'))
                                     ? Icon(
                                         Icons.person,
-                                        size: 54.r,
+                                        size: 36.r,
                                         color: Colors.white,
                                       )
                                     : null,
@@ -568,25 +562,18 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         ),
                         Positioned(
                           bottom: 0,
-                          right: 4.w,
+                          right: 0,
                           child: GestureDetector(
                             onTap: () => _showEditProfileDialog(currentUser),
                             child: Container(
-                              padding: EdgeInsets.all(8.w),
+                              padding: EdgeInsets.all(5.w),
                               decoration: const BoxDecoration(
                                 color: Colors.white,
                                 shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black12,
-                                    blurRadius: 4,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
                               ),
                               child: Icon(
                                 Icons.camera_alt,
-                                size: 16.r,
+                                size: 12.r,
                                 color: const Color(0xFF2563EB),
                               ),
                             ),
@@ -594,55 +581,64 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 16.h),
-                    Text(
-                      currentUser.fullName,
-                      style: TextStyle(
-                        fontSize: 20.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 6.h),
-                    Text(
-                      currentUser.position ?? 'Administrator',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: const Color(0xFF2DD4BF), // Light Teal
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 10.h),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 6.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(20.r),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          width: 1.r,
-                        ),
-                      ),
-                      child: Text(
-                        'ROLE: ADMIN',
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 1,
-                        ),
+                    SizedBox(width: 16.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _showFullName = !_showFullName;
+                              });
+                            },
+                            child: Text(
+                              currentUser.fullName,
+                              maxLines: _showFullName ? null : 1,
+                              overflow: _showFullName ? TextOverflow.visible : TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 2.h),
+                          Text(
+                            currentUser.position ?? 'Administrator',
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              color: const Color(0xFF2DD4BF), // Light Teal
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: 6.h),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 10.w,
+                              vertical: 4.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                            child: Text(
+                              'ROLE: ADMIN',
+                              style: TextStyle(
+                                fontSize: 9.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 20.h),
+              SizedBox(height: 16.h),
 
               // Quick Stats Section (New Hub Widget)
               Row(
@@ -681,7 +677,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: 24.h),
+              SizedBox(height: 16.h),
 
               // Detail List Section
               Text(
@@ -693,7 +689,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   letterSpacing: 1.2,
                 ),
               ),
-              SizedBox(height: 8.h),
+              SizedBox(height: 6.h),
               Card(
                 margin: EdgeInsets.zero,
                 elevation: 0,
@@ -730,7 +726,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   ],
                 ),
               ),
-              SizedBox(height: 20.h),
+              SizedBox(height: 14.h),
 
               // Edit Button
               ElevatedButton.icon(
@@ -850,46 +846,56 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(12.r),
         side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(12.r),
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 8.w),
-          child: Column(
+          padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 10.w),
+          child: Row(
             children: [
               Container(
-                padding: EdgeInsets.all(8.w),
+                padding: EdgeInsets.all(6.w),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   icon,
-                  size: 20.r,
+                  size: 16.r,
                   color: color,
                 ),
               ),
-              SizedBox(height: 8.h),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0F172A),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF0F172A),
+                        height: 1.1,
+                      ),
+                    ),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        color: Colors.grey[500],
+                        fontWeight: FontWeight.w500,
+                        height: 1.1,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-              ),
-              SizedBox(height: 2.h),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  color: Colors.grey[500],
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -905,23 +911,23 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     bool isEmail = false,
   }) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            padding: EdgeInsets.all(8.w),
+            padding: EdgeInsets.all(6.w),
             decoration: BoxDecoration(
               color: const Color(0xFF2563EB).withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(10.r),
+              borderRadius: BorderRadius.circular(8.r),
             ),
             child: Icon(
               icon,
-              size: 20.r,
+              size: 18.r,
               color: const Color(0xFF2563EB),
             ),
           ),
-          SizedBox(width: 16.w),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -929,16 +935,16 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 11.sp,
+                    fontSize: 10.sp,
                     color: Colors.grey[500],
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                SizedBox(height: 2.h),
+                SizedBox(height: 1.h),
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: 14.sp,
+                    fontSize: 13.sp,
                     color: const Color(0xFF0F172A),
                     fontWeight: FontWeight.w600,
                   ),
@@ -948,7 +954,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
           ),
           if (isEmail)
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
               decoration: BoxDecoration(
                 color: const Color(0xFF10B981).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20.r),
@@ -958,14 +964,14 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                 children: [
                   Icon(
                     Icons.verified,
-                    size: 12.r,
+                    size: 10.r,
                     color: const Color(0xFF10B981),
                   ),
-                  SizedBox(width: 4.w),
+                  SizedBox(width: 3.w),
                   Text(
                     'Aktif',
                     style: TextStyle(
-                      fontSize: 10.sp,
+                      fontSize: 9.sp,
                       color: const Color(0xFF10B981),
                       fontWeight: FontWeight.bold,
                     ),
