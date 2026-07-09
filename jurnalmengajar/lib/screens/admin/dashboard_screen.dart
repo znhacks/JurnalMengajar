@@ -150,19 +150,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }).toList();
     final totalSchedulesInWeek = groupDailySchedules(weekSchedules).length;
 
-    final hasHighlightBefore = _selectedTeacherId != null &&
-        scheduleProvider.schedules.any((s) {
-          if (!s.isActive || s.teacherId != _selectedTeacherId) return false;
-          final sDate = DateTime.utc(s.date.year, s.date.month, s.date.day);
-          return sDate.isBefore(startOfWeek);
-        });
+    final hasHighlightBefore = scheduleProvider.schedules.any((s) {
+      if (!s.isActive) return false;
+      if (_selectedTeacherId != null && s.teacherId != _selectedTeacherId) return false;
+      final sDate = DateTime.utc(s.date.year, s.date.month, s.date.day);
+      return sDate.isBefore(startOfWeek);
+    });
 
-    final hasHighlightAfter = _selectedTeacherId != null &&
-        scheduleProvider.schedules.any((s) {
-          if (!s.isActive || s.teacherId != _selectedTeacherId) return false;
-          final sDate = DateTime.utc(s.date.year, s.date.month, s.date.day);
-          return sDate.isAfter(endOfWeek);
-        });
+    final hasHighlightAfter = scheduleProvider.schedules.any((s) {
+      if (!s.isActive) return false;
+      if (_selectedTeacherId != null && s.teacherId != _selectedTeacherId) return false;
+      final sDate = DateTime.utc(s.date.year, s.date.month, s.date.day);
+      return sDate.isAfter(endOfWeek);
+    });
 
     // Calculate unsubmitted schedules for selected day using UTC calendar date comparison to avoid timezone shifts
     final schedulesForDay = scheduleProvider.schedules.where((s) {
@@ -396,7 +396,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   // ─── Calendar Card ─────────────────────────────────────────────────────────
 
   bool _hasTeacherScheduleOnDay(List<ScheduleModel> schedules, DateTime day) {
-    if (_selectedTeacherId == null) return false;
+    if (_selectedTeacherId == null) {
+      return schedules.any(
+        (s) =>
+            s.isActive &&
+            s.date.year == day.year &&
+            s.date.month == day.month &&
+            s.date.day == day.day,
+      );
+    }
     return schedules.any(
       (s) =>
           s.isActive &&

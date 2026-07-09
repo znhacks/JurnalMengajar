@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/journal_model.dart';
 import 'journal_repository.dart';
 import '../core/constants/supabase_constants.dart';
+import '../core/utils/image_compressor.dart';
 
 const _uuid = Uuid();
 
@@ -152,14 +153,20 @@ class SupabaseJournalRepository implements JournalRepository {
     String journalId,
   ) async {
     try {
-      final safeFileName = '${DateTime.now().millisecondsSinceEpoch}_$fileName';
+      // Compress image to WebP before uploading
+      final compressed = await ImageCompressor.compressToWebp(
+        bytes: fileBytes,
+        originalFileName: fileName,
+      );
+
+      final safeFileName = '${DateTime.now().millisecondsSinceEpoch}_${compressed.fileName}';
       final filePath = '$journalId/$safeFileName';
 
       await _supabase.storage
           .from(SupabaseConstants.bucketJournalAttachments)
           .uploadBinary(
         filePath,
-        Uint8List.fromList(fileBytes),
+        compressed.bytes,
         fileOptions: const FileOptions(
           cacheControl: '3600',
           upsert: true,

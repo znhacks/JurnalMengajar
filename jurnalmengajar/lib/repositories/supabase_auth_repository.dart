@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
 import 'auth_repository.dart';
+import '../core/utils/image_compressor.dart';
 
 class SupabaseAuthRepository implements AuthRepository {
   final SupabaseClient _supabase;
@@ -269,14 +270,20 @@ class SupabaseAuthRepository implements AuthRepository {
     String userId,
   ) async {
     try {
-      final ext = fileName.contains('.') ? fileName.split('.').last : 'jpg';
+      // Compress to WebP before uploading
+      final compressed = await ImageCompressor.compressToWebp(
+        bytes: imageBytes,
+        originalFileName: fileName,
+      );
+
+      final ext = compressed.fileName.contains('.') ? compressed.fileName.split('.').last : 'webp';
       final filePath = 'avatars/$userId/profile.$ext';
 
       await _supabase.storage
           .from('avatars')
           .uploadBinary(
             filePath,
-            Uint8List.fromList(imageBytes),
+            compressed.bytes,
             fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
           );
 
