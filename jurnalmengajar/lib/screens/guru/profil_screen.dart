@@ -891,171 +891,205 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   ],
                 ),
               ),
-              SizedBox(height: 14.h),
-
-              // Edit Button
-              ElevatedButton.icon(
-                onPressed: () => _showEditProfileDialog(currentUser, teacher),
-                icon: const Icon(Icons.edit, size: 18),
-                label: const Text('Edit Profil'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2563EB),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  minimumSize: Size.fromHeight(50.h),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14.r),
-                  ),
-                ),
-              ),
-              SizedBox(height: 12.h),
-
-              // Unfilled Journals Warning Button
-              if (unfilledCount > 0) ...[
-                Padding(
-                  padding: EdgeInsets.only(bottom: 12.h),
-                  child: ElevatedButton(
-                    onPressed: () => context.go('/guru/dashboard?tab=2'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber[700],
-                      foregroundColor: Colors.white,
-                      side: BorderSide(
-                        color: Colors.amber[700]!,
-                        width: 1.5.r,
-                      ),
-                      elevation: 0,
-                      minimumSize: Size.fromHeight(50.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14.r),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.menu_book_outlined,
-                          size: 18,
-                        ),
-                        SizedBox(width: 8.w),
-                        Text(
-                          'Jurnal Belum Diisi Saya',
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showEditProfileDialog(currentUser, teacher),
+                      icon: const Icon(Icons.edit, size: 16),
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Edit Profil',
                           style: TextStyle(
+                            fontSize: 12.sp,
                             fontWeight: FontWeight.bold,
-                            fontSize: 14.sp,
                           ),
                         ),
-                        SizedBox(width: 8.w),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8.w,
-                            vertical: 4.h,
-                          ),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            '$unfilledCount',
-                            style: TextStyle(
-                              color: Colors.amber[700],
-                              fontSize: 10.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        minimumSize: Size.fromHeight(44.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => context.push('/about'),
+                      icon: const Icon(Icons.info_outline, size: 16),
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Tentang Aplikasi',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF2563EB),
+                        side: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+                        elevation: 0,
+                        minimumSize: Size.fromHeight(44.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
 
-              // Warning Letters Button (SP)
+              // Row 2: Unfilled Journals and Warning Letters (SP)
               Consumer<WarningLetterProvider>(
                 builder: (context, warningProvider, child) {
                   final unreadCount = warningProvider.warningLetters
                       .where((w) => w.status == 'unread')
                       .length;
 
+                  final hasUnfilled = unfilledCount > 0;
+
                   return Padding(
-                    padding: EdgeInsets.only(bottom: 12.h),
-                    child: ElevatedButton(
-                      onPressed: () => context.push('/guru/warning-letters'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: unreadCount > 0
-                            ? const Color(0xFFBA1A1A)
-                            : Colors.white,
-                        foregroundColor: unreadCount > 0
-                            ? Colors.white
-                            : const Color(0xFFBA1A1A),
-                        side: BorderSide(
-                          color: const Color(0xFFBA1A1A),
-                          width: 1.5.r,
-                        ),
-                        elevation: 0,
-                        minimumSize: Size.fromHeight(50.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14.r),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            unreadCount > 0
-                                ? Icons.mail_rounded
-                                : Icons.mail_outline_rounded,
-                            size: 18,
-                          ),
-                          SizedBox(width: 8.w),
-                          Text(
-                            'Surat Peringatan Saya',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14.sp,
-                            ),
-                          ),
-                          if (unreadCount > 0) ...[
-                            SizedBox(width: 8.w),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8.w,
-                                vertical: 4.h,
-                              ),
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Text(
-                                '$unreadCount',
-                                style: TextStyle(
-                                  color: const Color(0xFFBA1A1A),
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.bold,
+                    padding: EdgeInsets.only(top: 10.h),
+                    child: Row(
+                      children: [
+                        if (hasUnfilled) ...[
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => context.go('/guru/dashboard?tab=2'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.amber[700],
+                                foregroundColor: Colors.white,
+                                side: BorderSide(
+                                  color: Colors.amber[700]!,
+                                  width: 1.5.r,
+                                ),
+                                elevation: 0,
+                                minimumSize: Size.fromHeight(44.h),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.r),
                                 ),
                               ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.menu_book_outlined, size: 16),
+                                  SizedBox(width: 6.w),
+                                  Flexible(
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        'Jurnal Kosong',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 11.sp,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 4.w),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 6.w,
+                                      vertical: 2.h,
+                                    ),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Text(
+                                      '$unfilledCount',
+                                      style: TextStyle(
+                                        color: Colors.amber[700],
+                                        fontSize: 9.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ],
+                          ),
+                          SizedBox(width: 8.w),
                         ],
-                      ),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () => context.push('/guru/warning-letters'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: unreadCount > 0
+                                  ? const Color(0xFFBA1A1A)
+                                  : Colors.white,
+                              foregroundColor: unreadCount > 0
+                                  ? Colors.white
+                                  : const Color(0xFFBA1A1A),
+                              side: BorderSide(
+                                color: const Color(0xFFBA1A1A),
+                                width: 1.5.r,
+                              ),
+                              elevation: 0,
+                              minimumSize: Size.fromHeight(44.h),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.r),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  unreadCount > 0
+                                      ? Icons.mail_rounded
+                                      : Icons.mail_outline_rounded,
+                                  size: 16,
+                                ),
+                                SizedBox(width: 6.w),
+                                Flexible(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      'Surat Peringatan',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11.sp,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                if (unreadCount > 0) ...[
+                                  SizedBox(width: 4.w),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 6.w,
+                                      vertical: 2.h,
+                                    ),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Text(
+                                      '$unreadCount',
+                                      style: TextStyle(
+                                        color: const Color(0xFFBA1A1A),
+                                        fontSize: 9.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 },
-              ),
-
-              // About App Button
-              OutlinedButton.icon(
-                onPressed: () => context.push('/about'),
-                icon: const Icon(Icons.info_outline, size: 18),
-                label: const Text('Tentang Aplikasi'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF2563EB),
-                  side: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-                  elevation: 0,
-                  minimumSize: Size.fromHeight(50.h),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14.r),
-                  ),
-                ),
               ),
               SizedBox(height: 24.h),
 
