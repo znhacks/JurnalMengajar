@@ -3,10 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // ─── Stitch "Serene Academic" Design Tokens ───────────────────────────────
-  static const Color primaryColor = Color(0xFF00685F); // Stitch primary
-  static const Color primaryAccent = Color(0xFF0D9488); // Teal accent
-  static const Color secondaryColor = Color(0xFF565E74); // Slate Blue
-  static const Color tertiaryColor = Color(0xFF825100); // Amber/tertiary
+  static const Color primaryColor = Color(0xFF1E40AF); // Premium Royal Blue
+  static const Color primaryAccent = Color(0xFF2563EB); // Vibrant Blue Accent
+  static const Color secondaryColor = Color(0xFF4F607A); // Slate Blue
+  static const Color tertiaryColor = Color(0xFFB45309); // Amber/Warning
   static const Color errorColor = Color(0xFFBA1A1A);
 
   // Surfaces
@@ -18,13 +18,13 @@ class AppTheme {
   // On-colors
   static const Color onBackground = Color(0xFF191C1E);
   static const Color onSurface = Color(0xFF191C1E);
-  static const Color onSurfaceVariant = Color(0xFF3D4947);
-  static const Color outline = Color(0xFF6D7A77);
-  static const Color outlineVariant = Color(0xFFBCC9C6);
+  static const Color onSurfaceVariant = Color(0xFF43474E);
+  static const Color outline = Color(0xFF72777F);
+  static const Color outlineVariant = Color(0xFFC2C7D0);
 
   // Tonal surface for primary
-  static const Color primaryContainer = Color(0xFF008378);
-  static const Color onPrimaryContainer = Color(0xFFF4FFFC);
+  static const Color primaryContainer = Color(0xFFDBE2FF);
+  static const Color onPrimaryContainer = Color(0xFF00154B);
 
   static ThemeData get lightTheme {
     final textTheme = GoogleFonts.hankenGroteskTextTheme().copyWith(
@@ -75,10 +75,10 @@ class AppTheme {
         outlineVariant: outlineVariant,
         inverseSurface: const Color(0xFF2D3133),
         onInverseSurface: const Color(0xFFEFF1F3),
-        inversePrimary: const Color(0xFF6BD8CB),
+        inversePrimary: const Color(0xFFBAC3FF),
         shadow: Colors.black,
         scrim: Colors.black,
-        surfaceTint: const Color(0xFF006A61),
+        surfaceTint: const Color(0xFF1E40AF),
       ),
       scaffoldBackgroundColor: background,
       textTheme: textTheme,

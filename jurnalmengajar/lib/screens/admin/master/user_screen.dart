@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -382,7 +382,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                                   ? const Color(0xFFD97706)
                                   : (isAdmin 
                                       ? const Color(0xFF4F46E5) 
-                                      : const Color(0xFF0D9488))
+                                      : const Color(0xFF2563EB))
                             ),
                           ),
                         ),
@@ -490,9 +490,9 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
         appBar: AppBar(
           title: const Text('Master User & Hak Akses'),
           bottom: TabBar(
-            labelColor: const Color(0xFF0D9488),
+            labelColor: const Color(0xFF2563EB),
             unselectedLabelColor: Colors.grey,
-            indicatorColor: const Color(0xFF0D9488),
+            indicatorColor: const Color(0xFF2563EB),
             tabs: [
               const Tab(
                 child: Row(
@@ -538,7 +538,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
         drawer: const AdminDrawer(currentRoute: '/admin/master-data/users'),
         body: RefreshIndicator(
           onRefresh: _fetchUsers,
-          color: const Color(0xFF0D9488),
+          color: const Color(0xFF2563EB),
           child: Column(
             children: [
               // Search field

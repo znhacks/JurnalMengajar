@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -139,8 +139,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color.fromARGB(255, 22, 163, 149),
-              Color.fromARGB(255, 134, 239, 225),
+              Color.fromARGB(255, 37, 99, 235),
+              Color.fromARGB(255, 147, 197, 253),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -173,8 +173,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               decoration: const BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    Color.fromARGB(255, 31, 99, 92),
-                                    Color.fromARGB(255, 32, 128, 115),
+                                    Color.fromARGB(255, 30, 64, 175),
+                                    Color.fromARGB(255, 29, 78, 216),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -256,7 +256,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         child: Container(
                                           padding: EdgeInsets.all(6.w),
                                           decoration: const BoxDecoration(
-                                            color: Color.fromARGB(255, 22, 163, 149),
+                                            color: Color.fromARGB(255, 37, 99, 235),
                                             shape: BoxShape.circle,
                                           ),
                                           child: Icon(
@@ -310,7 +310,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     icon: Icons.work_outline,
                                     suffixIcon: const Icon(
                                       Icons.arrow_drop_down,
-                                      color: Color.fromARGB(255, 22, 163, 149),
+                                      color: Color.fromARGB(255, 37, 99, 235),
                                     ),
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
@@ -401,7 +401,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       _obscurePassword
                                           ? Icons.visibility_off_outlined
                                           : Icons.visibility_outlined,
-                                      color: const Color.fromARGB(255, 22, 163, 149),
+                                      color: const Color.fromARGB(255, 37, 99, 235),
                                     ),
                                     onPressed: () {
                                       setState(() {
@@ -436,7 +436,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       _obscureConfirmPassword
                                           ? Icons.visibility_off_outlined
                                           : Icons.visibility_outlined,
-                                      color: const Color.fromARGB(255, 22, 163, 149),
+                                      color: const Color.fromARGB(255, 37, 99, 235),
                                     ),
                                     onPressed: () {
                                       setState(() {
@@ -453,10 +453,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ElevatedButton(
                                 onPressed: isLoading ? null : _handleRegister,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color.fromARGB(255, 22, 163, 149),
+                                  backgroundColor: const Color.fromARGB(255, 37, 99, 235),
                                   foregroundColor: Colors.white,
                                   elevation: 4,
-                                  shadowColor: const Color.fromARGB(255, 22, 163, 149).withValues(alpha: 0.4),
+                                  shadowColor: const Color.fromARGB(255, 37, 99, 235).withValues(alpha: 0.4),
                                   padding: EdgeInsets.symmetric(vertical: 16.h),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16.r),
@@ -502,7 +502,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       style: TextStyle(
                                         fontSize: 13.sp,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color.fromARGB(255, 22, 163, 149),
+                                        color: const Color.fromARGB(255, 37, 99, 235),
                                       ),
                                     ),
                                   ),
@@ -621,11 +621,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   opt,
                                   style: TextStyle(
                                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    color: isSelected ? const Color.fromARGB(255, 22, 163, 149) : null,
+                                    color: isSelected ? const Color.fromARGB(255, 37, 99, 235) : null,
                                   ),
                                 ),
                                 trailing: isSelected
-                                    ? const Icon(Icons.check, color: Color.fromARGB(255, 22, 163, 149))
+                                    ? const Icon(Icons.check, color: Color.fromARGB(255, 37, 99, 235))
                                     : null,
                                 onTap: () {
                                   onSelect(opt);
@@ -652,17 +652,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return InputDecoration(
       hintText: hintText,
       hintStyle: TextStyle(color: Colors.grey[400]),
-      prefixIcon: Icon(prefixIcon, color: const Color.fromARGB(255, 22, 163, 149)),
+      prefixIcon: Icon(prefixIcon, color: const Color.fromARGB(255, 37, 99, 235)),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: const Color(0xFFF0FDF4).withValues(alpha: 0.5),
+      fillColor: const Color(0xFFEFF6FF).withValues(alpha: 0.5),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16.r),
         borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16.r),
-        borderSide: const BorderSide(color: Color.fromARGB(255, 22, 163, 149), width: 2),
+        borderSide: const BorderSide(color: Color.fromARGB(255, 37, 99, 235), width: 2),
       ),
       contentPadding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 16.w),
     );

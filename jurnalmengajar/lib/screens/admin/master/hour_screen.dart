@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/master_data_provider.dart';
@@ -185,7 +185,7 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
       drawer: const AdminDrawer(currentRoute: '/admin/master-data/hours'),
       body: RefreshIndicator(
         onRefresh: _refreshData,
-        color: const Color(0xFF0D9488),
+        color: const Color(0xFF2563EB),
         child: masterProvider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : hours.isEmpty
@@ -238,10 +238,10 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                           child: Row(
                             children: [
                               CircleAvatar(
-                                backgroundColor: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                                backgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.1),
                                 child: Text(
                                   '#${hour.teachingHour}',
-                                  style: const TextStyle(color: Color(0xFF0D9488), fontWeight: FontWeight.bold),
+                                  style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold),
                                 ),
                               ),
                               SizedBox(width: 16.w),
@@ -307,7 +307,7 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),
-        backgroundColor: const Color(0xFF0D9488),
+        backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),

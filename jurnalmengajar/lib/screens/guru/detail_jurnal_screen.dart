@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -251,7 +251,7 @@ class DetailJurnalScreen extends StatelessWidget {
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, size: 20.w, color: const Color(0xFF0D9488)),
+        Icon(icon, size: 20.w, color: const Color(0xFF2563EB)),
         SizedBox(width: 12.w),
         Text(
           label,
@@ -386,7 +386,7 @@ class DetailJurnalScreen extends StatelessWidget {
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.open_in_new, color: Color(0xFF0D9488)),
+              icon: const Icon(Icons.open_in_new, color: Color(0xFF2563EB)),
               onPressed: () {
                 // PDF opening simulation
               },

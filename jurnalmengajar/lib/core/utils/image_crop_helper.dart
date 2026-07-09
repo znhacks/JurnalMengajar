@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:crop_your_image/crop_your_image.dart';
@@ -91,7 +91,7 @@ class _CropScreenState extends State<_CropScreen> {
                       child: CircularProgressIndicator(
                         strokeWidth: 2.5,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFF0D9488),
+                          Color(0xFF2563EB),
                         ),
                       ),
                     ),
@@ -102,7 +102,7 @@ class _CropScreenState extends State<_CropScreen> {
                   child: Text(
                     'Simpan',
                     style: TextStyle(
-                      color: const Color(0xFF0D9488),
+                      color: const Color(0xFF2563EB),
                       fontSize: 15.sp,
                       fontWeight: FontWeight.bold,
                     ),

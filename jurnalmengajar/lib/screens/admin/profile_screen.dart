@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -175,7 +175,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                     ListTile(
                       leading: const CircleAvatar(
                         backgroundColor: Color(0xFFE0F2F1),
-                        child: Icon(Icons.photo_library_outlined, color: Color(0xFF0D9488)),
+                        child: Icon(Icons.photo_library_outlined, color: Color(0xFF2563EB)),
                       ),
                       title: const Text('Galeri Foto'),
                       onTap: () {
@@ -186,7 +186,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                     ListTile(
                       leading: const CircleAvatar(
                         backgroundColor: Color(0xFFE0F2F1),
-                        child: Icon(Icons.camera_alt_outlined, color: Color(0xFF0D9488)),
+                        child: Icon(Icons.camera_alt_outlined, color: Color(0xFF2563EB)),
                       ),
                       title: const Text('Kamera'),
                       onTap: () {
@@ -274,7 +274,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                             child: Container(
                               padding: EdgeInsets.all(8.w),
                               decoration: const BoxDecoration(
-                                color: Color(0xFF0D9488),
+                                color: Color(0xFF2563EB),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -503,7 +503,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   gradient: const LinearGradient(
                     colors: [
                       Color(0xFF0F172A), // Slate 900
-                      Color(0xFF0D9488), // Teal 600
+                      Color(0xFF2563EB), // Teal 600
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -511,7 +511,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   borderRadius: BorderRadius.circular(24.r),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0D9488).withValues(alpha: 0.15),
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.15),
                       blurRadius: 16,
                       offset: const Offset(0, 8),
                     ),
@@ -587,7 +587,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                               child: Icon(
                                 Icons.camera_alt,
                                 size: 16.r,
-                                color: const Color(0xFF0D9488),
+                                color: const Color(0xFF2563EB),
                               ),
                             ),
                           ),
@@ -664,7 +664,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                       title: 'Kelas',
                       value: '${masterProvider.classes.length}',
                       icon: Icons.class_outlined,
-                      color: const Color(0xFF0D9488),
+                      color: const Color(0xFF2563EB),
                       onTap: () => context.push('/admin/master-data/classes'),
                     ),
                   ),
@@ -738,7 +738,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                 icon: const Icon(Icons.edit, size: 18),
                 label: const Text('Edit Profil'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0D9488),
+                  backgroundColor: const Color(0xFF2563EB),
                   foregroundColor: Colors.white,
                   elevation: 0,
                   minimumSize: Size.fromHeight(50.h),
@@ -912,13 +912,13 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
           Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
-              color: const Color(0xFF0D9488).withValues(alpha: 0.08),
+              color: const Color(0xFF2563EB).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10.r),
             ),
             child: Icon(
               icon,
               size: 20.r,
-              color: const Color(0xFF0D9488),
+              color: const Color(0xFF2563EB),
             ),
           ),
           SizedBox(width: 16.w),

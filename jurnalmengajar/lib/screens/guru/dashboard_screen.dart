@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:table_calendar/table_calendar.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
@@ -26,9 +25,7 @@ class GuruDashboardScreen extends StatefulWidget {
 }
 
 class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
-  DateTime _selectedDay = DateTime.now();
-  DateTime _focusedDay = DateTime.now();
-  CalendarFormat _calendarFormat = CalendarFormat.twoWeeks;
+  final DateTime _selectedDay = DateTime.now();
   bool _hasCheckedReminder = false;
 
   @override
@@ -367,12 +364,6 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       _buildQuickStats(totalSchedulesToday, totalJournals),
                       SizedBox(height: 24.h),
 
-                      // ── Calendar Card ─────────────────────────────────────
-                      _buildSectionTitle('Kalender Jadwal'),
-                      SizedBox(height: 12.h),
-                      _buildCalendarCard(teacher, scheduleProvider),
-                      SizedBox(height: 24.h),
-
                       // ── Today's Schedule ─────────────────────────────────
                       _buildSectionTitle(
                         'Jadwal — ${AppHelper.formatDateShort(_selectedDay)}',
@@ -409,7 +400,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF00685F), Color(0xFF0D9488)],
+          colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
         ),
       ),
       padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 28.h),
@@ -594,234 +585,6 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         fontSize: 15.sp,
         fontWeight: FontWeight.w700,
         color: AppTheme.onBackground,
-      ),
-    );
-  }
-
-  // ─── Calendar Card ─────────────────────────────────────────────────────────
-
-  /// Returns true if [day] has at least one active schedule in the cache.
-  bool _hasScheduleOnDay(ScheduleProvider scheduleProvider, DateTime day) {
-    return scheduleProvider.cachedTeacherSchedules.any(
-      (s) =>
-          s.isActive &&
-          s.date.year == day.year &&
-          s.date.month == day.month &&
-          s.date.day == day.day,
-    );
-  }
-
-  /// Builds a calendar day cell with yellow highlight when it has a schedule.
-  Widget _buildScheduledDayCell(
-    DateTime day,
-    bool isSelected,
-    bool isToday,
-    bool isOutside,
-    ScheduleProvider scheduleProvider,
-  ) {
-    final hasSchedule = _hasScheduleOnDay(scheduleProvider, day);
-
-    Color bgColor = Colors.transparent;
-    Color textColor = isOutside ? AppTheme.outline : AppTheme.onBackground;
-    FontWeight fontWeight = FontWeight.w500;
-
-    if (isSelected) {
-      bgColor = AppTheme.primaryColor;
-      textColor = Colors.white;
-      fontWeight = FontWeight.w700;
-    } else if (isToday) {
-      bgColor = AppTheme.primaryColor.withValues(alpha: 0.15);
-      textColor = AppTheme.primaryColor;
-      fontWeight = FontWeight.w700;
-    } else if (hasSchedule) {
-      bgColor = const Color(0xFFFFEB3B).withValues(alpha: 0.35);
-      textColor = isOutside ? AppTheme.outline : AppTheme.onBackground;
-      fontWeight = FontWeight.w700;
-    }
-
-    return Container(
-      margin: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: bgColor,
-        shape: BoxShape.circle,
-        border: hasSchedule && !isSelected && !isToday
-            ? Border.all(color: const Color(0xFFF59E0B), width: 1.5)
-            : null,
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        '${day.day}',
-        style: GoogleFonts.hankenGrotesk(
-          fontSize: 13.sp,
-          fontWeight: fontWeight,
-          color: textColor,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCalendarCard(
-    TeacherModel teacher,
-    ScheduleProvider scheduleProvider,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.outlineVariant),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          TableCalendar(
-            firstDay: DateTime.now().subtract(const Duration(days: 365)),
-            lastDay: DateTime.now().add(const Duration(days: 365)),
-            focusedDay: _focusedDay,
-            calendarFormat: _calendarFormat,
-            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-            onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                _selectedDay = selectedDay;
-                _focusedDay = focusedDay;
-              });
-              if (teacher.id.isNotEmpty) {
-                scheduleProvider.loadTeacherSchedules(teacher.id, selectedDay);
-              }
-            },
-            onFormatChanged: (format) {
-              setState(() {
-                _calendarFormat = format;
-              });
-            },
-            onPageChanged: (focusedDay) {
-              _focusedDay = focusedDay;
-            },
-            calendarBuilders: CalendarBuilders(
-              defaultBuilder: (context, day, focusedDay) {
-                return _buildScheduledDayCell(
-                  day,
-                  false,
-                  false,
-                  false,
-                  scheduleProvider,
-                );
-              },
-              outsideBuilder: (context, day, focusedDay) {
-                return _buildScheduledDayCell(
-                  day,
-                  false,
-                  false,
-                  true,
-                  scheduleProvider,
-                );
-              },
-              todayBuilder: (context, day, focusedDay) {
-                return _buildScheduledDayCell(
-                  day,
-                  false,
-                  true,
-                  false,
-                  scheduleProvider,
-                );
-              },
-              selectedBuilder: (context, day, focusedDay) {
-                return _buildScheduledDayCell(
-                  day,
-                  true,
-                  false,
-                  false,
-                  scheduleProvider,
-                );
-              },
-            ),
-            headerStyle: HeaderStyle(
-              formatButtonVisible: true,
-              formatButtonDecoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              formatButtonTextStyle: GoogleFonts.hankenGrotesk(
-                color: AppTheme.primaryColor,
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-              ),
-              titleTextStyle: GoogleFonts.hankenGrotesk(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.onBackground,
-              ),
-              leftChevronIcon: const Icon(
-                Icons.chevron_left,
-                color: AppTheme.onSurfaceVariant,
-              ),
-              rightChevronIcon: const Icon(
-                Icons.chevron_right,
-                color: AppTheme.onSurfaceVariant,
-              ),
-            ),
-            calendarStyle: CalendarStyle(
-              selectedDecoration: const BoxDecoration(
-                color: AppTheme.primaryColor,
-                shape: BoxShape.circle,
-              ),
-              selectedTextStyle: GoogleFonts.hankenGrotesk(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
-              todayDecoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              todayTextStyle: GoogleFonts.hankenGrotesk(
-                color: AppTheme.primaryColor,
-                fontWeight: FontWeight.w700,
-              ),
-              weekendTextStyle: GoogleFonts.hankenGrotesk(
-                color: const Color(0xFF825100),
-              ),
-              defaultTextStyle: GoogleFonts.hankenGrotesk(
-                color: AppTheme.onBackground,
-              ),
-              outsideTextStyle: GoogleFonts.hankenGrotesk(
-                color: AppTheme.outline,
-              ),
-            ),
-          ),
-          // ── Legend ────────────────────────────────────────────────────────
-          Padding(
-            padding: EdgeInsets.only(
-              left: 16.w,
-              right: 16.w,
-              bottom: 12.h,
-              top: 4.h,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 12.w,
-                  height: 12.w,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFEB3B).withValues(alpha: 0.35),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: const Color(0xFFF59E0B),
-                      width: 1.5,
-                    ),
-                  ),
-                ),
-                SizedBox(width: 6.w),
-                Text(
-                  'Ada jadwal mengajar',
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 11.sp,
-                    color: AppTheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

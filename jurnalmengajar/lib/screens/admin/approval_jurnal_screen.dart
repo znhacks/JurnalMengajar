@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -258,7 +258,7 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                                             child: ElevatedButton(
                                               onPressed: () => _handleApprove(journal.id, journal.teacherId),
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor: const Color(0xFF00685F),
+                                                backgroundColor: const Color(0xFF1E40AF),
                                                 minimumSize: Size(0, 38.h),
                                                 padding: EdgeInsets.symmetric(vertical: 6.h),
                                                 shape: RoundedRectangleBorder(

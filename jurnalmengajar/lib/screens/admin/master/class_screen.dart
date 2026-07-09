@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/master_data_provider.dart';
@@ -175,7 +175,7 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
       drawer: const AdminDrawer(currentRoute: '/admin/master-data/classes'),
       body: RefreshIndicator(
         onRefresh: _refreshData,
-        color: const Color(0xFF0D9488),
+        color: const Color(0xFF2563EB),
         child: masterProvider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : classes.isEmpty
@@ -233,8 +233,8 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                           child: Row(
                             children: [
                               CircleAvatar(
-                                backgroundColor: const Color(0xFF0D9488).withValues(alpha: 0.1),
-                                child: Icon(Icons.class_, color: const Color(0xFF0D9488), size: 20.w),
+                                backgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                                child: Icon(Icons.class_, color: const Color(0xFF2563EB), size: 20.w),
                               ),
                               SizedBox(width: 16.w),
                               Expanded(
@@ -253,7 +253,7 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                                     SizedBox(height: 2.h),
                                     Text(
                                       '${item.studentCount} Siswa',
-                                      style: TextStyle(fontSize: 12.sp, color: const Color(0xFF0D9488), fontWeight: FontWeight.bold),
+                                      style: TextStyle(fontSize: 12.sp, color: const Color(0xFF2563EB), fontWeight: FontWeight.bold),
                                     ),
                                   ],
                                 ),
@@ -298,7 +298,7 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),
-        backgroundColor: const Color(0xFF0D9488),
+        backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),

@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -194,7 +194,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
               ListTile(
                 leading: const Icon(
                   Icons.photo_camera,
-                  color: Color(0xFF0D9488),
+                  color: Color(0xFF2563EB),
                 ),
                 title: const Text('Kamera (Ambil Foto)'),
                 onTap: () {
@@ -643,7 +643,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                             'Klik untuk mengunggah Lampiran',
                             style: TextStyle(
                               fontSize: 13.sp,
-                              color: const Color(0xFF0D9488),
+                              color: const Color(0xFF2563EB),
                               fontWeight: FontWeight.bold,
                             ),
                           ),

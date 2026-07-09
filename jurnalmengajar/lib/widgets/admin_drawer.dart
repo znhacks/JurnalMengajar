@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -26,7 +26,7 @@ class AdminDrawer extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF00685F), Color(0xFF0D9488)],
+                colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
               ),
             ),
             padding: EdgeInsets.only(

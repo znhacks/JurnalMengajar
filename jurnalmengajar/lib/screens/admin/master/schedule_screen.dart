@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/master_data_provider.dart';
@@ -194,7 +194,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           ),
                         ),
                         selected: isSelected,
-                        selectedColor: const Color(0xFF0D9488),
+                        selectedColor: const Color(0xFF2563EB),
                         backgroundColor: const Color(0xFFF1F5F9),
                         checkmarkColor: Colors.white,
                         onSelected: (selected) {
@@ -293,7 +293,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                 ),
                               ),
                               selected: isSelected,
-                              selectedColor: const Color(0xFF0D9488),
+                              selectedColor: const Color(0xFF2563EB),
                               backgroundColor: const Color(0xFFF1F5F9),
                               checkmarkColor: Colors.white,
                               onSelected: (selected) {
@@ -336,7 +336,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.access_time, color: Color(0xFF0D9488), size: 18),
+                                  const Icon(Icons.access_time, color: Color(0xFF2563EB), size: 18),
                                   SizedBox(width: 8.w),
                                   Expanded(
                                     child: Text(
@@ -344,7 +344,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                       style: TextStyle(
                                         fontSize: 13.sp,
                                         fontWeight: FontWeight.w500,
-                                        color: const Color(0xFF0D9488),
+                                        color: const Color(0xFF2563EB),
                                       ),
                                     ),
                                   ),
@@ -367,7 +367,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                   SwitchListTile(
                     title: const Text('Jadwal Aktif'),
                     value: isActive,
-                    activeThumbColor: const Color(0xFF0D9488),
+                    activeThumbColor: const Color(0xFF2563EB),
                     onChanged: (val) => setDialogState(() => isActive = val),
                   ),
                   SizedBox(height: 24.h),
@@ -654,7 +654,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
       drawer: const AdminDrawer(currentRoute: '/admin/schedules'),
       body: RefreshIndicator(
         onRefresh: _refreshData,
-        color: const Color(0xFF0D9488),
+        color: const Color(0xFF2563EB),
         child: (masterProvider.isLoading || scheduleProvider.isLoading)
             ? const Center(child: CircularProgressIndicator())
             : groupedSchedules.isEmpty
@@ -773,7 +773,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                               SizedBox(height: 4.h),
                               Text(
                                 'Guru: ${teacher.name}',
-                                style: TextStyle(fontSize: 13.sp, color: const Color(0xFF0D9488), fontWeight: FontWeight.w600),
+                                style: TextStyle(fontSize: 13.sp, color: const Color(0xFF2563EB), fontWeight: FontWeight.w600),
                               ),
                               if (sched.note != null && sched.note!.isNotEmpty) ...[
                                 SizedBox(height: 4.h),
@@ -822,7 +822,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),
-        backgroundColor: const Color(0xFF0D9488),
+        backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),

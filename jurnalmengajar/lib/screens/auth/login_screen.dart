@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -124,8 +124,8 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color.fromARGB(255, 22, 163, 149),
-              Color.fromARGB(255, 134, 239, 225),
+              Color.fromARGB(255, 37, 99, 235),
+              Color.fromARGB(255, 147, 197, 253),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -158,8 +158,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               decoration: const BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    Color.fromARGB(255, 31, 99, 92),
-                                    Color.fromARGB(255, 32, 128, 115),
+                                    Color.fromARGB(255, 30, 64, 175),
+                                    Color.fromARGB(255, 29, 78, 216),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -249,11 +249,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                   hintStyle: TextStyle(color: Colors.grey[400]),
                                   prefixIcon: const Icon(
                                     Icons.person_outline,
-                                    color: Color.fromARGB(255, 22, 163, 149),
+                                    color: Color.fromARGB(255, 37, 99, 235),
                                   ),
                                   filled: true,
                                   fillColor: const Color(
-                                    0xFFF0FDF4,
+                                    0xFFEFF6FF,
                                   ).withValues(alpha: 0.5),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16.r),
@@ -262,7 +262,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16.r),
                                     borderSide: const BorderSide(
-                                      color: Color.fromARGB(255, 22, 163, 149),
+                                      color: Color.fromARGB(255, 37, 99, 235),
                                       width: 2,
                                     ),
                                   ),
@@ -306,14 +306,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   hintStyle: TextStyle(color: Colors.grey[400]),
                                   prefixIcon: const Icon(
                                     Icons.lock_outline,
-                                    color: Color.fromARGB(255, 22, 163, 149),
+                                    color: Color.fromARGB(255, 37, 99, 235),
                                   ),
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       _obscurePassword
                                           ? Icons.visibility_off_outlined
                                           : Icons.visibility_outlined,
-                                      color: const Color.fromARGB(255, 22, 163, 149),
+                                      color: const Color.fromARGB(255, 37, 99, 235),
                                     ),
                                     onPressed: () {
                                       setState(() {
@@ -323,7 +323,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   filled: true,
                                   fillColor: const Color(
-                                    0xFFF0FDF4,
+                                    0xFFEFF6FF,
                                   ).withValues(alpha: 0.5),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16.r),
@@ -332,7 +332,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16.r),
                                     borderSide: const BorderSide(
-                                      color: Color.fromARGB(255, 22, 163, 149),
+                                      color: Color.fromARGB(255, 37, 99, 235),
                                       width: 2,
                                     ),
                                   ),
@@ -354,7 +354,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     style: TextStyle(
                                       fontSize: 13.sp,
                                       fontWeight: FontWeight.bold,
-                                      color: const Color.fromARGB(255, 22, 163, 149),
+                                      color: const Color.fromARGB(255, 37, 99, 235),
                                     ),
                                   ),
                                 ),
@@ -365,10 +365,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               ElevatedButton(
                                 onPressed: isLoading ? null : _handleLogin,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color.fromARGB(255, 22, 163, 149),
+                                  backgroundColor: const Color.fromARGB(255, 37, 99, 235),
                                   foregroundColor: Colors.white,
                                   elevation: 4,
-                                  shadowColor: const Color.fromARGB(255, 22, 163, 149).withValues(alpha: 0.4),
+                                  shadowColor: const Color.fromARGB(255, 37, 99, 235).withValues(alpha: 0.4),
                                   padding: EdgeInsets.symmetric(vertical: 16.h),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16.r),
@@ -491,7 +491,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       style: TextStyle(
                                         fontSize: 13.sp,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color.fromARGB(255, 22, 163, 149),
+                                        color: const Color.fromARGB(255, 37, 99, 235),
                                       ),
                                     ),
                                   ),

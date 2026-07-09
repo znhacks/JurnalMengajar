@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -379,7 +379,7 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 22.w, color: const Color(0xFF0D9488)),
+          Icon(icon, size: 22.w, color: const Color(0xFF2563EB)),
           SizedBox(width: 16.w),
           Expanded(
             child: Column(

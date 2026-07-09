@@ -69,34 +69,89 @@ class WarningLetterProvider with ChangeNotifier {
     required int maxDays,
     required MasterDataProvider masterProvider,
   }) async {
+    if (schedules.isEmpty) return;
+
     final today = DateTime.now();
     final todayOnly = DateTime(today.year, today.month, today.day);
 
-    for (final schedule in schedules) {
-      if (!schedule.isActive) continue;
+    final teacherId = schedules.first.teacherId;
+    List<WarningLetterModel> existingWarnings = [];
+    try {
+      existingWarnings = await warningLetterRepository.getByTeacherId(teacherId);
+    } catch (_) {
+      // If error loading existing, we continue with empty list
+    }
 
-      final schedOnly = DateTime(schedule.date.year, schedule.date.month, schedule.date.day);
+    // Group schedules by date
+    final Map<String, List<ScheduleModel>> schedulesByDate = {};
+    for (final s in schedules) {
+      if (!s.isActive) continue;
+      final dateKey = '${s.date.year}-${s.date.month}-${s.date.day}';
+      schedulesByDate.putIfAbsent(dateKey, () => []).add(s);
+    }
+
+    for (final entry in schedulesByDate.entries) {
+      final dateSchedules = entry.value;
+      if (dateSchedules.isEmpty) continue;
+
+      final firstSchedule = dateSchedules.first;
+      final schedOnly = DateTime(firstSchedule.date.year, firstSchedule.date.month, firstSchedule.date.day);
       final diffDays = todayOnly.difference(schedOnly).inDays;
 
       if (diffDays > maxDays) {
-        final hasJournal = journals.any((j) => j.scheduleId == schedule.id);
-        if (!hasJournal) {
-          final cls = masterProvider.classes.firstWhere(
-            (c) => c.id == schedule.classId,
-            orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
-          );
-          final subject = masterProvider.subjects.firstWhere(
-            (s) => s.id == schedule.subjectId,
-            orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
-          );
-          final dateStr = AppHelper.formatDateShort(schedule.date);
+        // Collect schedules on this day that do NOT have a journal
+        final List<ScheduleModel> missingJournalSchedules = [];
+        for (final s in dateSchedules) {
+          final hasJournal = journals.any((j) => j.scheduleId == s.id);
+          if (!hasJournal) {
+            missingJournalSchedules.add(s);
+          }
+        }
 
-          final reason = 'Terlambat mengisi jurnal mengajar untuk kelas ${cls.name} pada tanggal $dateStr (Mata Pelajaran: ${subject.name}, Jam ke-${schedule.teachingHour}).';
+        if (missingJournalSchedules.isNotEmpty) {
+          final representativeSchedule = missingJournalSchedules.first;
+          final dateStr = AppHelper.formatDateShort(representativeSchedule.date);
+
+          // Check if warning for this date already exists
+          final alreadyExists = existingWarnings.any((w) => w.reason.contains(dateStr));
+          if (alreadyExists) continue;
+
+          // Format classes and hours
+          final Map<String, List<int>> classToHours = {};
+          final Map<String, String> classIdToName = {};
+          final Map<String, Set<String>> classToSubjects = {};
+
+          for (final s in missingJournalSchedules) {
+            final cls = masterProvider.classes.firstWhere(
+              (c) => c.id == s.classId,
+              orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
+            );
+            final subject = masterProvider.subjects.firstWhere(
+              (sub) => sub.id == s.subjectId,
+              orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
+            );
+
+            classIdToName[s.classId] = cls.name;
+            classToHours.putIfAbsent(s.classId, () => []).add(s.teachingHour);
+            classToSubjects.putIfAbsent(s.classId, () => {}).add(subject.name);
+          }
+
+          final List<String> detailStrings = [];
+          classToHours.forEach((classId, hours) {
+            final className = classIdToName[classId] ?? 'Kelas--';
+            final sortedHours = hours..sort();
+            final hoursStr = sortedHours.join(', ');
+            final subjectsStr = classToSubjects[classId]?.join(', ') ?? 'Mapel--';
+            detailStrings.add('$className (Mapel: $subjectsStr, Jam ke-$hoursStr)');
+          });
+
+          final details = detailStrings.join(' & ');
+          final reason = 'Terlambat mengisi jurnal mengajar pada tanggal $dateStr untuk kelas: $details.';
 
           final newWarning = WarningLetterModel(
             id: '',
-            teacherId: schedule.teacherId,
-            scheduleId: schedule.id,
+            teacherId: representativeSchedule.teacherId,
+            scheduleId: representativeSchedule.id,
             issuedAt: DateTime.now(),
             reason: reason,
             status: 'unread',

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class AppLoadingWidget extends StatelessWidget {
@@ -12,7 +12,7 @@ class AppLoadingWidget extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0D9488)),
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
           ),
           if (message != null) ...[
             SizedBox(height: 16.h),

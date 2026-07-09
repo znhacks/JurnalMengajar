@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -102,8 +102,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color.fromARGB(255, 22, 163, 149),
-              Color.fromARGB(255, 134, 239, 225),
+              Color.fromARGB(255, 37, 99, 235),
+              Color.fromARGB(255, 147, 197, 253),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -136,8 +136,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                               decoration: const BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    Color.fromARGB(255, 31, 99, 92),
-                                    Color.fromARGB(255, 32, 128, 115),
+                                    Color.fromARGB(255, 30, 64, 175),
+                                    Color.fromARGB(255, 29, 78, 216),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -455,11 +455,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       hintStyle: TextStyle(color: Colors.grey[400]),
       prefixIcon: Icon(
         icon,
-        color: const Color.fromARGB(255, 22, 163, 149),
+        color: const Color.fromARGB(255, 37, 99, 235),
       ),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: const Color(0xFFF0FDF4).withValues(alpha: 0.5),
+      fillColor: const Color(0xFFEFF6FF).withValues(alpha: 0.5),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16.r),
         borderSide: BorderSide.none,
@@ -467,7 +467,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16.r),
         borderSide: const BorderSide(
-          color: Color.fromARGB(255, 22, 163, 149),
+          color: Color.fromARGB(255, 37, 99, 235),
           width: 2,
         ),
       ),

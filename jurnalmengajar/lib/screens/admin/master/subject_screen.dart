@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/master_data_provider.dart';
@@ -69,7 +69,7 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                     title: const Text('Status Aktif'),
                     subtitle: const Text('Apakah mata pelajaran ini aktif digunakan saat ini'),
                     value: isActive,
-                    activeThumbColor: const Color(0xFF0D9488),
+                    activeThumbColor: const Color(0xFF2563EB),
                     onChanged: (val) {
                       setDialogState(() {
                         isActive = val;
@@ -141,7 +141,7 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
       drawer: const AdminDrawer(currentRoute: '/admin/master-data/subjects'),
       body: RefreshIndicator(
         onRefresh: _refreshData,
-        color: const Color(0xFF0D9488),
+        color: const Color(0xFF2563EB),
         child: masterProvider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : subjects.isEmpty
@@ -194,10 +194,10 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                           child: Row(
                             children: [
                               CircleAvatar(
-                                backgroundColor: subject.isActive ? const Color(0xFF0D9488).withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                                backgroundColor: subject.isActive ? const Color(0xFF2563EB).withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
                                 child: Icon(
                                   subject.isActive ? Icons.menu_book : Icons.block,
-                                  color: subject.isActive ? const Color(0xFF0D9488) : Colors.red,
+                                  color: subject.isActive ? const Color(0xFF2563EB) : Colors.red,
                                 ),
                               ),
                               SizedBox(width: 16.w),
@@ -214,7 +214,7 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                                       subject.isActive ? 'Aktif' : 'Tidak Aktif',
                                       style: TextStyle(
                                         fontSize: 12.sp,
-                                        color: subject.isActive ? const Color(0xFF0D9488) : Colors.red,
+                                        color: subject.isActive ? const Color(0xFF2563EB) : Colors.red,
                                       ),
                                     ),
                                   ],
@@ -260,7 +260,7 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),
-        backgroundColor: const Color(0xFF0D9488),
+        backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),

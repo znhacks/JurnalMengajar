@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/master_data_provider.dart';
@@ -76,7 +76,7 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                         title: const Text('Status Aktif'),
                         subtitle: const Text('Hanya boleh ada satu periode aktif dalam satu waktu'),
                         value: isActive,
-                        activeThumbColor: const Color(0xFF0D9488),
+                        activeThumbColor: const Color(0xFF2563EB),
                         onChanged: (val) {
                           setDialogState(() {
                             isActive = val;
@@ -150,7 +150,7 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
       drawer: const AdminDrawer(currentRoute: '/admin/master-data/periods'),
       body: RefreshIndicator(
         onRefresh: _refreshData,
-        color: const Color(0xFF0D9488),
+        color: const Color(0xFF2563EB),
         child: masterProvider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : periods.isEmpty
@@ -203,10 +203,10 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                           child: Row(
                             children: [
                               CircleAvatar(
-                                backgroundColor: period.isActive ? const Color(0xFF0D9488).withValues(alpha: 0.1) : Colors.grey[100],
+                                backgroundColor: period.isActive ? const Color(0xFF2563EB).withValues(alpha: 0.1) : Colors.grey[100],
                                 child: Icon(
                                   period.isActive ? Icons.check : Icons.history,
-                                  color: period.isActive ? const Color(0xFF0D9488) : Colors.grey,
+                                  color: period.isActive ? const Color(0xFF2563EB) : Colors.grey,
                                 ),
                               ),
                               SizedBox(width: 16.w),
@@ -223,7 +223,7 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                                       period.isActive ? 'Periode Aktif' : 'Tidak Aktif',
                                       style: TextStyle(
                                         fontSize: 12.sp,
-                                        color: period.isActive ? const Color(0xFF0D9488) : Colors.grey[600],
+                                        color: period.isActive ? const Color(0xFF2563EB) : Colors.grey[600],
                                         fontWeight: period.isActive ? FontWeight.bold : FontWeight.normal,
                                       ),
                                     ),
@@ -270,7 +270,7 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),
-        backgroundColor: const Color(0xFF0D9488),
+        backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),

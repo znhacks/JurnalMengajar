@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
@@ -114,7 +114,7 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                             onTap: pickDialogImage,
                             child: Container(
                               padding: EdgeInsets.all(6.w),
-                              decoration: const BoxDecoration(color: Color(0xFF0D9488), shape: BoxShape.circle),
+                              decoration: const BoxDecoration(color: Color(0xFF2563EB), shape: BoxShape.circle),
                               child: Icon(Icons.camera_alt, size: 14.r, color: Colors.white),
                             ),
                           ),
@@ -391,7 +391,7 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
             width: 4.w,
             height: 18.h,
             decoration: BoxDecoration(
-              color: const Color(0xFF0D9488),
+              color: const Color(0xFF2563EB),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -402,7 +402,7 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
               style: TextStyle(
                 fontSize: 13.sp,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF0D9488),
+                color: const Color(0xFF2563EB),
                 letterSpacing: 0.3,
               ),
             ),
@@ -410,14 +410,14 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
             decoration: BoxDecoration(
-              color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+              color: const Color(0xFF2563EB).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               '$count guru',
               style: TextStyle(
                 fontSize: 11.sp,
-                color: const Color(0xFF0D9488),
+                color: const Color(0xFF2563EB),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -482,7 +482,7 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF0D9488), width: 1.5),
+                  borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
                 ),
               ),
             ),
@@ -492,7 +492,7 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: _refreshData,
-              color: const Color(0xFF0D9488),
+              color: const Color(0xFF2563EB),
               child: masterProvider.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : teachers.isEmpty
@@ -533,7 +533,7 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),
-        backgroundColor: const Color(0xFF0D9488),
+        backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
@@ -602,11 +602,11 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                                   opt,
                                   style: TextStyle(
                                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    color: isSelected ? const Color(0xFF0D9488) : null,
+                                    color: isSelected ? const Color(0xFF2563EB) : null,
                                   ),
                                 ),
                                 trailing: isSelected
-                                    ? const Icon(Icons.check, color: Color(0xFF0D9488))
+                                    ? const Icon(Icons.check, color: Color(0xFF2563EB))
                                     : null,
                                 onTap: () {
                                   onSelect(opt);

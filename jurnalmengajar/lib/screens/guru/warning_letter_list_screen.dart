@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/warning_letter_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
+import '../../providers/schedule_provider.dart';
 import '../../models/teacher_model.dart';
+import '../../models/schedule_model.dart';
+import '../../models/warning_letter_model.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/helper.dart';
 
@@ -25,6 +27,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
       final warningProvider = Provider.of<WarningLetterProvider>(context, listen: false);
+      final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
 
       final currentUser = authProvider.currentUser;
       if (currentUser != null) {
@@ -35,7 +38,10 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
         );
 
         if (teacher.id.isNotEmpty) {
-          await warningProvider.loadTeacherWarningLetters(teacher.id);
+          await Future.wait([
+            warningProvider.loadTeacherWarningLetters(teacher.id),
+            scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
+          ]);
         }
       }
     });
@@ -44,7 +50,39 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
   @override
   Widget build(BuildContext context) {
     final warningProvider = context.watch<WarningLetterProvider>();
-    final isLoading = warningProvider.isLoading;
+    final scheduleProvider = context.watch<ScheduleProvider>();
+    final isLoading = warningProvider.isLoading || scheduleProvider.isLoading;
+
+    // Group warnings by schedule date (fallback to issuedAt date)
+    final Map<String, List<WarningLetterModel>> groupedMap = {};
+    final Map<String, DateTime> dateMap = {};
+
+    for (final warning in warningProvider.warningLetters) {
+      final schedule = scheduleProvider.cachedTeacherSchedules.firstWhere(
+        (s) => s.id == warning.scheduleId,
+        orElse: () => ScheduleModel(
+          id: '',
+          teacherId: '',
+          classId: '',
+          subjectId: '',
+          periodId: '',
+          date: warning.issuedAt,
+          teachingHour: 0,
+          isActive: false,
+        ),
+      );
+
+      final dateKey = '${schedule.date.year}-${schedule.date.month}-${schedule.date.day}';
+      groupedMap.putIfAbsent(dateKey, () => []).add(warning);
+      dateMap.putIfAbsent(dateKey, () => DateTime(schedule.date.year, schedule.date.month, schedule.date.day));
+    }
+
+    final sortedGroups = groupedMap.entries.toList()
+      ..sort((a, b) {
+        final dateA = dateMap[a.key]!;
+        final dateB = dateMap[b.key]!;
+        return dateB.compareTo(dateA);
+      });
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -61,12 +99,16 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                 onRefresh: () async {
                   final authProvider = Provider.of<AuthProvider>(context, listen: false);
                   final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+                  final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
                   final currentUser = authProvider.currentUser;
                   if (currentUser != null) {
                     final teacher = masterProvider.teachers.firstWhere(
                       (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
                     );
-                    await warningProvider.loadTeacherWarningLetters(teacher.id);
+                    await Future.wait([
+                      warningProvider.loadTeacherWarningLetters(teacher.id),
+                      scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
+                    ]);
                   }
                 },
                 color: AppTheme.primaryColor,
@@ -118,11 +160,15 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                       )
                     : ListView.separated(
                         padding: EdgeInsets.all(16.w),
-                        itemCount: warningProvider.warningLetters.length,
-                        separatorBuilder: (context, _) => SizedBox(height: 12.h),
+                        itemCount: sortedGroups.length,
+                        separatorBuilder: (context, _) => SizedBox(height: 16.h),
                         itemBuilder: (context, index) {
-                          final warning = warningProvider.warningLetters[index];
-                          final isUnread = warning.status == 'unread';
+                          final group = sortedGroups[index];
+                          final groupDate = dateMap[group.key]!;
+                          final groupWarnings = group.value;
+
+                          final hasUnread = groupWarnings.any((w) => w.status == 'unread');
+                          final unreadList = groupWarnings.where((w) => w.status == 'unread').toList();
 
                           return Card(
                             margin: EdgeInsets.zero,
@@ -131,10 +177,10 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16.r),
                               side: BorderSide(
-                                color: isUnread
+                                color: hasUnread
                                     ? const Color(0xFFFECACA)
                                     : AppTheme.outlineVariant,
-                                width: isUnread ? 1.5 : 1.0,
+                                width: hasUnread ? 1.5 : 1.0,
                               ),
                             ),
                             child: Padding(
@@ -147,14 +193,14 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                       Container(
                                         padding: EdgeInsets.all(8.w),
                                         decoration: BoxDecoration(
-                                          color: isUnread
+                                          color: hasUnread
                                               ? const Color(0xFFFEE2E2)
                                               : const Color(0xFFF1F5F9),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
                                           Icons.warning_amber_rounded,
-                                          color: isUnread
+                                          color: hasUnread
                                               ? const Color(0xFFEF4444)
                                               : const Color(0xFF64748B),
                                           size: 20,
@@ -166,7 +212,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              'Peringatan Keterlambatan',
+                                              AppHelper.formatDate(groupDate),
                                               style: GoogleFonts.hankenGrotesk(
                                                 fontWeight: FontWeight.w800,
                                                 fontSize: 14.sp,
@@ -174,7 +220,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                               ),
                                             ),
                                             Text(
-                                              '${AppHelper.formatDate(warning.issuedAt)} ${DateFormat('HH:mm').format(warning.issuedAt)}',
+                                              'Peringatan Keterlambatan (${groupWarnings.length} Surat)',
                                               style: GoogleFonts.hankenGrotesk(
                                                 fontSize: 11.sp,
                                                 color: AppTheme.outline,
@@ -190,17 +236,17 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                           vertical: 4.h,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: isUnread
+                                          color: hasUnread
                                               ? const Color(0xFFFEE2E2)
                                               : const Color(0xFFDCFCE7),
                                           borderRadius: BorderRadius.circular(999),
                                         ),
                                         child: Text(
-                                          isUnread ? 'Belum Konfirmasi' : 'Dikonfirmasi',
+                                          hasUnread ? 'Belum Konfirmasi' : 'Dikonfirmasi',
                                           style: GoogleFonts.hankenGrotesk(
                                             fontSize: 9.sp,
                                             fontWeight: FontWeight.w700,
-                                            color: isUnread
+                                            color: hasUnread
                                                 ? const Color(0xFFB91C1C)
                                                 : const Color(0xFF15803D),
                                           ),
@@ -209,24 +255,48 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                     ],
                                   ),
                                   const Divider(height: 24),
-                                  Text(
-                                    warning.reason,
-                                    style: GoogleFonts.hankenGrotesk(
-                                      fontSize: 13.sp,
-                                      color: AppTheme.onBackground,
-                                      height: 1.4,
-                                    ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: groupWarnings.map((w) {
+                                      return Padding(
+                                        padding: EdgeInsets.only(bottom: 8.h),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '• ',
+                                              style: TextStyle(
+                                                color: w.status == 'unread' ? const Color(0xFFB91C1C) : const Color(0xFF64748B),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Text(
+                                                w.reason,
+                                                style: GoogleFonts.hankenGrotesk(
+                                                  fontSize: 13.sp,
+                                                  color: AppTheme.onBackground,
+                                                  height: 1.4,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
                                   ),
-                                  if (isUnread) ...[
-                                    SizedBox(height: 16.h),
+                                  if (hasUnread) ...[
+                                    SizedBox(height: 12.h),
                                     SizedBox(
                                       width: double.infinity,
                                       child: ElevatedButton.icon(
-                                        onPressed: () {
-                                          warningProvider.markWarningLetterAsRead(warning.id);
+                                        onPressed: () async {
+                                          for (final w in unreadList) {
+                                            await warningProvider.markWarningLetterAsRead(w.id);
+                                          }
                                         },
                                         icon: const Icon(Icons.check_circle_outline, size: 16),
-                                        label: const Text('Konfirmasi Telah Membaca'),
+                                        label: Text('Konfirmasi Telah Membaca (${unreadList.length})'),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppTheme.primaryColor,
                                           foregroundColor: Colors.white,

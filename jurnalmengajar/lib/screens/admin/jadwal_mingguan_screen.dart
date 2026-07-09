@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -296,9 +296,9 @@ class _JadwalMingguanScreenState extends State<JadwalMingguanScreen> {
                             });
 
                             String dayName = 'Hari';
-                            Color dayColor = const Color(0xFF0D9488);
+                            Color dayColor = const Color(0xFF2563EB);
                             switch (day) {
-                              case 1: dayName = 'SENIN'; dayColor = const Color(0xFF0D9488); break;
+                              case 1: dayName = 'SENIN'; dayColor = const Color(0xFF2563EB); break;
                               case 2: dayName = 'SELASA'; dayColor = const Color(0xFF3B82F6); break;
                               case 3: dayName = 'RABU'; dayColor = const Color(0xFF8B5CF6); break;
                               case 4: dayName = 'KAMIS'; dayColor = const Color(0xFFF59E0B); break;
@@ -487,7 +487,7 @@ class _JadwalMingguanScreenState extends State<JadwalMingguanScreen> {
                                                     'Guru: ${teacher.name}',
                                                     style: TextStyle(
                                                       fontSize: 12.sp,
-                                                      color: const Color(0xFF0D9488),
+                                                      color: const Color(0xFF2563EB),
                                                       fontWeight: FontWeight.w600,
                                                     ),
                                                   ),
