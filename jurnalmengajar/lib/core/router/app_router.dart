@@ -142,7 +142,11 @@ class AppRouter {
         // Guru Module shell (Dashboard, Jadwal, Jurnal, Profil inside MainShell bottom nav)
         GoRoute(
           path: '/guru/dashboard',
-          builder: (context, state) => const GuruMainShell(),
+          builder: (context, state) {
+            final tabStr = state.uri.queryParameters['tab'];
+            final initialIndex = tabStr != null ? int.tryParse(tabStr) : null;
+            return GuruMainShell(initialIndex: initialIndex);
+          },
         ),
         // We can route detailed/form pages separately or as children
         GoRoute(

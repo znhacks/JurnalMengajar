@@ -12,6 +12,7 @@ import '../../models/user_model.dart';
 import '../../models/teacher_model.dart';
 import '../../core/utils/helper.dart';
 import '../../core/utils/image_crop_helper.dart';
+import '../../core/utils/schedule_grouper.dart';
 import '../../repositories/supabase_auth_repository.dart';
 import '../../widgets/image_viewer.dart';
 import '../../providers/warning_letter_provider.dart';
@@ -43,6 +44,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
       final currentUser = authProvider.currentUser;
       if (currentUser != null) {
         await masterProvider.loadAllData();
+        if (!mounted) return;
         final teacher = masterProvider.teachers.firstWhere(
           (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
           orElse: () => TeacherModel(
@@ -55,7 +57,13 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
           ),
         );
         if (teacher.id.isNotEmpty) {
-          await warningProvider.loadTeacherWarningLetters(teacher.id);
+          await Future.wait([
+            warningProvider.loadTeacherWarningLetters(teacher.id),
+            Provider.of<ScheduleProvider>(context, listen: false)
+                .loadTeacherSchedules(teacher.id, DateTime.now()),
+            Provider.of<JournalProvider>(context, listen: false)
+                .loadTeacherJournals(teacher.id),
+          ]);
         }
       }
     });
@@ -579,6 +587,22 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
         .where((s) => s.teacherId == teacher.id)
         .length;
 
+    // Group active schedules up to today with no journal entries
+    final today = DateTime.now();
+    final todayOnly = DateTime(today.year, today.month, today.day);
+
+    final groupedSchedules = groupDailySchedules(scheduleProvider.cachedTeacherSchedules);
+    final unfilledGroups = groupedSchedules.where((group) {
+      if (!group.isActive) return false;
+      final sDateOnly = DateTime(group.date.year, group.date.month, group.date.day);
+      if (sDateOnly.isAfter(todayOnly)) return false;
+      
+      // Check if there is any journal that matches any schedule in the group
+      return !journalProvider.teacherJournals.any((j) => group.scheduleIds.contains(j.scheduleId));
+    }).toList();
+
+    final unfilledCount = unfilledGroups.length;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -885,6 +909,65 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                 ),
               ),
               SizedBox(height: 12.h),
+
+              // Unfilled Journals Warning Button
+              if (unfilledCount > 0) ...[
+                Padding(
+                  padding: EdgeInsets.only(bottom: 12.h),
+                  child: ElevatedButton(
+                    onPressed: () => context.go('/guru/dashboard?tab=2'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber[700],
+                      foregroundColor: Colors.white,
+                      side: BorderSide(
+                        color: Colors.amber[700]!,
+                        width: 1.5.r,
+                      ),
+                      elevation: 0,
+                      minimumSize: Size.fromHeight(50.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14.r),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.menu_book_outlined,
+                          size: 18,
+                        ),
+                        SizedBox(width: 8.w),
+                        Text(
+                          'Jurnal Belum Diisi Saya',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14.sp,
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 4.h,
+                          ),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '$unfilledCount',
+                            style: TextStyle(
+                              color: Colors.amber[700],
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
 
               // Warning Letters Button (SP)
               Consumer<WarningLetterProvider>(

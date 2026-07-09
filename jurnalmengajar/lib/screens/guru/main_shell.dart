@@ -11,16 +11,20 @@ import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/warning_letter_provider.dart';
 import '../../models/teacher_model.dart';
+import '../../providers/schedule_provider.dart';
+import '../../providers/journal_provider.dart';
+import '../../core/utils/schedule_grouper.dart';
 
 class GuruMainShell extends StatefulWidget {
-  const GuruMainShell({super.key});
+  final int? initialIndex;
+  const GuruMainShell({super.key, this.initialIndex});
 
   @override
   State<GuruMainShell> createState() => _GuruMainShellState();
 }
 
 class _GuruMainShellState extends State<GuruMainShell> {
-  int _currentIndex = 0;
+  late int _currentIndex;
   double? _xPosition;
   double? _yPosition;
 
@@ -34,6 +38,7 @@ class _GuruMainShellState extends State<GuruMainShell> {
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialIndex ?? 0;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
@@ -42,18 +47,42 @@ class _GuruMainShellState extends State<GuruMainShell> {
       final currentUser = authProvider.currentUser;
       if (currentUser != null) {
         await masterProvider.loadAllData();
+        if (!mounted) return;
         final teacher = masterProvider.teachers.firstWhere(
           (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
           orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
         );
         if (teacher.id.isNotEmpty) {
-          await warningProvider.loadTeacherWarningLetters(teacher.id);
+          await Future.wait([
+            warningProvider.loadTeacherWarningLetters(teacher.id),
+            Provider.of<ScheduleProvider>(context, listen: false)
+                .loadTeacherSchedules(teacher.id, DateTime.now()),
+            Provider.of<JournalProvider>(context, listen: false)
+                .loadTeacherJournals(teacher.id),
+          ]);
         }
       }
     });
   }
 
-  Widget _buildFloatingWarningBadge(int unreadCount, double screenWidth, double screenHeight) {
+  @override
+  void didUpdateWidget(covariant GuruMainShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialIndex != null && widget.initialIndex != _currentIndex) {
+      _currentIndex = widget.initialIndex!;
+    }
+  }
+
+  Widget _buildFloatingBadge({
+    required int count,
+    required Color color,
+    required IconData icon,
+    required Color badgeColor,
+    required Color badgeTextColor,
+    required VoidCallback onTap,
+    required double screenWidth,
+    required double screenHeight,
+  }) {
     _xPosition ??= screenWidth - 72.w;
     _yPosition ??= screenHeight - 160.h;
 
@@ -71,18 +100,16 @@ class _GuruMainShellState extends State<GuruMainShell> {
             _yPosition = _yPosition!.clamp(16.0, screenHeight - 200.h);
           });
         },
-        onTap: () {
-          context.push('/guru/warning-letters');
-        },
+        onTap: onTap,
         child: Container(
           width: 56.w,
           height: 56.w,
           decoration: BoxDecoration(
-            color: const Color(0xFFBA1A1A), // Red Warning
+            color: color,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFBA1A1A).withValues(alpha: 0.4),
+                color: color.withValues(alpha: 0.4),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -93,8 +120,8 @@ class _GuruMainShellState extends State<GuruMainShell> {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              const Icon(
-                Icons.assignment_late_rounded,
+              Icon(
+                icon,
                 color: Colors.white,
                 size: 28,
               ),
@@ -103,8 +130,8 @@ class _GuruMainShellState extends State<GuruMainShell> {
                 top: -6.h,
                 child: Container(
                   padding: EdgeInsets.all(4.w),
-                  decoration: const BoxDecoration(
-                    color: Colors.amber,
+                  decoration: BoxDecoration(
+                    color: badgeColor,
                     shape: BoxShape.circle,
                   ),
                   constraints: BoxConstraints(
@@ -113,9 +140,9 @@ class _GuruMainShellState extends State<GuruMainShell> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    '$unreadCount',
+                    '$count',
                     style: GoogleFonts.hankenGrotesk(
-                      color: Colors.black,
+                      color: badgeTextColor,
                       fontWeight: FontWeight.w900,
                       fontSize: 10.sp,
                     ),
@@ -134,6 +161,28 @@ class _GuruMainShellState extends State<GuruMainShell> {
     final warningProvider = context.watch<WarningLetterProvider>();
     final unreadWarnings = warningProvider.warningLetters.where((w) => w.status == 'unread').length;
 
+    final scheduleProvider = context.watch<ScheduleProvider>();
+    final journalProvider = context.watch<JournalProvider>();
+
+    final teacherJournals = journalProvider.teacherJournals;
+    final cachedTeacherSchedules = scheduleProvider.cachedTeacherSchedules;
+
+    // Group active schedules up to today with no journal entries
+    final today = DateTime.now();
+    final todayOnly = DateTime(today.year, today.month, today.day);
+
+    final groupedSchedules = groupDailySchedules(cachedTeacherSchedules);
+    final unfilledGroups = groupedSchedules.where((group) {
+      if (!group.isActive) return false;
+      final sDateOnly = DateTime(group.date.year, group.date.month, group.date.day);
+      if (sDateOnly.isAfter(todayOnly)) return false;
+      
+      // Check if there is any journal that matches any schedule in the group
+      return !teacherJournals.any((j) => group.scheduleIds.contains(j.scheduleId));
+    }).toList();
+
+    final unfilledCount = unfilledGroups.length;
+
     final mediaQuery = MediaQuery.of(context);
     final screenWidth = mediaQuery.size.width;
     final screenHeight = mediaQuery.size.height;
@@ -143,7 +192,31 @@ class _GuruMainShellState extends State<GuruMainShell> {
         children: [
           IndexedStack(index: _currentIndex, children: _screens),
           if (unreadWarnings > 0)
-            _buildFloatingWarningBadge(unreadWarnings, screenWidth, screenHeight),
+            _buildFloatingBadge(
+              count: unreadWarnings,
+              color: const Color(0xFFBA1A1A),
+              icon: Icons.assignment_late_rounded,
+              badgeColor: Colors.amber,
+              badgeTextColor: Colors.black,
+              onTap: () => context.push('/guru/warning-letters'),
+              screenWidth: screenWidth,
+              screenHeight: screenHeight,
+            )
+          else if (unfilledCount > 0)
+            _buildFloatingBadge(
+              count: unfilledCount,
+              color: Colors.amber[700]!,
+              icon: Icons.menu_book_outlined,
+              badgeColor: const Color(0xFFBA1A1A),
+              badgeTextColor: Colors.white,
+              onTap: () {
+                setState(() {
+                  _currentIndex = 2; // Go to Jurnal tab
+                });
+              },
+              screenWidth: screenWidth,
+              screenHeight: screenHeight,
+            ),
         ],
       ),
       bottomNavigationBar: Container(
