@@ -31,15 +31,28 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-      final warningProvider = Provider.of<WarningLetterProvider>(context, listen: false);
+      final masterProvider = Provider.of<MasterDataProvider>(
+        context,
+        listen: false,
+      );
+      final warningProvider = Provider.of<WarningLetterProvider>(
+        context,
+        listen: false,
+      );
 
       final currentUser = authProvider.currentUser;
       if (currentUser != null) {
         await masterProvider.loadAllData();
         final teacher = masterProvider.teachers.firstWhere(
           (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
-          orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
+          orElse: () => TeacherModel(
+            id: '',
+            name: '',
+            position: '',
+            address: '',
+            phoneNumber: '',
+            email: '',
+          ),
         );
         if (teacher.id.isNotEmpty) {
           await warningProvider.loadTeacherWarningLetters(teacher.id);
@@ -58,7 +71,9 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
     final confirmed1 = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
         title: const Text(
           'HAPUS AKUN ANDA',
           style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
@@ -87,7 +102,9 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
       final confirmed2 = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
           title: const Text(
             'Konfirmasi Terakhir',
             style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
@@ -154,7 +171,9 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
       ),
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          Future<void> pickDialogImage({ImageSource source = ImageSource.gallery}) async {
+          Future<void> pickDialogImage({
+            ImageSource source = ImageSource.gallery,
+          }) async {
             final result = await pickAndCropImage(
               context: context,
               source: source,
@@ -189,13 +208,19 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     SizedBox(height: 12.h),
                     Text(
                       'Pilih Sumber Foto',
-                      style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     SizedBox(height: 8.h),
                     ListTile(
                       leading: const CircleAvatar(
                         backgroundColor: Color(0xFFE0F2F1),
-                        child: Icon(Icons.photo_library_outlined, color: Color(0xFF2563EB)),
+                        child: Icon(
+                          Icons.photo_library_outlined,
+                          color: Color(0xFF2563EB),
+                        ),
                       ),
                       title: const Text('Galeri Foto'),
                       onTap: () {
@@ -206,7 +231,10 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     ListTile(
                       leading: const CircleAvatar(
                         backgroundColor: Color(0xFFE0F2F1),
-                        child: Icon(Icons.camera_alt_outlined, color: Color(0xFF2563EB)),
+                        child: Icon(
+                          Icons.camera_alt_outlined,
+                          color: Color(0xFF2563EB),
+                        ),
                       ),
                       title: const Text('Kamera'),
                       onTap: () {
@@ -274,10 +302,13 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                 ? MemoryImage(tempImageBytes!)
                                 : (user.photoUrl != null &&
                                               user.photoUrl!.startsWith('http')
-                                          ? CachedNetworkImageProvider(user.photoUrl!)
+                                          ? CachedNetworkImageProvider(
+                                              user.photoUrl!,
+                                            )
                                           : null)
                                       as ImageProvider?,
-                            child: tempImageBytes == null && user.photoUrl == null
+                            child:
+                                tempImageBytes == null && user.photoUrl == null
                                 ? Icon(
                                     Icons.person,
                                     size: 48.r,
@@ -325,8 +356,14 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     onTap: isSaving
                         ? null
                         : () {
-                            final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-                            final subjectNames = masterProvider.subjects.map((s) => s.name).toList();
+                            final masterProvider =
+                                Provider.of<MasterDataProvider>(
+                                  context,
+                                  listen: false,
+                                );
+                            final subjectNames = masterProvider.subjects
+                                .map((s) => s.name)
+                                .toList();
                             _showPositionSelector(
                               context,
                               subjectNames,
@@ -344,7 +381,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         enabled: !isSaving,
                         decoration: const InputDecoration(
                           labelText: 'Jabatan',
-                          hintText: 'Ketuk untuk memilih jabatan / guru mapel...',
+                          hintText:
+                              'Ketuk untuk memilih jabatan / guru mapel...',
                           prefixIcon: Icon(Icons.badge_outlined),
                           suffixIcon: Icon(Icons.arrow_drop_down),
                         ),
@@ -379,11 +417,19 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         ? null
                         : () async {
                             if (nameController.text.trim().isEmpty) {
-                              AppHelper.showSnackBar(context, 'Nama lengkap tidak boleh kosong', isError: true);
+                              AppHelper.showSnackBar(
+                                context,
+                                'Nama lengkap tidak boleh kosong',
+                                isError: true,
+                              );
                               return;
                             }
                             if (posController.text.trim().isEmpty) {
-                              AppHelper.showSnackBar(context, 'Jabatan/guru mapel tidak boleh kosong', isError: true);
+                              AppHelper.showSnackBar(
+                                context,
+                                'Jabatan/guru mapel tidak boleh kosong',
+                                isError: true,
+                              );
                               return;
                             }
 
@@ -395,10 +441,11 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               context,
                               listen: false,
                             );
-                            final masterProvider = Provider.of<MasterDataProvider>(
-                              context,
-                              listen: false,
-                            );
+                            final masterProvider =
+                                Provider.of<MasterDataProvider>(
+                                  context,
+                                  listen: false,
+                                );
 
                             // Upload foto profil jika ada (web-compatible)
                             String? uploadedPhotoUrl = user.photoUrl;
@@ -445,9 +492,13 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                             if (success) {
                               // Optimistically update local teacher details cache without reloading everything
                               if (authProvider.currentUser != null) {
-                                masterProvider.updateTeacherFromUser(authProvider.currentUser!);
+                                masterProvider.updateTeacherFromUser(
+                                  authProvider.currentUser!,
+                                );
                               } else {
-                                masterProvider.updateTeacherFromUser(updatedUser);
+                                masterProvider.updateTeacherFromUser(
+                                  updatedUser,
+                                );
                               }
                               if (context.mounted) {
                                 AppHelper.showSnackBar(
@@ -517,10 +568,16 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
     );
 
     // Calculate teacher stats
-    final teacherJournals = journalProvider.journals.where((j) => j.teacherId == teacher.id).toList();
+    final teacherJournals = journalProvider.journals
+        .where((j) => j.teacherId == teacher.id)
+        .toList();
     final totalJournals = teacherJournals.length;
-    final verifiedJournals = teacherJournals.where((j) => j.status == 'verified').length;
-    final totalSchedules = scheduleProvider.schedules.where((s) => s.teacherId == teacher.id).length;
+    final verifiedJournals = teacherJournals
+        .where((j) => j.status == 'verified')
+        .length;
+    final totalSchedules = scheduleProvider.schedules
+        .where((s) => s.teacherId == teacher.id)
+        .length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -533,7 +590,9 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
                   title: const Text('Konfirmasi Logout'),
                   content: const Text(
                     'Apakah Anda yakin ingin keluar dari aplikasi?',
@@ -594,7 +653,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                       alignment: Alignment.center,
                       children: [
                         GestureDetector(
-                          onTap: currentUser.photoUrl != null &&
+                          onTap:
+                              currentUser.photoUrl != null &&
                                   currentUser.photoUrl!.startsWith('http')
                               ? () {
                                   FullScreenImageViewer.show(
@@ -607,19 +667,30 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                           child: Container(
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2.5.r),
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2.5.r,
+                              ),
                             ),
                             child: Hero(
                               tag: 'guru_profile_avatar',
                               child: CircleAvatar(
                                 radius: 36.r,
-                                backgroundColor: Colors.white.withValues(alpha: 0.2),
-                                backgroundImage: currentUser.photoUrl != null &&
+                                backgroundColor: Colors.white.withValues(
+                                  alpha: 0.2,
+                                ),
+                                backgroundImage:
+                                    currentUser.photoUrl != null &&
                                         currentUser.photoUrl!.startsWith('http')
-                                    ? CachedNetworkImageProvider(currentUser.photoUrl!)
+                                    ? CachedNetworkImageProvider(
+                                        currentUser.photoUrl!,
+                                      )
                                     : null,
-                                child: (currentUser.photoUrl == null ||
-                                        !currentUser.photoUrl!.startsWith('http'))
+                                child:
+                                    (currentUser.photoUrl == null ||
+                                        !currentUser.photoUrl!.startsWith(
+                                          'http',
+                                        ))
                                     ? Icon(
                                         Icons.person,
                                         size: 36.r,
@@ -634,7 +705,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                           bottom: 0,
                           right: 0,
                           child: GestureDetector(
-                            onTap: () => _showEditProfileDialog(currentUser, teacher),
+                            onTap: () =>
+                                _showEditProfileDialog(currentUser, teacher),
                             child: Container(
                               padding: EdgeInsets.all(5.w),
                               decoration: const BoxDecoration(
@@ -656,7 +728,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                           GestureDetector(
+                          GestureDetector(
                             onTap: () {
                               setState(() {
                                 _showFullName = !_showFullName;
@@ -665,7 +737,9 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                             child: Text(
                               currentUser.fullName,
                               maxLines: _showFullName ? null : 1,
-                              overflow: _showFullName ? TextOverflow.visible : TextOverflow.ellipsis,
+                              overflow: _showFullName
+                                  ? TextOverflow.visible
+                                  : TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 18.sp,
                                 fontWeight: FontWeight.bold,
@@ -764,11 +838,11 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   borderRadius: BorderRadius.circular(16.r),
                   side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
                 ),
-                 child: Column(
+                child: Column(
                   children: [
                     _buildProfileDetailItem(
                       Icons.badge_outlined,
-                      'NIP / Jabatan',
+                      'Jabatan',
                       currentUser.position ?? teacher.position,
                     ),
                     const Divider(height: 1, color: Color(0xFFF1F5F9)),
@@ -815,16 +889,25 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
               // Warning Letters Button (SP)
               Consumer<WarningLetterProvider>(
                 builder: (context, warningProvider, child) {
-                  final unreadCount = warningProvider.warningLetters.where((w) => w.status == 'unread').length;
+                  final unreadCount = warningProvider.warningLetters
+                      .where((w) => w.status == 'unread')
+                      .length;
 
                   return Padding(
                     padding: EdgeInsets.only(bottom: 12.h),
                     child: ElevatedButton(
                       onPressed: () => context.push('/guru/warning-letters'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: unreadCount > 0 ? const Color(0xFFBA1A1A) : Colors.white,
-                        foregroundColor: unreadCount > 0 ? Colors.white : const Color(0xFFBA1A1A),
-                        side: BorderSide(color: const Color(0xFFBA1A1A), width: 1.5.r),
+                        backgroundColor: unreadCount > 0
+                            ? const Color(0xFFBA1A1A)
+                            : Colors.white,
+                        foregroundColor: unreadCount > 0
+                            ? Colors.white
+                            : const Color(0xFFBA1A1A),
+                        side: BorderSide(
+                          color: const Color(0xFFBA1A1A),
+                          width: 1.5.r,
+                        ),
                         elevation: 0,
                         minimumSize: Size.fromHeight(50.h),
                         shape: RoundedRectangleBorder(
@@ -835,18 +918,26 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            unreadCount > 0 ? Icons.mail_rounded : Icons.mail_outline_rounded,
+                            unreadCount > 0
+                                ? Icons.mail_rounded
+                                : Icons.mail_outline_rounded,
                             size: 18,
                           ),
                           SizedBox(width: 8.w),
                           Text(
                             'Surat Peringatan Saya',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14.sp,
+                            ),
                           ),
                           if (unreadCount > 0) ...[
                             SizedBox(width: 8.w),
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8.w,
+                                vertical: 4.h,
+                              ),
                               decoration: const BoxDecoration(
                                 color: Colors.white,
                                 shape: BoxShape.circle,
@@ -901,7 +992,10 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF5F5),
                   borderRadius: BorderRadius.circular(16.r),
-                  border: Border.all(color: Colors.red.withValues(alpha: 0.2), width: 1.r),
+                  border: Border.all(
+                    color: Colors.red.withValues(alpha: 0.2),
+                    width: 1.r,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -992,11 +1086,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                 color: color.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                size: 16.r,
-                color: color,
-              ),
+              child: Icon(icon, size: 16.r, color: color),
             ),
             SizedBox(width: 8.w),
             Expanded(
@@ -1050,11 +1140,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
               color: const Color(0xFF2563EB).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8.r),
             ),
-            child: Icon(
-              icon,
-              size: 18.r,
-              color: const Color(0xFF2563EB),
-            ),
+            child: Icon(icon, size: 18.r, color: const Color(0xFF2563EB)),
           ),
           SizedBox(width: 12.w),
           Expanded(
@@ -1149,7 +1235,10 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                 children: [
                   Text(
                     'Pilih Jabatan / Guru Mapel',
-                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 12.h),
@@ -1164,22 +1253,33 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   SizedBox(height: 12.h),
                   Expanded(
                     child: filteredOptions.isEmpty
-                        ? const Center(child: Text('Tidak ada pilihan ditemukan'))
+                        ? const Center(
+                            child: Text('Tidak ada pilihan ditemukan'),
+                          )
                         : ListView.builder(
                             itemCount: filteredOptions.length,
                             itemBuilder: (context, index) {
                               final opt = filteredOptions[index];
-                              final isSelected = opt.toLowerCase() == currentPosition.toLowerCase();
+                              final isSelected =
+                                  opt.toLowerCase() ==
+                                  currentPosition.toLowerCase();
                               return ListTile(
                                 title: Text(
                                   opt,
                                   style: TextStyle(
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    color: isSelected ? const Color(0xFF2563EB) : null,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: isSelected
+                                        ? const Color(0xFF2563EB)
+                                        : null,
                                   ),
                                 ),
                                 trailing: isSelected
-                                    ? const Icon(Icons.check, color: Color(0xFF2563EB))
+                                    ? const Icon(
+                                        Icons.check,
+                                        color: Color(0xFF2563EB),
+                                      )
                                     : null,
                                 onTap: () {
                                   onSelect(opt);

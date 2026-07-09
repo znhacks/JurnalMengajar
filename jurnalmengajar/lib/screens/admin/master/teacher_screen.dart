@@ -1,14 +1,18 @@
-﻿import 'dart:io';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:uuid/uuid.dart';
 import '../../../providers/master_data_provider.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../models/teacher_model.dart';
 import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
+import '../../../core/utils/image_crop_helper.dart';
+import '../../../repositories/supabase_auth_repository.dart';
 
 class MasterTeacherScreen extends StatefulWidget {
   const MasterTeacherScreen({super.key});
@@ -18,7 +22,6 @@ class MasterTeacherScreen extends StatefulWidget {
 }
 
 class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
-  final ImagePicker _picker = ImagePicker();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -51,7 +54,9 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
     final phoneController = TextEditingController(text: teacher?.phoneNumber ?? '');
     final emailController = TextEditingController(text: teacher?.email ?? '');
     final addressController = TextEditingController(text: teacher?.address ?? '');
-    File? tempImage;
+    Uint8List? tempImageBytes;
+    String? tempImageName;
+    bool isSaving = false;
 
     showModalBottomSheet(
       context: context,
@@ -61,13 +66,58 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
       ),
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          Future<void> pickDialogImage() async {
-            final XFile? img = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-            if (img != null) {
+          Future<void> pickDialogImage({ImageSource source = ImageSource.gallery}) async {
+            final result = await pickAndCropImage(
+              context: context,
+              source: source,
+            );
+            if (result != null) {
               setDialogState(() {
-                tempImage = File(img.path);
+                tempImageBytes = result.bytes;
+                tempImageName = result.name;
               });
             }
+          }
+
+          Future<void> showImageSourceSheet() async {
+            await showModalBottomSheet<void>(
+              context: context,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+              ),
+              builder: (sheetCtx) => SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(height: 8.h),
+                    Container(
+                      width: 40.w,
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2.r),
+                      ),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.photo_library),
+                      title: const Text('Pilih dari Galeri'),
+                      onTap: () {
+                        Navigator.pop(sheetCtx);
+                        pickDialogImage(source: ImageSource.gallery);
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.camera_alt),
+                      title: const Text('Ambil dari Kamera'),
+                      onTap: () {
+                        Navigator.pop(sheetCtx);
+                        pickDialogImage(source: ImageSource.camera);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
           return Padding(
@@ -96,14 +146,14 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                         CircleAvatar(
                           radius: 44.r,
                           backgroundColor: Colors.grey[200],
-                          backgroundImage: tempImage != null
-                              ? FileImage(tempImage!)
+                          backgroundImage: tempImageBytes != null
+                              ? MemoryImage(tempImageBytes!)
                               : (teacher?.photoUrl != null && teacher!.photoUrl!.startsWith('http')
                                   ? NetworkImage(teacher.photoUrl!)
                                   : (teacher?.photoUrl != null
                                       ? FileImage(File(teacher!.photoUrl!))
                                       : null)) as ImageProvider?,
-                          child: tempImage == null && teacher?.photoUrl == null
+                          child: tempImageBytes == null && teacher?.photoUrl == null
                               ? Icon(Icons.person, size: 44.r, color: Colors.grey[400])
                               : null,
                         ),
@@ -111,7 +161,7 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                           bottom: 0,
                           right: 0,
                           child: GestureDetector(
-                            onTap: pickDialogImage,
+                            onTap: showImageSourceSheet,
                             child: Container(
                               padding: EdgeInsets.all(6.w),
                               decoration: const BoxDecoration(color: Color(0xFF2563EB), shape: BoxShape.circle),
@@ -180,51 +230,91 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                   SizedBox(height: 24.h),
 
                   ElevatedButton(
-                    onPressed: () async {
-                      if (nameController.text.trim().isEmpty) {
-                        AppHelper.showSnackBar(context, 'Nama guru tidak boleh kosong', isError: true);
-                        return;
-                      }
-                      if (posController.text.trim().isEmpty) {
-                        AppHelper.showSnackBar(context, 'Jabatan/guru mapel tidak boleh kosong', isError: true);
-                        return;
-                      }
-                      if (emailController.text.trim().isEmpty) {
-                        AppHelper.showSnackBar(context, 'Email tidak boleh kosong', isError: true);
-                        return;
-                      }
+                    onPressed: isSaving
+                        ? null
+                        : () async {
+                            if (nameController.text.trim().isEmpty) {
+                              AppHelper.showSnackBar(context, 'Nama guru tidak boleh kosong', isError: true);
+                              return;
+                            }
+                            if (posController.text.trim().isEmpty) {
+                              AppHelper.showSnackBar(context, 'Jabatan/guru mapel tidak boleh kosong', isError: true);
+                              return;
+                            }
+                            if (emailController.text.trim().isEmpty) {
+                              AppHelper.showSnackBar(context, 'Email tidak boleh kosong', isError: true);
+                              return;
+                            }
 
-                      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-                      bool success;
+                            setDialogState(() {
+                              isSaving = true;
+                            });
 
-                      if (teacher == null) {
-                        success = await masterProvider.createTeacher(TeacherModel(
-                          id: '',
-                          name: nameController.text.trim(),
-                          position: posController.text.trim(),
-                          phoneNumber: phoneController.text.trim(),
-                          email: emailController.text.trim(),
-                          address: addressController.text.trim(),
-                          photoUrl: tempImage?.path,
-                        ));
-                      } else {
-                        success = await masterProvider.updateTeacher(teacher.copyWith(
-                          name: nameController.text.trim(),
-                          position: posController.text.trim(),
-                          phoneNumber: phoneController.text.trim(),
-                          address: addressController.text.trim(),
-                          photoUrl: tempImage?.path ?? teacher.photoUrl,
-                        ));
-                      }
+                            final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                            final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
 
-                      if (success && context.mounted) {
-                        AppHelper.showSnackBar(context, 'Data guru berhasil disimpan!');
-                        Navigator.pop(context);
-                      } else if (context.mounted) {
-                        AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menyimpan data guru.', isError: true);
-                      }
-                    },
-                    child: const Text('Simpan'),
+                            String? uploadedPhotoUrl = teacher?.photoUrl;
+                            if (tempImageBytes != null &&
+                                tempImageName != null &&
+                                authProvider.authRepository is SupabaseAuthRepository) {
+                              try {
+                                final supabaseRepo = authProvider.authRepository as SupabaseAuthRepository;
+                                final targetId = teacher?.id ?? const Uuid().v4();
+                                uploadedPhotoUrl = await supabaseRepo.uploadProfilePhoto(
+                                  tempImageBytes!,
+                                  tempImageName!,
+                                  targetId,
+                                );
+                              } catch (e) {
+                                if (context.mounted) {
+                                  AppHelper.showSnackBar(context, 'Gagal upload foto: $e', isError: true);
+                                }
+                                setDialogState(() {
+                                  isSaving = false;
+                                });
+                                return;
+                              }
+                            }
+
+                            bool success;
+                            if (teacher == null) {
+                              success = await masterProvider.createTeacher(TeacherModel(
+                                id: '',
+                                name: nameController.text.trim(),
+                                position: posController.text.trim(),
+                                phoneNumber: phoneController.text.trim(),
+                                email: emailController.text.trim(),
+                                address: addressController.text.trim(),
+                                photoUrl: uploadedPhotoUrl,
+                              ));
+                            } else {
+                              success = await masterProvider.updateTeacher(teacher.copyWith(
+                                name: nameController.text.trim(),
+                                position: posController.text.trim(),
+                                phoneNumber: phoneController.text.trim(),
+                                address: addressController.text.trim(),
+                                photoUrl: uploadedPhotoUrl,
+                              ));
+                            }
+
+                            if (success && context.mounted) {
+                              AppHelper.showSnackBar(context, 'Data guru berhasil disimpan!');
+                              Navigator.pop(context);
+                            } else if (context.mounted) {
+                              AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menyimpan data guru.', isError: true);
+                            }
+
+                            setDialogState(() {
+                              isSaving = false;
+                            });
+                          },
+                    child: isSaving
+                        ? SizedBox(
+                            width: 20.w,
+                            height: 20.h,
+                            child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Text('Simpan'),
                   ),
                   SizedBox(height: 20.h),
                 ],
