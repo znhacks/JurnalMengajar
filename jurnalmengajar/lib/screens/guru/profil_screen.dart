@@ -562,6 +562,14 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
       return const Scaffold(body: Center(child: Text('User not found')));
     }
 
+    final isLoading = masterProvider.isLoading ||
+        scheduleProvider.isLoading ||
+        journalProvider.isLoading;
+
+    final errorMessage = masterProvider.errorMessage ??
+        scheduleProvider.errorMessage ??
+        journalProvider.errorMessage;
+
     final teacher = masterProvider.teachers.firstWhere(
       (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
       orElse: () => TeacherModel(
@@ -574,6 +582,60 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
         photoUrl: currentUser.photoUrl,
       ),
     );
+
+    final isFirstLoad = teacher.id.isEmpty && masterProvider.teachers.isEmpty;
+
+    if (isFirstLoad && isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (isFirstLoad && errorMessage != null) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.w),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.cloud_off, color: Colors.red, size: 48),
+                SizedBox(height: 16.h),
+                Text(
+                  'Gagal Memuat Profil',
+                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  errorMessage,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13.sp, color: Colors.grey[600]),
+                ),
+                SizedBox(height: 24.h),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    masterProvider.loadAllData();
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Coba Lagi'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    minimumSize: Size(150.w, 40.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     // Calculate teacher stats
     final teacherJournals = journalProvider.journals
@@ -607,6 +669,16 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('Profil Pengajar'),
+        bottom: isLoading
+            ? PreferredSize(
+                preferredSize: Size.fromHeight(2.h),
+                child: const LinearProgressIndicator(
+                  minHeight: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+                  backgroundColor: Colors.transparent,
+                ),
+              )
+            : null,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.red),
@@ -703,18 +775,14 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                 backgroundColor: Colors.white.withValues(
                                   alpha: 0.2,
                                 ),
-                                backgroundImage:
-                                    currentUser.photoUrl != null &&
-                                        currentUser.photoUrl!.startsWith('http')
-                                    ? CachedNetworkImageProvider(
-                                        currentUser.photoUrl!,
-                                      )
-                                    : null,
-                                child:
-                                    (currentUser.photoUrl == null ||
-                                        !currentUser.photoUrl!.startsWith(
-                                          'http',
-                                        ))
+                                backgroundImage: (teacher.photoUrl != null && teacher.photoUrl!.startsWith('http'))
+                                    ? CachedNetworkImageProvider(teacher.photoUrl!)
+                                    : (currentUser.photoUrl != null &&
+                                            currentUser.photoUrl!.startsWith('http')
+                                        ? CachedNetworkImageProvider(currentUser.photoUrl!)
+                                        : null) as ImageProvider?,
+                                child: (teacher.photoUrl == null || !teacher.photoUrl!.startsWith('http')) &&
+                                        (currentUser.photoUrl == null || !currentUser.photoUrl!.startsWith('http'))
                                     ? Icon(
                                         Icons.person,
                                         size: 36.r,
@@ -759,7 +827,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               });
                             },
                             child: Text(
-                              currentUser.fullName,
+                              teacher.name.isNotEmpty ? teacher.name : currentUser.fullName,
                               maxLines: _showFullName ? null : 1,
                               overflow: _showFullName
                                   ? TextOverflow.visible
@@ -773,7 +841,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                           ),
                           SizedBox(height: 2.h),
                           Text(
-                            currentUser.position ?? teacher.position,
+                            teacher.position.isNotEmpty ? teacher.position : (currentUser.position ?? 'Guru'),
                             style: TextStyle(
                               fontSize: 13.sp,
                               color: const Color(0xFF2DD4BF), // Light Teal
@@ -846,7 +914,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
 
               // Detail List Section
               Text(
-                'INFORMASI GURU',
+                'INFORMASI AKUN',
                 style: TextStyle(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.bold,
@@ -867,30 +935,41 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     _buildProfileDetailItem(
                       Icons.badge_outlined,
                       'Jabatan',
-                      currentUser.position ?? teacher.position,
+                      teacher.position.isNotEmpty ? teacher.position : (currentUser.position ?? 'Guru'),
                     ),
                     const Divider(height: 1, color: Color(0xFFF1F5F9)),
                     _buildProfileDetailItem(
                       Icons.email_outlined,
                       'Email',
-                      currentUser.email,
+                      teacher.email.isNotEmpty ? teacher.email : currentUser.email,
                       isEmail: true,
                     ),
                     const Divider(height: 1, color: Color(0xFFF1F5F9)),
                     _buildProfileDetailItem(
                       Icons.phone_outlined,
                       'No. Telepon',
-                      currentUser.phoneNumber ?? teacher.phoneNumber,
+                      teacher.phoneNumber.isNotEmpty ? teacher.phoneNumber : (currentUser.phoneNumber ?? 'Belum Diisi'),
                     ),
                     const Divider(height: 1, color: Color(0xFFF1F5F9)),
                     _buildProfileDetailItem(
                       Icons.home_outlined,
                       'Alamat Lengkap',
-                      currentUser.address ?? teacher.address,
+                      teacher.address.isNotEmpty ? teacher.address : (currentUser.address ?? 'Belum Diisi'),
                     ),
                   ],
                 ),
               ),
+              SizedBox(height: 20.h),
+              Text(
+                'PENGATURAN AKUN',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[500],
+                  letterSpacing: 1.2,
+                ),
+              ),
+              SizedBox(height: 8.h),
               Row(
                 children: [
                   Expanded(
@@ -1091,85 +1170,65 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   );
                 },
               ),
-              SizedBox(height: 24.h),
+              SizedBox(height: 20.h),
 
-              // Danger Zone Panel
-              Text(
-                'ZONA BAHAYA',
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red[400],
-                  letterSpacing: 1.2,
-                ),
-              ),
-              SizedBox(height: 8.h),
+              // Danger Zone Panel (Compact & Elegant)
               Container(
-                padding: EdgeInsets.all(16.w),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF5F5),
-                  borderRadius: BorderRadius.circular(16.r),
+                  borderRadius: BorderRadius.circular(12.r),
                   border: Border.all(
-                    color: Colors.red.withValues(alpha: 0.2),
+                    color: Colors.red.withValues(alpha: 0.15),
                     width: 1.r,
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(6.w),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.warning_amber_rounded,
-                            color: Colors.red,
-                            size: 20,
-                          ),
-                        ),
-                        SizedBox(width: 10.w),
-                        Text(
-                          'Hapus Akun',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red[800],
-                          ),
-                        ),
-                      ],
+                child: ListTile(
+                  contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
+                  leading: Container(
+                    padding: EdgeInsets.all(6.w),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
                     ),
-                    SizedBox(height: 10.h),
-                    Text(
-                      'Tindakan berikut akan menghapus akun guru Anda secara permanen beserta seluruh data jadwal dan jurnal mengajar.',
+                    child: const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.red,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    'Zona Bahaya',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red[800],
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Hapus akun guru secara permanen',
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: Colors.red[700],
+                    ),
+                  ),
+                  trailing: TextButton(
+                    onPressed: () => _handleDeleteAccount(currentUser),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.red,
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                    ),
+                    child: Text(
+                      'Hapus Akun',
                       style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Colors.red[700],
-                        height: 1.4,
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 16.h),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () => _handleDeleteAccount(currentUser),
-                        icon: const Icon(Icons.delete_forever, size: 18),
-                        label: const Text('Hapus Akun Saya'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          minimumSize: Size.fromHeight(48.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ],

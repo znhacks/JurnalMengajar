@@ -451,10 +451,77 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
 
     final isSuperAdmin = currentUser.email.toLowerCase() == 'admin@jurnal.com';
 
+    final isLoading = masterProvider.isLoading || journalProvider.isLoading;
+    final errorMessage = masterProvider.errorMessage ?? journalProvider.errorMessage;
+
+    final hasNoData = masterProvider.teachers.isEmpty && masterProvider.classes.isEmpty;
+
+    if (hasNoData && isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (hasNoData && errorMessage != null) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.w),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.cloud_off, color: Colors.red, size: 48),
+                SizedBox(height: 16.h),
+                Text(
+                  'Gagal Memuat Profil Admin',
+                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  errorMessage,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13.sp, color: Colors.grey[600]),
+                ),
+                SizedBox(height: 24.h),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    masterProvider.loadAllData();
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Coba Lagi'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    minimumSize: Size(150.w, 40.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('Profil Administrator'),
+        bottom: isLoading
+            ? PreferredSize(
+                preferredSize: Size.fromHeight(2.h),
+                child: const LinearProgressIndicator(
+                  minHeight: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+                  backgroundColor: Colors.transparent,
+                ),
+              )
+            : null,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.red),
@@ -726,7 +793,17 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   ],
                 ),
               ),
-              SizedBox(height: 14.h),
+              SizedBox(height: 20.h),
+              Text(
+                'PENGATURAN AKUN',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[500],
+                  letterSpacing: 1.2,
+                ),
+              ),
+              SizedBox(height: 8.h),
 
               // Edit Button
               ElevatedButton.icon(
@@ -743,88 +820,70 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   ),
                 ),
               ),
-              SizedBox(height: 24.h),
+              SizedBox(height: 20.h),
 
-              // Danger Zone Panel
-              Text(
-                'ZONA BAHAYA',
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red[400],
-                  letterSpacing: 1.2,
-                ),
-              ),
-              SizedBox(height: 8.h),
+              // Danger Zone Panel (Compact & Elegant)
               Container(
-                padding: EdgeInsets.all(16.w),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF5F5),
-                  borderRadius: BorderRadius.circular(16.r),
-                  border: Border.all(color: Colors.red.withValues(alpha: 0.2), width: 1.r),
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(
+                    color: Colors.red.withValues(alpha: 0.15),
+                    width: 1.r,
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(6.w),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.warning_amber_rounded,
-                            color: Colors.red,
-                            size: 20,
-                          ),
-                        ),
-                        SizedBox(width: 10.w),
-                        Text(
-                          'Hapus Akun',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red[800],
-                          ),
-                        ),
-                      ],
+                child: ListTile(
+                  contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
+                  leading: Container(
+                    padding: EdgeInsets.all(6.w),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
                     ),
-                    SizedBox(height: 10.h),
-                    Text(
-                      isSuperAdmin
-                          ? 'Akun administrator utama (admin@jurnal.com) dilindungi sistem dan tidak dapat dihapus.'
-                          : 'Tindakan berikut akan menghapus akun administrator Anda secara permanen beserta seluruh data terkait.',
+                    child: const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.red,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    'Zona Bahaya',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red[800],
+                    ),
+                  ),
+                  subtitle: Text(
+                    isSuperAdmin
+                        ? 'Akun utama dilindungi sistem'
+                        : 'Hapus akun administrator secara permanen',
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: Colors.red[700],
+                    ),
+                  ),
+                  trailing: TextButton(
+                    onPressed: isSuperAdmin ? null : () => _handleDeleteAccount(currentUser),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: isSuperAdmin ? Colors.grey[300] : Colors.red,
+                      disabledBackgroundColor: Colors.grey[300],
+                      disabledForegroundColor: Colors.grey[500],
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                    ),
+                    child: Text(
+                      'Hapus Akun',
                       style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Colors.red[700],
-                        height: 1.4,
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.bold,
+                        color: isSuperAdmin ? Colors.grey[500] : Colors.white,
                       ),
                     ),
-                    SizedBox(height: 16.h),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: isSuperAdmin
-                            ? null
-                            : () => _handleDeleteAccount(currentUser),
-                        icon: const Icon(Icons.delete_forever, size: 18),
-                        label: const Text('Hapus Akun Saya'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: Colors.grey[300],
-                          disabledForegroundColor: Colors.grey[500],
-                          elevation: 0,
-                          minimumSize: Size.fromHeight(48.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ],
