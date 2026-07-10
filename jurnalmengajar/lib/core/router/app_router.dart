@@ -20,7 +20,6 @@ import '../../screens/admin/master/class_screen.dart';
 import '../../screens/admin/master/teacher_screen.dart';
 import '../../screens/admin/master/user_screen.dart';
 import '../../screens/admin/master/schedule_screen.dart';
-import '../../screens/admin/jadwal_mingguan_screen.dart';
 import '../../screens/admin/settings_screen.dart';
 import '../../screens/admin/profile_screen.dart';
 import '../../screens/admin/warning_letter_list_screen.dart';
@@ -228,10 +227,6 @@ class AppRouter {
         GoRoute(
           path: '/admin/schedules',
           builder: (context, state) => const MasterScheduleScreen(),
-        ),
-        GoRoute(
-          path: '/admin/weekly-schedules',
-          builder: (context, state) => const JadwalMingguanScreen(),
         ),
         GoRoute(
           path: '/admin/settings',
