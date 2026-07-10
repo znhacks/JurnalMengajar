@@ -60,7 +60,7 @@ class AuthProvider with ChangeNotifier {
         _currentUser = user;
       }
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = _cleanErrorMessage(e);
     } finally {
       _isLoadingUser = false;
       _isLoading = false;
@@ -85,7 +85,7 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = _cleanErrorMessage(e);
       _isLoading = false;
       notifyListeners();
       return false;
@@ -106,7 +106,7 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = _cleanErrorMessage(e);
       _isLoading = false;
       notifyListeners();
       return false;
@@ -142,7 +142,7 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = _cleanErrorMessage(e);
       _isLoading = false;
       notifyListeners();
       return false;
@@ -159,7 +159,7 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = _cleanErrorMessage(e);
       _isLoading = false;
       notifyListeners();
       return false;
@@ -177,7 +177,7 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = _cleanErrorMessage(e);
       _isLoading = false;
       notifyListeners();
       return false;
@@ -204,7 +204,7 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = _cleanErrorMessage(e);
       _isLoading = false;
       notifyListeners();
       return false;
@@ -221,7 +221,7 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return users;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = _cleanErrorMessage(e);
       _isLoading = false;
       notifyListeners();
       return [];
@@ -242,7 +242,7 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = _cleanErrorMessage(e);
       _isLoading = false;
       notifyListeners();
       return false;
@@ -262,7 +262,7 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = _cleanErrorMessage(e);
       _isLoading = false;
       notifyListeners();
       return false;
@@ -272,5 +272,40 @@ class AuthProvider with ChangeNotifier {
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  String _cleanErrorMessage(dynamic e) {
+    final errorString = e.toString().toLowerCase();
+    
+    // Deteksi error koneksi internet / jaringan
+    if (errorString.contains('socketexception') || 
+        errorString.contains('failed host lookup') || 
+        errorString.contains('network_request_failed') ||
+        errorString.contains('clientexception') ||
+        errorString.contains('network error') ||
+        errorString.contains('xmlhttprequest error') ||
+        errorString.contains('connection failed') ||
+        errorString.contains('failed to connect') ||
+        errorString.contains('handshake') ||
+        errorString.contains('stream error')) {
+      return 'Koneksi internet terputus. Silakan periksa koneksi internet Anda dan coba lagi.';
+    }
+    
+    // Deteksi error autentikasi umum dari Supabase
+    if (errorString.contains('invalid login credentials')) {
+      return 'Email atau password salah. Silakan periksa kembali.';
+    }
+    if (errorString.contains('email not confirmed')) {
+      return 'Email Anda belum diverifikasi. Silakan periksa kotak masuk email Anda.';
+    }
+    if (errorString.contains('rate limit') || errorString.contains('too many requests')) {
+      return 'Terlalu banyak percobaan masuk. Silakan coba lagi nanti.';
+    }
+    if (errorString.contains('user already exists') || errorString.contains('user_already_exists')) {
+      return 'Email sudah terdaftar. Silakan gunakan email lain atau masuk.';
+    }
+    
+    // Bersihkan prefix "Exception: " jika ada
+    return e.toString().replaceAll('Exception: ', '');
   }
 }
