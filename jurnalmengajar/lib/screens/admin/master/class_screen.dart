@@ -31,12 +31,20 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
 
   void _showFormDialog({ClassModel? classItem}) {
     final nameController = TextEditingController(text: classItem?.name ?? '');
-    
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+
+    final masterProvider = Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    );
     final activePeriod = masterProvider.activePeriod;
-    
+
     // Choose periodId: existing class's periodId, or the currently active period, or the first period in list
-    String? selectedPeriodId = classItem?.periodId ?? activePeriod?.id ?? (masterProvider.periods.isNotEmpty ? masterProvider.periods.first.id : null);
+    String? selectedPeriodId =
+        classItem?.periodId ??
+        activePeriod?.id ??
+        (masterProvider.periods.isNotEmpty
+            ? masterProvider.periods.first.id
+            : null);
 
     showModalBottomSheet(
       context: context,
@@ -60,15 +68,20 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                 children: [
                   Text(
                     classItem == null ? 'Tambah Kelas Baru' : 'Edit Kelas',
-                    style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 16.h),
-                  
+
                   // Period Selector Dropdown
                   DropdownButtonFormField<String>(
                     initialValue: selectedPeriodId,
-                    decoration: const InputDecoration(labelText: 'Periode Akademik'),
+                    decoration: const InputDecoration(
+                      labelText: 'Periode Akademik',
+                    ),
                     items: masterProvider.periods.map((p) {
                       return DropdownMenuItem<String>(
                         value: p.id,
@@ -94,35 +107,55 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                   ElevatedButton(
                     onPressed: () async {
                       if (selectedPeriodId == null) {
-                        AppHelper.showSnackBar(context, 'Pilih periode akademik terlebih dahulu', isError: true);
+                        AppHelper.showSnackBar(
+                          context,
+                          'Pilih periode akademik terlebih dahulu',
+                          isError: true,
+                        );
                         return;
                       }
                       if (nameController.text.trim().isEmpty) {
-                        AppHelper.showSnackBar(context, 'Nama kelas tidak boleh kosong', isError: true);
+                        AppHelper.showSnackBar(
+                          context,
+                          'Nama kelas tidak boleh kosong',
+                          isError: true,
+                        );
                         return;
                       }
 
                       bool success;
 
                       if (classItem == null) {
-                        success = await masterProvider.createClass(ClassModel(
-                          id: '',
-                          periodId: selectedPeriodId!,
-                          name: nameController.text.trim(),
-                          studentCount: 0,
-                        ));
+                        success = await masterProvider.createClass(
+                          ClassModel(
+                            id: '',
+                            periodId: selectedPeriodId!,
+                            name: nameController.text.trim(),
+                            studentCount: 0,
+                          ),
+                        );
                       } else {
-                        success = await masterProvider.updateClass(classItem.copyWith(
-                          periodId: selectedPeriodId!,
-                          name: nameController.text.trim(),
-                        ));
+                        success = await masterProvider.updateClass(
+                          classItem.copyWith(
+                            periodId: selectedPeriodId!,
+                            name: nameController.text.trim(),
+                          ),
+                        );
                       }
 
                       if (success && context.mounted) {
-                        AppHelper.showSnackBar(context, 'Kelas berhasil disimpan!');
+                        AppHelper.showSnackBar(
+                          context,
+                          'Kelas berhasil disimpan!',
+                        );
                         Navigator.pop(context);
                       } else if (context.mounted) {
-                        AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menyimpan kelas.', isError: true);
+                        AppHelper.showSnackBar(
+                          context,
+                          masterProvider.errorMessage ??
+                              'Gagal menyimpan kelas.',
+                          isError: true,
+                        );
                       }
                     },
                     child: const Text('Simpan'),
@@ -138,13 +171,31 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
   }
 
   Future<void> _handleDelete(String id) async {
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+    final masterProvider = Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    );
     final success = await masterProvider.deleteClass(id);
     if (success && mounted) {
       AppHelper.showSnackBar(context, 'Kelas berhasil dihapus');
     } else if (mounted) {
-      AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menghapus kelas.', isError: true);
+      AppHelper.showSnackBar(
+        context,
+        masterProvider.errorMessage ?? 'Gagal menghapus kelas.',
+        isError: true,
+      );
     }
+  }
+
+  Widget _actionIcon(IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: EdgeInsets.all(5.w),
+        child: Icon(icon, color: color, size: 18.w),
+      ),
+    );
   }
 
   @override
@@ -153,9 +204,7 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
     final classes = masterProvider.classes;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Master Kelas'),
-      ),
+      appBar: AppBar(title: const Text('Master Kelas & Siswa')),
       drawer: const AdminDrawer(currentRoute: '/admin/master-data/classes'),
       body: RefreshIndicator(
         onRefresh: _refreshData,
@@ -163,130 +212,170 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
         child: masterProvider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : classes.isEmpty
-                ? const AppEmptyWidget(
-                    title: 'Kelas Kosong',
-                    subtitle: 'Tekan tombol + di bawah untuk menambah kelas.',
-                  )
-                : ListView.separated(
-                    padding: EdgeInsets.all(16.w),
-                    itemCount: classes.length,
-                    separatorBuilder: (context, index) => SizedBox(height: 12.h),
-                    itemBuilder: (context, index) {
-                      final item = classes[index];
-                      final period = masterProvider.periods.firstWhere(
-                        (p) => p.id == item.periodId,
-                        orElse: () => PeriodModel(id: '', name: 'Periode--', isActive: false),
-                      );
+            ? const AppEmptyWidget(
+                title: 'Kelas Kosong',
+                subtitle: 'Tekan tombol + di bawah untuk menambah kelas.',
+              )
+            : ListView.separated(
+                padding: EdgeInsets.all(16.w),
+                itemCount: classes.length,
+                separatorBuilder: (context, index) => SizedBox(height: 12.h),
+                itemBuilder: (context, index) {
+                  final item = classes[index];
+                  final period = masterProvider.periods.firstWhere(
+                    (p) => p.id == item.periodId,
+                    orElse: () =>
+                        PeriodModel(id: '', name: 'Periode--', isActive: false),
+                  );
 
-                      return Dismissible(
-                        key: Key(item.id),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: EdgeInsets.only(right: 20.w),
-                          decoration: BoxDecoration(
-                            color: Colors.red[600],
-                            borderRadius: BorderRadius.circular(12),
+                  return Dismissible(
+                    key: Key(item.id),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: EdgeInsets.only(right: 20.w),
+                      decoration: BoxDecoration(
+                        color: Colors.red[600],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.delete, color: Colors.white),
+                    ),
+                    onDismissed: (_) => _handleDelete(item.id),
+                    confirmDismiss: (_) async {
+                      return await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Hapus Kelas'),
+                          content: const Text(
+                            'Apakah Anda yakin ingin menghapus kelas ini?',
                           ),
-                          child: const Icon(Icons.delete, color: Colors.white),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Batal'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text(
+                                'Hapus',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
                         ),
-                        onDismissed: (_) => _handleDelete(item.id),
-                        confirmDismiss: (_) async {
-                          return await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Hapus Kelas'),
-                              content: const Text('Apakah Anda yakin ingin menghapus kelas ini?'),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                        child: InkWell(
-                          onTap: () => context.push('/admin/master-data/classes/${item.id}/students'),
+                      );
+                    },
+                    child: InkWell(
+                      onTap: () => context.push(
+                        '/admin/master-data/classes/${item.id}/students',
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: EdgeInsets.all(16.w),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 18.r,
+                              backgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                              child: Icon(
+                                Icons.class_,
+                                color: const Color(0xFF2563EB),
+                                size: 16.w,
+                              ),
                             ),
-                            child: Row(
-                              children: [
-                              CircleAvatar(
-                                backgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.1),
-                                child: Icon(Icons.class_, color: const Color(0xFF2563EB), size: 20.w),
-                              ),
-                              SizedBox(width: 16.w),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.name,
-                                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
-                                    ),
-                                    SizedBox(height: 2.h),
-                                    Text(
-                                      'Periode: ${period.name}',
-                                      style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
-                                    ),
-                                    SizedBox(height: 2.h),
-                                    Text(
-                                      '${item.studentCount} Siswa',
-                                      style: TextStyle(fontSize: 12.sp, color: const Color(0xFF2563EB), fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
+                            SizedBox(width: 10.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.visibility_outlined, color: Colors.blue),
-                                    onPressed: () => context.push('/admin/master-data/classes/${item.id}/students'),
+                                  Text(
+                                    item.name,
+                                    style: TextStyle(
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF0F172A),
+                                    ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_outlined, color: Colors.indigo),
-                                    onPressed: () => _showFormDialog(classItem: item),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                    onPressed: () async {
-                                      final confirm = await showDialog<bool>(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          title: const Text('Hapus Kelas'),
-                                          content: const Text('Apakah Anda yakin ingin menghapus kelas ini?'),
-                                          actions: [
-                                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(context, true),
-                                              child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-                                            ),
-                                          ],
+                                  SizedBox(height: 2.h),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        period.name,
+                                        style: TextStyle(
+                                          fontSize: 11.sp,
+                                          color: Colors.grey[500],
                                         ),
-                                      );
-                                      if (confirm == true) {
-                                        _handleDelete(item.id);
-                                      }
-                                    },
+                                      ),
+                                      Text(
+                                        '  ·  ${item.studentCount} Siswa',
+                                        style: TextStyle(
+                                          fontSize: 11.sp,
+                                          color: const Color(0xFF2563EB),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
+                            ),
+                            // Compact action icons
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _actionIcon(
+                                  Icons.visibility_outlined,
+                                  Colors.blue,
+                                  () => context.push('/admin/master-data/classes/${item.id}/students'),
+                                ),
+                                _actionIcon(
+                                  Icons.edit_outlined,
+                                  Colors.indigo,
+                                  () => _showFormDialog(classItem: item),
+                                ),
+                                _actionIcon(
+                                  Icons.delete_outline,
+                                  Colors.red,
+                                  () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('Hapus Kelas'),
+                                        content: const Text(
+                                          'Apakah Anda yakin ingin menghapus kelas ini?',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context, false),
+                                            child: const Text('Batal'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context, true),
+                                            child: const Text(
+                                              'Hapus',
+                                              style: TextStyle(color: Colors.red),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirm == true) _handleDelete(item.id);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                    );
-                  },
-                  ),
+                    ),
+                  );
+                },
+              ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),

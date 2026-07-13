@@ -26,6 +26,7 @@ import '../../screens/admin/warning_letter_list_screen.dart';
 import '../../screens/guru/warning_letter_list_screen.dart';
 import '../../screens/admin/admin_jurnal_list_screen.dart';
 import '../../screens/admin/master/student_screen.dart';
+import '../../screens/admin/master/teacher_detail_screen.dart';
 
 class AppRouter {
   static GoRouter router(BuildContext context) {
@@ -242,6 +243,13 @@ class AppRouter {
         GoRoute(
           path: '/admin/master-data/teachers',
           builder: (context, state) => const MasterTeacherScreen(),
+        ),
+        GoRoute(
+          path: '/admin/master-data/teachers/:teacherId',
+          builder: (context, state) {
+            final teacherId = state.pathParameters['teacherId']!;
+            return TeacherDetailScreen(teacherId: teacherId);
+          },
         ),
         GoRoute(
           path: '/admin/schedules',

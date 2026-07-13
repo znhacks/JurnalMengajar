@@ -824,17 +824,17 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           );
                         },
                         child: Container(
-                          padding: EdgeInsets.all(12.w),
+                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
                           child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               CircleAvatar(
-                                radius: 20.r,
+                                radius: 18.r,
                                 backgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.1),
                                 backgroundImage: teacher.photoUrl != null && teacher.photoUrl!.isNotEmpty
                                     ? NetworkImage(teacher.photoUrl!)
@@ -845,12 +845,12 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                         style: GoogleFonts.hankenGrotesk(
                                           fontWeight: FontWeight.bold,
                                           color: const Color(0xFF2563EB),
-                                          fontSize: 14.sp,
+                                          fontSize: 13.sp,
                                         ),
                                       )
                                     : null,
                               ),
-                              SizedBox(width: 12.w),
+                              SizedBox(width: 10.w),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -861,20 +861,20 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                         Expanded(
                                           child: Text(
                                             '${cls.name} • Jam Ke-${sched.teachingHours.join(', ')}',
-                                            style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                                            style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
                                           ),
                                         ),
                                         Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             IconButton(
-                                              icon: const Icon(Icons.edit_outlined, color: Colors.indigo, size: 18),
+                                              icon: const Icon(Icons.edit_outlined, color: Colors.indigo, size: 16),
                                               onPressed: () => _showFormDialog(groupedSchedule: sched),
                                               constraints: const BoxConstraints(),
-                                              padding: EdgeInsets.all(6.w),
+                                              padding: EdgeInsets.all(4.w),
                                             ),
                                             IconButton(
-                                              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                                              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 16),
                                               onPressed: () async {
                                                 final confirm = await showDialog<bool>(
                                                   context: context,
@@ -895,42 +895,43 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                 }
                                               },
                                               constraints: const BoxConstraints(),
-                                              padding: EdgeInsets.all(6.w),
+                                              padding: EdgeInsets.all(4.w),
                                             ),
                                           ],
                                         ),
                                       ],
                                     ),
-                                    SizedBox(height: 2.h),
+                                    SizedBox(height: 1.h),
                                     Text(
                                       'Mata Pelajaran: ${subject.name}',
-                                      style: TextStyle(fontSize: 12.sp, color: Colors.grey[750], fontWeight: FontWeight.w500),
+                                      style: TextStyle(fontSize: 11.5.sp, color: Colors.grey[700], fontWeight: FontWeight.w500),
                                     ),
-                                    SizedBox(height: 2.h),
+                                    SizedBox(height: 1.h),
                                     Text(
                                       'Guru: ${teacher.name}',
-                                      style: TextStyle(fontSize: 12.sp, color: const Color(0xFF2563EB), fontWeight: FontWeight.w600),
+                                      style: TextStyle(fontSize: 11.5.sp, color: const Color(0xFF2563EB), fontWeight: FontWeight.w600),
                                     ),
                                     if (sched.note != null && sched.note!.isNotEmpty) ...[
-                                      SizedBox(height: 2.h),
+                                      SizedBox(height: 1.h),
                                       Text(
                                         'Catatan: ${sched.note}',
-                                        style: TextStyle(fontSize: 11.sp, color: Colors.grey[600], fontStyle: FontStyle.italic),
+                                        style: TextStyle(fontSize: 10.5.sp, color: Colors.grey[600], fontStyle: FontStyle.italic),
                                       ),
                                     ],
-                                    const Divider(height: 12),
+                                    const Divider(height: 8),
                                     Wrap(
                                       spacing: 8.w,
                                       runSpacing: 4.h,
                                       alignment: WrapAlignment.spaceBetween,
+                                      crossAxisAlignment: WrapCrossAlignment.center,
                                       children: [
                                         Text(
                                           '${AppHelper.formatDateShort(sched.startDate)} s/d ${AppHelper.formatDateShort(sched.endDate)}',
-                                          style: TextStyle(fontSize: 11.sp, color: Colors.grey[500]),
+                                          style: TextStyle(fontSize: 10.5.sp, color: Colors.grey[500]),
                                         ),
                                         Text(
                                           'Hari: ${sched.weekdays.map(getWeekdayName).join(', ')}',
-                                          style: TextStyle(fontSize: 11.sp, color: Colors.grey[600], fontWeight: FontWeight.w500),
+                                          style: TextStyle(fontSize: 10.5.sp, color: Colors.grey[600], fontWeight: FontWeight.w500),
                                         ),
                                         Container(
                                           padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.h),
@@ -941,7 +942,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                           child: Text(
                                             sched.isActive ? 'Aktif' : 'Nonaktif',
                                             style: TextStyle(
-                                              fontSize: 10.sp,
+                                              fontSize: 9.5.sp,
                                               fontWeight: FontWeight.bold,
                                               color: sched.isActive ? const Color(0xFF10B981) : Colors.red,
                                             ),

@@ -276,6 +276,17 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
     }
   }
 
+  Widget _actionIcon(IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: EdgeInsets.all(5.w),
+        child: Icon(icon, color: color, size: 18.w),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final masterProvider = context.watch<MasterDataProvider>();
@@ -437,17 +448,17 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                               final genderColor = isMale ? const Color(0xFF2563EB) : const Color(0xFFEC4899);
 
                               return Container(
-                                padding: EdgeInsets.all(12.w),
+                                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(12),
                                   border: Border.all(color: AppTheme.outlineVariant),
                                 ),
                                 child: Row(
                                   children: [
                                     // Initials avatar
                                     CircleAvatar(
-                                      radius: 20.r,
+                                      radius: 17.r,
                                       backgroundColor: genderColor.withValues(alpha: 0.1),
                                       child: Text(
                                         student.name.isNotEmpty
@@ -456,11 +467,11 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                         style: GoogleFonts.hankenGrotesk(
                                           fontWeight: FontWeight.bold,
                                           color: genderColor,
-                                          fontSize: 16.sp,
+                                          fontSize: 13.sp,
                                         ),
                                       ),
                                     ),
-                                    SizedBox(width: 12.w),
+                                    SizedBox(width: 10.w),
 
                                     // Student details
                                     Expanded(
@@ -470,7 +481,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                           Text(
                                             student.name,
                                             style: GoogleFonts.hankenGrotesk(
-                                              fontSize: 14.sp,
+                                              fontSize: 13.sp,
                                               fontWeight: FontWeight.bold,
                                               color: AppTheme.onBackground,
                                             ),
@@ -483,21 +494,10 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                                 style: GoogleFonts.hankenGrotesk(
                                                   fontSize: 11.sp,
                                                   color: AppTheme.onSurfaceVariant,
-                                                  fontWeight: FontWeight.w500,
                                                 ),
                                               ),
-                                              SizedBox(width: 8.w),
-                                              Container(
-                                                width: 4.w,
-                                                height: 4.w,
-                                                decoration: BoxDecoration(
-                                                  color: AppTheme.outline,
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              ),
-                                              SizedBox(width: 8.w),
                                               Text(
-                                                isMale ? 'Laki-laki' : 'Perempuan',
+                                                '  ·  ${isMale ? 'L' : 'P'}',
                                                 style: GoogleFonts.hankenGrotesk(
                                                   fontSize: 11.sp,
                                                   color: genderColor,
@@ -510,19 +510,19 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                       ),
                                     ),
 
-                                    // Action buttons
+                                    // Compact action icons
                                     Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.edit_outlined, color: Colors.indigo),
-                                          onPressed: () => _showFormDialog(studentItem: student),
-                                          constraints: const BoxConstraints(),
-                                          padding: EdgeInsets.all(8.w),
+                                        _actionIcon(
+                                          Icons.edit_outlined,
+                                          Colors.indigo,
+                                          () => _showFormDialog(studentItem: student),
                                         ),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                          onPressed: () async {
+                                        _actionIcon(
+                                          Icons.delete_outline,
+                                          Colors.red,
+                                          () async {
                                             final confirm = await showDialog<bool>(
                                               context: context,
                                               builder: (context) => AlertDialog(
@@ -541,12 +541,8 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                                 ],
                                               ),
                                             );
-                                            if (confirm == true) {
-                                              _handleDelete(student.id);
-                                            }
+                                            if (confirm == true) _handleDelete(student.id);
                                           },
-                                          constraints: const BoxConstraints(),
-                                          padding: EdgeInsets.all(8.w),
                                         ),
                                       ],
                                     ),

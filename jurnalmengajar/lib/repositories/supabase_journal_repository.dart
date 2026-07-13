@@ -158,8 +158,9 @@ class SupabaseJournalRepository implements JournalRepository {
   Future<String> uploadAttachment(
     List<int> fileBytes,
     String fileName,
-    String journalId,
-  ) async {
+    String journalId, {
+    String suffix = '',
+  }) async {
     try {
       // Compress image to WebP before uploading
       final compressed = await ImageCompressor.compressToWebp(
@@ -167,7 +168,8 @@ class SupabaseJournalRepository implements JournalRepository {
         originalFileName: fileName,
       );
 
-      final safeFileName = '${DateTime.now().millisecondsSinceEpoch}_${compressed.fileName}';
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      final safeFileName = '$ts${suffix}_${compressed.fileName}';
       final filePath = '$journalId/$safeFileName';
 
       await _supabase.storage

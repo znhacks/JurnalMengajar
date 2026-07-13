@@ -13,6 +13,8 @@ import '../../models/journal_attachment_model.dart';
 import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
 import '../../models/hour_model.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/helper.dart';
 
 class FormJurnalScreen extends StatefulWidget {
@@ -36,10 +38,13 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
   int _permissionCount = 0;
   int _alphaCount = 0;
 
-  /// Bytes gambar yang dipilih (web-compatible, tidak menggunakan File)
-  Uint8List? _attachmentImageBytes;
-  String? _attachmentImageName;
-  String? _mockPdfName;
+  final Map<String, String> _studentAttendance = {};
+
+  /// Multi-image support (max 3)
+  final List<Uint8List> _imageBytesList = [];
+  final List<String> _imageNamesList = [];
+  final List<String> _existingImageUrls = []; // URLs existing saat edit
+  static const int _maxImages = 3;
   final ImagePicker _picker = ImagePicker();
 
   JournalModel? _existingJournal;
@@ -55,8 +60,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
       );
       if (scheduleProvider.schedules.isEmpty &&
           scheduleProvider.teacherSchedulesForSelectedDate.isEmpty) {
-        scheduleProvider.loadAllSchedules();
+        await scheduleProvider.loadAllSchedules();
       }
+      if (!mounted) return;
 
       final journalProvider = Provider.of<JournalProvider>(
         context,
@@ -65,74 +71,114 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
       final existing = await journalProvider.getJournalForSchedule(
         widget.scheduleId,
       );
-      if (existing != null && mounted) {
-        setState(() {
-          _existingJournal = existing;
-          _isEditing = true;
-          _materialController.text = existing.material;
 
-          // Parse structured note if it exists
-          final fullNote = existing.note;
-          String parsedSickNames = '';
-          String parsedPermissionNames = '';
-          String parsedAlphaNames = '';
-          String parsedGeneralNote = '';
+      ScheduleModel? schedule;
+      try {
+        schedule = scheduleProvider.schedules.firstWhere(
+          (s) => s.id == widget.scheduleId,
+          orElse: () => scheduleProvider.teacherSchedulesForSelectedDate
+              .firstWhere((s) => s.id == widget.scheduleId),
+        );
+      } catch (_) {}
 
-          if (fullNote != null) {
-            if (fullNote.contains('Keterangan Absensi:')) {
-              final parts = fullNote.split('\n\nCatatan Pembelajaran:\n');
-              final absencePart = parts[0];
-              if (parts.length > 1) {
-                parsedGeneralNote = parts[1];
+      if (schedule != null && mounted) {
+        final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+        await masterProvider.loadStudentsForClass(schedule.classId);
+
+        if (existing != null) {
+          setState(() {
+            _existingJournal = existing;
+            _isEditing = true;
+            _materialController.text = existing.material;
+
+            // Parse structured note if it exists
+            final fullNote = existing.note;
+            String parsedSickNames = '';
+            String parsedPermissionNames = '';
+            String parsedAlphaNames = '';
+            String parsedGeneralNote = '';
+
+            if (fullNote != null) {
+              if (fullNote.contains('Keterangan Absensi:')) {
+                final parts = fullNote.split('\n\nCatatan Pembelajaran:\n');
+                final absencePart = parts[0];
+                if (parts.length > 1) {
+                  parsedGeneralNote = parts[1];
+                } else {
+                  if (fullNote.contains('Catatan Pembelajaran:')) {
+                    final notesParts = fullNote.split('Catatan Pembelajaran:\n');
+                    if (notesParts.length > 1) {
+                      parsedGeneralNote = notesParts[1];
+                    }
+                  }
+                }
+
+                final lines = absencePart.split('\n');
+                for (final line in lines) {
+                  if (line.startsWith('Sakit (')) {
+                    final colonIndex = line.indexOf('): ');
+                    if (colonIndex != -1) {
+                      parsedSickNames = line.substring(colonIndex + 3);
+                    }
+                  } else if (line.startsWith('Izin (')) {
+                    final colonIndex = line.indexOf('): ');
+                    if (colonIndex != -1) {
+                      parsedPermissionNames = line.substring(colonIndex + 3);
+                    }
+                  } else if (line.startsWith('Alfa (')) {
+                    final colonIndex = line.indexOf('): ');
+                    if (colonIndex != -1) {
+                      parsedAlphaNames = line.substring(colonIndex + 3);
+                    }
+                  }
+                }
               } else {
-                if (fullNote.contains('Catatan Pembelajaran:')) {
-                  final notesParts = fullNote.split('Catatan Pembelajaran:\n');
-                  if (notesParts.length > 1) {
-                    parsedGeneralNote = notesParts[1];
-                  }
-                }
+                parsedGeneralNote = fullNote;
               }
+            }
 
-              final lines = absencePart.split('\n');
-              for (final line in lines) {
-                if (line.startsWith('Sakit (')) {
-                  final colonIndex = line.indexOf('): ');
-                  if (colonIndex != -1) {
-                    parsedSickNames = line.substring(colonIndex + 3);
-                  }
-                } else if (line.startsWith('Izin (')) {
-                  final colonIndex = line.indexOf('): ');
-                  if (colonIndex != -1) {
-                    parsedPermissionNames = line.substring(colonIndex + 3);
-                  }
-                } else if (line.startsWith('Alfa (')) {
-                  final colonIndex = line.indexOf('): ');
-                  if (colonIndex != -1) {
-                    parsedAlphaNames = line.substring(colonIndex + 3);
-                  }
-                }
+            _noteController.text = parsedGeneralNote;
+            _sickNamesController.text = parsedSickNames;
+            _permissionNamesController.text = parsedPermissionNames;
+            _alphaNamesController.text = parsedAlphaNames;
+
+            _sickCount = existing.sickCount;
+            _permissionCount = existing.permissionCount;
+            _alphaCount = existing.alphaCount;
+
+            final sickNames = parsedSickNames.split(',').map((e) => e.trim().toLowerCase()).toList();
+            final permNames = parsedPermissionNames.split(',').map((e) => e.trim().toLowerCase()).toList();
+            final alphaNames = parsedAlphaNames.split(',').map((e) => e.trim().toLowerCase()).toList();
+
+            for (final s in masterProvider.students) {
+              final sName = s.name.trim().toLowerCase();
+              if (sickNames.contains(sName)) {
+                _studentAttendance[s.id] = 'S';
+              } else if (permNames.contains(sName)) {
+                _studentAttendance[s.id] = 'I';
+              } else if (alphaNames.contains(sName)) {
+                _studentAttendance[s.id] = 'A';
+              } else {
+                _studentAttendance[s.id] = 'H';
               }
-            } else {
-              parsedGeneralNote = fullNote;
             }
-          }
 
-          _noteController.text = parsedGeneralNote;
-          _sickNamesController.text = parsedSickNames;
-          _permissionNamesController.text = parsedPermissionNames;
-          _alphaNamesController.text = parsedAlphaNames;
-
-          _sickCount = existing.sickCount;
-          _permissionCount = existing.permissionCount;
-          _alphaCount = existing.alphaCount;
-          if (existing.attachment != null) {
-            if (existing.attachment!.fileType == 'pdf') {
-              _mockPdfName = existing.attachment!.fileName;
-            } else {
-              _attachmentImageName = existing.attachment!.fileName;
+            // Restore existing attachment URLs into list
+            if (existing.attachmentUrl != null && existing.attachmentUrl!.isNotEmpty) {
+              _existingImageUrls.addAll(
+                existing.attachmentUrl!.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty),
+              );
+            } else if (existing.attachment?.filePath != null) {
+              _existingImageUrls.add(existing.attachment!.filePath);
             }
-          }
-        });
+          });
+        } else {
+          setState(() {
+            for (final s in masterProvider.students) {
+              _studentAttendance[s.id] = 'H';
+            }
+          });
+        }
       }
     });
   }
@@ -148,18 +194,21 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    final totalSlots = _existingImageUrls.length + _imageBytesList.length;
+    if (totalSlots >= _maxImages) {
+      AppHelper.showSnackBar(context, 'Maksimal $_maxImages foto lampiran.', isError: true);
+      return;
+    }
     try {
       final XFile? image = await _picker.pickImage(
         source: source,
         imageQuality: 70,
       );
       if (image != null) {
-        // Baca sebagai bytes agar kompatibel dengan Flutter Web
         final bytes = await image.readAsBytes();
         setState(() {
-          _attachmentImageBytes = bytes;
-          _attachmentImageName = image.name;
-          _mockPdfName = null;
+          _imageBytesList.add(bytes);
+          _imageNamesList.add(image.name);
         });
       }
     } catch (e) {
@@ -187,7 +236,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Pilih Lampiran Jurnal',
+                'Pilih Foto Lampiran',
                 style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -203,6 +252,17 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                   _pickImage(ImageSource.camera);
                 },
               ),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_library_outlined,
+                  color: Color(0xFF2563EB),
+                ),
+                title: const Text('Galeri Foto'),
+                onTap: () {
+                  context.pop();
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
             ],
           ),
         ),
@@ -210,7 +270,63 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     );
   }
 
+  /// Helper widget untuk satu tile foto dengan tombol hapus
+  Widget _buildPhotoTile({
+    required Widget child,
+    required VoidCallback onDelete,
+  }) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: SizedBox(
+            width: 80.w,
+            height: 80.w,
+            child: child,
+          ),
+        ),
+        Positioned(
+          top: 2,
+          right: 2,
+          child: GestureDetector(
+            onTap: onDelete,
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, color: Colors.white, size: 12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<void> _submitForm(ScheduleModel schedule) async {
+    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+    final sickNamesList = masterProvider.students
+        .where((s) => _studentAttendance[s.id] == 'S')
+        .map((s) => s.name)
+        .toList();
+    final permNamesList = masterProvider.students
+        .where((s) => _studentAttendance[s.id] == 'I')
+        .map((s) => s.name)
+        .toList();
+    final alphaNamesList = masterProvider.students
+        .where((s) => _studentAttendance[s.id] == 'A')
+        .map((s) => s.name)
+        .toList();
+
+    _sickCount = sickNamesList.length;
+    _permissionCount = permNamesList.length;
+    _alphaCount = alphaNamesList.length;
+
+    _sickNamesController.text = sickNamesList.join(', ');
+    _permissionNamesController.text = permNamesList.join(', ');
+    _alphaNamesController.text = alphaNamesList.join(', ');
+
     if (_formKey.currentState!.validate()) {
       final journalProvider = Provider.of<JournalProvider>(
         context,
@@ -218,31 +334,19 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
       );
       _formKey.currentState!.save();
 
-      JournalAttachmentModel? attachment = _existingJournal?.attachment;
-      if (_attachmentImageBytes != null && _attachmentImageName != null) {
+      // Build first attachment model (for legacy compat)
+      JournalAttachmentModel? attachment;
+      final hasNewImages = _imageBytesList.isNotEmpty;
+      final hasExisting = _existingImageUrls.isNotEmpty;
+      if (hasNewImages) {
         attachment = JournalAttachmentModel(
-          id:
-              _existingJournal?.attachment?.id ??
-              'ja_${DateTime.now().millisecondsSinceEpoch}',
+          id: _existingJournal?.attachment?.id ?? 'ja_${DateTime.now().millisecondsSinceEpoch}',
           filePath: _existingJournal?.attachment?.filePath ?? 'pending_upload',
           fileType: 'image',
-          fileName: _attachmentImageName!,
+          fileName: _imageNamesList.first,
         );
-      } else if (_mockPdfName != null) {
-        attachment = JournalAttachmentModel(
-          id:
-              _existingJournal?.attachment?.id ??
-              'ja_${DateTime.now().millisecondsSinceEpoch}',
-          filePath:
-              _existingJournal?.attachment?.filePath ??
-              'mock_pdf_directory/$_mockPdfName',
-          fileType: 'pdf',
-          fileName: _mockPdfName!,
-        );
-      } else if (_attachmentImageBytes == null &&
-          _attachmentImageName == null &&
-          _mockPdfName == null) {
-        attachment = null;
+      } else if (hasExisting) {
+        attachment = _existingJournal?.attachment;
       }
 
       // Construct structured note
@@ -291,8 +395,8 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
         final success = await journalProvider.updateJournal(
           updatedJournal,
-          attachmentBytes: _attachmentImageBytes,
-          attachmentFileName: _attachmentImageName,
+          imageBytesList: _imageBytesList,
+          imageNamesList: _imageNamesList,
         );
 
         if (success && mounted) {
@@ -333,8 +437,8 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
         final success = await journalProvider.createJournal(
           newJournal,
-          attachmentBytes: _attachmentImageBytes,
-          attachmentFileName: _attachmentImageName,
+          imageBytesList: _imageBytesList,
+          imageNamesList: _imageNamesList,
         );
 
         if (success && mounted) {
@@ -480,109 +584,136 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
                 // Absensi Siswa
                 Text(
-                  'Absensi Siswa (Jumlah Siswa)',
+                  'Absensi Siswa (Daftar Kelas)',
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
                     color: const Color(0xFF0F172A),
                   ),
                 ),
-                SizedBox(height: 12.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildCounterWidget(
-                      'Sakit',
-                      _sickCount,
-                      (val) => setState(() => _sickCount = val),
-                    ),
-                    _buildCounterWidget(
-                      'Izin',
-                      _permissionCount,
-                      (val) => setState(() => _permissionCount = val),
-                    ),
-                    _buildCounterWidget(
-                      'Alpha',
-                      _alphaCount,
-                      (val) => setState(() => _alphaCount = val),
-                    ),
-                  ],
+                SizedBox(height: 8.h),
+                // Attendance Summary Header Card
+                Builder(
+                  builder: (context) {
+                    final totalStudents = masterProvider.students.length;
+                    final totalHadir = masterProvider.students.where((s) => _studentAttendance[s.id] == 'H' || _studentAttendance[s.id] == null).length;
+                    final totalSakit = masterProvider.students.where((s) => _studentAttendance[s.id] == 'S').length;
+                    final totalIzin = masterProvider.students.where((s) => _studentAttendance[s.id] == 'I').length;
+                    final totalAlfa = masterProvider.students.where((s) => _studentAttendance[s.id] == 'A').length;
+
+                    return Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(color: AppTheme.outlineVariant),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildSummaryItem('Total', '$totalStudents', Colors.black87),
+                          _buildSummaryItem('Hadir', '$totalHadir', const Color(0xFF10B981)),
+                          _buildSummaryItem('Sakit', '$totalSakit', const Color(0xFF2563EB)),
+                          _buildSummaryItem('Izin', '$totalIzin', const Color(0xFFF59E0B)),
+                          _buildSummaryItem('Alfa', '$totalAlfa', Colors.red),
+                        ],
+                      ),
+                    );
+                  }
                 ),
-                if (_sickCount > 0) ...[
-                  SizedBox(height: 16.h),
-                  Text(
-                    'Siapa yang Sakit?',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF64748B),
-                    ),
+                SizedBox(height: 12.h),
+                // Students List
+                Container(
+                  constraints: BoxConstraints(maxHeight: 280.h),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
-                  SizedBox(height: 6.h),
-                  TextFormField(
-                    controller: _sickNamesController,
-                    validator: (value) {
-                      if (_sickCount > 0 && (value == null || value.trim().isEmpty)) {
-                        return 'Nama siswa yang sakit tidak boleh kosong';
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      hintText: 'Nama siswa yang sakit (misal: Budi, Ani)',
-                      fillColor: Colors.white,
-                    ),
-                  ),
-                ],
-                if (_permissionCount > 0) ...[
-                  SizedBox(height: 16.h),
-                  Text(
-                    'Siapa yang Izin?',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF64748B),
-                    ),
-                  ),
-                  SizedBox(height: 6.h),
-                  TextFormField(
-                    controller: _permissionNamesController,
-                    validator: (value) {
-                      if (_permissionCount > 0 && (value == null || value.trim().isEmpty)) {
-                        return 'Nama siswa yang izin tidak boleh kosong';
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      hintText: 'Nama siswa yang izin (misal: Candra, Dedi)',
-                      fillColor: Colors.white,
-                    ),
-                  ),
-                ],
-                if (_alphaCount > 0) ...[
-                  SizedBox(height: 16.h),
-                  Text(
-                    'Siapa yang Alfa?',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF64748B),
-                    ),
-                  ),
-                  SizedBox(height: 6.h),
-                  TextFormField(
-                    controller: _alphaNamesController,
-                    validator: (value) {
-                      if (_alphaCount > 0 && (value == null || value.trim().isEmpty)) {
-                        return 'Nama siswa yang alfa tidak boleh kosong';
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      hintText: 'Nama siswa yang alfa (misal: Eki, Fani)',
-                      fillColor: Colors.white,
-                    ),
-                  ),
-                ],
+                  child: masterProvider.students.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.w),
+                            child: Text(
+                              'Tidak ada siswa terdaftar di kelas ini',
+                              style: TextStyle(color: Colors.grey[500], fontSize: 13.sp),
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          shrinkWrap: true,
+                          padding: EdgeInsets.all(10.w),
+                          itemCount: masterProvider.students.length,
+                          separatorBuilder: (context, _) => const Divider(height: 8, color: Color(0xFFF1F5F9)),
+                          itemBuilder: (context, index) {
+                            final student = masterProvider.students[index];
+                            final status = _studentAttendance[student.id] ?? 'H';
+
+                            return Padding(
+                              padding: EdgeInsets.symmetric(vertical: 4.h),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          student.name,
+                                          style: GoogleFonts.hankenGrotesk(
+                                            fontSize: 12.5.sp,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppTheme.onBackground,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        if (student.nis != null && student.nis!.isNotEmpty)
+                                          Text(
+                                            'NIS: ${student.nis}',
+                                            style: GoogleFonts.hankenGrotesk(
+                                              fontSize: 10.sp,
+                                              color: AppTheme.outline,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  // H, S, I, A Status Toggle Buttons
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _buildStatusToggle('H', status == 'H', const Color(0xFF10B981), () {
+                                        setState(() {
+                                          _studentAttendance[student.id] = 'H';
+                                        });
+                                      }),
+                                      SizedBox(width: 4.w),
+                                      _buildStatusToggle('S', status == 'S', const Color(0xFF2563EB), () {
+                                        setState(() {
+                                          _studentAttendance[student.id] = 'S';
+                                        });
+                                      }),
+                                      SizedBox(width: 4.w),
+                                      _buildStatusToggle('I', status == 'I', const Color(0xFFF59E0B), () {
+                                        setState(() {
+                                          _studentAttendance[student.id] = 'I';
+                                        });
+                                      }),
+                                      SizedBox(width: 4.w),
+                                      _buildStatusToggle('A', status == 'A', Colors.red, () {
+                                        setState(() {
+                                          _studentAttendance[student.id] = 'A';
+                                        });
+                                      }),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                ),
                 SizedBox(height: 24.h),
 
                 // Catatan Mengajar
@@ -608,188 +739,86 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
                 // Lampiran Jurnal
                 Text(
-                  'Lampiran (Foto)',
+                  'Lampiran Foto (Maks 3)',
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
                     color: const Color(0xFF0F172A),
                   ),
                 ),
-                SizedBox(height: 8.h),
-                InkWell(
-                  onTap: _showAttachmentBottomSheet,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      vertical: 24.h,
-                      horizontal: 16.w,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Column(
-                      children: [
-                        if (_attachmentImageBytes == null &&
-                            _attachmentImageName == null &&
-                            _mockPdfName == null) ...[
-                          Icon(
-                            Icons.cloud_upload_outlined,
-                            size: 40.w,
-                            color: Colors.grey[400],
-                          ),
-                          SizedBox(height: 8.h),
-                          Text(
-                            'Klik untuk mengunggah Lampiran',
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              color: const Color(0xFF2563EB),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 4.h),
-                          Text(
-                            'Mendukung Foto (Kamera)',
-                            style: TextStyle(
-                              fontSize: 11.sp,
-                              color: Colors.grey[450],
-                            ),
-                          ),
-                        ] else if (_attachmentImageBytes != null ||
-                            _attachmentImageName != null) ...[
-                          Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: _attachmentImageBytes != null
-                                    ? Image.memory(
-                                        _attachmentImageBytes!,
-                                        height: 60.h,
-                                        width: 60.h,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : (_existingJournal?.attachment?.filePath !=
-                                                  null &&
-                                              _existingJournal!
-                                                  .attachment!
-                                                  .filePath
-                                                  .startsWith('http')
-                                          ? Image.network(
-                                              _existingJournal!
-                                                  .attachment!
-                                                  .filePath,
-                                              height: 60.h,
-                                              width: 60.h,
-                                              fit: BoxFit.cover,
-                                              errorBuilder:
-                                                  (
-                                                    context,
-                                                    error,
-                                                    stackTrace,
-                                                  ) => const Icon(
-                                                    Icons.image,
-                                                    size: 30,
-                                                  ),
-                                            )
-                                          : Container(
-                                              height: 60.h,
-                                              width: 60.h,
-                                              color: Colors.grey[200],
-                                              child: const Icon(Icons.image),
-                                            )),
-                              ),
-                              SizedBox(width: 12.w),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _attachmentImageName ?? 'Foto Lampiran',
-                                      style: TextStyle(
-                                        fontSize: 14.sp,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF0F172A),
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      'Tipe: Image (Foto)',
-                                      style: TextStyle(
-                                        fontSize: 12.sp,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () => setState(() {
-                                  _attachmentImageBytes = null;
-                                  _attachmentImageName = null;
-                                }),
-                              ),
-                            ],
-                          ),
-                        ] else if (_mockPdfName != null) ...[
-                          Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(12.w),
-                                decoration: BoxDecoration(
-                                  color: Colors.red.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.picture_as_pdf,
-                                  color: Colors.red,
-                                ),
-                              ),
-                              SizedBox(width: 12.w),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _mockPdfName!,
-                                      style: TextStyle(
-                                        fontSize: 14.sp,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF0F172A),
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      'Tipe: PDF Dokumen',
-                                      style: TextStyle(
-                                        fontSize: 12.sp,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () =>
-                                    setState(() => _mockPdfName = null),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
+                SizedBox(height: 4.h),
+                Text(
+                  'Tambahkan foto bukti kegiatan mengajar',
+                  style: TextStyle(fontSize: 11.sp, color: Colors.grey[500]),
                 ),
+                SizedBox(height: 10.h),
+                Builder(builder: (context) {
+                  final totalSlots = _existingImageUrls.length + _imageBytesList.length;
+                  final canAdd = totalSlots < _maxImages;
+                  return Wrap(
+                    spacing: 10.w,
+                    runSpacing: 10.h,
+                    children: [
+                      // Existing photos (from edit mode)
+                      for (int i = 0; i < _existingImageUrls.length; i++)
+                        _buildPhotoTile(
+                          child: _existingImageUrls[i].startsWith('http')
+                              ? Image.network(
+                                  _existingImageUrls[i],
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (ctx, err, st) =>
+                                      const Icon(Icons.broken_image, color: Colors.grey),
+                                )
+                              : const Icon(Icons.image, color: Colors.grey),
+                          onDelete: () => setState(() => _existingImageUrls.removeAt(i)),
+                        ),
+                      // New photos
+                      for (int i = 0; i < _imageBytesList.length; i++)
+                        _buildPhotoTile(
+                          child: Image.memory(_imageBytesList[i], fit: BoxFit.cover),
+                          onDelete: () => setState(() {
+                            _imageBytesList.removeAt(i);
+                            _imageNamesList.removeAt(i);
+                          }),
+                        ),
+                      // Add button slot
+                      if (canAdd)
+                        InkWell(
+                          onTap: _showAttachmentBottomSheet,
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            width: 80.w,
+                            height: 80.w,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: const Color(0xFFCBD5E1),
+                                style: BorderStyle.solid,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_a_photo_outlined,
+                                    size: 22.r, color: const Color(0xFF2563EB)),
+                                SizedBox(height: 4.h),
+                                Text(
+                                  'Tambah\nFoto',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 9.sp,
+                                    color: const Color(0xFF2563EB),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                }),
                 SizedBox(height: 40.h),
 
                 // Submit Button
@@ -838,46 +867,60 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     );
   }
 
-  Widget _buildCounterWidget(
-    String title,
-    int count,
-    ValueChanged<int> onChanged,
-  ) {
+  Widget _buildSummaryItem(String label, String value, Color color) {
     return Column(
       children: [
         Text(
-          title,
-          style: TextStyle(
-            fontSize: 13.sp,
+          label,
+          style: GoogleFonts.hankenGrotesk(
+            fontSize: 10.sp,
             fontWeight: FontWeight.w600,
-            color: Colors.grey[750],
+            color: color.withValues(alpha: 0.8),
           ),
         ),
-        SizedBox(height: 8.h),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.remove, size: 18),
-                onPressed: count > 0 ? () => onChanged(count - 1) : null,
-              ),
-              Text(
-                '$count',
-                style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold),
-              ),
-              IconButton(
-                icon: const Icon(Icons.add, size: 18),
-                onPressed: () => onChanged(count + 1),
-              ),
-            ],
+        SizedBox(height: 2.h),
+        Text(
+          value,
+          style: GoogleFonts.hankenGrotesk(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w800,
+            color: color,
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildStatusToggle(
+    String label,
+    bool isSelected,
+    Color activeColor,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        width: 28.w,
+        height: 28.w,
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor : Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isSelected ? activeColor : const Color(0xFFE2E8F0),
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: GoogleFonts.hankenGrotesk(
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w800,
+            color: isSelected ? Colors.white : const Color(0xFF64748B),
+          ),
+        ),
+      ),
     );
   }
 }

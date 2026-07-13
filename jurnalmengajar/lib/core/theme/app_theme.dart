@@ -85,7 +85,7 @@ class AppTheme {
 
       // ─── AppBar ───────────────────────────────────────────────────────────
       appBarTheme: AppBarTheme(
-        backgroundColor: primaryColor,
+        backgroundColor: const Color(0xFF0F172A),
         foregroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 1,

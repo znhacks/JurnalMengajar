@@ -330,90 +330,75 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: Ink(
-          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 8.h),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 10.h),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: onTap != null
-                  ? color.withValues(alpha: 0.4)
-                  : AppTheme.outlineVariant,
+                  ? color.withValues(alpha: 0.3)
+                  : AppTheme.outlineVariant.withValues(alpha: 0.8),
               width: onTap != null ? 1.2 : 1.0,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(4.w),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Icon(icon, color: color, size: 12.w),
-                  ),
-                  if (subtitle != null)
-                    Flexible(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          subtitle,
-                          style: GoogleFonts.hankenGrotesk(
-                            fontSize: 7.sp,
-                            color: color,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              SizedBox(height: 4.h),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  count,
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.onBackground,
-                  ),
+              // Icon Container
+              Container(
+                padding: EdgeInsets.all(5.w),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
                 ),
+                child: Icon(icon, color: color, size: 14.w),
+              ),
+              SizedBox(height: 6.h),
+              // Count Number
+              Text(
+                count,
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.onBackground,
+                  height: 1.1,
+                ),
+                textAlign: TextAlign.center,
               ),
               SizedBox(height: 2.h),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  title,
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 9.sp,
-                    color: AppTheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              // Title text
+              Text(
+                title,
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 10.sp,
+                  color: AppTheme.onBackground,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
                 ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              Visibility(
-                visible: onTap != null,
-                maintainSize: true,
-                maintainAnimation: true,
-                maintainState: true,
-                child: Padding(
-                  padding: EdgeInsets.only(top: 2.h),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Icon(Icons.arrow_forward_ios_rounded,
-                          size: 8.sp, color: color),
-                    ],
-                  ),
+              SizedBox(height: 3.h),
+              // Subtitle / Indicator
+              Text(
+                subtitle ?? (onTap != null ? 'Ketuk Detail' : ' '),
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 7.5.sp,
+                  color: onTap != null ? color : AppTheme.outline,
+                  fontWeight: FontWeight.w600,
+                  height: 1.1,
                 ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),

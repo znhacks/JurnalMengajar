@@ -24,16 +24,16 @@ class AdminDrawer extends StatelessWidget {
           Container(
             color: Colors.white,
             padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 24.h,
-              bottom: 16.h,
-              left: 24.w,
-              right: 24.w,
+              top: MediaQuery.of(context).padding.top + 16.h,
+              bottom: 12.h,
+              left: 16.w,
+              right: 16.w,
             ),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Image.asset(
                 'assets/LogoJr.png',
-                height: 48.h,
+                height: 38.h,
                 fit: BoxFit.contain,
               ),
             ),
@@ -44,7 +44,7 @@ class AdminDrawer extends StatelessWidget {
           // ── Menu List ──────────────────────────────────────────────────────
           Expanded(
             child: ListView(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
               children: [
                 _buildMenuItem(
                   context,
@@ -77,24 +77,24 @@ class AdminDrawer extends StatelessWidget {
                   '/about',
                 ),
 
-                SizedBox(height: 16.h),
+                SizedBox(height: 8.h),
                 const Divider(
                   height: 1,
                   color: Color(0xFFE2E8F0),
                   thickness: 1,
                 ),
-                SizedBox(height: 16.h),
+                SizedBox(height: 8.h),
 
                 Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 8.h,
+                    horizontal: 12.w,
+                    vertical: 4.h,
                   ),
                   child: Text(
                     'Master Data',
                     style: GoogleFonts.hankenGrotesk(
                       color: const Color(0xFF0F172A),
-                      fontSize: 14.sp,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -120,7 +120,7 @@ class AdminDrawer extends StatelessWidget {
                 _buildMenuItem(
                   context,
                   Icons.home_rounded,
-                  'Kelas',
+                  'Kelas & Siswa',
                   '/admin/master-data/classes',
                 ),
                 _buildMenuItem(
@@ -154,21 +154,25 @@ class AdminDrawer extends StatelessWidget {
           // ── Footer / Logout ───────────────────────────────────────────────
           const Divider(height: 1, color: Color(0xFFE2E8F0), thickness: 1),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
             child: ListTile(
+              dense: true,
+              visualDensity: const VisualDensity(horizontal: -3, vertical: -3),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 0),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.r),
+                borderRadius: BorderRadius.circular(10.r),
               ),
               leading: const Icon(
                 Icons.logout_rounded,
                 color: Color(0xFF0F172A),
+                size: 20,
               ),
               title: Text(
                 'Keluar',
                 style: GoogleFonts.hankenGrotesk(
                   color: const Color(0xFF0F172A),
                   fontWeight: FontWeight.w700,
-                  fontSize: 14.sp,
+                  fontSize: 13.sp,
                 ),
               ),
               onTap: () {
@@ -220,7 +224,7 @@ class AdminDrawer extends StatelessWidget {
               },
             ),
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 8.h),
         ],
       ),
     );
@@ -234,22 +238,25 @@ class AdminDrawer extends StatelessWidget {
   ) {
     final isSelected = currentRoute == route;
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 2.h),
+      padding: EdgeInsets.symmetric(vertical: 1.h),
       child: ListTile(
+        dense: true,
+        visualDensity: const VisualDensity(horizontal: -3, vertical: -3),
+        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 0),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(10.r),
         ),
         leading: Icon(
           icon,
           color: isSelected ? AppTheme.primaryColor : const Color(0xFF64748B),
-          size: 22,
+          size: 20,
         ),
         title: Text(
           title,
           style: GoogleFonts.hankenGrotesk(
             color: isSelected ? AppTheme.primaryColor : const Color(0xFF0F172A),
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            fontSize: 14.sp,
+            fontSize: 13.sp,
           ),
         ),
         selected: isSelected,

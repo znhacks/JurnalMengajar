@@ -684,34 +684,46 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             SizedBox(height: 4.h),
-                            Row(
+                            Wrap(
+                              spacing: 8.w,
+                              runSpacing: 4.h,
+                              crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
-                                const Icon(
-                                  Icons.people_outline,
-                                  size: 11,
-                                  color: AppTheme.outline,
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.people_outline,
+                                      size: 11,
+                                      color: AppTheme.outline,
+                                    ),
+                                    SizedBox(width: 3.w),
+                                    Text(
+                                      '${cls.studentCount} Siswa',
+                                      style: GoogleFonts.hankenGrotesk(
+                                        fontSize: 10.sp,
+                                        color: AppTheme.outline,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                SizedBox(width: 3.w),
-                                Text(
-                                  '${cls.studentCount} Siswa',
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 10.sp,
-                                    color: AppTheme.outline,
-                                  ),
-                                ),
-                                SizedBox(width: 8.w),
-                                const Icon(
-                                  Icons.access_time_outlined,
-                                  size: 11,
-                                  color: AppTheme.outline,
-                                ),
-                                SizedBox(width: 3.w),
-                                Text(
-                                  '$hrStart - $hrEnd',
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 10.sp,
-                                    color: AppTheme.outline,
-                                  ),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.access_time_outlined,
+                                      size: 11,
+                                      color: AppTheme.outline,
+                                    ),
+                                    SizedBox(width: 3.w),
+                                    Text(
+                                      '$hrStart - $hrEnd',
+                                      style: GoogleFonts.hankenGrotesk(
+                                        fontSize: 10.sp,
+                                        color: AppTheme.outline,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),

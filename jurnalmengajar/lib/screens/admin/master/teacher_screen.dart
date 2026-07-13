@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
@@ -418,55 +419,63 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
           ),
         );
       },
-      child: Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: Colors.white,
+      child: Card(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          side: const BorderSide(color: Color(0xFFE2E8F0)),
         ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 24.r,
-              backgroundColor: const Color(0xFFF1F5F9),
-              backgroundImage: t.photoUrl != null && t.photoUrl!.startsWith('http')
-                  ? NetworkImage(t.photoUrl!)
-                  : (t.photoUrl != null ? FileImage(File(t.photoUrl!)) : null) as ImageProvider?,
-              child: t.photoUrl == null
-                  ? Icon(Icons.person, size: 24.r, color: Colors.grey[400])
-                  : null,
-            ),
-            SizedBox(width: 16.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    t.name,
-                    style: TextStyle(
-                        fontSize: 15.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push('/admin/master-data/teachers/${t.id}'),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 20.r,
+                  backgroundColor: const Color(0xFFF1F5F9),
+                  backgroundImage: t.photoUrl != null && t.photoUrl!.startsWith('http')
+                      ? NetworkImage(t.photoUrl!)
+                      : (t.photoUrl != null ? FileImage(File(t.photoUrl!)) : null) as ImageProvider?,
+                  child: t.photoUrl == null
+                      ? Icon(Icons.person, size: 20.r, color: Colors.grey[400])
+                      : null,
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        t.name,
+                        style: TextStyle(
+                            fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                      ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        t.email,
+                        style: TextStyle(fontSize: 11.sp, color: Colors.grey[600]),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    t.email,
-                    style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.chat,
+                    color: t.phoneNumber.trim().isEmpty ? Colors.grey[400] : const Color(0xFF25D366),
+                    size: 20,
                   ),
-                ],
-              ),
+                  onPressed: () => _launchWhatsApp(t.phoneNumber),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, color: Colors.indigo, size: 20),
+                  onPressed: () => _showFormDialog(teacher: t),
+                ),
+              ],
             ),
-            IconButton(
-              icon: Icon(
-                Icons.chat,
-                color: t.phoneNumber.trim().isEmpty ? Colors.grey[400] : const Color(0xFF25D366),
-              ),
-              onPressed: () => _launchWhatsApp(t.phoneNumber),
-            ),
-            IconButton(
-              icon: const Icon(Icons.edit_outlined, color: Colors.indigo),
-              onPressed: () => _showFormDialog(teacher: t),
-            ),
-          ],
+          ),
         ),
       ),
     );
