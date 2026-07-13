@@ -24,6 +24,7 @@ import '../../screens/admin/settings_screen.dart';
 import '../../screens/admin/profile_screen.dart';
 import '../../screens/admin/warning_letter_list_screen.dart';
 import '../../screens/guru/warning_letter_list_screen.dart';
+import '../../screens/admin/admin_jurnal_list_screen.dart';
 
 class AppRouter {
   static GoRouter router(BuildContext context) {
@@ -185,6 +186,15 @@ class AppRouter {
         GoRoute(
           path: '/admin/approvals',
           builder: (context, state) => const ApprovalJurnalScreen(),
+        ),
+        GoRoute(
+          path: '/admin/journals',
+          builder: (context, state) {
+            final tab = int.tryParse(
+                    state.uri.queryParameters['tab'] ?? '0') ??
+                0;
+            return AdminJurnalListScreen(initialTabIndex: tab);
+          },
         ),
         GoRoute(
           path: '/admin/journal/:id',

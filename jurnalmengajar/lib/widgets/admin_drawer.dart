@@ -32,13 +32,13 @@ class AdminDrawer extends StatelessWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Image.asset(
-                'assets/logoJurnalMengajarLogin.png',
+                'assets/LogoJr.png',
                 height: 48.h,
                 fit: BoxFit.contain,
               ),
             ),
           ),
-          
+
           const Divider(height: 1, color: Color(0xFFE2E8F0), thickness: 1),
 
           // ── Menu List ──────────────────────────────────────────────────────
@@ -46,18 +46,50 @@ class AdminDrawer extends StatelessWidget {
             child: ListView(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
               children: [
-                _buildMenuItem(context, Icons.space_dashboard_rounded, 'Dashboard', '/admin/dashboard'),
-                _buildMenuItem(context, Icons.check_circle_rounded, 'Jurnal Mengajar', '/admin/approvals'),
-                _buildMenuItem(context, Icons.calendar_month_rounded, 'Jadwal Mengajar', '/admin/schedules'),
-                _buildMenuItem(context, Icons.settings_rounded, 'Pengaturan', '/admin/settings'),
-                _buildMenuItem(context, Icons.info_rounded, 'Tentang Aplikasi', '/about'),
-                
+                _buildMenuItem(
+                  context,
+                  Icons.space_dashboard_rounded,
+                  'Dashboard',
+                  '/admin/dashboard',
+                ),
+                _buildMenuItem(
+                  context,
+                  Icons.check_circle_rounded,
+                  'Jurnal Mengajar',
+                  '/admin/approvals',
+                ),
+                _buildMenuItem(
+                  context,
+                  Icons.calendar_month_rounded,
+                  'Jadwal Mengajar',
+                  '/admin/schedules',
+                ),
+                _buildMenuItem(
+                  context,
+                  Icons.settings_rounded,
+                  'Pengaturan',
+                  '/admin/settings',
+                ),
+                _buildMenuItem(
+                  context,
+                  Icons.info_rounded,
+                  'Tentang Aplikasi',
+                  '/about',
+                ),
+
                 SizedBox(height: 16.h),
-                const Divider(height: 1, color: Color(0xFFE2E8F0), thickness: 1),
+                const Divider(
+                  height: 1,
+                  color: Color(0xFFE2E8F0),
+                  thickness: 1,
+                ),
                 SizedBox(height: 16.h),
-                
+
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 8.h,
+                  ),
                   child: Text(
                     'Master Data',
                     style: GoogleFonts.hankenGrotesk(
@@ -67,14 +99,54 @@ class AdminDrawer extends StatelessWidget {
                     ),
                   ),
                 ),
-                _buildMenuItem(context, Icons.local_offer_rounded, 'Periode', '/admin/master-data/periods'),
-                _buildMenuItem(context, Icons.assignment_rounded, 'Pelajaran', '/admin/master-data/subjects'),
-                _buildMenuItem(context, Icons.access_time_filled_rounded, 'Jam Pelajaran', '/admin/master-data/hours'),
-                _buildMenuItem(context, Icons.home_rounded, 'Kelas', '/admin/master-data/classes'),
-                _buildMenuItem(context, Icons.school_rounded, 'Guru', '/admin/master-data/teachers'),
-                _buildMenuItem(context, Icons.manage_accounts_rounded, 'User & Akses', '/admin/master-data/users'),
-                _buildMenuItem(context, Icons.mail_rounded, 'Surat Peringatan (SP)', '/admin/warning-letters'),
-                _buildMenuItem(context, Icons.person_rounded, 'Profil Saya', '/admin/profile'),
+                _buildMenuItem(
+                  context,
+                  Icons.local_offer_rounded,
+                  'Periode',
+                  '/admin/master-data/periods',
+                ),
+                _buildMenuItem(
+                  context,
+                  Icons.assignment_rounded,
+                  'Pelajaran',
+                  '/admin/master-data/subjects',
+                ),
+                _buildMenuItem(
+                  context,
+                  Icons.access_time_filled_rounded,
+                  'Jam Pelajaran',
+                  '/admin/master-data/hours',
+                ),
+                _buildMenuItem(
+                  context,
+                  Icons.home_rounded,
+                  'Kelas',
+                  '/admin/master-data/classes',
+                ),
+                _buildMenuItem(
+                  context,
+                  Icons.school_rounded,
+                  'Guru',
+                  '/admin/master-data/teachers',
+                ),
+                _buildMenuItem(
+                  context,
+                  Icons.manage_accounts_rounded,
+                  'User & Akses',
+                  '/admin/master-data/users',
+                ),
+                _buildMenuItem(
+                  context,
+                  Icons.mail_rounded,
+                  'Surat Peringatan (SP)',
+                  '/admin/warning-letters',
+                ),
+                _buildMenuItem(
+                  context,
+                  Icons.person_rounded,
+                  'Profil Saya',
+                  '/admin/profile',
+                ),
               ],
             ),
           ),
@@ -87,7 +159,10 @@ class AdminDrawer extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12.r),
               ),
-              leading: const Icon(Icons.logout_rounded, color: Color(0xFF0F172A)),
+              leading: const Icon(
+                Icons.logout_rounded,
+                color: Color(0xFF0F172A),
+              ),
               title: Text(
                 'Keluar',
                 style: GoogleFonts.hankenGrotesk(
@@ -106,18 +181,24 @@ class AdminDrawer extends StatelessWidget {
                     ),
                     title: Text(
                       'Konfirmasi Logout',
-                      style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w700),
+                      style: GoogleFonts.hankenGrotesk(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     content: Text(
                       'Apakah Anda yakin ingin keluar dari halaman Administrator?',
-                      style: GoogleFonts.hankenGrotesk(color: AppTheme.onSurfaceVariant),
+                      style: GoogleFonts.hankenGrotesk(
+                        color: AppTheme.onSurfaceVariant,
+                      ),
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
                         child: Text(
                           'Batal',
-                          style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w600),
+                          style: GoogleFonts.hankenGrotesk(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                       TextButton(
@@ -145,7 +226,12 @@ class AdminDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuItem(BuildContext context, IconData icon, String title, String route) {
+  Widget _buildMenuItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String route,
+  ) {
     final isSelected = currentRoute == route;
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 2.h),

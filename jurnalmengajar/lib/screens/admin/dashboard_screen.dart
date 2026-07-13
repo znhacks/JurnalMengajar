@@ -226,18 +226,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // ── Stat Cards Row ──────────────────────────────────────────
-                        Row(
+                         Row(
                           children: [
-                            Expanded(
-                              child: _buildStatCard(
-                                'Total Jurnal',
-                                '$totalJournals',
-                                Icons.assignment_outlined,
-                                AppTheme.primaryColor,
-                              ),
-                            ),
-                            SizedBox(width: 10.w),
                             Expanded(
                               child: _buildStatCard(
                                 'Total Jadwal',
@@ -250,10 +240,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             SizedBox(width: 10.w),
                             Expanded(
                               child: _buildStatCard(
+                                'Total Jurnal',
+                                '$totalJournals',
+                                Icons.assignment_outlined,
+                                AppTheme.primaryColor,
+                                onTap: () => context.push('/admin/journals'),
+                              ),
+                            ),
+                            SizedBox(width: 10.w),
+                            Expanded(
+                              child: _buildStatCard(
                                 'Approval',
                                 '$totalPending',
                                 Icons.rate_review_outlined,
                                 const Color(0xFF825100),
+                                onTap: () => context.push('/admin/journals?tab=1'),
                               ),
                             ),
                             SizedBox(width: 10.w),
@@ -264,6 +265,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 Icons.pending_actions_outlined,
                                 const Color(0xFFBA1A1A),
                                 subtitle: 'Hari ini',
+                                onTap: () => context.push('/admin/journals?tab=1'),
                               ),
                             ),
                           ],
@@ -323,72 +325,92 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     IconData icon,
     Color color, {
     String? subtitle,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Ink(
+          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 8.h),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: onTap != null
+                  ? color.withValues(alpha: 0.4)
+                  : AppTheme.outlineVariant,
+              width: onTap != null ? 1.2 : 1.0,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: EdgeInsets.all(4.w),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(icon, color: color, size: 12.w),
-              ),
-              if (subtitle != null)
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      subtitle,
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 7.sp,
-                        color: color,
-                        fontWeight: FontWeight.w600,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(4.w),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(icon, color: color, size: 12.w),
+                  ),
+                  if (subtitle != null)
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          subtitle,
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 7.sp,
+                            color: color,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
+                ],
+              ),
+              SizedBox(height: 4.h),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  count,
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.onBackground,
                   ),
                 ),
+              ),
+              SizedBox(height: 2.h),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  title,
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 9.sp,
+                    color: AppTheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (onTap != null) ...[SizedBox(height: 2.h), Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Icon(Icons.arrow_forward_ios_rounded,
+                      size: 8.sp, color: color),
+                ],
+              )],
             ],
           ),
-          SizedBox(height: 4.h),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              count,
-              style: GoogleFonts.hankenGrotesk(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w800,
-                color: AppTheme.onBackground,
-              ),
-            ),
-          ),
-          SizedBox(height: 2.h),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              title,
-              style: GoogleFonts.hankenGrotesk(
-                fontSize: 9.sp,
-                color: AppTheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
