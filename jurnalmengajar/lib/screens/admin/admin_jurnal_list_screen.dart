@@ -73,9 +73,6 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
       backgroundColor: AppTheme.background,
       appBar: AppBar(
         title: const Text('Jurnal Mengajar'),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppTheme.onBackground),
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(48.h),
           child: Container(
@@ -89,7 +86,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
               dividerHeight: 1,
               tabs: [
                 _buildTab('Semua', allJournals.length),
-                _buildTab('Perlu Approval', pendingJournals.length,
+                _buildTab('Menunggu', pendingJournals.length,
                     badgeColor: const Color(0xFF825100)),
                 _buildTab('Terverifikasi', verifiedJournals.length,
                     badgeColor: AppTheme.primaryColor),
@@ -98,7 +95,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
           ),
         ),
       ),
-      drawer: const AdminDrawer(currentRoute: '/admin/approvals'),
+      drawer: const AdminDrawer(currentRoute: '/admin/journals'),
       body: SafeArea(
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -281,12 +278,16 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                           Icon(Icons.person_outline,
                               size: 13.sp, color: AppTheme.outline),
                           SizedBox(width: 4.w),
-                          Text(
-                            teacher.name,
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 12.sp,
-                              color: AppTheme.onSurfaceVariant,
-                              fontWeight: FontWeight.w600,
+                          Expanded(
+                            child: Text(
+                              teacher.name,
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 12.sp,
+                                color: AppTheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],

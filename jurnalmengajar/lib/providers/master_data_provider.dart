@@ -10,6 +10,8 @@ import '../repositories/subject_repository.dart';
 import '../repositories/hour_repository.dart';
 import '../repositories/class_repository.dart';
 import '../repositories/teacher_repository.dart';
+import '../models/student_model.dart';
+import '../repositories/student_repository.dart';
 
 class MasterDataProvider with ChangeNotifier {
   final PeriodRepository periodRepository;
@@ -17,12 +19,14 @@ class MasterDataProvider with ChangeNotifier {
   final HourRepository hourRepository;
   final ClassRepository classRepository;
   final TeacherRepository teacherRepository;
+  final StudentRepository studentRepository;
 
   List<PeriodModel> _periods = [];
   List<SubjectModel> _subjects = [];
   List<HourModel> _hours = [];
   List<ClassModel> _classes = [];
   List<TeacherModel> _teachers = [];
+  List<StudentModel> _students = [];
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -33,6 +37,7 @@ class MasterDataProvider with ChangeNotifier {
     required this.hourRepository,
     required this.classRepository,
     required this.teacherRepository,
+    required this.studentRepository,
   }) {
     loadAllData();
   }
@@ -43,6 +48,7 @@ class MasterDataProvider with ChangeNotifier {
   List<HourModel> get hours => _hours;
   List<ClassModel> get classes => _classes;
   List<TeacherModel> get teachers => _teachers;
+  List<StudentModel> get students => _students;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -334,6 +340,72 @@ class MasterDataProvider with ChangeNotifier {
         phoneNumber: user.phoneNumber ?? _teachers[index].phoneNumber,
         photoUrl: user.photoUrl,
       );
+      notifyListeners();
+    }
+  }
+
+  // --- STUDENT CRUD ---
+  Future<void> loadStudentsForClass(String classId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      _students = await studentRepository.getAllByClass(classId);
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> createStudent(StudentModel model) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await studentRepository.create(model);
+      _students = await studentRepository.getAllByClass(model.classId);
+      _classes = await classRepository.getAll();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> updateStudent(StudentModel model) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await studentRepository.update(model);
+      _students = await studentRepository.getAllByClass(model.classId);
+      _classes = await classRepository.getAll();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> deleteStudent(String id, String classId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await studentRepository.delete(id);
+      _students = await studentRepository.getAllByClass(classId);
+      _classes = await classRepository.getAll();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }

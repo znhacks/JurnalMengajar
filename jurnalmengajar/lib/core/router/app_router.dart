@@ -25,6 +25,7 @@ import '../../screens/admin/profile_screen.dart';
 import '../../screens/admin/warning_letter_list_screen.dart';
 import '../../screens/guru/warning_letter_list_screen.dart';
 import '../../screens/admin/admin_jurnal_list_screen.dart';
+import '../../screens/admin/master/student_screen.dart';
 
 class AppRouter {
   static GoRouter router(BuildContext context) {
@@ -160,7 +161,8 @@ class AppRouter {
           path: '/guru/journal-form',
           builder: (context, state) {
             final scheduleId = state.uri.queryParameters['scheduleId'] ?? '';
-            return FormJurnalScreen(scheduleId: scheduleId);
+            final dateStr = state.uri.queryParameters['date'];
+            return FormJurnalScreen(scheduleId: scheduleId, dateStr: dateStr);
           },
         ),
         GoRoute(
@@ -229,6 +231,13 @@ class AppRouter {
         GoRoute(
           path: '/admin/master-data/classes',
           builder: (context, state) => const MasterClassScreen(),
+        ),
+        GoRoute(
+          path: '/admin/master-data/classes/:classId/students',
+          builder: (context, state) {
+            final classId = state.pathParameters['classId']!;
+            return MasterStudentScreen(classId: classId);
+          },
         ),
         GoRoute(
           path: '/admin/master-data/teachers',

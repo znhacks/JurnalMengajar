@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +10,7 @@ import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
 import '../../models/teacher_model.dart';
 import '../../core/utils/helper.dart';
+import '../../providers/auth_provider.dart';
 
 class DetailJurnalScreen extends StatelessWidget {
   final String journalId;
@@ -19,6 +20,9 @@ class DetailJurnalScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final masterProvider = context.watch<MasterDataProvider>();
     final journalProvider = context.watch<JournalProvider>();
+    final authProvider = context.watch<AuthProvider>();
+    final currentUser = authProvider.currentUser;
+    final isAdmin = currentUser?.role == 'admin';
 
     late JournalModel journal;
     try {
@@ -221,7 +225,50 @@ class DetailJurnalScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              if (journal.status == 'rejected') ...[
+              if (journal.status == 'rejected' && journal.rejectionNote != null && journal.rejectionNote!.isNotEmpty) ...[
+                SizedBox(height: 16.h),
+                Card(
+                  margin: EdgeInsets.zero,
+                  color: Colors.red.withValues(alpha: 0.05),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: const BorderSide(color: Colors.red, width: 1.2),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(16.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.info_outline, color: Colors.red),
+                            SizedBox(width: 8.w),
+                            Text(
+                              'Catatan Penolakan Admin:',
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red[800],
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8.h),
+                        Text(
+                          journal.rejectionNote!,
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            color: Colors.red[900],
+                            height: 1.4,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              if (journal.status == 'rejected' && !isAdmin) ...[
                 SizedBox(height: 24.h),
                 ElevatedButton.icon(
                   onPressed: () {
@@ -240,10 +287,145 @@ class DetailJurnalScreen extends StatelessWidget {
                   ),
                 ),
               ],
+              if (isAdmin && journal.status == 'pending') ...[
+                SizedBox(height: 24.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _handleReject(context, journalProvider, journal),
+                        icon: const Icon(Icons.close, color: Colors.red),
+                        label: const Text('Tolak'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red, width: 1.5),
+                          padding: EdgeInsets.symmetric(vertical: 14.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 16.w),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _handleApprove(context, journalProvider, journal),
+                        icon: const Icon(Icons.check, color: Colors.white),
+                        label: const Text('Setujui'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF10B981),
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 14.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               SizedBox(height: 24.h),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _handleApprove(BuildContext context, JournalProvider journalProvider, JournalModel journal) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Setujui Jurnal'),
+        content: const Text('Apakah Anda yakin ingin menyetujui jurnal mengajar ini?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final success = await journalProvider.verifyJournal(
+                journal.id,
+                'verified',
+                teacherId: journal.teacherId,
+              );
+              if (success && context.mounted) {
+                AppHelper.showSnackBar(context, 'Jurnal berhasil diverifikasi!');
+                Navigator.pop(context);
+              } else if (context.mounted) {
+                AppHelper.showSnackBar(context, 'Gagal memverifikasi jurnal', isError: true);
+              }
+            },
+            child: const Text('Setujui', style: TextStyle(color: Color(0xFF10B981))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleReject(BuildContext context, JournalProvider journalProvider, JournalModel journal) {
+    final commentController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final isButtonEnabled = commentController.text.trim().isNotEmpty;
+          
+          return AlertDialog(
+            title: const Text('Tolak Jurnal'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Masukkan alasan penolakan jurnal ini. Catatan wajib diisi agar guru dapat merevisi dengan jelas.',
+                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: commentController,
+                  autofocus: true,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Alasan Penolakan',
+                    hintText: 'Contoh: Foto lampiran buram / materi tidak sesuai...',
+                  ),
+                  onChanged: (_) {
+                    setDialogState(() {});
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Batal'),
+              ),
+              TextButton(
+                onPressed: isButtonEnabled
+                    ? () async {
+                        Navigator.pop(ctx);
+                        final success = await journalProvider.verifyJournal(
+                          journal.id,
+                          'rejected',
+                          rejectionNote: commentController.text.trim(),
+                          teacherId: journal.teacherId,
+                        );
+                        if (success && context.mounted) {
+                          AppHelper.showSnackBar(context, 'Jurnal berhasil ditolak');
+                          Navigator.pop(context);
+                        } else if (context.mounted) {
+                          AppHelper.showSnackBar(context, 'Gagal menolak jurnal', isError: true);
+                        }
+                      }
+                    : null,
+                child: const Text('Tolak Jurnal', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

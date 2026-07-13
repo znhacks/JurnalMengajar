@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../providers/master_data_provider.dart';
 import '../../../providers/schedule_provider.dart';
 import '../../../providers/journal_provider.dart';
@@ -523,7 +524,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           return;
                         }
 
-                        success = await scheduleProvider.createMultipleSchedules(schedulesToCreate);
+                        success = await scheduleProvider.createMultipleSchedules(schedulesToCreate, masterProvider.teachers);
                       } else {
                         // Edit Mode
                         final journalProvider = Provider.of<JournalProvider>(context, listen: false);
@@ -588,7 +589,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                               note: noteController.text.trim().isEmpty ? null : noteController.text.trim(),
                               isActive: isActive,
                             );
-                            final res = await scheduleProvider.updateSchedule(updatedSched);
+                            final res = await scheduleProvider.updateSchedule(updatedSched, masterProvider.teachers);
                             if (!res) allSuccess = false;
                           }
                           success = allSuccess;
@@ -644,7 +645,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                             );
                             return;
                           }
-                          success = await scheduleProvider.createMultipleSchedules(schedulesToCreate);
+                          success = await scheduleProvider.createMultipleSchedules(schedulesToCreate, masterProvider.teachers);
                         }
                       }
 
@@ -823,104 +824,133 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           );
                         },
                         child: Container(
-                          padding: EdgeInsets.all(16.w),
+                          padding: EdgeInsets.all(12.w),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
-                          child: Column(
+                          child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      '${cls.name} • Jam Ke-${sched.teachingHours.join(', ')}',
-                                      style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
-                                    ),
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.edit_outlined, color: Colors.indigo, size: 20),
-                                        onPressed: () => _showFormDialog(groupedSchedule: sched),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                                        onPressed: () async {
-                                          final confirm = await showDialog<bool>(
-                                            context: context,
-                                            builder: (context) => AlertDialog(
-                                              title: const Text('Hapus Jadwal'),
-                                              content: const Text('Apakah Anda yakin ingin menghapus jadwal mengajar ini?'),
-                                              actions: [
-                                                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-                                                TextButton(
-                                                  onPressed: () => Navigator.pop(context, true),
-                                                  child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-                                                ),
-                                              ],
+                              CircleAvatar(
+                                radius: 20.r,
+                                backgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                                backgroundImage: teacher.photoUrl != null && teacher.photoUrl!.isNotEmpty
+                                    ? NetworkImage(teacher.photoUrl!)
+                                    : null,
+                                child: teacher.photoUrl == null || teacher.photoUrl!.isEmpty
+                                    ? Text(
+                                        teacher.name.isNotEmpty ? teacher.name.substring(0, 1).toUpperCase() : 'G',
+                                        style: GoogleFonts.hankenGrotesk(
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF2563EB),
+                                          fontSize: 14.sp,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                              SizedBox(width: 12.w),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            '${cls.name} • Jam Ke-${sched.teachingHours.join(', ')}',
+                                            style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                                          ),
+                                        ),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.edit_outlined, color: Colors.indigo, size: 18),
+                                              onPressed: () => _showFormDialog(groupedSchedule: sched),
+                                              constraints: const BoxConstraints(),
+                                              padding: EdgeInsets.all(6.w),
                                             ),
-                                          );
-                                          if (confirm == true) {
-                                            _handleDelete(sched.scheduleIds);
-                                          }
-                                        },
+                                            IconButton(
+                                              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                                              onPressed: () async {
+                                                final confirm = await showDialog<bool>(
+                                                  context: context,
+                                                  builder: (context) => AlertDialog(
+                                                    title: const Text('Hapus Jadwal'),
+                                                    content: const Text('Apakah Anda yakin ingin menghapus jadwal mengajar ini?'),
+                                                    actions: [
+                                                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+                                                      TextButton(
+                                                        onPressed: () => Navigator.pop(context, true),
+                                                        child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                                if (confirm == true) {
+                                                  _handleDelete(sched.scheduleIds);
+                                                }
+                                              },
+                                              constraints: const BoxConstraints(),
+                                              padding: EdgeInsets.all(6.w),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 2.h),
+                                    Text(
+                                      'Mata Pelajaran: ${subject.name}',
+                                      style: TextStyle(fontSize: 12.sp, color: Colors.grey[750], fontWeight: FontWeight.w500),
+                                    ),
+                                    SizedBox(height: 2.h),
+                                    Text(
+                                      'Guru: ${teacher.name}',
+                                      style: TextStyle(fontSize: 12.sp, color: const Color(0xFF2563EB), fontWeight: FontWeight.w600),
+                                    ),
+                                    if (sched.note != null && sched.note!.isNotEmpty) ...[
+                                      SizedBox(height: 2.h),
+                                      Text(
+                                        'Catatan: ${sched.note}',
+                                        style: TextStyle(fontSize: 11.sp, color: Colors.grey[600], fontStyle: FontStyle.italic),
                                       ),
                                     ],
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 4.h),
-                              Text(
-                                'Mata Pelajaran: ${subject.name}',
-                                style: TextStyle(fontSize: 13.sp, color: Colors.grey[750], fontWeight: FontWeight.w500),
-                              ),
-                              SizedBox(height: 4.h),
-                              Text(
-                                'Guru: ${teacher.name}',
-                                style: TextStyle(fontSize: 13.sp, color: const Color(0xFF2563EB), fontWeight: FontWeight.w600),
-                              ),
-                              if (sched.note != null && sched.note!.isNotEmpty) ...[
-                                SizedBox(height: 4.h),
-                                Text(
-                                  'Catatan: ${sched.note}',
-                                  style: TextStyle(fontSize: 12.sp, color: Colors.grey[600], fontStyle: FontStyle.italic),
+                                    const Divider(height: 12),
+                                    Wrap(
+                                      spacing: 8.w,
+                                      runSpacing: 4.h,
+                                      alignment: WrapAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          '${AppHelper.formatDateShort(sched.startDate)} s/d ${AppHelper.formatDateShort(sched.endDate)}',
+                                          style: TextStyle(fontSize: 11.sp, color: Colors.grey[500]),
+                                        ),
+                                        Text(
+                                          'Hari: ${sched.weekdays.map(getWeekdayName).join(', ')}',
+                                          style: TextStyle(fontSize: 11.sp, color: Colors.grey[600], fontWeight: FontWeight.w500),
+                                        ),
+                                        Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.h),
+                                          decoration: BoxDecoration(
+                                            color: (sched.isActive ? const Color(0xFF10B981) : Colors.red).withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(999),
+                                          ),
+                                          child: Text(
+                                            sched.isActive ? 'Aktif' : 'Nonaktif',
+                                            style: TextStyle(
+                                              fontSize: 10.sp,
+                                              fontWeight: FontWeight.bold,
+                                              color: sched.isActive ? const Color(0xFF10B981) : Colors.red,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                              ],
-                              const Divider(height: 16),
-                              Wrap(
-                                spacing: 8.w,
-                                runSpacing: 4.h,
-                                alignment: WrapAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    '${AppHelper.formatDateShort(sched.startDate)} s/d ${AppHelper.formatDateShort(sched.endDate)}',
-                                    style: TextStyle(fontSize: 12.sp, color: Colors.grey[500]),
-                                  ),
-                                  Text(
-                                    'Hari: ${sched.weekdays.map(getWeekdayName).join(', ')}',
-                                    style: TextStyle(fontSize: 12.sp, color: Colors.grey[600], fontWeight: FontWeight.w500),
-                                  ),
-                                  Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                                    decoration: BoxDecoration(
-                                      color: (sched.isActive ? const Color(0xFF10B981) : Colors.red).withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(999),
-                                    ),
-                                    child: Text(
-                                      sched.isActive ? 'Aktif' : 'Nonaktif',
-                                      style: TextStyle(
-                                        fontSize: 11.sp,
-                                        fontWeight: FontWeight.bold,
-                                        color: sched.isActive ? const Color(0xFF10B981) : Colors.red,
-                                      ),
-                                    ),
-                                  ),
-                                ],
                               ),
                             ],
                           ),

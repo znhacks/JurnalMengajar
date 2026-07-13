@@ -65,27 +65,53 @@ class ScheduleProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void _validateNoActiveOverlap(ScheduleModel proposed, {String? excludeId}) {
+  void _validateNoActiveOverlap(
+    ScheduleModel proposed, {
+    String? excludeId,
+    required List<dynamic> teachers,
+  }) {
     if (!proposed.isActive) return;
 
     for (final s in _schedules) {
       if (s.id == excludeId) continue;
-      if (s.isActive &&
-          s.classId == proposed.classId &&
-          s.teachingHour == proposed.teachingHour &&
-          s.date.year == proposed.date.year &&
-          s.date.month == proposed.date.month &&
-          s.date.day == proposed.date.day) {
-        throw Exception('Terdapat Jadwal Aktif, Ambil jam atau tanggal yang berbeda');
+      if (s.isActive) {
+        final dateStrS = "${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}";
+        final dateStrProposed = "${proposed.date.year}-${proposed.date.month.toString().padLeft(2, '0')}-${proposed.date.day.toString().padLeft(2, '0')}";
+        if (dateStrS == dateStrProposed) {
+        
+        final isSameTeacher = s.teacherId == proposed.teacherId;
+        final isSameClass = s.classId == proposed.classId;
+        final isSameHour = s.teachingHour == proposed.teachingHour;
+
+        if (isSameHour && (isSameTeacher || isSameClass)) {
+          String teacherName = 'Guru';
+          try {
+            final t = teachers.firstWhere((t) => t.id == s.teacherId);
+            teacherName = t.name;
+          } catch (_) {
+            try {
+              final t = teachers.firstWhere((t) => t.id == proposed.teacherId);
+              teacherName = t.name;
+            } catch (_) {}
+          }
+
+          throw Exception(
+            'Tidak bisa membuat jadwal.\n\n'
+            'Guru: $teacherName\n'
+            'Jam yang terpakai: Jam ke-${proposed.teachingHour}\n\n'
+            'Coba pilih jam lain'
+          );
+        }
       }
     }
   }
+}
 
-  Future<bool> createSchedule(ScheduleModel model) async {
+  Future<bool> createSchedule(ScheduleModel model, List<dynamic> teachers) async {
     _isLoading = true;
     notifyListeners();
     try {
-      _validateNoActiveOverlap(model);
+      _validateNoActiveOverlap(model, teachers: teachers);
       await scheduleRepository.create(model);
       clearTeacherSchedulesCache();
       await loadAllSchedules();
@@ -99,12 +125,12 @@ class ScheduleProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> createMultipleSchedules(List<ScheduleModel> models) async {
+  Future<bool> createMultipleSchedules(List<ScheduleModel> models, List<dynamic> teachers) async {
     _isLoading = true;
     notifyListeners();
     try {
       for (final m in models) {
-        _validateNoActiveOverlap(m);
+        _validateNoActiveOverlap(m, teachers: teachers);
       }
       await scheduleRepository.createMultiple(models);
       clearTeacherSchedulesCache();
@@ -119,11 +145,11 @@ class ScheduleProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> updateSchedule(ScheduleModel model) async {
+  Future<bool> updateSchedule(ScheduleModel model, List<dynamic> teachers) async {
     _isLoading = true;
     notifyListeners();
     try {
-      _validateNoActiveOverlap(model, excludeId: model.id);
+      _validateNoActiveOverlap(model, excludeId: model.id, teachers: teachers);
       await scheduleRepository.update(model);
       clearTeacherSchedulesCache();
       await loadAllSchedules();

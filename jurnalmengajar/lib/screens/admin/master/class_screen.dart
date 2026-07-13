@@ -1,5 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/master_data_provider.dart';
 import '../../../models/class_model.dart';
@@ -30,7 +31,6 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
 
   void _showFormDialog({ClassModel? classItem}) {
     final nameController = TextEditingController(text: classItem?.name ?? '');
-    final studentCountController = TextEditingController(text: classItem != null ? '${classItem.studentCount}' : '');
     
     final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
     final activePeriod = masterProvider.activePeriod;
@@ -90,16 +90,6 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                       hintText: 'Contoh: Kelas X-A, XI-MIPA 1',
                     ),
                   ),
-                  SizedBox(height: 12.h),
-
-                  TextField(
-                    controller: studentCountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Jumlah Siswa',
-                      hintText: 'Contoh: 32',
-                    ),
-                  ),
                   SizedBox(height: 24.h),
                   ElevatedButton(
                     onPressed: () async {
@@ -111,11 +101,6 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                         AppHelper.showSnackBar(context, 'Nama kelas tidak boleh kosong', isError: true);
                         return;
                       }
-                      final sCount = int.tryParse(studentCountController.text.trim());
-                      if (sCount == null || sCount <= 0) {
-                        AppHelper.showSnackBar(context, 'Jumlah siswa harus berupa angka positif', isError: true);
-                        return;
-                      }
 
                       bool success;
 
@@ -124,13 +109,12 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                           id: '',
                           periodId: selectedPeriodId!,
                           name: nameController.text.trim(),
-                          studentCount: sCount,
+                          studentCount: 0,
                         ));
                       } else {
                         success = await masterProvider.updateClass(classItem.copyWith(
                           periodId: selectedPeriodId!,
                           name: nameController.text.trim(),
-                          studentCount: sCount,
                         ));
                       }
 
@@ -223,15 +207,18 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                             ),
                           );
                         },
-                        child: Container(
-                          padding: EdgeInsets.all(16.w),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                          ),
-                          child: Row(
-                            children: [
+                        child: InkWell(
+                          onTap: () => context.push('/admin/master-data/classes/${item.id}/students'),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: EdgeInsets.all(16.w),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: Row(
+                              children: [
                               CircleAvatar(
                                 backgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.1),
                                 child: Icon(Icons.class_, color: const Color(0xFF2563EB), size: 20.w),
@@ -261,6 +248,10 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.visibility_outlined, color: Colors.blue),
+                                    onPressed: () => context.push('/admin/master-data/classes/${item.id}/students'),
+                                  ),
                                   IconButton(
                                     icon: const Icon(Icons.edit_outlined, color: Colors.indigo),
                                     onPressed: () => _showFormDialog(classItem: item),
@@ -292,8 +283,9 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                             ],
                           ),
                         ),
-                      );
-                    },
+                      ),
+                    );
+                  },
                   ),
       ),
       floatingActionButton: FloatingActionButton(

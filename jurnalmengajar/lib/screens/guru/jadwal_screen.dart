@@ -6,6 +6,8 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
+import '../../providers/journal_provider.dart';
+import '../../models/journal_model.dart';
 import '../../models/teacher_model.dart';
 import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
@@ -13,7 +15,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/schedule_model.dart';
-import '../../models/period_model.dart';
 import '../../core/utils/schedule_grouper.dart';
 
 class GuruJadwalScreen extends StatefulWidget {
@@ -45,9 +46,16 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       context,
       listen: false,
     );
+    final journalProvider = Provider.of<JournalProvider>(
+      context,
+      listen: false,
+    );
 
     final currentUser = authProvider.currentUser;
     if (currentUser != null) {
+      if (masterProvider.teachers.isEmpty) {
+        await masterProvider.loadAllData();
+      }
       final teacher = masterProvider.teachers.firstWhere(
         (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
         orElse: () => TeacherModel(
@@ -61,7 +69,10 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       );
 
       if (teacher.id.isNotEmpty) {
-        await scheduleProvider.loadTeacherSchedules(teacher.id, _selectedDay);
+        await Future.wait([
+          scheduleProvider.loadTeacherSchedules(teacher.id, _selectedDay),
+          journalProvider.loadTeacherJournals(teacher.id),
+        ]);
       }
     }
   }
@@ -422,6 +433,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     final authProvider = context.watch<AuthProvider>();
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
+    final journalProvider = context.watch<JournalProvider>();
 
     final currentUser = authProvider.currentUser;
     final teacher = masterProvider.teachers.firstWhere(
@@ -468,6 +480,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                               return _buildScheduleItem(
                                 scheduleGroup,
                                 masterProvider,
+                                journalProvider,
                               );
                             },
                           );
@@ -519,6 +532,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
   Widget _buildScheduleItem(
     GroupedDailySchedule scheduleGroup,
     MasterDataProvider master,
+    JournalProvider journalProvider,
   ) {
     final schedule = scheduleGroup.primarySchedule;
     final cls = master.classes.firstWhere(
@@ -544,85 +558,202 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '00:00';
     final hoursStr = scheduleGroup.teachingHours.join(', ');
 
-    final period = master.periods.firstWhere(
-      (p) => p.id == schedule.periodId,
-      orElse: () => PeriodModel(id: '', name: 'Periode--', isActive: false),
-    );
+    // Find matching journal for this schedule group on the selected day
+    JournalModel? matchingJournal;
+    for (final j in journalProvider.teacherJournals) {
+      final sameDate = j.date.year == _selectedDay.year &&
+                      j.date.month == _selectedDay.month &&
+                      j.date.day == _selectedDay.day;
+      if (sameDate && (j.scheduleId == schedule.id || scheduleGroup.scheduleIds.contains(j.scheduleId))) {
+        matchingJournal = j;
+        break;
+      }
+    }
+
+    Color statusColor;
+    String statusLabel;
+    IconData statusIcon;
+
+    if (matchingJournal == null) {
+      statusColor = AppTheme.outline;
+      statusLabel = 'Belum Input';
+      statusIcon = Icons.pending_actions_rounded;
+    } else if (matchingJournal.status == 'verified') {
+      statusColor = const Color(0xFF10B981);
+      statusLabel = 'Disetujui';
+      statusIcon = Icons.check_circle_rounded;
+    } else if (matchingJournal.status == 'rejected') {
+      statusColor = Colors.red;
+      statusLabel = 'Ditolak';
+      statusIcon = Icons.cancel_rounded;
+    } else {
+      statusColor = const Color(0xFFF59E0B);
+      statusLabel = 'Menunggu';
+      statusIcon = Icons.hourglass_empty_rounded;
+    }
 
     return InkWell(
-      onTap: () => context.push('/guru/schedule/${schedule.id}'),
-      borderRadius: BorderRadius.circular(16),
+      onTap: () {
+        if (matchingJournal != null) {
+          context.push('/guru/journal/${matchingJournal.id}');
+        } else {
+          context.push('/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
+        }
+      },
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.outlineVariant),
         ),
-        child: Row(
-          children: [
-            // Left block (Hour Info)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Jam Ke',
-                  style: TextStyle(fontSize: 11.sp, color: Colors.grey[500]),
-                ),
-                Text(
-                  hoursStr,
-                  style: TextStyle(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF0F172A),
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              Container(
+                width: 4.w,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
                   ),
                 ),
-                Text(
-                  '$hrStart - $hrEnd',
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    color: const Color(0xFF2563EB),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(width: 16.w),
-            // Divider
-            Container(height: 50.h, width: 1, color: Colors.grey[200]),
-            SizedBox(width: 16.w),
-            // Right block (Class & Mapel details)
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    cls.name,
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF0F172A),
-                    ),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    subject.name,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    'Periode: ${period.name}',
-                    style: TextStyle(fontSize: 12.sp, color: Colors.grey[500]),
-                  ),
-                ],
               ),
-            ),
-            const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
-          ],
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                  child: Row(
+                    children: [
+                      // Hour block
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 6.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Jam',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 9.sp,
+                                color: AppTheme.primaryColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              '#$hoursStr',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 14.sp,
+                                color: AppTheme.primaryColor,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      // Details block
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              cls.name,
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.onBackground,
+                              ),
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              subject.name,
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 12.sp,
+                                color: AppTheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(height: 4.h),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.people_outline,
+                                  size: 11,
+                                  color: AppTheme.outline,
+                                ),
+                                SizedBox(width: 3.w),
+                                Text(
+                                  '${cls.studentCount} Siswa',
+                                  style: GoogleFonts.hankenGrotesk(
+                                    fontSize: 10.sp,
+                                    color: AppTheme.outline,
+                                  ),
+                                ),
+                                SizedBox(width: 8.w),
+                                const Icon(
+                                  Icons.access_time_outlined,
+                                  size: 11,
+                                  color: AppTheme.outline,
+                                ),
+                                SizedBox(width: 3.w),
+                                Text(
+                                  '$hrStart - $hrEnd',
+                                  style: GoogleFonts.hankenGrotesk(
+                                    fontSize: 10.sp,
+                                    color: AppTheme.outline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Status Badge
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: statusColor.withValues(alpha: 0.3), width: 1),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(statusIcon, color: statusColor, size: 12.sp),
+                            SizedBox(width: 4.w),
+                            Text(
+                              statusLabel,
+                              style: TextStyle(
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.bold,
+                                color: statusColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: AppTheme.outline,
+                        size: 18,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

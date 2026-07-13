@@ -85,18 +85,18 @@ class AppTheme {
 
       // ─── AppBar ───────────────────────────────────────────────────────────
       appBarTheme: AppBarTheme(
-        backgroundColor: surfaceColor,
-        foregroundColor: onBackground,
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 1,
-        shadowColor: outlineVariant,
+        shadowColor: Colors.transparent,
         centerTitle: true,
         titleTextStyle: GoogleFonts.hankenGrotesk(
-          color: onBackground,
+          color: Colors.white,
           fontSize: 17,
           fontWeight: FontWeight.w700,
         ),
-        iconTheme: const IconThemeData(color: onBackground),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
 
       // ─── Cards ────────────────────────────────────────────────────────────

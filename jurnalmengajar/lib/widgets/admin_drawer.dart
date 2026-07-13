@@ -56,7 +56,7 @@ class AdminDrawer extends StatelessWidget {
                   context,
                   Icons.check_circle_rounded,
                   'Jurnal Mengajar',
-                  '/admin/approvals',
+                  '/admin/journals',
                 ),
                 _buildMenuItem(
                   context,

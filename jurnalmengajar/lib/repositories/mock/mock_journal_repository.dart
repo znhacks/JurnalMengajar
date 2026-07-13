@@ -59,11 +59,14 @@ class MockJournalRepository implements JournalRepository {
   }
 
   @override
-  Future<void> verifyJournal(String journalId, String status) async {
+  Future<void> verifyJournal(String journalId, String status, {String? rejectionNote}) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final index = _db.journals.indexWhere((j) => j.id == journalId);
     if (index != -1) {
-      _db.journals[index] = _db.journals[index].copyWith(status: status);
+      _db.journals[index] = _db.journals[index].copyWith(
+        status: status,
+        rejectionNote: status == 'rejected' ? rejectionNote : null,
+      );
     } else {
       throw Exception('Jurnal tidak ditemukan!');
     }

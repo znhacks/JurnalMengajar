@@ -11,6 +11,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/warning_letter_provider.dart';
 import '../../models/teacher_model.dart';
+import '../../models/user_model.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/journal_provider.dart';
 import '../../core/utils/schedule_grouper.dart';
@@ -35,34 +36,35 @@ class _GuruMainShellState extends State<GuruMainShell> {
     const GuruProfilScreen(),
   ];
 
+  String? _loadedUserId;
+
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex ?? 0;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-      final warningProvider = Provider.of<WarningLetterProvider>(context, listen: false);
+  }
 
-      final currentUser = authProvider.currentUser;
-      if (currentUser != null) {
-        await masterProvider.loadAllData();
-        if (!mounted) return;
-        final teacher = masterProvider.teachers.firstWhere(
-          (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
-          orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
-        );
-        if (teacher.id.isNotEmpty) {
-          await Future.wait([
-            warningProvider.loadTeacherWarningLetters(teacher.id),
-            Provider.of<ScheduleProvider>(context, listen: false)
-                .loadTeacherSchedules(teacher.id, DateTime.now()),
-            Provider.of<JournalProvider>(context, listen: false)
-                .loadTeacherJournals(teacher.id),
-          ]);
-        }
-      }
-    });
+  Future<void> _loadUserData(UserModel currentUser) async {
+    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+    final warningProvider = Provider.of<WarningLetterProvider>(context, listen: false);
+    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+
+    await masterProvider.loadAllData();
+    if (!mounted) return;
+    
+    final teacher = masterProvider.teachers.firstWhere(
+      (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
+      orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
+    );
+    
+    if (teacher.id.isNotEmpty) {
+      await Future.wait([
+        warningProvider.loadTeacherWarningLetters(teacher.id),
+        scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
+        journalProvider.loadTeacherJournals(teacher.id),
+      ]);
+    }
   }
 
   @override
@@ -158,6 +160,16 @@ class _GuruMainShellState extends State<GuruMainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+    final currentUser = authProvider.currentUser;
+
+    if (currentUser != null && _loadedUserId != currentUser.id) {
+      _loadedUserId = currentUser.id;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadUserData(currentUser);
+      });
+    }
+
     final warningProvider = context.watch<WarningLetterProvider>();
     final unreadWarnings = warningProvider.warningLetters.where((w) => w.status == 'unread').length;
 

@@ -181,12 +181,12 @@ class JournalProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> verifyJournal(String journalId, String status, {String? teacherId}) async {
+  Future<bool> verifyJournal(String journalId, String status, {String? rejectionNote, String? teacherId}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      await journalRepository.verifyJournal(journalId, status);
+      await journalRepository.verifyJournal(journalId, status, rejectionNote: rejectionNote);
       await loadAllJournals();
       if (teacherId != null && teacherId.isNotEmpty) {
         await loadTeacherJournals(teacherId);

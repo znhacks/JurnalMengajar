@@ -135,11 +135,19 @@ class SupabaseJournalRepository implements JournalRepository {
   }
 
   @override
-  Future<void> verifyJournal(String journalId, String status) async {
+  Future<void> verifyJournal(String journalId, String status, {String? rejectionNote}) async {
     try {
+      final Map<String, dynamic> payload = {
+        SupabaseConstants.fieldStatus: status,
+      };
+      if (status == 'rejected' && rejectionNote != null) {
+        payload['rejection_note'] = rejectionNote;
+      } else if (status == 'approved') {
+        payload['rejection_note'] = null;
+      }
       await _supabase
           .from(SupabaseConstants.tableJournals)
-          .update({SupabaseConstants.fieldStatus: status})
+          .update(payload)
           .eq(SupabaseConstants.fieldId, journalId);
     } catch (e) {
       throw Exception('Gagal memperbarui status jurnal: $e');

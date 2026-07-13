@@ -208,9 +208,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       backgroundColor: AppTheme.background,
       appBar: AppBar(
         title: const Text('Dashboard Admin'),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppTheme.onBackground),
       ),
       drawer: const AdminDrawer(currentRoute: '/admin/dashboard'),
       body: isLoading
@@ -226,7 +223,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                         Row(
+                        // 1. Calendar Card (di atas sendiri)
+                        _buildCalendarCard(
+                          scheduleProvider.schedules,
+                          hasHighlightBefore,
+                          hasHighlightAfter,
+                        ),
+                        SizedBox(height: 12.h),
+
+                        // 2. Teacher Selector (opsi pemilihan dibawahnya)
+                        _buildTeacherSelectorCompact(masterProvider.teachers),
+                        SizedBox(height: 12.h),
+
+                        // 3. Stat Cards Row (di Bawah bagian opsi)
+                        Row(
                           children: [
                             Expanded(
                               child: _buildStatCard(
@@ -272,19 +282,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ),
                         SizedBox(height: 12.h),
 
-                        // ── Teacher Selector + Calendar ─────────────────────────────
-                        _buildTeacherSelectorCompact(masterProvider.teachers),
-                        SizedBox(height: 12.h),
-
-                        // ── Calendar Card ──────────────────────────────────────────
-                        _buildCalendarCard(
-                          scheduleProvider.schedules,
-                          hasHighlightBefore,
-                          hasHighlightAfter,
-                        ),
-                        SizedBox(height: 12.h),
-
-                        // ── Jadwal hari ini ────────────────────────────────────────
+                        // 4. Jadwal hari ini (sisanya di Bawah stats card)
                         _buildSectionTitle(
                           _selectedTeacherId == null
                               ? 'Jadwal — ${AppHelper.formatDateShort(_selectedDay)}'
@@ -401,13 +399,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (onTap != null) ...[SizedBox(height: 2.h), Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Icon(Icons.arrow_forward_ios_rounded,
-                      size: 8.sp, color: color),
-                ],
-              )],
+              Visibility(
+                visible: onTap != null,
+                maintainSize: true,
+                maintainAnimation: true,
+                maintainState: true,
+                child: Padding(
+                  padding: EdgeInsets.only(top: 2.h),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Icon(Icons.arrow_forward_ios_rounded,
+                          size: 8.sp, color: color),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -939,15 +946,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         child: Row(
                           children: [
                             CircleAvatar(
-                              backgroundColor: statusColor.withValues(
-                                alpha: 0.1,
-                              ),
-                              child: Icon(
-                                hasJournal
-                                    ? Icons.check_circle_outline
-                                    : Icons.pending_actions,
-                                color: statusColor,
-                              ),
+                              radius: 20.r,
+                              backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                              backgroundImage: teacher.photoUrl != null && teacher.photoUrl!.isNotEmpty
+                                  ? NetworkImage(teacher.photoUrl!)
+                                  : null,
+                              child: teacher.photoUrl == null || teacher.photoUrl!.isEmpty
+                                  ? Text(
+                                      teacher.name.isNotEmpty
+                                          ? teacher.name.substring(0, 1).toUpperCase()
+                                          : 'G',
+                                      style: GoogleFonts.hankenGrotesk(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.primaryColor,
+                                        fontSize: 14.sp,
+                                      ),
+                                    )
+                                  : null,
                             ),
                             SizedBox(width: 12.w),
                             Expanded(
@@ -975,23 +990,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 ],
                               ),
                             ),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 10.w,
-                                vertical: 4.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: statusColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                hasJournal ? 'Sudah Input' : 'Belum Input',
-                                style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: statusColor,
-                                ),
-                              ),
+                            Icon(
+                              hasJournal ? Icons.check_circle_rounded : Icons.pending_actions_rounded,
+                              color: statusColor,
+                              size: 22.w,
                             ),
                           ],
                         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
@@ -340,6 +341,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        title: const Text('Dashboard Guru'),
+      ),
       body: RefreshIndicator(
         onRefresh: _refreshData,
         color: AppTheme.primaryColor,
@@ -400,10 +404,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+          colors: [Color(0xFF0F172A), Color(0xFF2563EB)],
         ),
       ),
-      padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 28.h),
+      padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 18.h),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -413,11 +417,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
               shape: BoxShape.circle,
               border: Border.all(
                 color: Colors.white.withValues(alpha: 0.4),
-                width: 2.5,
+                width: 2,
               ),
             ),
             child: CircleAvatar(
-              radius: 28.r,
+              radius: 20.r,
               backgroundColor: Colors.white.withValues(alpha: 0.15),
               backgroundImage:
                   teacher.photoUrl != null &&
@@ -425,11 +429,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   ? NetworkImage(teacher.photoUrl!)
                   : null,
               child: teacher.photoUrl == null
-                  ? Icon(Icons.person, size: 28.r, color: Colors.white70)
+                  ? Icon(Icons.person, size: 20.r, color: Colors.white70)
                   : null,
             ),
           ),
-          SizedBox(width: 14.w),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -437,30 +441,31 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 Text(
                   'Selamat Datang 👋',
                   style: GoogleFonts.hankenGrotesk(
-                    fontSize: 12.sp,
-                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 10.sp,
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                SizedBox(height: 2.h),
+                SizedBox(height: 1.h),
                 Text(
                   teacher.name,
                   style: GoogleFonts.hankenGrotesk(
-                    fontSize: 19.sp,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 4.h),
                 Text(
                   teacher.position,
                   style: GoogleFonts.hankenGrotesk(
-                    fontSize: 12.sp,
-                    color: Colors.white.withValues(alpha: 0.75),
-                    fontWeight: FontWeight.w500,
+                    fontSize: 10.sp,
+                    color: Colors.white.withValues(alpha: 0.65),
+                    fontWeight: FontWeight.w400,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -709,55 +714,83 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
     );
 
-    final matchedHours =
-        master.hours
-            .where((h) => scheduleGroup.teachingHours.contains(h.teachingHour))
-            .toList()
-          ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
-
-    final hrStart = matchedHours.isNotEmpty
-        ? matchedHours.first.startTime
-        : '00:00';
-    final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '00:00';
     final hoursStr = scheduleGroup.teachingHours.join(', ');
 
+    // Find matching journal for this schedule group on the selected day
+    JournalModel? matchingJournal;
+    for (final j in journalProvider.teacherJournals) {
+      final sameDate = j.date.year == _selectedDay.year &&
+                      j.date.month == _selectedDay.month &&
+                      j.date.day == _selectedDay.day;
+      if (sameDate && (j.scheduleId == schedule.id || scheduleGroup.scheduleIds.contains(j.scheduleId))) {
+        matchingJournal = j;
+        break;
+      }
+    }
+
+    Color statusColor;
+    String statusLabel;
+    IconData statusIcon;
+
+    if (matchingJournal == null) {
+      statusColor = AppTheme.outline;
+      statusLabel = 'Belum Input';
+      statusIcon = Icons.pending_actions_rounded;
+    } else if (matchingJournal.status == 'verified') {
+      statusColor = const Color(0xFF10B981);
+      statusLabel = 'Disetujui';
+      statusIcon = Icons.check_circle_rounded;
+    } else if (matchingJournal.status == 'rejected') {
+      statusColor = Colors.red;
+      statusLabel = 'Ditolak';
+      statusIcon = Icons.cancel_rounded;
+    } else {
+      statusColor = const Color(0xFFF59E0B);
+      statusLabel = 'Menunggu';
+      statusIcon = Icons.hourglass_empty_rounded;
+    }
+
     return InkWell(
-      onTap: () => context.push('/guru/schedule/${schedule.id}'),
-      borderRadius: BorderRadius.circular(16),
+      onTap: () {
+        if (matchingJournal != null) {
+          context.push('/guru/journal/${matchingJournal.id}');
+        } else {
+          context.push('/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
+        }
+      },
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppTheme.outlineVariant),
         ),
         child: IntrinsicHeight(
           child: Row(
             children: [
-              // Left accent bar
               Container(
                 width: 4.w,
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor,
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
                   ),
                 ),
               ),
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.all(14.w),
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                   child: Row(
                     children: [
-                      // Hour chip
                       Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 10.w,
-                          vertical: 8.h,
+                          horizontal: 8.w,
+                          vertical: 6.h,
                         ),
                         decoration: BoxDecoration(
                           color: AppTheme.primaryColor.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -773,23 +806,15 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             Text(
                               '#$hoursStr',
                               style: GoogleFonts.hankenGrotesk(
-                                fontSize: 16.sp,
+                                fontSize: 14.sp,
                                 color: AppTheme.primaryColor,
                                 fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            Text(
-                              hrStart,
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 9.sp,
-                                color: AppTheme.primaryColor,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      SizedBox(width: 14.w),
-                      // Class & Subject
+                      SizedBox(width: 12.w),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -798,47 +823,35 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             Text(
                               cls.name,
                               style: GoogleFonts.hankenGrotesk(
-                                fontSize: 15.sp,
+                                fontSize: 14.sp,
                                 fontWeight: FontWeight.w700,
                                 color: AppTheme.onBackground,
                               ),
                             ),
-                            SizedBox(height: 3.h),
+                            SizedBox(height: 2.h),
                             Text(
                               subject.name,
                               style: GoogleFonts.hankenGrotesk(
-                                fontSize: 13.sp,
+                                fontSize: 12.sp,
                                 color: AppTheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w500,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             SizedBox(height: 4.h),
                             Row(
                               children: [
                                 const Icon(
                                   Icons.people_outline,
-                                  size: 12,
+                                  size: 11,
                                   color: AppTheme.outline,
                                 ),
                                 SizedBox(width: 3.w),
                                 Text(
                                   '${cls.studentCount} Siswa',
                                   style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 11.sp,
-                                    color: AppTheme.outline,
-                                  ),
-                                ),
-                                SizedBox(width: 8.w),
-                                const Icon(
-                                  Icons.access_time_outlined,
-                                  size: 12,
-                                  color: AppTheme.outline,
-                                ),
-                                SizedBox(width: 3.w),
-                                Text(
-                                  '$hrStart–$hrEnd',
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 11.sp,
+                                    fontSize: 10.sp,
                                     color: AppTheme.outline,
                                   ),
                                 ),
@@ -847,10 +860,34 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                           ],
                         ),
                       ),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: statusColor.withValues(alpha: 0.3), width: 1),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(statusIcon, color: statusColor, size: 12.sp),
+                            SizedBox(width: 4.w),
+                            Text(
+                              statusLabel,
+                              style: TextStyle(
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.bold,
+                                color: statusColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
                       const Icon(
                         Icons.chevron_right,
                         color: AppTheme.outline,
-                        size: 20,
+                        size: 18,
                       ),
                     ],
                   ),
@@ -879,30 +916,29 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
     return InkWell(
       onTap: () => context.push('/guru/journal/${journal.id}'),
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppTheme.outlineVariant),
         ),
         child: IntrinsicHeight(
           child: Row(
             children: [
-              // Status accent bar
               Container(
                 width: 4.w,
                 decoration: BoxDecoration(
                   color: statusColor,
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
                   ),
                 ),
               ),
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.all(14.w),
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -911,20 +947,18 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              '${cls.name} · ${subject.name}',
+                              '${cls.name} • Jam Ke-${journal.teachingHour}',
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 14.sp,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.bold,
                                 color: AppTheme.onBackground,
                               ),
                             ),
                           ),
-                          SizedBox(width: 8.w),
-                          // Pill status badge
                           Container(
                             padding: EdgeInsets.symmetric(
-                              horizontal: 10.w,
-                              vertical: 4.h,
+                              horizontal: 8.w,
+                              vertical: 2.h,
                             ),
                             decoration: BoxDecoration(
                               color: statusColor.withValues(alpha: 0.1),
@@ -933,26 +967,25 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             child: Text(
                               AppHelper.getStatusLabel(journal.status),
                               style: GoogleFonts.hankenGrotesk(
-                                fontSize: 10.sp,
+                                fontSize: 9.sp,
                                 color: statusColor,
                                 fontWeight: FontWeight.w700,
-                                letterSpacing: 0.2,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: 6.h),
+                      SizedBox(height: 2.h),
                       Text(
-                        journal.material,
+                        '${subject.name} — ${journal.material}',
                         style: GoogleFonts.hankenGrotesk(
                           fontSize: 12.sp,
                           color: AppTheme.onSurfaceVariant,
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: 8.h),
+                      SizedBox(height: 6.h),
                       Row(
                         children: [
                           const Icon(
@@ -964,15 +997,17 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                           Text(
                             AppHelper.formatDateShort(journal.date),
                             style: GoogleFonts.hankenGrotesk(
-                              fontSize: 11.sp,
+                              fontSize: 10.sp,
                               color: AppTheme.outline,
                             ),
                           ),
                           const Spacer(),
+                          const Icon(Icons.people_outline, size: 11, color: AppTheme.outline),
+                          SizedBox(width: 4.w),
                           Text(
                             'S:${journal.sickCount} I:${journal.permissionCount} A:${journal.alphaCount}',
                             style: GoogleFonts.hankenGrotesk(
-                              fontSize: 11.sp,
+                              fontSize: 10.sp,
                               color: AppTheme.onSurfaceVariant,
                               fontWeight: FontWeight.w600,
                             ),

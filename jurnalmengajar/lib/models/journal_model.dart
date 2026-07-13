@@ -16,6 +16,7 @@ class JournalModel {
   final JournalAttachmentModel? attachment;
   final String status; // 'pending' | 'approved' | 'rejected'
   final String? attachmentUrl;
+  final String? rejectionNote;
 
   JournalModel({
     required this.id,
@@ -33,6 +34,7 @@ class JournalModel {
     this.attachment,
     required this.status,
     this.attachmentUrl,
+    this.rejectionNote,
   });
 
   factory JournalModel.fromJson(Map<String, dynamic> json) {
@@ -70,6 +72,7 @@ class JournalModel {
       attachment: attachment,
       status: json['status'] as String,
       attachmentUrl: attachmentUrl,
+      rejectionNote: json['rejection_note'] as String? ?? json['rejectionNote'] as String?,
     );
   }
 
@@ -89,6 +92,7 @@ class JournalModel {
       'note': note,
       'status': status,
       'attachment_url': attachmentUrl,
+      'rejection_note': rejectionNote,
     };
   }
 
@@ -108,6 +112,7 @@ class JournalModel {
     JournalAttachmentModel? attachment,
     String? status,
     String? attachmentUrl,
+    String? rejectionNote,
   }) {
     return JournalModel(
       id: id ?? this.id,
@@ -125,6 +130,7 @@ class JournalModel {
       attachment: attachment ?? this.attachment,
       status: status ?? this.status,
       attachmentUrl: attachmentUrl ?? this.attachmentUrl,
+      rejectionNote: rejectionNote ?? this.rejectionNote,
     );
   }
 }

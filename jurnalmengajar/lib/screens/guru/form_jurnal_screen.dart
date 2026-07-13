@@ -1,4 +1,4 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -17,7 +17,8 @@ import '../../core/utils/helper.dart';
 
 class FormJurnalScreen extends StatefulWidget {
   final String scheduleId;
-  const FormJurnalScreen({super.key, required this.scheduleId});
+  final String? dateStr;
+  const FormJurnalScreen({super.key, required this.scheduleId, this.dateStr});
 
   @override
   State<FormJurnalScreen> createState() => _FormJurnalScreenState();
@@ -316,7 +317,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         final newJournal = JournalModel(
           id: '', // Will be generated in repository
           scheduleId: schedule.id,
-          date: schedule.date,
+          date: widget.dateStr != null ? DateTime.parse(widget.dateStr!) : schedule.date,
           teachingHour: schedule.teachingHour,
           classId: schedule.classId,
           subjectId: schedule.subjectId,
@@ -437,7 +438,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                         const Divider(height: 16),
                         _buildSummaryRow(
                           'Tanggal',
-                          AppHelper.formatDate(schedule.date),
+                          AppHelper.formatDate(widget.dateStr != null ? DateTime.parse(widget.dateStr!) : schedule.date),
                         ),
                         const Divider(height: 16),
                         _buildSummaryRow(

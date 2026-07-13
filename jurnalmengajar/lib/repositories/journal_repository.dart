@@ -7,5 +7,5 @@ abstract class JournalRepository {
   Future<void> create(JournalModel model);
   Future<void> update(JournalModel model);
   Future<void> delete(String id);
-  Future<void> verifyJournal(String journalId, String status);
+  Future<void> verifyJournal(String journalId, String status, {String? rejectionNote});
 }

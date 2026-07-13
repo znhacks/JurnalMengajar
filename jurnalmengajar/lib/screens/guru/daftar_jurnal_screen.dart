@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -110,7 +111,6 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
       backgroundColor: AppTheme.background,
       appBar: AppBar(
         title: const Text('Riwayat Jurnal'),
-        backgroundColor: Colors.white,
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(48.h),
           child: Container(
@@ -214,72 +214,52 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
       orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
     );
 
-    const statusColor = Color(0xFFEA580C); // Warning Orange
+    const statusColor = Color(0xFFEA580C);
     final hoursStr = group.teachingHours.join(', ');
 
     return InkWell(
-      onTap: () => context.push('/guru/journal-form?scheduleId=${schedule.id}'),
-      borderRadius: BorderRadius.circular(16),
+      onTap: () => context.push('/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(group.date)}'),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFFED7AA), width: 1.5), // Orange tint border
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFFED7AA), width: 1.2),
         ),
         child: IntrinsicHeight(
           child: Row(
             children: [
-              // Status left bar
               Container(
                 width: 4.w,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: statusColor,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
                   ),
                 ),
               ),
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.all(14.w),
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header row
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  cls.name,
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 15.sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppTheme.onBackground,
-                                  ),
-                                ),
-                                SizedBox(height: 2.h),
-                                Text(
-                                  subject.name,
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 13.sp,
-                                    color: AppTheme.onSurfaceVariant,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              '${cls.name} • Jam Ke-$hoursStr',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.onBackground,
+                              ),
                             ),
                           ),
-                          SizedBox(width: 8.w),
-                          // Pill status badge
                           Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 10.w, vertical: 4.h),
+                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                             decoration: BoxDecoration(
                               color: statusColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(999),
@@ -287,51 +267,31 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
                             child: Text(
                               'Belum Diisi',
                               style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 10.sp,
-                                  color: statusColor,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.2),
+                                fontSize: 9.sp,
+                                color: statusColor,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: 10.h),
-                      // Instruction preview
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(10.w),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF7ED), // Light orange bg
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.edit_note, color: statusColor, size: 20),
-                            SizedBox(width: 8.w),
-                            Expanded(
-                              child: Text(
-                                'Jadwal mengajar jam ke-$hoursStr belum diisi. Ketuk untuk isi sekarang.',
-                                style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 12.sp,
-                                  color: const Color(0xFFC2410C),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
+                      SizedBox(height: 2.h),
+                      Text(
+                        subject.name,
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 12.sp,
+                          color: AppTheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      SizedBox(height: 10.h),
-                      // Footer row
+                      SizedBox(height: 6.h),
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today_outlined,
-                              size: 12, color: AppTheme.outline),
+                          const Icon(Icons.calendar_today_outlined, size: 11, color: AppTheme.outline),
                           SizedBox(width: 4.w),
                           Text(
                             AppHelper.formatDateShort(group.date),
-                            style: GoogleFonts.hankenGrotesk(
-                                fontSize: 11.sp, color: AppTheme.outline),
+                            style: GoogleFonts.hankenGrotesk(fontSize: 10.sp, color: AppTheme.outline),
                           ),
                           const Spacer(),
                           Text(
@@ -339,12 +299,11 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 11.sp,
                               color: AppTheme.primaryColor,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                           SizedBox(width: 2.w),
-                          const Icon(Icons.arrow_forward,
-                              size: 12, color: AppTheme.primaryColor),
+                          const Icon(Icons.arrow_forward_rounded, size: 11, color: AppTheme.primaryColor),
                         ],
                       ),
                     ],
@@ -372,67 +331,47 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
 
     return InkWell(
       onTap: () => context.push('/guru/journal/${journal.id}'),
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppTheme.outlineVariant),
         ),
         child: IntrinsicHeight(
           child: Row(
             children: [
-              // Status left bar
               Container(
                 width: 4.w,
                 decoration: BoxDecoration(
                   color: statusColor,
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
                   ),
                 ),
               ),
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.all(14.w),
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header row
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  cls.name,
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 15.sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppTheme.onBackground,
-                                  ),
-                                ),
-                                SizedBox(height: 2.h),
-                                Text(
-                                  subject.name,
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 13.sp,
-                                    color: AppTheme.onSurfaceVariant,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              '${cls.name} • Jam Ke-${journal.teachingHour}',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.onBackground,
+                              ),
                             ),
                           ),
-                          SizedBox(width: 8.w),
-                          // Pill status badge
                           Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 10.w, vertical: 4.h),
+                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                             decoration: BoxDecoration(
                               color: statusColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(999),
@@ -440,53 +379,41 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
                             child: Text(
                               AppHelper.getStatusLabel(journal.status),
                               style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 10.sp,
-                                  color: statusColor,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.2),
+                                fontSize: 9.sp,
+                                color: statusColor,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: 10.h),
-                      // Material preview
-                      Container(
-                        padding: EdgeInsets.all(10.w),
-                        decoration: BoxDecoration(
-                          color: AppTheme.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(8),
+                      SizedBox(height: 2.h),
+                      Text(
+                        '${subject.name} — ${journal.material}',
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 12.sp,
+                          color: AppTheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
                         ),
-                        child: Text(
-                          journal.material,
-                          style: GoogleFonts.hankenGrotesk(
-                            fontSize: 12.sp,
-                            color: AppTheme.onSurfaceVariant,
-                            height: 1.4,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: 10.h),
-                      // Footer row
+                      SizedBox(height: 6.h),
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today_outlined,
-                              size: 12, color: AppTheme.outline),
+                          const Icon(Icons.calendar_today_outlined, size: 11, color: AppTheme.outline),
                           SizedBox(width: 4.w),
                           Text(
                             AppHelper.formatDateShort(journal.date),
-                            style: GoogleFonts.hankenGrotesk(
-                                fontSize: 11.sp, color: AppTheme.outline),
+                            style: GoogleFonts.hankenGrotesk(fontSize: 10.sp, color: AppTheme.outline),
                           ),
                           const Spacer(),
-                          const Icon(Icons.people_outline,
-                              size: 12, color: AppTheme.outline),
+                          const Icon(Icons.people_outline, size: 11, color: AppTheme.outline),
                           SizedBox(width: 4.w),
                           Text(
                             'S:${journal.sickCount} I:${journal.permissionCount} A:${journal.alphaCount}',
                             style: GoogleFonts.hankenGrotesk(
-                              fontSize: 11.sp,
+                              fontSize: 10.sp,
                               color: AppTheme.onSurfaceVariant,
                               fontWeight: FontWeight.w600,
                             ),
