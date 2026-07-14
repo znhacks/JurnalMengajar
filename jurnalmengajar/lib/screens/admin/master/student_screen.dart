@@ -306,7 +306,10 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
       appBar: AppBar(
         title: Text(
           'Daftar Siswa',
-          style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+          style: GoogleFonts.hankenGrotesk(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.onBackground,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -322,61 +325,47 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                   // Class summary header card
                   Container(
                     width: double.infinity,
-                    margin: EdgeInsets.all(16.w),
-                    padding: EdgeInsets.all(16.w),
+                    margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFF2563EB).withValues(alpha: 0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              cls.name,
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                              ),
-                            ),
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                '${filteredStudents.length} Siswa Terdaftar',
-                                style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 11.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 8.h),
                         Text(
-                          'Kelola data siswa, nomor induk siswa, dan jenis kelamin kelas ${cls.name} di halaman ini.',
+                          cls.name,
                           style: GoogleFonts.hankenGrotesk(
-                            fontSize: 12.sp,
-                            color: Colors.white.withValues(alpha: 0.8),
-                            height: 1.4,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '${filteredStudents.length} Siswa Terdaftar',
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ],

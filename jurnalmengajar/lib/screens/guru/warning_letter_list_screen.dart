@@ -87,7 +87,13 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Surat Peringatan Saya'),
+        title: Text(
+          'Surat Peringatan Saya',
+          style: GoogleFonts.hankenGrotesk(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.onBackground,
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppTheme.onBackground),

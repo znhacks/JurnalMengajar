@@ -71,7 +71,13 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Persetujuan Jurnal'),
+        title: Text(
+          'Persetujuan Jurnal',
+          style: GoogleFonts.hankenGrotesk(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.onBackground,
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppTheme.onBackground),
