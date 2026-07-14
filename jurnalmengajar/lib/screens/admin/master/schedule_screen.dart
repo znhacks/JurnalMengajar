@@ -772,135 +772,138 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                     title: 'Jadwal Kosong',
                     subtitle: 'Tekan tombol + di bawah untuk menambah jadwal mengajar baru.',
                   )
-                : ListView.separated(
-                    padding: EdgeInsets.all(16.w),
-                    itemCount: groupedSchedules.length,
-                    separatorBuilder: (context, index) => SizedBox(height: 12.h),
-                    itemBuilder: (context, index) {
-                      final sched = groupedSchedules[index];
+                  : ListView.separated(
+                      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                      itemCount: groupedSchedules.length,
+                      separatorBuilder: (context, index) => SizedBox(height: 8.h),
+                      itemBuilder: (context, index) {
+                        final sched = groupedSchedules[index];
 
-                      final teacher = masterProvider.teachers.firstWhere(
-                        (t) => t.id == sched.teacherId,
-                        orElse: () => TeacherModel(id: '', name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''),
-                      );
+                        final teacher = masterProvider.teachers.firstWhere(
+                          (t) => t.id == sched.teacherId,
+                          orElse: () => TeacherModel(id: '', name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''),
+                        );
 
-                      final cls = masterProvider.classes.firstWhere(
-                        (c) => c.id == sched.classId,
-                        orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
-                      );
+                        final cls = masterProvider.classes.firstWhere(
+                          (c) => c.id == sched.classId,
+                          orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
+                        );
 
-                      final subject = masterProvider.subjects.firstWhere(
-                        (s) => s.id == sched.subjectId,
-                        orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
-                      );
+                        final subject = masterProvider.subjects.firstWhere(
+                          (s) => s.id == sched.subjectId,
+                          orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
+                        );
 
-                      return Dismissible(
-                        key: Key(sched.scheduleIds.first),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: EdgeInsets.only(right: 20.w),
-                          decoration: BoxDecoration(
-                            color: Colors.red[600],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.delete, color: Colors.white),
-                        ),
-                        onDismissed: (_) => _handleDelete(sched.scheduleIds),
-                        confirmDismiss: (_) async {
-                          return await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Hapus Jadwal'),
-                              content: const Text('Apakah Anda yakin ingin menghapus jadwal mengajar ini?'),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-                                ),
-                              ],
+                        return Dismissible(
+                          key: Key(sched.scheduleIds.first),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: EdgeInsets.only(right: 20.w),
+                            decoration: BoxDecoration(
+                              color: Colors.red[600],
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          );
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                            child: const Icon(Icons.delete, color: Colors.white),
                           ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              CircleAvatar(
-                                radius: 18.r,
-                                backgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.1),
-                                backgroundImage: teacher.photoUrl != null && teacher.photoUrl!.isNotEmpty
-                                    ? NetworkImage(teacher.photoUrl!)
-                                    : null,
-                                child: teacher.photoUrl == null || teacher.photoUrl!.isEmpty
-                                    ? Text(
-                                        teacher.name.isNotEmpty ? teacher.name.substring(0, 1).toUpperCase() : 'G',
-                                        style: GoogleFonts.hankenGrotesk(
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF2563EB),
-                                          fontSize: 13.sp,
-                                        ),
-                                      )
-                                    : null,
+                          onDismissed: (_) => _handleDelete(sched.scheduleIds),
+                          confirmDismiss: (_) async {
+                            return await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Hapus Jadwal'),
+                                content: const Text('Apakah Anda yakin ingin menghapus jadwal mengajar ini?'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, true),
+                                    child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                                  ),
+                                ],
                               ),
-                              SizedBox(width: 10.w),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            '${cls.name} • Jam Ke-${sched.teachingHours.join(', ')}',
-                                            style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                            );
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                CircleAvatar(
+                                  radius: 18.r,
+                                  backgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                                  backgroundImage: teacher.photoUrl != null && teacher.photoUrl!.isNotEmpty
+                                      ? NetworkImage(teacher.photoUrl!)
+                                      : null,
+                                  child: teacher.photoUrl == null || teacher.photoUrl!.isEmpty
+                                      ? Text(
+                                          teacher.name.isNotEmpty ? teacher.name.substring(0, 1).toUpperCase() : 'G',
+                                          style: GoogleFonts.hankenGrotesk(
+                                            fontWeight: FontWeight.bold,
+                                            color: const Color(0xFF2563EB),
+                                            fontSize: 13.sp,
                                           ),
-                                        ),
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.edit_outlined, color: Colors.indigo, size: 16),
-                                              onPressed: () => _showFormDialog(groupedSchedule: sched),
-                                              constraints: const BoxConstraints(),
-                                              padding: EdgeInsets.all(4.w),
+                                        )
+                                      : null,
+                                ),
+                                SizedBox(width: 10.w),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              '${cls.name} • Jam Ke-${sched.teachingHours.join(', ')}',
+                                              style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
                                             ),
-                                            IconButton(
-                                              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 16),
-                                              onPressed: () async {
-                                                final confirm = await showDialog<bool>(
-                                                  context: context,
-                                                  builder: (context) => AlertDialog(
-                                                    title: const Text('Hapus Jadwal'),
-                                                    content: const Text('Apakah Anda yakin ingin menghapus jadwal mengajar ini?'),
-                                                    actions: [
-                                                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-                                                      TextButton(
-                                                        onPressed: () => Navigator.pop(context, true),
-                                                        child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                                if (confirm == true) {
-                                                  _handleDelete(sched.scheduleIds);
-                                                }
-                                              },
-                                              constraints: const BoxConstraints(),
-                                              padding: EdgeInsets.all(4.w),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
+                                          ),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              IconButton(
+                                                icon: const Icon(Icons.edit_outlined, color: Colors.indigo, size: 16),
+                                                onPressed: () => _showFormDialog(groupedSchedule: sched),
+                                                constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                                                padding: EdgeInsets.zero,
+                                                visualDensity: VisualDensity.compact,
+                                              ),
+                                              SizedBox(width: 6.w),
+                                              IconButton(
+                                                icon: const Icon(Icons.delete_outline, color: Colors.red, size: 16),
+                                                onPressed: () async {
+                                                  final confirm = await showDialog<bool>(
+                                                    context: context,
+                                                    builder: (context) => AlertDialog(
+                                                      title: const Text('Hapus Jadwal'),
+                                                      content: const Text('Apakah Anda yakin ingin menghapus jadwal mengajar ini?'),
+                                                      actions: [
+                                                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+                                                        TextButton(
+                                                          onPressed: () => Navigator.pop(context, true),
+                                                          child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                  if (confirm == true) {
+                                                    _handleDelete(sched.scheduleIds);
+                                                  }
+                                                },
+                                                constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                                                padding: EdgeInsets.zero,
+                                                visualDensity: VisualDensity.compact,
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                     SizedBox(height: 1.h),
                                     Text(
                                       'Mata Pelajaran: ${subject.name}',
