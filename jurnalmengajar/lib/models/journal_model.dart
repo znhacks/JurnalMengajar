@@ -45,12 +45,13 @@ class JournalModel {
       attachment = JournalAttachmentModel.fromJson(
           json['attachment'] as Map<String, dynamic>);
     } else if (attachmentUrl != null && attachmentUrl.isNotEmpty) {
-      final uri = Uri.parse(attachmentUrl);
+      final firstUrl = attachmentUrl.split(',').first.trim();
+      final uri = Uri.parse(firstUrl);
       final fileName = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : 'attachment';
       final fileType = fileName.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image';
       attachment = JournalAttachmentModel(
         id: 'ja_remote',
-        filePath: attachmentUrl,
+        filePath: firstUrl,
         fileType: fileType,
         fileName: fileName,
       );

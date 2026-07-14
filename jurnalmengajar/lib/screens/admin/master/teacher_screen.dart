@@ -430,7 +430,7 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
         child: InkWell(
           onTap: () => context.push('/admin/master-data/teachers/${t.id}'),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
             child: Row(
               children: [
                 CircleAvatar(
@@ -452,11 +452,15 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                         t.name,
                         style: TextStyle(
                             fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(height: 2.h),
                       Text(
                         t.email,
                         style: TextStyle(fontSize: 11.sp, color: Colors.grey[600]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -465,12 +469,17 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                   icon: Icon(
                     Icons.chat,
                     color: t.phoneNumber.trim().isEmpty ? Colors.grey[400] : const Color(0xFF25D366),
-                    size: 20,
+                    size: 18.sp,
                   ),
+                  constraints: const BoxConstraints(),
+                  padding: EdgeInsets.all(6.w),
                   onPressed: () => _launchWhatsApp(t.phoneNumber),
                 ),
+                SizedBox(width: 4.w),
                 IconButton(
-                  icon: const Icon(Icons.edit_outlined, color: Colors.indigo, size: 20),
+                  icon: Icon(Icons.edit_outlined, color: Colors.indigo, size: 18.sp),
+                  constraints: const BoxConstraints(),
+                  padding: EdgeInsets.all(6.w),
                   onPressed: () => _showFormDialog(teacher: t),
                 ),
               ],

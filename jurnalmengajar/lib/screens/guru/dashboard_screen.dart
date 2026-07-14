@@ -332,8 +332,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       ),
     );
 
-    final totalSchedulesToday =
-        scheduleProvider.teacherSchedulesForSelectedDate.length;
+    final activeSchedulesToday = scheduleProvider.teacherSchedulesForSelectedDate
+        .where((s) => s.isActive)
+        .toList();
+    final totalSchedulesToday = groupDailySchedules(activeSchedulesToday).length;
     final totalJournals = journalProvider.teacherJournals.length;
     final pendingJournals = journalProvider.teacherJournals
         .where((j) => j.status == 'pending')
@@ -861,7 +863,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         ),
                       ),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: statusLabel == 'Belum Input' ? 6.w : 8.w,
+                            vertical: 2.h),
                         decoration: BoxDecoration(
                           color: statusColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
@@ -871,15 +875,17 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(statusIcon, color: statusColor, size: 12.sp),
-                            SizedBox(width: 4.w),
-                            Text(
-                              statusLabel,
-                              style: TextStyle(
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.bold,
-                                color: statusColor,
+                            if (statusLabel != 'Belum Input') ...[
+                              SizedBox(width: 4.w),
+                              Text(
+                                statusLabel,
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: statusColor,
+                                ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
                       ),

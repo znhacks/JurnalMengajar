@@ -645,9 +645,11 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
     final verifiedJournals = teacherJournals
         .where((j) => j.status == 'verified')
         .length;
-    final totalSchedules = scheduleProvider.schedules
-        .where((s) => s.teacherId == teacher.id)
-        .length;
+    final activeTeacherSchedules = scheduleProvider.cachedTeacherSchedules
+        .where((s) => s.isActive)
+        .toList();
+    final teacherGroupedSchedules = groupDailySchedules(activeTeacherSchedules);
+    final totalSchedules = teacherGroupedSchedules.length;
 
     // Group active schedules up to today with no journal entries
     final today = DateTime.now();

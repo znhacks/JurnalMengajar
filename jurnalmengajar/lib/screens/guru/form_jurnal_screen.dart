@@ -222,53 +222,6 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     }
   }
 
-  void _showAttachmentBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(16.w),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Pilih Foto Lampiran',
-                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 16.h),
-              ListTile(
-                leading: const Icon(
-                  Icons.photo_camera,
-                  color: Color(0xFF2563EB),
-                ),
-                title: const Text('Kamera (Ambil Foto)'),
-                onTap: () {
-                  context.pop();
-                  _pickImage(ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: const Icon(
-                  Icons.photo_library_outlined,
-                  color: Color(0xFF2563EB),
-                ),
-                title: const Text('Galeri Foto'),
-                onTap: () {
-                  context.pop();
-                  _pickImage(ImageSource.gallery);
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   /// Helper widget untuk satu tile foto dengan tombol hapus
   Widget _buildPhotoTile({
@@ -784,7 +737,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                       // Add button slot
                       if (canAdd)
                         InkWell(
-                          onTap: _showAttachmentBottomSheet,
+                          onTap: () => _pickImage(ImageSource.camera),
                           borderRadius: BorderRadius.circular(10),
                           child: Container(
                             width: 80.w,

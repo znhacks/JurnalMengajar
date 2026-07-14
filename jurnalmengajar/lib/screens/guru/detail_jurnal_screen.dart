@@ -6,6 +6,7 @@ import '../../widgets/image_viewer.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/journal_provider.dart';
 import '../../models/journal_model.dart';
+import '../../models/journal_attachment_model.dart';
 import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
 import '../../models/teacher_model.dart';
@@ -477,14 +478,62 @@ class DetailJurnalScreen extends StatelessWidget {
   }
 
   Widget _buildAttachmentPreview(BuildContext context, JournalModel journal) {
-    final attachment = journal.attachment;
-    if (attachment == null) {
+    final attachmentUrl = journal.attachmentUrl;
+    if (attachmentUrl == null || attachmentUrl.isEmpty) {
+      final attachment = journal.attachment;
+      if (attachment == null) {
+        return Text(
+          'Tidak ada lampiran diunggah.',
+          style: TextStyle(fontSize: 13.sp, color: Colors.grey[500]),
+        );
+      }
+      return _buildSingleAttachment(context, attachment);
+    }
+
+    final urls = attachmentUrl.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    if (urls.isEmpty) {
       return Text(
         'Tidak ada lampiran diunggah.',
         style: TextStyle(fontSize: 13.sp, color: Colors.grey[500]),
       );
     }
 
+    if (urls.length == 1) {
+      final url = urls.first;
+      final uri = Uri.parse(url);
+      final fileName = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : 'attachment';
+      final fileType = fileName.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image';
+      final att = JournalAttachmentModel(
+        id: 'ja_remote_0',
+        filePath: url,
+        fileType: fileType,
+        fileName: fileName,
+      );
+      return _buildSingleAttachment(context, att);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: List.generate(urls.length, (index) {
+        final url = urls[index];
+        final uri = Uri.parse(url);
+        final fileName = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : 'attachment_${index + 1}';
+        final fileType = fileName.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image';
+        final att = JournalAttachmentModel(
+          id: 'ja_remote_$index',
+          filePath: url,
+          fileType: fileType,
+          fileName: fileName,
+        );
+        return Padding(
+          padding: EdgeInsets.only(bottom: index == urls.length - 1 ? 0 : 12.h),
+          child: _buildSingleAttachment(context, att),
+        );
+      }),
+    );
+  }
+
+  Widget _buildSingleAttachment(BuildContext context, JournalAttachmentModel attachment) {
     if (attachment.fileType == 'image') {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -264,7 +264,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 '$totalPending',
                                 Icons.rate_review_outlined,
                                 const Color(0xFF825100),
-                                onTap: () => context.push('/admin/journals?tab=1'),
+                                onTap: () => context.push('/admin/journals?tab=2'),
                               ),
                             ),
                             SizedBox(width: 10.w),

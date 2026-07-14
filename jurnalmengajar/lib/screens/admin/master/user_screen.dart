@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -296,9 +296,9 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
 
   Widget _buildUserList(List<UserModel> users, AuthProvider authProvider, {required bool isPendingTab}) {
     return ListView.separated(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
       itemCount: users.length,
-      separatorBuilder: (context, index) => SizedBox(height: 12.h),
+      separatorBuilder: (context, index) => SizedBox(height: 8.h),
       itemBuilder: (context, index) {
         final user = users[index];
         final isAdmin = user.role == 'admin';
@@ -306,7 +306,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
         final isCurrentUser = user.id == authProvider.currentUser?.id;
 
         return Container(
-          padding: EdgeInsets.all(16.w),
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
