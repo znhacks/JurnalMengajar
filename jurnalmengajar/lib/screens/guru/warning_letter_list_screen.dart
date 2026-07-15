@@ -236,28 +236,25 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                           ],
                                         ),
                                       ),
-                                      Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 8.w,
-                                          vertical: 4.h,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: hasUnread
-                                              ? const Color(0xFFFEE2E2)
-                                              : const Color(0xFFDCFCE7),
-                                          borderRadius: BorderRadius.circular(999),
-                                        ),
-                                        child: Text(
-                                          hasUnread ? 'Belum Konfirmasi' : 'Dikonfirmasi',
-                                          style: GoogleFonts.hankenGrotesk(
-                                            fontSize: 9.sp,
-                                            fontWeight: FontWeight.w700,
-                                            color: hasUnread
-                                                ? const Color(0xFFB91C1C)
-                                                : const Color(0xFF15803D),
+                                      if (!hasUnread)
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 8.w,
+                                            vertical: 4.h,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFDCFCE7),
+                                            borderRadius: BorderRadius.circular(999),
+                                          ),
+                                          child: Text(
+                                            'Dikonfirmasi',
+                                            style: GoogleFonts.hankenGrotesk(
+                                              fontSize: 9.sp,
+                                              fontWeight: FontWeight.w700,
+                                              color: const Color(0xFF15803D),
+                                            ),
                                           ),
                                         ),
-                                      ),
                                     ],
                                   ),
                                   const Divider(height: 24),
