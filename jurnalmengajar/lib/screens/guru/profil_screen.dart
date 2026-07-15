@@ -680,20 +680,6 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
       );
     }
 
-    // Calculate teacher stats
-    final teacherJournals = journalProvider.journals
-        .where((j) => j.teacherId == teacher.id)
-        .toList();
-    final totalJournals = teacherJournals.length;
-    final verifiedJournals = teacherJournals
-        .where((j) => j.status == 'verified')
-        .length;
-    final activeTeacherSchedules = scheduleProvider.cachedTeacherSchedules
-        .where((s) => s.isActive)
-        .toList();
-    final teacherGroupedSchedules = groupDailySchedules(activeTeacherSchedules);
-    final totalSchedules = teacherGroupedSchedules.length;
-
     // Group active schedules up to today with no journal entries
     final today = DateTime.now();
     final todayOnly = DateTime(today.year, today.month, today.day);
@@ -921,41 +907,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
               ),
               SizedBox(height: 16.h),
 
-              // Live Stats Row for Teacher
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      context,
-                      title: 'Jadwal',
-                      value: '$totalSchedules',
-                      icon: Icons.calendar_today_outlined,
-                      color: const Color(0xFF0F172A),
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: _buildStatCard(
-                      context,
-                      title: 'Jurnal',
-                      value: '$totalJournals',
-                      icon: Icons.menu_book_outlined,
-                      color: const Color(0xFF2563EB),
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: _buildStatCard(
-                      context,
-                      title: 'Disetujui',
-                      value: '$verifiedJournals',
-                      icon: Icons.check_circle_outline_rounded,
-                      color: const Color(0xFF10B981),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16.h),
+
 
               // Detail List Section
               Text(
@@ -1278,67 +1230,6 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    BuildContext context, {
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.r),
-        side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 10.w),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(6.w),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 16.r, color: color),
-            ),
-            SizedBox(width: 8.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF0F172A),
-                      height: 1.1,
-                    ),
-                  ),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 10.sp,
-                      color: Colors.grey[500],
-                      fontWeight: FontWeight.w500,
-                      height: 1.1,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );

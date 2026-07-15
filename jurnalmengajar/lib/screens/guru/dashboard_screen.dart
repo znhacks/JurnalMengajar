@@ -332,11 +332,6 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       ),
     );
 
-    final activeSchedulesToday = scheduleProvider.teacherSchedulesForSelectedDate
-        .where((s) => s.isActive)
-        .toList();
-    final totalSchedulesToday = groupDailySchedules(activeSchedulesToday).length;
-    final totalJournals = journalProvider.teacherJournals.length;
     final pendingJournals = journalProvider.teacherJournals
         .where((j) => j.status == 'pending')
         .length;
@@ -366,9 +361,71 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ── Quick Stats Row ───────────────────────────────────
-                      _buildQuickStats(totalSchedulesToday, totalJournals),
-                      SizedBox(height: 24.h),
+                      // ── Statistik Mengajar Button ──────────────────────────
+                      InkWell(
+                        onTap: () => context.push('/guru/statistik'),
+                        borderRadius: BorderRadius.circular(16.r),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16.r),
+                            border: Border.all(color: AppTheme.outlineVariant),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.primaryColor.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(8.w),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
+                                child: const Icon(
+                                  Icons.bar_chart_rounded,
+                                  color: AppTheme.primaryColor,
+                                  size: 20,
+                                ),
+                              ),
+                              SizedBox(width: 12.w),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Statistik Mengajar',
+                                      style: GoogleFonts.hankenGrotesk(
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppTheme.onBackground,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Klik untuk melihat laporan & realisasi lengkap',
+                                      style: GoogleFonts.hankenGrotesk(
+                                        fontSize: 11.sp,
+                                        color: AppTheme.outline,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(
+                                Icons.chevron_right_rounded,
+                                color: AppTheme.outline,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 20.h),
 
                       // ── Today's Schedule ─────────────────────────────────
                       _buildSectionTitle(
@@ -507,82 +564,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     );
   }
 
-  // ─── Quick Stats ───────────────────────────────────────────────────────────
-  Widget _buildQuickStats(int scheduleCount, int journalCount) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatChip(
-            icon: Icons.calendar_today_outlined,
-            label: 'Jadwal Hari Ini',
-            value: '$scheduleCount',
-            color: AppTheme.primaryColor,
-          ),
-        ),
-        SizedBox(width: 12.w),
-        Expanded(
-          child: _buildStatChip(
-            icon: Icons.assignment_outlined,
-            label: 'Total Jurnal',
-            value: '$journalCount',
-            color: const Color(0xFF825100),
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildStatChip({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
-      padding: EdgeInsets.all(14.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.outlineVariant),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8.w),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 18.w),
-          ),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.onBackground,
-                  ),
-                ),
-                Text(
-                  label,
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 10.sp,
-                    color: AppTheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ─── Section Title ─────────────────────────────────────────────────────────
   Widget _buildSectionTitle(String title) {

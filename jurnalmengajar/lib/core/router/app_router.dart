@@ -24,6 +24,7 @@ import '../../screens/admin/settings_screen.dart';
 import '../../screens/admin/profile_screen.dart';
 import '../../screens/admin/warning_letter_list_screen.dart';
 import '../../screens/guru/warning_letter_list_screen.dart';
+import '../../screens/guru/statistik_screen.dart';
 import '../../screens/admin/admin_jurnal_list_screen.dart';
 import '../../screens/admin/master/student_screen.dart';
 import '../../screens/admin/master/teacher_detail_screen.dart';
@@ -176,6 +177,10 @@ class AppRouter {
         GoRoute(
           path: '/guru/warning-letters',
           builder: (context, state) => const GuruWarningLetterListScreen(),
+        ),
+        GoRoute(
+          path: '/guru/statistik',
+          builder: (context, state) => const GuruStatistikScreen(),
         ),
 
         // Admin Module Routes
