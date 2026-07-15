@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -26,7 +26,8 @@ class _LoginScreenState extends State<LoginScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.errorMessage != null) {
         final errMsg = authProvider.errorMessage!;
-        if (errMsg.contains('menunggu persetujuan') || errMsg.contains('verifikasi')) {
+        if (errMsg.contains('menunggu persetujuan') ||
+            errMsg.contains('verifikasi')) {
           showDialog(
             context: context,
             builder: (dialogContext) => AlertDialog(
@@ -66,8 +67,11 @@ class _LoginScreenState extends State<LoginScreen> {
       if (success && mounted) {
         AppHelper.showSnackBar(context, 'Login Berhasil!');
       } else if (mounted) {
-        final errMsg = authProvider.errorMessage ?? 'Gagal login. Periksa kembali email dan password.';
-        if (errMsg.contains('menunggu persetujuan') || errMsg.contains('verifikasi')) {
+        final errMsg =
+            authProvider.errorMessage ??
+            'Gagal login. Periksa kembali email dan password.';
+        if (errMsg.contains('menunggu persetujuan') ||
+            errMsg.contains('verifikasi')) {
           showDialog(
             context: context,
             builder: (dialogContext) => AlertDialog(
@@ -95,7 +99,8 @@ class _LoginScreenState extends State<LoginScreen> {
       AppHelper.showSnackBar(context, 'Login Google Berhasil!');
     } else if (mounted) {
       final errMsg = authProvider.errorMessage ?? 'Gagal login dengan Google.';
-      if (errMsg.contains('menunggu persetujuan') || errMsg.contains('verifikasi')) {
+      if (errMsg.contains('menunggu persetujuan') ||
+          errMsg.contains('verifikasi')) {
         showDialog(
           context: context,
           builder: (dialogContext) => AlertDialog(
@@ -154,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ClipPath(
                             clipper: const WaveClipper(),
                             child: Container(
-                              height: 180.h,
+                              height: 130.h,
                               decoration: const BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
@@ -191,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // Form Section
                       Padding(
-                        padding: EdgeInsets.fromLTRB(28.w, 16.h, 28.w, 28.h),
+                        padding: EdgeInsets.fromLTRB(24.w, 12.h, 24.w, 20.h),
                         child: Form(
                           key: _formKey,
                           child: Column(
@@ -217,7 +222,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                               // Email Input
                               Text(
-                                'EMAIL ATAU NUPTK',
+                                'EMAIL',
                                 style: TextStyle(
                                   fontSize: 11.sp,
                                   fontWeight: FontWeight.bold,
@@ -267,12 +272,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   contentPadding: EdgeInsets.symmetric(
-                                    vertical: 14.h,
-                                    horizontal: 16.w,
+                                    vertical: 10.h,
+                                    horizontal: 12.w,
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 20.h),
+                              SizedBox(height: 10.h),
 
                               // Password Input
                               Text(
@@ -313,7 +318,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                       _obscurePassword
                                           ? Icons.visibility_off_outlined
                                           : Icons.visibility_outlined,
-                                      color: const Color.fromARGB(255, 37, 99, 235),
+                                      color: const Color.fromARGB(
+                                        255,
+                                        37,
+                                        99,
+                                        235,
+                                      ),
                                     ),
                                     onPressed: () {
                                       setState(() {
@@ -337,12 +347,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   contentPadding: EdgeInsets.symmetric(
-                                    vertical: 14.h,
-                                    horizontal: 16.w,
+                                    vertical: 10.h,
+                                    horizontal: 12.w,
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 12.h),
+                              SizedBox(height: 6.h),
 
                               // Forgot Password
                               Align(
@@ -354,22 +364,37 @@ class _LoginScreenState extends State<LoginScreen> {
                                     style: TextStyle(
                                       fontSize: 13.sp,
                                       fontWeight: FontWeight.bold,
-                                      color: const Color.fromARGB(255, 37, 99, 235),
+                                      color: const Color.fromARGB(
+                                        255,
+                                        37,
+                                        99,
+                                        235,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 24.h),
+                              SizedBox(height: 14.h),
 
                               // Submit Button
                               ElevatedButton(
                                 onPressed: isLoading ? null : _handleLogin,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color.fromARGB(255, 37, 99, 235),
+                                  backgroundColor: const Color.fromARGB(
+                                    255,
+                                    37,
+                                    99,
+                                    235,
+                                  ),
                                   foregroundColor: Colors.white,
                                   elevation: 4,
-                                  shadowColor: const Color.fromARGB(255, 37, 99, 235).withValues(alpha: 0.4),
-                                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                                  shadowColor: const Color.fromARGB(
+                                    255,
+                                    37,
+                                    99,
+                                    235,
+                                  ).withValues(alpha: 0.4),
+                                  padding: EdgeInsets.symmetric(vertical: 13.h),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16.r),
                                   ),
@@ -438,7 +463,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     color: Color(0xFFE2E8F0),
                                     width: 1.5,
                                   ),
-                                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                                  padding: EdgeInsets.symmetric(vertical: 10.h),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16.r),
                                   ),
@@ -491,7 +516,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                       style: TextStyle(
                                         fontSize: 13.sp,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color.fromARGB(255, 37, 99, 235),
+                                        color: const Color.fromARGB(
+                                          255,
+                                          37,
+                                          99,
+                                          235,
+                                        ),
                                       ),
                                     ),
                                   ),
