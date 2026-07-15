@@ -202,6 +202,18 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> changeEmail(String newEmail) async {
+    try {
+      await _supabase.auth.updateUser(
+        UserAttributes(email: newEmail),
+        emailRedirectTo: 'io.supabase.jurnalmengajar://login-callback',
+      );
+    } catch (e) {
+      throw Exception('Gagal mengubah email: $e');
+    }
+  }
+
+  @override
   Future<void> logout() async {
     try {
       await _supabase.auth.signOut();

@@ -117,6 +117,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
 
   void _showEditProfileDialog(UserModel user) {
     final nameController = TextEditingController(text: user.fullName);
+    final emailController = TextEditingController(text: user.email);
     final posController = TextEditingController(
       text: user.position ?? 'Administrator',
     );
@@ -303,6 +304,17 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   ),
                   SizedBox(height: 16.h),
                   TextField(
+                    controller: emailController,
+                    enabled: !isSaving,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      hintText: 'contoh@email.com',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  TextField(
                     controller: posController,
                     enabled: !isSaving,
                     decoration: const InputDecoration(
@@ -338,6 +350,24 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                     onPressed: isSaving
                         ? null
                         : () async {
+                            if (nameController.text.trim().isEmpty) {
+                              AppHelper.showSnackBar(
+                                context,
+                                'Nama lengkap tidak boleh kosong',
+                                isError: true,
+                              );
+                              return;
+                            }
+                            final newEmail = emailController.text.trim();
+                            if (newEmail.isEmpty) {
+                              AppHelper.showSnackBar(
+                                context,
+                                'Email tidak boleh kosong',
+                                isError: true,
+                              );
+                              return;
+                            }
+
                             setDialogState(() {
                               isSaving = true;
                             });
@@ -394,13 +424,35 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                               updatedUser,
                             );
                             if (success) {
+                              bool emailSuccess = true;
+                              final isEmailChanged = newEmail.toLowerCase() != user.email.toLowerCase();
+                              
+                              if (isEmailChanged) {
+                                emailSuccess = await authProvider.changeEmail(newEmail);
+                              }
+
                               await masterProvider.loadAllData();
+                              
                               if (context.mounted) {
-                                AppHelper.showSnackBar(
-                                  context,
-                                  'Profil berhasil diperbarui!',
-                                );
-                                Navigator.pop(context);
+                                if (isEmailChanged && emailSuccess) {
+                                  AppHelper.showSnackBar(
+                                    context,
+                                    'Profil diperbarui! Silakan verifikasi email baru Anda melalui tautan konfirmasi yang dikirim.',
+                                  );
+                                  Navigator.pop(context);
+                                } else if (isEmailChanged && !emailSuccess) {
+                                  AppHelper.showSnackBar(
+                                    context,
+                                    'Profil diperbarui, tetapi gagal mengirim konfirmasi email baru: ${authProvider.errorMessage}',
+                                    isError: true,
+                                  );
+                                } else {
+                                  AppHelper.showSnackBar(
+                                    context,
+                                    'Profil berhasil diperbarui!',
+                                  );
+                                  Navigator.pop(context);
+                                }
                               }
                             } else {
                               if (context.mounted) {

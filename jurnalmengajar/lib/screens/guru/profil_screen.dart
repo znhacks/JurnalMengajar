@@ -157,6 +157,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
 
   void _showEditProfileDialog(UserModel user, TeacherModel teacher) {
     final nameController = TextEditingController(text: user.fullName);
+    final emailController = TextEditingController(text: user.email);
     final posController = TextEditingController(
       text: user.position ?? teacher.position,
     );
@@ -360,6 +361,17 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     ),
                   ),
                   SizedBox(height: 16.h),
+                  TextField(
+                    controller: emailController,
+                    enabled: !isSaving,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      hintText: 'contoh@email.com',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
                   GestureDetector(
                     onTap: isSaving
                         ? null
@@ -432,6 +444,15 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               );
                               return;
                             }
+                            final newEmail = emailController.text.trim();
+                            if (newEmail.isEmpty) {
+                              AppHelper.showSnackBar(
+                                context,
+                                'Email tidak boleh kosong',
+                                isError: true,
+                              );
+                              return;
+                            }
                             if (posController.text.trim().isEmpty) {
                               AppHelper.showSnackBar(
                                 context,
@@ -498,6 +519,13 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               updatedUser,
                             );
                             if (success) {
+                              bool emailSuccess = true;
+                              final isEmailChanged = newEmail.toLowerCase() != user.email.toLowerCase();
+                              
+                              if (isEmailChanged) {
+                                emailSuccess = await authProvider.changeEmail(newEmail);
+                              }
+
                               // Optimistically update local teacher details cache without reloading everything
                               if (authProvider.currentUser != null) {
                                 masterProvider.updateTeacherFromUser(
@@ -508,12 +536,27 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                   updatedUser,
                                 );
                               }
+                              
                               if (context.mounted) {
-                                AppHelper.showSnackBar(
-                                  context,
-                                  'Profil berhasil diperbarui!',
-                                );
-                                Navigator.pop(context);
+                                if (isEmailChanged && emailSuccess) {
+                                  AppHelper.showSnackBar(
+                                    context,
+                                    'Profil diperbarui! Silakan verifikasi email baru Anda melalui tautan konfirmasi yang dikirim.',
+                                  );
+                                  Navigator.pop(context);
+                                } else if (isEmailChanged && !emailSuccess) {
+                                  AppHelper.showSnackBar(
+                                    context,
+                                    'Profil diperbarui, tetapi gagal mengirim konfirmasi email baru: ${authProvider.errorMessage}',
+                                    isError: true,
+                                  );
+                                } else {
+                                  AppHelper.showSnackBar(
+                                    context,
+                                    'Profil berhasil diperbarui!',
+                                  );
+                                  Navigator.pop(context);
+                                }
                               }
                             } else {
                               if (context.mounted) {

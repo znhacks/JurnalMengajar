@@ -132,15 +132,22 @@ Buat bucket di Supabase Storage:
 - Nama: `journal-attachments`
 - Akses publik untuk read, private untuk write
 
-### 4. Authentication
+### 4. Authentication & URL Configuration (Deep Linking)
 
 Supabase Auth sudah terintegrasi untuk:
-- Sign up
-- Sign in
-- Password reset
+- Sign up & Sign in
+- Password reset & Ganti email (dengan verifikasi link)
 - Logout
 
 User yang register otomatis dibuat di tabel `users`.
+
+#### Konfigurasi URL Redirection di Supabase Dashboard:
+Agar tautan konfirmasi (seperti reset password dan ganti email) mengarahkan pengguna kembali ke aplikasi mobile (bukan ke `localhost:3000`), Anda harus mendaftarkan URL deep link proyek ke Supabase:
+1. Buka **Supabase Dashboard** -> **Authentication** -> **URL Configuration**.
+2. Di bagian **Redirect URLs** (Allowed Redirect URLs), tambahkan URL berikut:
+   - `io.supabase.jurnalmengajar://login-callback`
+   - `io.supabase.jurnalmengajar://login-callback/reset-password`
+3. Klik **Save** / **Add URL**.
 
 ### 5. Relasi Database
 
@@ -154,10 +161,24 @@ Pastikan foreign keys sudah setup dengan benar:
 
 ### 6. RLS (Row Level Security)
 
-Jika menggunakan RLS, pastikan policy sudah setup untuk:
-- Users hanya bisa baca/update profil mereka sendiri
-- Guru hanya bisa lihat schedules dan journals mereka
-- Admin bisa lihat semua data
+Untuk keamanan tingkat tinggi, Row Level Security (RLS) wajib diaktifkan pada semua tabel. Kami telah membuat skrip pengaturan RLS lengkap di file [supabase_rls_setup.sql](file:///c:/Jordi/JurnalMengajar/jurnalmengajar/supabase_rls_setup.sql).
+
+#### Cara Mengaktifkan RLS:
+1. Buka **Supabase Dashboard** untuk proyek Anda.
+2. Buka tab **SQL Editor** dari menu sebelah kiri.
+3. Buat query baru, lalu salin dan tempelkan seluruh isi file [supabase_rls_setup.sql](file:///c:/Jordi/JurnalMengajar/jurnalmengajar/supabase_rls_setup.sql) ke editor.
+4. Jalankan perintah tersebut (klik **Run**).
+
+#### Apa yang Dilakukan oleh Skrip Ini?
+- **Mengaktifkan RLS** di semua tabel (`users`, `periods`, `subjects`, `lesson_hours`, `classes`, `students`, `schedules`, `journals`, `settings`, `warning_letters`).
+- **Membuat RLS Policies**:
+  - Pengguna terautentikasi dapat melihat profil pengguna lain, tetapi hanya bisa memperbarui profil mereka sendiri.
+  - Guru hanya bisa melihat jadwal mengajar (`schedules`) dan jurnal mengajar (`journals`) milik mereka sendiri.
+  - Guru dapat menandai surat peringatan (`warning_letters`) yang ditujukan kepada mereka sebagai sudah dibaca (`read`).
+  - Admin memiliki akses penuh (write/read) untuk seluruh data (master data, persetujuan jurnal, pengaturan, dll).
+- **Sinkronisasi Otomatis (Triggers)**:
+  - Saat pengguna baru mendaftar di sistem autentikasi (`auth.users`), record profil di `public.users` akan dibuat secara otomatis.
+  - Saat pengguna memperbarui email mereka, perubahan tersebut secara otomatis disinkronkan ke tabel `public.users.email`.
 
 ## Repository Usage
 

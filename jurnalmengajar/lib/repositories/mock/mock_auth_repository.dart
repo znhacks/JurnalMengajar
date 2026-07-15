@@ -96,6 +96,26 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> changeEmail(String newEmail) async {
+    await Future.delayed(const Duration(seconds: 1));
+    if (_db.currentUser != null) {
+      final oldEmail = _db.currentUser!.email;
+      final updatedUser = _db.currentUser!.copyWith(email: newEmail);
+      _db.currentUser = updatedUser;
+      
+      final index = _db.users.indexWhere((u) => u.id == updatedUser.id);
+      if (index != -1) {
+        _db.users[index] = updatedUser;
+      }
+      
+      final teacherIndex = _db.teachers.indexWhere((t) => t.email.toLowerCase() == oldEmail.toLowerCase());
+      if (teacherIndex != -1) {
+        _db.teachers[teacherIndex] = _db.teachers[teacherIndex].copyWith(email: newEmail);
+      }
+    }
+  }
+
+  @override
   Future<void> logout() async {
     await Future.delayed(const Duration(milliseconds: 300));
     _db.currentUser = null;
