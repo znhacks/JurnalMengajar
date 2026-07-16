@@ -18,7 +18,10 @@ class AboutAppScreen extends StatelessWidget {
             if (context.canPop()) {
               context.pop();
             } else {
-              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              final authProvider = Provider.of<AuthProvider>(
+                context,
+                listen: false,
+              );
               if (authProvider.currentUser?.role == 'admin') {
                 context.go('/admin/dashboard');
               } else {
@@ -146,19 +149,13 @@ class AboutAppScreen extends StatelessWidget {
                       _buildInfoRow(
                         Icons.code_outlined,
                         'Tim Pengembang',
-                        'JoeDevs',
+                        'UBIG x JoeDevs',
                       ),
                       SizedBox(height: 8.h),
                       _buildInfoRow(
                         Icons.phone_android_outlined,
                         'Platform',
                         'Mobile',
-                      ),
-                      SizedBox(height: 8.h),
-                      _buildInfoRow(
-                        Icons.language_outlined,
-                        'Teknologi',
-                        'Flutter + Supabase',
                       ),
                     ],
                   ),
