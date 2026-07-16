@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/master_data_provider.dart';
@@ -194,9 +194,9 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                     subtitle: 'Tekan tombol + di bawah untuk menambah jam pelajaran.',
                   )
                 : ListView.separated(
-                    padding: EdgeInsets.all(16.w),
+                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                     itemCount: hours.length,
-                    separatorBuilder: (context, index) => SizedBox(height: 12.h),
+                    separatorBuilder: (context, index) => SizedBox(height: 8.h),
                     itemBuilder: (context, index) {
                       final hour = hours[index];
                       return Dismissible(
@@ -229,38 +229,30 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                           );
                         },
                         child: Container(
-                          padding: EdgeInsets.all(16.w),
+                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
                           child: Row(
                             children: [
-                              CircleAvatar(
-                                backgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.1),
-                                child: Text(
-                                  '#${hour.teachingHour}',
-                                  style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              SizedBox(width: 16.w),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       'Jam Pelajaran Ke-${hour.teachingHour}',
-                                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                                      style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
                                     ),
-                                    SizedBox(height: 4.h),
+                                    SizedBox(height: 2.h),
                                     Row(
                                       children: [
-                                        const Icon(Icons.schedule, size: 14, color: Colors.grey),
+                                        const Icon(Icons.schedule, size: 12, color: Colors.grey),
                                         SizedBox(width: 4.w),
                                         Text(
                                           '${hour.startTime} s.d. ${hour.endTime}',
-                                          style: TextStyle(fontSize: 13.sp, color: Colors.grey[600]),
+                                          style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
                                         ),
                                       ],
                                     ),
@@ -271,11 +263,13 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                                  mainAxisSize: MainAxisSize.min,
                                  children: [
                                    IconButton(
-                                     icon: const Icon(Icons.edit_outlined, color: Colors.indigo),
+                                     icon: const Icon(Icons.edit_outlined, color: Colors.indigo, size: 18),
                                      onPressed: () => _showFormDialog(hour: hour),
+                                     constraints: const BoxConstraints(),
+                                     padding: EdgeInsets.all(8.w),
                                    ),
                                    IconButton(
-                                     icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                     icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
                                      onPressed: () async {
                                        final confirm = await showDialog<bool>(
                                          context: context,
@@ -295,6 +289,8 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                                          _handleDelete(hour.id);
                                        }
                                      },
+                                     constraints: const BoxConstraints(),
+                                     padding: EdgeInsets.all(8.w),
                                    ),
                                  ],
                               ),
