@@ -199,10 +199,18 @@ class _GuruMainShellState extends State<GuruMainShell> {
     final screenWidth = mediaQuery.size.width;
     final screenHeight = mediaQuery.size.height;
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          IndexedStack(index: _currentIndex, children: _screens),
+    return PopScope(
+      canPop: _currentIndex == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        setState(() {
+          _currentIndex = 0;
+        });
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            IndexedStack(index: _currentIndex, children: _screens),
           if (unreadWarnings > 0)
             _buildFloatingBadge(
               count: unreadWarnings,
@@ -222,9 +230,7 @@ class _GuruMainShellState extends State<GuruMainShell> {
               badgeColor: const Color(0xFFBA1A1A),
               badgeTextColor: Colors.white,
               onTap: () {
-                setState(() {
-                  _currentIndex = 2; // Go to Jurnal tab
-                });
+                context.go('/guru/dashboard?tab=2');
               },
               screenWidth: screenWidth,
               screenHeight: screenHeight,
@@ -244,9 +250,7 @@ class _GuruMainShellState extends State<GuruMainShell> {
         child: NavigationBar(
           selectedIndex: _currentIndex,
           onDestinationSelected: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
+            context.go('/guru/dashboard?tab=$index');
           },
           backgroundColor: Colors.white,
           surfaceTintColor: Colors.transparent,
@@ -277,6 +281,7 @@ class _GuruMainShellState extends State<GuruMainShell> {
           ],
         ),
       ),
-    );
+    ),
+   );
   }
 }

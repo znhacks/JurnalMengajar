@@ -214,37 +214,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                   ],
                 ),
                 TextButton.icon(
-                  onPressed: () async {
-                    final DateTime? picked = await showDatePicker(
-                      context: context,
-                      initialDate: _focusedDay,
-                      firstDate: DateTime.now().subtract(
-                        const Duration(days: 365),
-                      ),
-                      lastDate: DateTime.now().add(const Duration(days: 365)),
-                      builder: (context, child) {
-                        return Theme(
-                          data: Theme.of(context).copyWith(
-                            colorScheme: const ColorScheme.light(
-                              primary: AppTheme.primaryColor,
-                              onPrimary: Colors.white,
-                              onSurface: AppTheme.onBackground,
-                            ),
-                          ),
-                          child: child!,
-                        );
-                      },
-                    );
-                    if (picked != null) {
-                      setState(() {
-                        _focusedDay = picked;
-                        _selectedDay = picked;
-                      });
-                      if (teacher.id.isNotEmpty) {
-                        scheduleProvider.loadTeacherSchedules(teacher.id, picked);
-                      }
-                    }
-                  },
+                  onPressed: () => _showFullCalendarDialog(context, scheduleProvider, teacher),
                   icon: const Icon(
                     Icons.calendar_month,
                     color: AppTheme.primaryColor,
@@ -425,6 +395,157 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showFullCalendarDialog(
+    BuildContext context,
+    ScheduleProvider scheduleProvider,
+    TeacherModel teacher,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        DateTime focused = _focusedDay;
+        DateTime selected = _selectedDay;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              insetPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(16.w),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Pilih Tanggal',
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF0F172A),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                          constraints: const BoxConstraints(),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+                    TableCalendar(
+                      firstDay: DateTime.now().subtract(const Duration(days: 365)),
+                      lastDay: DateTime.now().add(const Duration(days: 365)),
+                      focusedDay: focused,
+                      calendarFormat: CalendarFormat.month,
+                      startingDayOfWeek: StartingDayOfWeek.monday,
+                      headerStyle: const HeaderStyle(
+                        formatButtonVisible: false,
+                        titleCentered: true,
+                      ),
+                      selectedDayPredicate: (day) => isSameDay(selected, day),
+                      onDaySelected: (selDay, focDay) {
+                        setDialogState(() {
+                          selected = selDay;
+                          focused = focDay;
+                        });
+                        setState(() {
+                          _selectedDay = selDay;
+                          _focusedDay = focDay;
+                        });
+                        if (teacher.id.isNotEmpty) {
+                          scheduleProvider.loadTeacherSchedules(teacher.id, selDay);
+                        }
+                        Navigator.pop(context);
+                      },
+                      onPageChanged: (focDay) {
+                        setDialogState(() {
+                          focused = focDay;
+                        });
+                        setState(() {
+                          _focusedDay = focDay;
+                        });
+                      },
+                      calendarBuilders: CalendarBuilders(
+                        defaultBuilder: (context, day, focusedDay) {
+                          return _buildScheduledDayCell(
+                            day,
+                            false,
+                            false,
+                            false,
+                            scheduleProvider.cachedTeacherSchedules,
+                          );
+                        },
+                        outsideBuilder: (context, day, focusedDay) {
+                          return _buildScheduledDayCell(
+                            day,
+                            false,
+                            false,
+                            true,
+                            scheduleProvider.cachedTeacherSchedules,
+                          );
+                        },
+                        todayBuilder: (context, day, focusedDay) {
+                          return _buildScheduledDayCell(
+                            day,
+                            false,
+                            true,
+                            false,
+                            scheduleProvider.cachedTeacherSchedules,
+                          );
+                        },
+                        selectedBuilder: (context, day, focusedDay) {
+                          return _buildScheduledDayCell(
+                            day,
+                            true,
+                            false,
+                            false,
+                            scheduleProvider.cachedTeacherSchedules,
+                          );
+                        },
+                      ),
+                      calendarStyle: CalendarStyle(
+                        selectedDecoration: const BoxDecoration(
+                          color: AppTheme.primaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                        selectedTextStyle: GoogleFonts.hankenGrotesk(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        todayDecoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        todayTextStyle: GoogleFonts.hankenGrotesk(
+                          color: AppTheme.primaryColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        weekendTextStyle: GoogleFonts.hankenGrotesk(
+                          color: const Color(0xFF825100),
+                        ),
+                        defaultTextStyle: GoogleFonts.hankenGrotesk(
+                          color: AppTheme.onBackground,
+                        ),
+                        outsideTextStyle: GoogleFonts.hankenGrotesk(
+                          color: AppTheme.outline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
