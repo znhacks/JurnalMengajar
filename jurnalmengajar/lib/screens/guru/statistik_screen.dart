@@ -127,7 +127,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -138,18 +138,20 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                   borderRadius: BorderRadius.circular(16.r),
                   border: Border.all(color: AppTheme.outlineVariant),
                 ),
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 2.h),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
                       icon: const Icon(Icons.chevron_left, color: AppTheme.primaryColor),
                       onPressed: _prevMonth,
+                      constraints: const BoxConstraints(),
+                      padding: EdgeInsets.symmetric(vertical: 8.h),
                     ),
                     Text(
                       _getMonthName(_selectedMonth),
                       style: GoogleFonts.hankenGrotesk(
-                        fontSize: 16.sp,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.w800,
                         color: const Color(0xFF1E293B),
                       ),
@@ -157,11 +159,13 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                     IconButton(
                       icon: const Icon(Icons.chevron_right, color: AppTheme.primaryColor),
                       onPressed: _nextMonth,
+                      constraints: const BoxConstraints(),
+                      padding: EdgeInsets.symmetric(vertical: 8.h),
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 16.h),
+              SizedBox(height: 10.h),
 
               // ─── Jurnal Terisi & Kehadiran Siswa Row ─────────────────────────
               Row(
@@ -174,27 +178,27 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                         borderRadius: BorderRadius.circular(16.r),
                         border: Border.all(color: AppTheme.outlineVariant),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 12.w),
+                      padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 10.w),
                       child: Column(
                         children: [
                           Text(
                             'Jurnal Terisi',
                             style: GoogleFonts.hankenGrotesk(
-                              fontSize: 13.sp,
+                              fontSize: 12.sp,
                               fontWeight: FontWeight.w700,
                               color: AppTheme.onSurfaceVariant,
                             ),
                           ),
-                          SizedBox(height: 16.h),
+                          SizedBox(height: 10.h),
                           Stack(
                             alignment: Alignment.center,
                             children: [
                               SizedBox(
-                                width: 75.w,
-                                height: 75.w,
+                                width: 56.w,
+                                height: 56.w,
                                 child: CircularProgressIndicator(
                                   value: fillRate / 100,
-                                  strokeWidth: 8.w,
+                                  strokeWidth: 5.w,
                                   backgroundColor: const Color(0xFFEFF6FF),
                                   valueColor: const AlwaysStoppedAnimation<Color>(
                                     Color(0xFF1E40AF),
@@ -205,17 +209,17 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                                 '${fillRate.toStringAsFixed(1)}%',
                                 style: GoogleFonts.hankenGrotesk(
                                   fontWeight: FontWeight.w800,
-                                  fontSize: 14.sp,
+                                  fontSize: 11.sp,
                                   color: const Color(0xFF1E293B),
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(height: 16.h),
+                          SizedBox(height: 10.h),
                           Text(
                             '$filledMeetings / $totalMeetings Pertemuan',
                             style: GoogleFonts.hankenGrotesk(
-                              fontSize: 11.sp,
+                              fontSize: 10.sp,
                               color: AppTheme.outline,
                               fontWeight: FontWeight.w600,
                             ),
@@ -224,7 +228,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(width: 16.w),
+                  SizedBox(width: 10.w),
                   // Kehadiran Siswa
                   Expanded(
                     child: Container(
@@ -233,20 +237,20 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                         borderRadius: BorderRadius.circular(16.r),
                         border: Border.all(color: AppTheme.outlineVariant),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 12.w),
+                      padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 10.w),
                       child: Column(
                         children: [
                           Text(
                             'Kehadiran Siswa',
                             style: GoogleFonts.hankenGrotesk(
-                              fontSize: 13.sp,
+                              fontSize: 12.sp,
                               fontWeight: FontWeight.w700,
                               color: AppTheme.onSurfaceVariant,
                             ),
                           ),
-                          SizedBox(height: 20.h),
+                          SizedBox(height: 10.h),
                           Container(
-                            padding: EdgeInsets.all(12.w),
+                            padding: EdgeInsets.all(8.w),
                             decoration: const BoxDecoration(
                               color: Color(0xFFEFF6FF),
                               shape: BoxShape.circle,
@@ -254,24 +258,24 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                             child: Icon(
                               Icons.people_outline,
                               color: const Color(0xFF10B981),
-                              size: 26.w,
+                              size: 20.w,
                             ),
                           ),
-                          SizedBox(height: 14.h),
+                          SizedBox(height: 10.h),
                           Text(
                             '${attendanceRate.toStringAsFixed(1)}%',
                             style: GoogleFonts.hankenGrotesk(
                               fontWeight: FontWeight.w800,
-                              fontSize: 18.sp,
+                              fontSize: 15.sp,
                               color: const Color(0xFF1E293B),
                             ),
                           ),
-                          SizedBox(height: 12.h),
+                          SizedBox(height: 8.h),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(4.r),
                             child: LinearProgressIndicator(
                               value: attendanceRate / 100,
-                              minHeight: 5.h,
+                              minHeight: 4.h,
                               backgroundColor: const Color(0xFFEFF6FF),
                               valueColor: const AlwaysStoppedAnimation<Color>(
                                 Color(0xFF10B981),
@@ -284,7 +288,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: 16.h),
+              SizedBox(height: 10.h),
 
               // ─── Status Verifikasi Jurnal ─────────────────────────────────────
               Container(
@@ -293,19 +297,19 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                   borderRadius: BorderRadius.circular(16.r),
                   border: Border.all(color: AppTheme.outlineVariant),
                 ),
-                padding: EdgeInsets.all(16.w),
+                padding: EdgeInsets.all(12.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Status Verifikasi Jurnal',
                       style: GoogleFonts.hankenGrotesk(
-                        fontSize: 14.sp,
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.w800,
                         color: const Color(0xFF1E293B),
                       ),
                     ),
-                    SizedBox(height: 16.h),
+                    SizedBox(height: 10.h),
                     // Disetujui
                     _buildVerificationRow(
                       icon: Icons.check_circle_outline,
@@ -313,7 +317,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                       label: 'Disetujui',
                       value: '$disetujuiCount Jurnal',
                     ),
-                    const Divider(color: Color(0xFFF1F5F9), height: 16),
+                    const Divider(color: Color(0xFFF1F5F9), height: 10),
                     // Pending
                     _buildVerificationRow(
                       icon: Icons.hourglass_empty,
@@ -321,7 +325,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                       label: 'Pending / Proses',
                       value: '$pendingCount Jurnal',
                     ),
-                    const Divider(color: Color(0xFFF1F5F9), height: 16),
+                    const Divider(color: Color(0xFFF1F5F9), height: 10),
                     // Ditolak
                     _buildVerificationRow(
                       icon: Icons.cancel_outlined,
@@ -332,7 +336,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                   ],
                 ),
               ),
-              SizedBox(height: 16.h),
+              SizedBox(height: 10.h),
 
               // ─── Distribusi Ketidakhadiran Siswa ──────────────────────────────
               Container(
@@ -341,19 +345,19 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                   borderRadius: BorderRadius.circular(16.r),
                   border: Border.all(color: AppTheme.outlineVariant),
                 ),
-                padding: EdgeInsets.all(16.w),
+                padding: EdgeInsets.all(12.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Distribusi Ketidakhadiran Siswa',
                       style: GoogleFonts.hankenGrotesk(
-                        fontSize: 14.sp,
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.w800,
                         color: const Color(0xFF1E293B),
                       ),
                     ),
-                    SizedBox(height: 16.h),
+                    SizedBox(height: 10.h),
                     Row(
                       children: [
                         Expanded(
@@ -364,7 +368,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                             textColor: const Color(0xFFD97706),
                           ),
                         ),
-                        SizedBox(width: 10.w),
+                        SizedBox(width: 8.w),
                         Expanded(
                           child: _buildAbsenceCard(
                             label: 'Izin',
@@ -373,7 +377,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                             textColor: const Color(0xFF0284C7),
                           ),
                         ),
-                        SizedBox(width: 10.w),
+                        SizedBox(width: 8.w),
                         Expanded(
                           child: _buildAbsenceCard(
                             label: 'Alpha',
@@ -387,7 +391,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                   ],
                 ),
               ),
-              SizedBox(height: 16.h),
+              SizedBox(height: 10.h),
 
               // ─── Realisasi Mengajar Per Kelas ──────────────────────────────
               Container(
@@ -396,28 +400,28 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                   borderRadius: BorderRadius.circular(16.r),
                   border: Border.all(color: AppTheme.outlineVariant),
                 ),
-                padding: EdgeInsets.all(16.w),
+                padding: EdgeInsets.all(12.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Realisasi Mengajar Per Kelas',
                       style: GoogleFonts.hankenGrotesk(
-                        fontSize: 14.sp,
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.w800,
                         color: const Color(0xFF1E293B),
                       ),
                     ),
-                    SizedBox(height: 16.h),
+                    SizedBox(height: 10.h),
                     if (classesInMonth.isEmpty)
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        padding: EdgeInsets.symmetric(vertical: 8.h),
                         child: Center(
                           child: Text(
                             'Tidak ada data realisasi kelas.',
                             style: GoogleFonts.hankenGrotesk(
                               color: AppTheme.outline,
-                              fontSize: 12.sp,
+                              fontSize: 11.sp,
                             ),
                           ),
                         ),
@@ -427,7 +431,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: classesInMonth.length,
-                        separatorBuilder: (context, _) => SizedBox(height: 16.h),
+                        separatorBuilder: (context, _) => SizedBox(height: 10.h),
                         itemBuilder: (context, index) {
                           final cls = classesInMonth[index];
                           final scheduledCount = schedulesInMonth
@@ -449,7 +453,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                                   Text(
                                     cls.name,
                                     style: GoogleFonts.hankenGrotesk(
-                                      fontSize: 13.sp,
+                                      fontSize: 12.sp,
                                       fontWeight: FontWeight.w800,
                                       color: const Color(0xFF1E293B),
                                     ),
@@ -457,19 +461,19 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                                   Text(
                                     '$filledCount / $scheduledCount Jurnal',
                                     style: GoogleFonts.hankenGrotesk(
-                                      fontSize: 13.sp,
+                                      fontSize: 12.sp,
                                       fontWeight: FontWeight.w800,
                                       color: AppTheme.primaryColor,
                                     ),
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 6.h),
+                              SizedBox(height: 4.h),
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(4.r),
                                 child: LinearProgressIndicator(
                                   value: rate,
-                                  minHeight: 4.h,
+                                  minHeight: 3.h,
                                   backgroundColor: const Color(0xFFEFF6FF),
                                   valueColor: const AlwaysStoppedAnimation<Color>(
                                     AppTheme.primaryColor,
@@ -498,12 +502,12 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
   }) {
     return Row(
       children: [
-        Icon(icon, color: color, size: 18.w),
-        SizedBox(width: 8.w),
+        Icon(icon, color: color, size: 14.w),
+        SizedBox(width: 6.w),
         Text(
           label,
           style: GoogleFonts.hankenGrotesk(
-            fontSize: 13.sp,
+            fontSize: 12.sp,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF475569),
           ),
@@ -512,7 +516,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
         Text(
           value,
           style: GoogleFonts.hankenGrotesk(
-            fontSize: 13.sp,
+            fontSize: 12.sp,
             fontWeight: FontWeight.w700,
             color: color,
           ),
@@ -532,31 +536,31 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
         color: bgColor,
         borderRadius: BorderRadius.circular(12.r),
       ),
-      padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
+      padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 6.w),
       child: Column(
         children: [
           Text(
             label,
             style: GoogleFonts.hankenGrotesk(
-              fontSize: 12.sp,
+              fontSize: 11.sp,
               fontWeight: FontWeight.w600,
-              color: textColor,
-            ),
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            '$value',
-            style: GoogleFonts.hankenGrotesk(
-              fontSize: 20.sp,
-              fontWeight: FontWeight.w800,
               color: textColor,
             ),
           ),
           SizedBox(height: 2.h),
           Text(
+            '$value',
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w800,
+              color: textColor,
+            ),
+          ),
+          SizedBox(height: 1.h),
+          Text(
             'Kasus',
             style: GoogleFonts.hankenGrotesk(
-              fontSize: 10.sp,
+              fontSize: 9.sp,
               color: textColor.withValues(alpha: 0.8),
               fontWeight: FontWeight.w500,
             ),

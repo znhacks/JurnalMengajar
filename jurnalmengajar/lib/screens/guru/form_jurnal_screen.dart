@@ -58,11 +58,6 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         context,
         listen: false,
       );
-      if (scheduleProvider.schedules.isEmpty &&
-          scheduleProvider.teacherSchedulesForSelectedDate.isEmpty) {
-        await scheduleProvider.loadAllSchedules();
-      }
-      if (!mounted) return;
 
       final journalProvider = Provider.of<JournalProvider>(
         context,
@@ -74,12 +69,25 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
       ScheduleModel? schedule;
       try {
-        schedule = scheduleProvider.schedules.firstWhere(
+        schedule = scheduleProvider.cachedTeacherSchedules.firstWhere(
           (s) => s.id == widget.scheduleId,
-          orElse: () => scheduleProvider.teacherSchedulesForSelectedDate
-              .firstWhere((s) => s.id == widget.scheduleId),
+          orElse: () => scheduleProvider.schedules.firstWhere(
+            (s) => s.id == widget.scheduleId,
+            orElse: () => scheduleProvider.teacherSchedulesForSelectedDate.firstWhere(
+              (s) => s.id == widget.scheduleId,
+            ),
+          ),
         );
       } catch (_) {}
+
+      if (schedule == null && mounted) {
+        await scheduleProvider.loadAllSchedules();
+        try {
+          schedule = scheduleProvider.schedules.firstWhere(
+            (s) => s.id == widget.scheduleId,
+          );
+        } catch (_) {}
+      }
 
       if (schedule != null && mounted) {
         final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
@@ -427,10 +435,14 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
     ScheduleModel? schedule;
     try {
-      schedule = scheduleProvider.schedules.firstWhere(
+      schedule = scheduleProvider.cachedTeacherSchedules.firstWhere(
         (s) => s.id == widget.scheduleId,
-        orElse: () => scheduleProvider.teacherSchedulesForSelectedDate
-            .firstWhere((s) => s.id == widget.scheduleId),
+        orElse: () => scheduleProvider.schedules.firstWhere(
+          (s) => s.id == widget.scheduleId,
+          orElse: () => scheduleProvider.teacherSchedulesForSelectedDate.firstWhere(
+            (s) => s.id == widget.scheduleId,
+          ),
+        ),
       );
     } catch (_) {
       return Scaffold(

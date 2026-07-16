@@ -64,4 +64,28 @@ class SupabaseWarningLetterRepository implements WarningLetterRepository {
       throw Exception('Gagal mengubah status surat peringatan: $e');
     }
   }
+
+  @override
+  Future<void> update(WarningLetterModel model) async {
+    try {
+      await _supabase
+          .from('warning_letters')
+          .update(model.toJson())
+          .eq('id', model.id);
+    } catch (e) {
+      throw Exception('Gagal memperbarui surat peringatan: $e');
+    }
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    try {
+      await _supabase
+          .from('warning_letters')
+          .delete()
+          .eq('id', id);
+    } catch (e) {
+      throw Exception('Gagal menghapus surat peringatan: $e');
+    }
+  }
 }

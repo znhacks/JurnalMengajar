@@ -735,11 +735,13 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     }
 
     return InkWell(
-      onTap: () {
+      onTap: () async {
         if (matchingJournal != null) {
-          context.push('/guru/journal/${matchingJournal.id}');
+          await context.push('/guru/journal/${matchingJournal.id}');
+          _refreshData();
         } else {
-          context.push('/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
+          await context.push('/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
+          _refreshData();
         }
       },
       borderRadius: BorderRadius.circular(12),

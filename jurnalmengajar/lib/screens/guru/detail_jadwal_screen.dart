@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -31,13 +31,6 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
   void initState() {
     super.initState();
     _checkExistingJournal();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-      if (scheduleProvider.schedules.isEmpty &&
-          scheduleProvider.teacherSchedulesForSelectedDate.isEmpty) {
-        scheduleProvider.loadAllSchedules();
-      }
-    });
   }
 
   Future<void> _checkExistingJournal() async {
@@ -50,18 +43,38 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
     // Find schedule
     ScheduleModel? schedule;
     try {
-      schedule = scheduleProvider.schedules.firstWhere(
+      schedule = scheduleProvider.cachedTeacherSchedules.firstWhere(
         (s) => s.id == widget.scheduleId,
-        orElse: () => scheduleProvider.teacherSchedulesForSelectedDate.firstWhere(
+        orElse: () => scheduleProvider.schedules.firstWhere(
           (s) => s.id == widget.scheduleId,
+          orElse: () => scheduleProvider.teacherSchedulesForSelectedDate.firstWhere(
+            (s) => s.id == widget.scheduleId,
+          ),
         ),
       );
     } catch (_) {}
 
+    if (schedule == null) {
+      await scheduleProvider.loadAllSchedules();
+      try {
+        schedule = scheduleProvider.schedules.firstWhere(
+          (s) => s.id == widget.scheduleId,
+        );
+      } catch (_) {}
+    }
+
     if (schedule != null) {
-      final allSchedules = scheduleProvider.schedules.isNotEmpty 
-          ? scheduleProvider.schedules 
-          : scheduleProvider.teacherSchedulesForSelectedDate;
+      final uniqueSchedulesMap = <String, ScheduleModel>{};
+      for (final s in scheduleProvider.cachedTeacherSchedules) {
+        uniqueSchedulesMap[s.id] = s;
+      }
+      for (final s in scheduleProvider.schedules) {
+        uniqueSchedulesMap[s.id] = s;
+      }
+      for (final s in scheduleProvider.teacherSchedulesForSelectedDate) {
+        uniqueSchedulesMap[s.id] = s;
+      }
+      final allSchedules = uniqueSchedulesMap.values.toList();
           
       final groupSchedules = allSchedules.where((s) {
         return s.date.year == schedule!.date.year &&
@@ -107,10 +120,13 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
     // Find schedule
     ScheduleModel? schedule;
     try {
-      schedule = scheduleProvider.schedules.firstWhere(
+      schedule = scheduleProvider.cachedTeacherSchedules.firstWhere(
         (s) => s.id == widget.scheduleId,
-        orElse: () => scheduleProvider.teacherSchedulesForSelectedDate.firstWhere(
+        orElse: () => scheduleProvider.schedules.firstWhere(
           (s) => s.id == widget.scheduleId,
+          orElse: () => scheduleProvider.teacherSchedulesForSelectedDate.firstWhere(
+            (s) => s.id == widget.scheduleId,
+          ),
         ),
       );
     } catch (_) {
@@ -121,9 +137,17 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
     }
 
     // Find all schedule IDs in same group
-    final allSchedules = scheduleProvider.schedules.isNotEmpty 
-        ? scheduleProvider.schedules 
-        : scheduleProvider.teacherSchedulesForSelectedDate;
+    final uniqueSchedulesMap = <String, ScheduleModel>{};
+    for (final s in scheduleProvider.cachedTeacherSchedules) {
+      uniqueSchedulesMap[s.id] = s;
+    }
+    for (final s in scheduleProvider.schedules) {
+      uniqueSchedulesMap[s.id] = s;
+    }
+    for (final s in scheduleProvider.teacherSchedulesForSelectedDate) {
+      uniqueSchedulesMap[s.id] = s;
+    }
+    final allSchedules = uniqueSchedulesMap.values.toList();
         
     final groupSchedules = allSchedules.where((s) {
       return s.date.year == schedule!.date.year &&

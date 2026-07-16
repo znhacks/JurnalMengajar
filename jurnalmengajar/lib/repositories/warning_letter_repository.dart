@@ -5,4 +5,6 @@ abstract class WarningLetterRepository {
   Future<List<WarningLetterModel>> getByTeacherId(String teacherId);
   Future<void> create(WarningLetterModel model);
   Future<void> markAsRead(String id);
+  Future<void> update(WarningLetterModel model);
+  Future<void> delete(String id);
 }

@@ -7,6 +7,7 @@ import '../models/subject_model.dart';
 import '../repositories/warning_letter_repository.dart';
 import 'master_data_provider.dart';
 import '../core/utils/helper.dart';
+import '../core/utils/schedule_grouper.dart';
 
 class WarningLetterProvider with ChangeNotifier {
   final WarningLetterRepository warningLetterRepository;
@@ -82,58 +83,61 @@ class WarningLetterProvider with ChangeNotifier {
       // If error loading existing, we continue with empty list
     }
 
-    // Group schedules by date
-    final Map<String, List<ScheduleModel>> schedulesByDate = {};
-    for (final s in schedules) {
-      if (!s.isActive) continue;
-      final dateKey = '${s.date.year}-${s.date.month}-${s.date.day}';
-      schedulesByDate.putIfAbsent(dateKey, () => []).add(s);
+    // 1. Group active schedules using groupDailySchedules
+    final activeSchedules = schedules.where((s) => s.isActive).toList();
+    final groupedSchedules = groupDailySchedules(activeSchedules);
+
+    // 2. Map groups by date key (yyyy-MM-dd)
+    final Map<String, List<GroupedDailySchedule>> groupsByDate = {};
+    for (final group in groupedSchedules) {
+      final dateKey = '${group.date.year}-${group.date.month}-${group.date.day}';
+      groupsByDate.putIfAbsent(dateKey, () => []).add(group);
     }
 
-    for (final entry in schedulesByDate.entries) {
-      final dateSchedules = entry.value;
-      if (dateSchedules.isEmpty) continue;
+    // 3. Process each date
+    for (final entry in groupsByDate.entries) {
+      final dateGroups = entry.value;
+      if (dateGroups.isEmpty) continue;
 
-      final firstSchedule = dateSchedules.first;
-      final schedOnly = DateTime(firstSchedule.date.year, firstSchedule.date.month, firstSchedule.date.day);
+      final firstGroup = dateGroups.first;
+      final schedOnly = DateTime(firstGroup.date.year, firstGroup.date.month, firstGroup.date.day);
       final diffDays = todayOnly.difference(schedOnly).inDays;
+      final dateStr = AppHelper.formatDateShort(firstGroup.date);
+
+      // Find if warning for this date already exists
+      final existingWarningIndex = existingWarnings.indexWhere((w) => w.reason.contains(dateStr));
+      final WarningLetterModel? existingWarning = existingWarningIndex != -1 ? existingWarnings[existingWarningIndex] : null;
 
       if (diffDays > maxDays) {
-        // Collect schedules on this day that do NOT have a journal
-        final List<ScheduleModel> missingJournalSchedules = [];
-        for (final s in dateSchedules) {
-          final hasJournal = journals.any((j) => j.scheduleId == s.id);
+        // Collect daily schedule groups on this day that do NOT have a journal
+        final List<GroupedDailySchedule> missingJournalGroups = [];
+        for (final group in dateGroups) {
+          // A group has a journal if ANY of its scheduleIds has a journal in journals
+          final hasJournal = journals.any((j) => group.scheduleIds.contains(j.scheduleId));
           if (!hasJournal) {
-            missingJournalSchedules.add(s);
+            missingJournalGroups.add(group);
           }
         }
 
-        if (missingJournalSchedules.isNotEmpty) {
-          final representativeSchedule = missingJournalSchedules.first;
-          final dateStr = AppHelper.formatDateShort(representativeSchedule.date);
-
-          // Check if warning for this date already exists
-          final alreadyExists = existingWarnings.any((w) => w.reason.contains(dateStr));
-          if (alreadyExists) continue;
-
+        if (missingJournalGroups.isNotEmpty) {
           // Format classes and hours
           final Map<String, List<int>> classToHours = {};
           final Map<String, String> classIdToName = {};
           final Map<String, Set<String>> classToSubjects = {};
 
-          for (final s in missingJournalSchedules) {
+          for (final group in missingJournalGroups) {
             final cls = masterProvider.classes.firstWhere(
-              (c) => c.id == s.classId,
+              (c) => c.id == group.classId,
               orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
             );
             final subject = masterProvider.subjects.firstWhere(
-              (sub) => sub.id == s.subjectId,
+              (sub) => sub.id == group.subjectId,
               orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
             );
 
-            classIdToName[s.classId] = cls.name;
-            classToHours.putIfAbsent(s.classId, () => []).add(s.teachingHour);
-            classToSubjects.putIfAbsent(s.classId, () => {}).add(subject.name);
+            classIdToName[group.classId] = cls.name;
+            classToHours.putIfAbsent(group.classId, () => []).addAll(group.teachingHours);
+            classToSubjects.putIfAbsent(group.classId, () => {}).add(subject.name);
           }
 
           final List<String> detailStrings = [];
@@ -148,19 +152,49 @@ class WarningLetterProvider with ChangeNotifier {
           final details = detailStrings.join(' & ');
           final reason = 'Terlambat mengisi jurnal mengajar pada tanggal $dateStr untuk kelas: $details.';
 
-          final newWarning = WarningLetterModel(
-            id: '',
-            teacherId: representativeSchedule.teacherId,
-            scheduleId: representativeSchedule.id,
-            issuedAt: DateTime.now(),
-            reason: reason,
-            status: 'unread',
-          );
+          if (existingWarning != null) {
+            if (existingWarning.reason != reason) {
+              final updatedWarning = existingWarning.copyWith(reason: reason);
+              try {
+                await warningLetterRepository.update(updatedWarning);
+              } catch (_) {
+                // Ignore errors
+              }
+            }
+          } else {
+            final representativeGroup = missingJournalGroups.first;
+            final newWarning = WarningLetterModel(
+              id: '',
+              teacherId: representativeGroup.teacherId,
+              scheduleId: representativeGroup.scheduleIds.first,
+              issuedAt: DateTime.now(),
+              reason: reason,
+              status: 'unread',
+            );
 
+            try {
+              await warningLetterRepository.create(newWarning);
+            } catch (_) {
+              // Ignore errors (like duplicate warning constraint)
+            }
+          }
+        } else {
+          // All journals on this day are filled, delete warning if it exists
+          if (existingWarning != null) {
+            try {
+              await warningLetterRepository.delete(existingWarning.id);
+            } catch (_) {
+              // Ignore errors
+            }
+          }
+        }
+      } else {
+        // Not late, delete warning if it exists
+        if (existingWarning != null) {
           try {
-            await warningLetterRepository.create(newWarning);
+            await warningLetterRepository.delete(existingWarning.id);
           } catch (_) {
-            // Ignore errors (like duplicate warning constraint)
+            // Ignore errors
           }
         }
       }
