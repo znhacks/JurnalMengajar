@@ -10,6 +10,7 @@ import '../../providers/schedule_provider.dart';
 import '../../providers/journal_provider.dart';
 import '../../models/teacher_model.dart';
 import '../../models/journal_model.dart';
+import '../../models/schedule_model.dart';
 import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
 import '../../core/utils/helper.dart';
@@ -136,6 +137,21 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
     if (unfinishedSchedules.isEmpty) return;
 
+    // Group by (classId, subjectId) so multiple teaching hours for the same
+    // class+subject on the same day appear as a single entry.
+    final Map<String, List<int>> groupedHours = {};
+    final Map<String, ScheduleModel> groupedRepresentative = {};
+    for (final s in unfinishedSchedules) {
+      final key = '${s.classId}|${s.subjectId}';
+      groupedHours.putIfAbsent(key, () => []).add(s.teachingHour);
+      groupedRepresentative.putIfAbsent(key, () => s);
+    }
+    // Sort hours inside each group
+    for (final k in groupedHours.keys) {
+      groupedHours[k]!.sort();
+    }
+    final groupedKeys = groupedHours.keys.toList();
+
     if (!mounted) return;
 
     showDialog(
@@ -183,7 +199,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 SizedBox(height: 10.h),
                 // Subtitle
                 Text(
-                  'Halo ${teacher.name}, Anda memiliki ${unfinishedSchedules.length} jadwal mengajar hari ini yang belum diisi jurnalnya. Silakan segera melengkapi:',
+                  'Halo ${teacher.name}, Anda memiliki ${groupedKeys.length} jadwal mengajar hari ini yang belum diisi jurnalnya. Silakan segera melengkapi:',
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 13.sp,
                     color: const Color(0xFF475569),
@@ -206,11 +222,13 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     child: ListView.separated(
                       shrinkWrap: true,
                       padding: EdgeInsets.all(12.w),
-                      itemCount: unfinishedSchedules.length,
+                      itemCount: groupedKeys.length,
                       separatorBuilder: (context, _) =>
                           const Divider(color: Color(0xFFE2E8F0), height: 12),
                       itemBuilder: (context, index) {
-                        final schedule = unfinishedSchedules[index];
+                        final key = groupedKeys[index];
+                        final schedule = groupedRepresentative[key]!;
+                        final hours = groupedHours[key]!;
                         final cls = masterProvider.classes.firstWhere(
                           (c) => c.id == schedule.classId,
                           orElse: () => ClassModel(
@@ -228,6 +246,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             isActive: false,
                           ),
                         );
+                        final hoursLabel = hours.length == 1
+                            ? 'Jam ${hours.first}'
+                            : 'Jam ${hours.join(', ')}';
                         return Row(
                           children: [
                             Container(
@@ -242,7 +263,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                 borderRadius: BorderRadius.circular(6.r),
                               ),
                               child: Text(
-                                'Jam ${schedule.teachingHour}',
+                                hoursLabel,
                                 style: GoogleFonts.hankenGrotesk(
                                   fontSize: 10.sp,
                                   color: AppTheme.primaryColor,
