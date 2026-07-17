@@ -477,6 +477,56 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                         return;
                       }
 
+                      // Check teacher expertise match
+                      final selectedTeacher = masterProvider.teachers.firstWhere((t) => t.id == selectedTeacherId);
+                      final selectedSubject = masterProvider.subjects.firstWhere((s) => s.id == selectedSubjectId);
+
+                      final teacherPos = selectedTeacher.position.trim().toLowerCase();
+                      final subjectName = selectedSubject.name.trim().toLowerCase();
+                      bool isConflicting = false;
+                      if (teacherPos.startsWith('guru ') && teacherPos != 'guru') {
+                        final expertise = teacherPos.replaceFirst('guru ', '').trim();
+                        isConflicting = !subjectName.contains(expertise) && !expertise.contains(subjectName);
+                      }
+
+                      if (isConflicting) {
+                        FocusScope.of(context).unfocus();
+                        final confirmExpertise = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+                            title: Row(
+                              children: [
+                                Icon(Icons.warning_amber_rounded, color: const Color(0xFFD97706), size: 28.sp),
+                                SizedBox(width: 8.w),
+                                const Text('Peringatan Keahlian'),
+                              ],
+                            ),
+                            content: Text(
+                              'Guru "${selectedTeacher.name}" memiliki keahlian sebagai "${selectedTeacher.position}". '
+                              'Mata pelajaran yang dipilih adalah "${selectedSubject.name}".\n\n'
+                              'Apakah Anda yakin ingin menjadwalkan guru ini untuk pelajaran yang berbeda?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Batal'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text(
+                                  'Lanjutkan',
+                                  style: TextStyle(color: Color(0xFFD97706), fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmExpertise != true) return;
+                      }
+
+                      if (!context.mounted) return;
+
                       final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
                       final dialogContext = context;
                       bool success = false;
