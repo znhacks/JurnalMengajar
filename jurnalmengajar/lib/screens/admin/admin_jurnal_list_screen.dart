@@ -181,10 +181,13 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        _buildJournalList(allJournals, masterProvider),
+                        _buildJournalList(allJournals, masterProvider,
+                            badgeColor: AppTheme.primaryColor),
                         _buildUnfilledList(unfilledGroups, masterProvider),
-                        _buildJournalList(pendingJournals, masterProvider),
-                        _buildJournalList(verifiedJournals, masterProvider),
+                        _buildJournalList(pendingJournals, masterProvider,
+                            badgeColor: const Color(0xFF825100)),
+                        _buildJournalList(verifiedJournals, masterProvider,
+                            badgeColor: AppTheme.primaryColor),
                       ],
                     ),
                   ),
@@ -228,7 +231,11 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     );
   }
 
-  Widget _buildJournalList(List<JournalModel> list, MasterDataProvider master) {
+  Widget _buildJournalList(
+    List<JournalModel> list,
+    MasterDataProvider master, {
+    Color? badgeColor,
+  }) {
     // Apply universal search filter
     final filtered = _searchQuery.isEmpty
         ? list
@@ -262,18 +269,136 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
       );
     }
 
-    final sorted = List<JournalModel>.from(filtered)
-      ..sort((a, b) => b.date.compareTo(a.date));
+    // Group by teacher
+    final Map<TeacherModel, List<JournalModel>> groups = {};
+    for (final item in filtered) {
+      final teacher = master.teachers.firstWhere(
+        (t) => t.id == item.teacherId,
+        orElse: () => TeacherModel(
+            id: item.teacherId,
+            name: 'Guru--',
+            position: '',
+            address: '',
+            phoneNumber: '',
+            email: ''),
+      );
+      groups.putIfAbsent(teacher, () => []).add(item);
+    }
+
+    // Sort teachers alphabetically by name
+    final sortedTeachers = groups.keys.toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+    final activeColor = badgeColor ?? AppTheme.primaryColor;
 
     return RefreshIndicator(
       onRefresh: _refreshData,
       color: AppTheme.primaryColor,
-      child: ListView.separated(
-        padding: EdgeInsets.all(16.w),
-        itemCount: sorted.length,
-        separatorBuilder: (context, _) => SizedBox(height: 12.h),
-        itemBuilder: (context, index) {
-          return _buildJournalCard(sorted[index], master);
+      child: ListView.builder(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        itemCount: sortedTeachers.length,
+        itemBuilder: (context, teacherIndex) {
+          final teacher = sortedTeachers[teacherIndex];
+          final teacherItems = groups[teacher]!
+            ..sort((a, b) => b.date.compareTo(a.date));
+          final isExpanded = _expandedTeacherIds.contains(teacher.id);
+
+          return Card(
+            margin: EdgeInsets.only(bottom: 12.h),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: AppTheme.outlineVariant),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                key: ValueKey<String>('journal_teacher_${teacher.id}'),
+                initiallyExpanded: isExpanded,
+                onExpansionChanged: (expanded) {
+                  setState(() {
+                    if (expanded) {
+                      _expandedTeacherIds.add(teacher.id);
+                    } else {
+                      _expandedTeacherIds.remove(teacher.id);
+                    }
+                  });
+                },
+                title: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 16.r,
+                      backgroundColor: const Color(0xFFF1F5F9),
+                      backgroundImage: teacher.photoUrl != null &&
+                              teacher.photoUrl!.startsWith('http')
+                          ? NetworkImage(teacher.photoUrl!)
+                          : null,
+                      child: teacher.photoUrl == null
+                          ? Icon(Icons.person, size: 16.r, color: Colors.grey[450])
+                          : null,
+                    ),
+                    SizedBox(width: 10.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            teacher.name,
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.onBackground,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            teacher.position.isNotEmpty ? teacher.position : 'Guru',
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 11.sp,
+                              color: AppTheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                trailing: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: activeColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${teacherItems.length}',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 10.sp,
+                      color: activeColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                children: [
+                  Container(
+                    color: const Color(0xFFF8FAFC),
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: teacherItems.length,
+                      separatorBuilder: (context, _) => SizedBox(height: 10.h),
+                      itemBuilder: (context, itemIndex) {
+                        return _buildJournalCard(teacherItems[itemIndex], master);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
         },
       ),
     );
@@ -595,7 +720,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                '${teacherItems.length} belum',
+                                '${teacherItems.length}',
                                 style: GoogleFonts.hankenGrotesk(
                                   fontSize: 10.sp,
                                   color: const Color(0xFFBA1A1A),

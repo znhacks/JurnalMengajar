@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
@@ -164,8 +165,29 @@ class SupabaseAuthRepository implements AuthRepository {
       final userId = authResponse.user?.id;
       if (userId == null) throw Exception('Gagal membuat akun');
 
-      // 2. Create user in database
-      final userData = user.copyWith(id: userId).toJson();
+      // 2. Upload profile photo if provided and is a local file path
+      String? finalPhotoUrl = user.photoUrl;
+      if (finalPhotoUrl != null &&
+          finalPhotoUrl.isNotEmpty &&
+          !finalPhotoUrl.startsWith('http')) {
+        try {
+          final file = File(finalPhotoUrl);
+          if (await file.exists()) {
+            final bytes = await file.readAsBytes();
+            final fileName = finalPhotoUrl.split('/').last;
+            finalPhotoUrl = await uploadProfilePhoto(bytes, fileName, userId);
+          }
+        } catch (uploadError) {
+          debugPrint('Error uploading profile photo during registration: $uploadError');
+          finalPhotoUrl = null;
+        }
+      }
+
+      // 3. Create user in database
+      final userData = user.copyWith(
+        id: userId,
+        photoUrl: finalPhotoUrl,
+      ).toJson();
       await _supabase.from('users').insert(userData);
     } catch (e) {
       if (e.toString().contains('Pendaftaran Anda sedang menunggu') || e.toString().contains('Email ini sudah terdaftar')) {

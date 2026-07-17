@@ -1,12 +1,12 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../core/utils/helper.dart';
+import '../../core/utils/image_crop_helper.dart';
 import '../../widgets/wave_clipper.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -27,7 +27,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
 
   File? _profileImage;
-  final ImagePicker _picker = ImagePicker();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   final String _selectedRole = 'pending_guru';
@@ -52,26 +51,95 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage(ImageSource source) async {
     try {
-      final XFile? pickedFile = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 70,
+      final result = await pickAndCropImage(
+        context: context,
+        source: source,
       );
-      if (pickedFile != null) {
+      if (result != null) {
+        final tempDir = Directory.systemTemp;
+        final tempFile = File(
+          '${tempDir.path}/profile_crop_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
+        await tempFile.writeAsBytes(result.bytes);
+
         setState(() {
-          _profileImage = File(pickedFile.path);
+          _profileImage = tempFile;
         });
       }
     } catch (e) {
       if (mounted) {
         AppHelper.showSnackBar(
           context,
-          'Gagal memilih gambar: $e',
+          'Gagal memproses gambar: $e',
           isError: true,
         );
       }
     }
+  }
+
+  void _showImageSourceSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(height: 8.h),
+            Container(
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              'Pilih Sumber Foto',
+              style: TextStyle(
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFFEFF6FF),
+                child: Icon(
+                  Icons.photo_library_outlined,
+                  color: Color.fromARGB(255, 37, 99, 235),
+                ),
+              ),
+              title: const Text('Galeri Foto'),
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFFEFF6FF),
+                child: Icon(
+                  Icons.camera_alt_outlined,
+                  color: Color.fromARGB(255, 37, 99, 235),
+                ),
+              ),
+              title: const Text('Kamera'),
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            SizedBox(height: 8.h),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _handleRegister() async {
@@ -252,7 +320,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       bottom: 0,
                                       right: 0,
                                       child: GestureDetector(
-                                        onTap: _pickImage,
+                                        onTap: _showImageSourceSheet,
                                         child: Container(
                                           padding: EdgeInsets.all(6.w),
                                           decoration: const BoxDecoration(

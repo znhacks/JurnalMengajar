@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/master_data_provider.dart';
@@ -30,6 +30,15 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
   void _showFormDialog({PeriodModel? period}) {
     final nameController = TextEditingController(text: period?.name ?? '');
     bool isActive = period?.isActive ?? false;
+
+    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+    final hasExistingActivePeriod = masterProvider.periods.any(
+      (p) => p.isActive && (period == null || p.id != period.id),
+    );
+    final existingActivePeriodName = masterProvider.periods.firstWhere(
+      (p) => p.isActive && (period == null || p.id != period.id),
+      orElse: () => PeriodModel(id: '', name: '', isActive: false),
+    ).name;
 
     showModalBottomSheet(
       context: context,
@@ -83,7 +92,53 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                           });
                         },
                       ),
-                      SizedBox(height: 24.h),
+                      SizedBox(height: 8.h),
+                      if (isActive && hasExistingActivePeriod) ...[
+                        Container(
+                          padding: EdgeInsets.all(12.w),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFBEB),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFDE68A)),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                color: const Color(0xFFD97706),
+                                size: 20.r,
+                              ),
+                              SizedBox(width: 10.w),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Perhatian',
+                                      style: TextStyle(
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF92400E),
+                                      ),
+                                    ),
+                                    SizedBox(height: 2.h),
+                                    Text(
+                                      'Mengaktifkan periode ini akan menonaktifkan periode "$existingActivePeriodName" yang saat ini sedang aktif.',
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        color: const Color(0xFFB45309),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 16.h),
+                      ],
+                      SizedBox(height: 16.h),
                       ElevatedButton(
                         onPressed: () async {
                           if (nameController.text.trim().isEmpty) {

@@ -29,6 +29,12 @@ class SupabasePeriodRepository implements PeriodRepository {
   @override
   Future<void> create(PeriodModel model) async {
     try {
+      if (model.isActive) {
+        await _supabase
+            .from('periods')
+            .update({'is_active': false})
+            .eq('is_active', true);
+      }
       final payload = model.toJson();
       if ((payload['id'] as String?)?.isEmpty ?? true) {
         payload['id'] = _uuid.v4();
@@ -42,6 +48,12 @@ class SupabasePeriodRepository implements PeriodRepository {
   @override
   Future<void> update(PeriodModel model) async {
     try {
+      if (model.isActive) {
+        await _supabase
+            .from('periods')
+            .update({'is_active': false})
+            .eq('is_active', true);
+      }
       await _supabase
           .from('periods')
           .update(model.toJson())
