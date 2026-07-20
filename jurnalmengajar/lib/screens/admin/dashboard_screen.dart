@@ -1022,7 +1022,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         final statusColor = hasJournal
             ? AppTheme.primaryColor
             : const Color(0xFFBA1A1A);
-        final hoursStr = scheduleGroup.teachingHours.join(', ');
+        final hoursStr = AppHelper.formatTeachingHours(scheduleGroup.teachingHours);
 
         return Material(
           color: Colors.transparent,

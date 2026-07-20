@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class AppHelper {
@@ -47,5 +47,24 @@ class AppHelper {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
+  }
+
+  static String formatTeachingHours(List<int> hours) {
+    if (hours.isEmpty) return '-';
+    final sorted = hours.toSet().toList()..sort();
+    if (sorted.length == 1) return '${sorted.first}';
+
+    bool isConsecutive = true;
+    for (int i = 0; i < sorted.length - 1; i++) {
+      if (sorted[i + 1] != sorted[i] + 1) {
+        isConsecutive = false;
+        break;
+      }
+    }
+
+    if (isConsecutive && sorted.length >= 2) {
+      return '${sorted.first}-${sorted.last}';
+    }
+    return sorted.join(', ');
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../widgets/image_viewer.dart';
@@ -273,7 +274,10 @@ class DetailJurnalScreen extends StatelessWidget {
                 SizedBox(height: 24.h),
                 ElevatedButton.icon(
                   onPressed: () {
-                    context.push('/guru/journal-form?scheduleId=${journal.scheduleId}');
+                    final dateStr = DateFormat('yyyy-MM-dd').format(journal.date);
+                    context.push(
+                      '/guru/journal-form?scheduleId=${journal.scheduleId}&journalId=${journal.id}&date=$dateStr',
+                    );
                   },
                   icon: const Icon(Icons.edit_note),
                   label: const Text('Revisi Jurnal'),

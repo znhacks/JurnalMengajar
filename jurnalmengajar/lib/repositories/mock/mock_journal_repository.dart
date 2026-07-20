@@ -18,11 +18,19 @@ class MockJournalRepository implements JournalRepository {
   }
 
   @override
-  Future<JournalModel?> getJournalForSchedule(String scheduleId) async {
+  Future<JournalModel?> getJournalForSchedule(String scheduleId, {DateTime? date}) async {
     await Future.delayed(const Duration(milliseconds: 200));
-    final index = _db.journals.indexWhere((j) => j.scheduleId == scheduleId);
-    if (index != -1) {
-      return _db.journals[index];
+    final matching = _db.journals.where((j) {
+      if (j.scheduleId != scheduleId) return false;
+      if (date != null) {
+        return j.date.year == date.year &&
+               j.date.month == date.month &&
+               j.date.day == date.day;
+      }
+      return true;
+    }).toList();
+    if (matching.isNotEmpty) {
+      return matching.last;
     }
     return null;
   }
@@ -32,10 +40,15 @@ class MockJournalRepository implements JournalRepository {
     await Future.delayed(const Duration(milliseconds: 500));
     final id = 'j_${DateTime.now().millisecondsSinceEpoch}';
     
-    // Check if a journal already exists for this schedule
-    final exists = _db.journals.any((j) => j.scheduleId == model.scheduleId);
+    // Check if an active (non-rejected) journal already exists for this schedule on the same date
+    final exists = _db.journals.any((j) =>
+        j.scheduleId == model.scheduleId &&
+        j.date.year == model.date.year &&
+        j.date.month == model.date.month &&
+        j.date.day == model.date.day &&
+        j.status != 'rejected');
     if (exists) {
-      throw Exception('Jurnal untuk jadwal ini sudah dibuat!');
+      throw Exception('Jurnal untuk jadwal ini sudah diinput!');
     }
 
     _db.journals.add(model.copyWith(id: id));

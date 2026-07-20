@@ -47,12 +47,22 @@ class SupabaseJournalRepository implements JournalRepository {
   }
 
   @override
-  Future<JournalModel?> getJournalForSchedule(String scheduleId) async {
+  Future<JournalModel?> getJournalForSchedule(String scheduleId, {DateTime? date}) async {
     try {
-      final response = await _supabase
+      var query = _supabase
           .from(SupabaseConstants.tableJournals)
           .select()
-          .eq(SupabaseConstants.fieldScheduleId, scheduleId)
+          .eq(SupabaseConstants.fieldScheduleId, scheduleId);
+
+      if (date != null) {
+        final startOfDay = DateTime(date.year, date.month, date.day).toIso8601String();
+        final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59).toIso8601String();
+        query = query.gte('date', startOfDay).lte('date', endOfDay);
+      }
+
+      final response = await query
+          .order('created_at', ascending: false)
+          .limit(1)
           .maybeSingle();
 
       if (response == null) return null;

@@ -47,9 +47,9 @@ class JournalProvider with ChangeNotifier {
     }
   }
 
-  Future<JournalModel?> getJournalForSchedule(String scheduleId) async {
+  Future<JournalModel?> getJournalForSchedule(String scheduleId, {DateTime? date}) async {
     try {
-      return await journalRepository.getJournalForSchedule(scheduleId);
+      return await journalRepository.getJournalForSchedule(scheduleId, date: date);
     } catch (_) {
       return null;
     }
@@ -103,7 +103,11 @@ class JournalProvider with ChangeNotifier {
       }
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      String msg = e.toString().replaceAll('Exception: ', '');
+      if (msg.contains('journals_schedule_id_fkey') || msg.contains('23503')) {
+        msg = 'Jadwal ini tidak ditemukan di database (ID jadwal tidak terdaftar atau sudah dihapus). Silakan refresh halaman jadwal Anda.';
+      }
+      _errorMessage = msg;
       return false;
     } finally {
       _isLoading = false;
@@ -156,7 +160,11 @@ class JournalProvider with ChangeNotifier {
       }
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      String msg = e.toString().replaceAll('Exception: ', '');
+      if (msg.contains('journals_schedule_id_fkey') || msg.contains('23503')) {
+        msg = 'Jadwal ini tidak ditemukan di database (ID jadwal tidak terdaftar atau sudah dihapus). Silakan refresh halaman jadwal Anda.';
+      }
+      _errorMessage = msg;
       return false;
     } finally {
       _isLoading = false;

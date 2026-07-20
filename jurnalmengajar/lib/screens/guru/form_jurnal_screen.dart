@@ -20,7 +20,13 @@ import '../../core/utils/helper.dart';
 class FormJurnalScreen extends StatefulWidget {
   final String scheduleId;
   final String? dateStr;
-  const FormJurnalScreen({super.key, required this.scheduleId, this.dateStr});
+  final String? journalId;
+  const FormJurnalScreen({
+    super.key,
+    required this.scheduleId,
+    this.dateStr,
+    this.journalId,
+  });
 
   @override
   State<FormJurnalScreen> createState() => _FormJurnalScreenState();
@@ -63,9 +69,63 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         context,
         listen: false,
       );
-      final existing = await journalProvider.getJournalForSchedule(
-        widget.scheduleId,
-      );
+
+      JournalModel? existing;
+
+      // 1. Try finding by journalId
+      if (widget.journalId != null && widget.journalId!.isNotEmpty) {
+        try {
+          existing = journalProvider.teacherJournals.firstWhere(
+            (j) => j.id == widget.journalId,
+            orElse: () => journalProvider.journals.firstWhere(
+              (j) => j.id == widget.journalId,
+            ),
+          );
+        } catch (_) {}
+      }
+
+      DateTime? targetDate;
+      if (widget.dateStr != null) {
+        try {
+          targetDate = DateTime.parse(widget.dateStr!);
+        } catch (_) {}
+      }
+
+      // 2. Try finding in loaded journals by scheduleId and date
+      if (existing == null && widget.scheduleId.isNotEmpty) {
+        try {
+          existing = journalProvider.teacherJournals.firstWhere(
+            (j) {
+              final sameSchedule = j.scheduleId == widget.scheduleId;
+              if (targetDate != null) {
+                return sameSchedule &&
+                    j.date.year == targetDate.year &&
+                    j.date.month == targetDate.month &&
+                    j.date.day == targetDate.day;
+              }
+              return sameSchedule;
+            },
+            orElse: () => journalProvider.journals.firstWhere(
+              (j) {
+                final sameSchedule = j.scheduleId == widget.scheduleId;
+                if (targetDate != null) {
+                  return sameSchedule &&
+                      j.date.year == targetDate.year &&
+                      j.date.month == targetDate.month &&
+                      j.date.day == targetDate.day;
+                }
+                return sameSchedule;
+              },
+            ),
+          );
+        } catch (_) {}
+
+        // 3. Fallback DB lookup
+        existing ??= await journalProvider.getJournalForSchedule(
+          widget.scheduleId,
+          date: targetDate,
+        );
+      }
 
       ScheduleModel? schedule;
       try {
@@ -94,13 +154,14 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         await masterProvider.loadStudentsForClass(schedule.classId);
 
         if (existing != null) {
+          final journalData = existing;
           setState(() {
-            _existingJournal = existing;
+            _existingJournal = journalData;
             _isEditing = true;
-            _materialController.text = existing.material;
+            _materialController.text = journalData.material;
 
             // Parse structured note if it exists
-            final fullNote = existing.note;
+            final fullNote = journalData.note;
             String parsedSickNames = '';
             String parsedPermissionNames = '';
             String parsedAlphaNames = '';
@@ -150,9 +211,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             _permissionNamesController.text = parsedPermissionNames;
             _alphaNamesController.text = parsedAlphaNames;
 
-            _sickCount = existing.sickCount;
-            _permissionCount = existing.permissionCount;
-            _alphaCount = existing.alphaCount;
+            _sickCount = journalData.sickCount;
+            _permissionCount = journalData.permissionCount;
+            _alphaCount = journalData.alphaCount;
 
             final sickNames = parsedSickNames.split(',').map((e) => e.trim().toLowerCase()).toList();
             final permNames = parsedPermissionNames.split(',').map((e) => e.trim().toLowerCase()).toList();
@@ -172,12 +233,12 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             }
 
             // Restore existing attachment URLs into list
-            if (existing.attachmentUrl != null && existing.attachmentUrl!.isNotEmpty) {
+            if (journalData.attachmentUrl != null && journalData.attachmentUrl!.isNotEmpty) {
               _existingImageUrls.addAll(
-                existing.attachmentUrl!.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty),
+                journalData.attachmentUrl!.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty),
               );
-            } else if (existing.attachment?.filePath != null) {
-              _existingImageUrls.add(existing.attachment!.filePath);
+            } else if (journalData.attachment?.filePath != null) {
+              _existingImageUrls.add(journalData.attachment!.filePath);
             }
           });
         } else {
@@ -347,7 +408,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         final updatedJournal = JournalModel(
           id: _existingJournal!.id,
           scheduleId: schedule.id,
-          date: schedule.date,
+          date: _existingJournal!.date,
           teachingHour: schedule.teachingHour,
           classId: schedule.classId,
           subjectId: schedule.subjectId,
@@ -362,6 +423,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           attachmentUrl: attachment == null
               ? null
               : _existingJournal!.attachmentUrl,
+          rejectionNote: null, // Clear rejection note when revised!
         );
 
         final success = await journalProvider.updateJournal(
@@ -500,6 +562,49 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (_existingJournal?.status == 'rejected') ...[
+                  Container(
+                    padding: EdgeInsets.all(14.w),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 22.sp),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Jurnal Ditolak (Perlu Revisi)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red.shade900,
+                                  fontSize: 13.sp,
+                                ),
+                              ),
+                              if (_existingJournal?.rejectionNote != null && _existingJournal!.rejectionNote!.isNotEmpty) ...[
+                                SizedBox(height: 4.h),
+                                Text(
+                                  'Catatan Penolakan: ${_existingJournal!.rejectionNote}',
+                                  style: TextStyle(
+                                    color: Colors.red.shade800,
+                                    fontSize: 12.sp,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                ],
                 // Info Summary Card (Read-only)
                 Card(
                   color: const Color(0xFFF1F5F9),
@@ -517,7 +622,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                         const Divider(height: 16),
                         _buildSummaryRow(
                           'Tanggal',
-                          AppHelper.formatDate(widget.dateStr != null ? DateTime.parse(widget.dateStr!) : schedule.date),
+                          AppHelper.formatDate(_existingJournal?.date ?? (widget.dateStr != null ? DateTime.parse(widget.dateStr!) : schedule.date)),
                         ),
                         const Divider(height: 16),
                         _buildSummaryRow(

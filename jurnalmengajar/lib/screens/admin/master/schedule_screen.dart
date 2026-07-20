@@ -910,7 +910,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                         children: [
                                           Expanded(
                                             child: Text(
-                                              '${cls.name} • Jam Ke-${sched.teachingHours.join(', ')}',
+                                              '${cls.name} • Jam Ke-${AppHelper.formatTeachingHours(sched.teachingHours)}',
                                               style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
                                             ),
                                           ),

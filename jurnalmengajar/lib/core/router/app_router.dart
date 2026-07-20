@@ -193,8 +193,15 @@ class AppRouter {
           pageBuilder: (context, state) {
             final scheduleId = state.uri.queryParameters['scheduleId'] ?? '';
             final dateStr = state.uri.queryParameters['date'];
+            final journalId = state.uri.queryParameters['journalId'];
             return _buildCustomTransition(
-                context, state, FormJurnalScreen(scheduleId: scheduleId, dateStr: dateStr));
+                context,
+                state,
+                FormJurnalScreen(
+                  scheduleId: scheduleId,
+                  dateStr: dateStr,
+                  journalId: journalId,
+                ));
           },
         ),
         GoRoute(

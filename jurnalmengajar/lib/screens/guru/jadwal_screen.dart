@@ -14,6 +14,7 @@ import '../../models/subject_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/helper.dart';
 import '../../models/schedule_model.dart';
 import '../../core/utils/schedule_grouper.dart';
 
@@ -677,7 +678,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         ? matchedHours.first.startTime
         : '00:00';
     final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '00:00';
-    final hoursStr = scheduleGroup.teachingHours.join(', ');
+    final hoursStr = AppHelper.formatTeachingHours(scheduleGroup.teachingHours);
 
     // Find matching journal for this schedule group on the selected day
     JournalModel? matchingJournal;
@@ -716,7 +717,11 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     return InkWell(
       onTap: () {
         if (matchingJournal != null) {
-          context.push('/guru/journal/${matchingJournal.id}');
+          if (matchingJournal.status == 'rejected') {
+            context.push('/guru/journal-form?scheduleId=${schedule.id}&journalId=${matchingJournal.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
+          } else {
+            context.push('/guru/journal/${matchingJournal.id}');
+          }
         } else {
           context.push('/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
         }

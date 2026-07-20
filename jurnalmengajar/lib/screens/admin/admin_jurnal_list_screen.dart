@@ -1035,7 +1035,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                             size: 12, color: AppTheme.outline),
                         SizedBox(width: 4.w),
                         Text(
-                          'Jam ke-${group.teachingHours.join(', ')}',
+                          'Jam ke-${AppHelper.formatTeachingHours(group.teachingHours)}',
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 11.sp,
                             color: AppTheme.onSurfaceVariant,

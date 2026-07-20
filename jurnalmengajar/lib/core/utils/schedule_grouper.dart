@@ -127,8 +127,8 @@ List<GroupedDailySchedule> groupDailySchedules(List<ScheduleModel> flatSchedules
 
     list.sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
 
-    final List<int> hours = list.map((s) => s.teachingHour).toList();
-    final List<String> ids = list.map((s) => s.id).toList();
+    final List<int> hours = list.map((s) => s.teachingHour).toSet().toList()..sort();
+    final List<String> ids = list.map((s) => s.id).toSet().toList();
 
     result.add(
       GroupedDailySchedule(

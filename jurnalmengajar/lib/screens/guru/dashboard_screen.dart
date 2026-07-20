@@ -725,7 +725,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
     );
 
-    final hoursStr = scheduleGroup.teachingHours.join(', ');
+    final hoursStr = AppHelper.formatTeachingHours(scheduleGroup.teachingHours);
 
     // Find matching journal for this schedule group on the selected day
     JournalModel? matchingJournal;
@@ -764,7 +764,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     return InkWell(
       onTap: () async {
         if (matchingJournal != null) {
-          await context.push('/guru/journal/${matchingJournal.id}');
+          if (matchingJournal.status == 'rejected') {
+            await context.push('/guru/journal-form?scheduleId=${schedule.id}&journalId=${matchingJournal.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
+          } else {
+            await context.push('/guru/journal/${matchingJournal.id}');
+          }
           _refreshData();
         } else {
           await context.push('/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');

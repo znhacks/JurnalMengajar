@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/master_data_provider.dart';
@@ -159,7 +160,7 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
           s.periodId == schedule.periodId;
     }).toList()..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
 
-    final hoursStr = groupSchedules.map((s) => s.teachingHour).join(', ');
+    final hoursStr = AppHelper.formatTeachingHours(groupSchedules.map((s) => s.teachingHour).toList());
     final matchedHours = masterProvider.hours
         .where((h) => groupSchedules.map((s) => s.teachingHour).contains(h.teachingHour))
         .toList()
@@ -318,7 +319,8 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                               Expanded(
                                 child: ElevatedButton.icon(
                                   onPressed: () {
-                                    context.push('/guru/journal-form?scheduleId=${schedule!.id}');
+                                    final dateStr = DateFormat('yyyy-MM-dd').format(_existingJournal!.date);
+                                    context.push('/guru/journal-form?scheduleId=${schedule!.id}&journalId=${_existingJournal!.id}&date=$dateStr');
                                   },
                                   icon: const Icon(Icons.edit_note),
                                   label: const Text('Revisi Jurnal'),
