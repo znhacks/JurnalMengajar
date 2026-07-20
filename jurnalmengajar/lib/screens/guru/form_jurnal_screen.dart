@@ -289,6 +289,16 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     _alphaNamesController.text = alphaNamesList.join(', ');
 
     if (_formKey.currentState!.validate()) {
+      final totalPhotos = _imageBytesList.length + _existingImageUrls.length;
+      if (totalPhotos < 1) {
+        AppHelper.showSnackBar(
+          context,
+          'Wajib melampirkan minimal 1 foto kegiatan pembelajaran!',
+          isError: true,
+        );
+        return;
+      }
+
       final journalProvider = Provider.of<JournalProvider>(
         context,
         listen: false,
@@ -703,18 +713,30 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 SizedBox(height: 20.h),
 
                 // Lampiran Jurnal
-                Text(
-                  'Lampiran Foto (Maks 3)',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF0F172A),
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      'Lampiran Foto',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
+                    Text(
+                      ' * (Wajib min. 1)',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ],
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  'Tambahkan foto bukti kegiatan mengajar',
-                  style: TextStyle(fontSize: 11.sp, color: Colors.grey[500]),
+                  'Tambahkan foto bukti kegiatan mengajar (1 - 3 foto)',
+                  style: TextStyle(fontSize: 11.sp, color: Colors.grey[600]),
                 ),
                 SizedBox(height: 10.h),
                 Builder(builder: (context) {
