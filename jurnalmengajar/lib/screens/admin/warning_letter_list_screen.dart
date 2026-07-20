@@ -225,6 +225,8 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                       ),
                                       title: Text(
                                         teacher.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                         style: GoogleFonts.hankenGrotesk(
                                           fontWeight: FontWeight.w800,
                                           fontSize: 14.sp,
@@ -233,6 +235,8 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                       ),
                                       subtitle: Text(
                                         teacher.position,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 11.sp,
                                           color: AppTheme.onSurfaceVariant,

@@ -13,7 +13,6 @@ import '../../models/user_model.dart';
 import '../../models/teacher_model.dart';
 import '../../core/utils/helper.dart';
 import '../../core/utils/image_crop_helper.dart';
-import '../../core/utils/schedule_grouper.dart';
 import '../../repositories/supabase_auth_repository.dart';
 import '../../widgets/image_viewer.dart';
 import '../../providers/warning_letter_provider.dart';
@@ -681,22 +680,6 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
       );
     }
 
-    // Group active schedules up to today with no journal entries
-    final today = DateTime.now();
-    final todayOnly = DateTime(today.year, today.month, today.day);
-
-    final groupedSchedules = groupDailySchedules(scheduleProvider.cachedTeacherSchedules);
-    final unfilledGroups = groupedSchedules.where((group) {
-      if (!group.isActive) return false;
-      final sDateOnly = DateTime(group.date.year, group.date.month, group.date.day);
-      if (sDateOnly.isAfter(todayOnly)) return false;
-      
-      // Check if there is any journal that matches any schedule in the group
-      return !journalProvider.teacherJournals.any((j) => group.scheduleIds.contains(j.scheduleId));
-    }).toList();
-
-    final unfilledCount = unfilledGroups.length;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -876,7 +859,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                             teacher.position.isNotEmpty ? teacher.position : (currentUser.position ?? 'Guru'),
                             style: TextStyle(
                               fontSize: 13.sp,
-                              color: const Color(0xFF2DD4BF), // Light Teal
+                              color: Colors.white.withValues(alpha: 0.8),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -891,7 +874,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: Text(
-                              'ROLE: ${currentUser.role.toUpperCase()}',
+                              'JABATAN: ${currentUser.role.toUpperCase()}',
                               style: TextStyle(
                                 fontSize: 9.sp,
                                 fontWeight: FontWeight.bold,
@@ -907,8 +890,6 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                 ),
               ),
               SizedBox(height: 16.h),
-
-
 
               // Detail List Section
               Text(
@@ -984,16 +965,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         bgColor: const Color(0xFFEFF6FF),
                         onTap: () => _showEditProfileDialog(currentUser, teacher),
                       ),
-                      // 2. Jurnal Kosong
-                      _buildHorizontalAction(
-                        icon: Icons.menu_book_rounded,
-                        label: 'Jurnal Kosong',
-                        color: Colors.amber[700]!,
-                        bgColor: unfilledCount > 0 ? const Color(0xFFFFFBEB) : const Color(0xFFF8FAFC),
-                        badgeCount: unfilledCount,
-                        onTap: () => context.go('/guru/dashboard?tab=2'),
-                      ),
-                      // 3. Surat Peringatan
+                      // 2. Surat Peringatan
                       _buildHorizontalAction(
                         icon: Icons.mail_rounded,
                         label: 'Peringatan',
@@ -1002,7 +974,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         badgeCount: unreadCount,
                         onTap: () => context.push('/guru/warning-letters'),
                       ),
-                      // 4. Tentang Aplikasi
+                      // 3. Tentang Aplikasi
                       _buildHorizontalAction(
                         icon: Icons.info_outline_rounded,
                         label: 'Tentang',

@@ -14,7 +14,6 @@ import '../../models/teacher_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/journal_provider.dart';
-import '../../core/utils/schedule_grouper.dart';
 
 class GuruMainShell extends StatefulWidget {
   final int? initialIndex;
@@ -173,28 +172,6 @@ class _GuruMainShellState extends State<GuruMainShell> {
     final warningProvider = context.watch<WarningLetterProvider>();
     final unreadWarnings = warningProvider.warningLetters.where((w) => w.status == 'unread').length;
 
-    final scheduleProvider = context.watch<ScheduleProvider>();
-    final journalProvider = context.watch<JournalProvider>();
-
-    final teacherJournals = journalProvider.teacherJournals;
-    final cachedTeacherSchedules = scheduleProvider.cachedTeacherSchedules;
-
-    // Group active schedules up to today with no journal entries
-    final today = DateTime.now();
-    final todayOnly = DateTime(today.year, today.month, today.day);
-
-    final groupedSchedules = groupDailySchedules(cachedTeacherSchedules);
-    final unfilledGroups = groupedSchedules.where((group) {
-      if (!group.isActive) return false;
-      final sDateOnly = DateTime(group.date.year, group.date.month, group.date.day);
-      if (sDateOnly.isAfter(todayOnly)) return false;
-      
-      // Check if there is any journal that matches any schedule in the group
-      return !teacherJournals.any((j) => group.scheduleIds.contains(j.scheduleId));
-    }).toList();
-
-    final unfilledCount = unfilledGroups.length;
-
     final mediaQuery = MediaQuery.of(context);
     final screenWidth = mediaQuery.size.width;
     final screenHeight = mediaQuery.size.height;
@@ -219,19 +196,6 @@ class _GuruMainShellState extends State<GuruMainShell> {
               badgeColor: Colors.amber,
               badgeTextColor: Colors.black,
               onTap: () => context.push('/guru/warning-letters'),
-              screenWidth: screenWidth,
-              screenHeight: screenHeight,
-            )
-          else if (unfilledCount > 0)
-            _buildFloatingBadge(
-              count: unfilledCount,
-              color: Colors.amber[700]!,
-              icon: Icons.menu_book_outlined,
-              badgeColor: const Color(0xFFBA1A1A),
-              badgeTextColor: Colors.white,
-              onTap: () {
-                context.go('/guru/dashboard?tab=2');
-              },
               screenWidth: screenWidth,
               screenHeight: screenHeight,
             ),

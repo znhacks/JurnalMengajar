@@ -25,6 +25,8 @@ class MasterTeacherScreen extends StatefulWidget {
 class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _isSelectionMode = false;
+  final Set<String> _selectedIds = {};
 
   @override
   void initState() {
@@ -37,6 +39,74 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
         _searchQuery = _searchController.text.toLowerCase();
       });
     });
+  }
+
+  void _toggleSelectionMode({String? initialId}) {
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      _selectedIds.clear();
+      if (_isSelectionMode && initialId != null) {
+        _selectedIds.add(initialId);
+      }
+    });
+  }
+
+  void _toggleSelectItem(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+        if (_selectedIds.isEmpty) {
+          _isSelectionMode = false;
+        }
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
+
+  void _selectAll(List<TeacherModel> allTeachers) {
+    setState(() {
+      if (_selectedIds.length == allTeachers.length) {
+        _selectedIds.clear();
+      } else {
+        _selectedIds.addAll(allTeachers.map((t) => t.id));
+      }
+    });
+  }
+
+  Future<void> _handleBatchDelete() async {
+    if (_selectedIds.isEmpty) return;
+    final count = _selectedIds.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Hapus $count Data Guru', style: const TextStyle(color: Colors.red)),
+        content: Text('Apakah Anda yakin ingin menghapus $count data guru yang dipilih? Akun login guru yang bersangkutan juga akan dihapus.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hapus Massal', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+      final idsToDelete = _selectedIds.toList();
+      final success = await masterProvider.deleteMultipleTeachers(idsToDelete);
+      if (!mounted) return;
+      if (success) {
+        AppHelper.showSnackBar(context, '$count data guru berhasil dihapus.');
+        setState(() {
+          _selectedIds.clear();
+          _isSelectionMode = false;
+        });
+      } else {
+        AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menghapus data guru.', isError: true);
+      }
+    }
   }
 
   @override
@@ -422,17 +492,38 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
       child: Card(
         margin: EdgeInsets.zero,
         elevation: 0,
+        color: _selectedIds.contains(t.id) ? const Color(0xFFEFF6FF) : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: Color(0xFFE2E8F0)),
+          side: BorderSide(
+            color: _selectedIds.contains(t.id) ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+            width: _selectedIds.contains(t.id) ? 1.5 : 1.0,
+          ),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => context.push('/admin/master-data/teachers/${t.id}'),
+          onTap: _isSelectionMode
+              ? () => _toggleSelectItem(t.id)
+              : () => context.push('/admin/master-data/teachers/${t.id}'),
+          onLongPress: () {
+            if (!_isSelectionMode) {
+              _toggleSelectionMode(initialId: t.id);
+            } else {
+              _toggleSelectItem(t.id);
+            }
+          },
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
             child: Row(
               children: [
+                if (_isSelectionMode) ...[
+                  Checkbox(
+                    value: _selectedIds.contains(t.id),
+                    activeColor: const Color(0xFF2563EB),
+                    onChanged: (_) => _toggleSelectItem(t.id),
+                  ),
+                  SizedBox(width: 4.w),
+                ],
                 CircleAvatar(
                   radius: 20.r,
                   backgroundColor: const Color(0xFFF1F5F9),
@@ -465,23 +556,31 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: Icon(
-                    Icons.chat,
-                    color: t.phoneNumber.trim().isEmpty ? Colors.grey[400] : const Color(0xFF25D366),
-                    size: 18.sp,
+                if (!_isSelectionMode)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.chat,
+                          color: t.phoneNumber.trim().isEmpty ? Colors.grey[400] : const Color(0xFF25D366),
+                          size: 20.sp,
+                        ),
+                        tooltip: 'WhatsApp',
+                        constraints: const BoxConstraints(),
+                        padding: EdgeInsets.all(2.w),
+                        onPressed: () => _launchWhatsApp(t.phoneNumber),
+                      ),
+                      SizedBox(width: 2.w),
+                      IconButton(
+                        icon: Icon(Icons.edit_outlined, color: Colors.indigo, size: 20.sp),
+                        tooltip: 'Edit Guru',
+                        constraints: const BoxConstraints(),
+                        padding: EdgeInsets.all(2.w),
+                        onPressed: () => _showFormDialog(teacher: t),
+                      ),
+                    ],
                   ),
-                  constraints: const BoxConstraints(),
-                  padding: EdgeInsets.all(6.w),
-                  onPressed: () => _launchWhatsApp(t.phoneNumber),
-                ),
-                SizedBox(width: 4.w),
-                IconButton(
-                  icon: Icon(Icons.edit_outlined, color: Colors.indigo, size: 18.sp),
-                  constraints: const BoxConstraints(),
-                  padding: EdgeInsets.all(6.w),
-                  onPressed: () => _showFormDialog(teacher: t),
-                ),
               ],
             ),
           ),
@@ -556,9 +655,44 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Master Data Guru'),
-      ),
+      appBar: _isSelectionMode
+          ? AppBar(
+              backgroundColor: const Color(0xFF0F172A),
+              foregroundColor: Colors.white,
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => setState(() {
+                  _isSelectionMode = false;
+                  _selectedIds.clear();
+                }),
+              ),
+              title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    _selectedIds.length == teachers.length ? Icons.deselect : Icons.select_all,
+                    color: Colors.white,
+                  ),
+                  tooltip: _selectedIds.length == teachers.length ? 'Batal Pilih Semua' : 'Pilih Semua',
+                  onPressed: () => _selectAll(teachers),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                  tooltip: 'Hapus Massal',
+                  onPressed: _selectedIds.isEmpty ? null : _handleBatchDelete,
+                ),
+              ],
+            )
+          : AppBar(
+              title: const Text('Master Data Guru'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.checklist_rounded),
+                  tooltip: 'Pilih Massal',
+                  onPressed: teachers.isEmpty ? null : () => _toggleSelectionMode(),
+                ),
+              ],
+            ),
       drawer: const AdminDrawer(currentRoute: '/admin/master-data/teachers'),
       body: Column(
         children: [

@@ -15,12 +15,83 @@ class MasterHourScreen extends StatefulWidget {
 }
 
 class _MasterHourScreenState extends State<MasterHourScreen> {
+  bool _isSelectionMode = false;
+  final Set<String> _selectedIds = {};
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshData();
     });
+  }
+
+  void _toggleSelectionMode({String? initialId}) {
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      _selectedIds.clear();
+      if (_isSelectionMode && initialId != null) {
+        _selectedIds.add(initialId);
+      }
+    });
+  }
+
+  void _toggleSelectItem(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+        if (_selectedIds.isEmpty) {
+          _isSelectionMode = false;
+        }
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
+
+  void _selectAll(List<HourModel> allHours) {
+    setState(() {
+      if (_selectedIds.length == allHours.length) {
+        _selectedIds.clear();
+      } else {
+        _selectedIds.addAll(allHours.map((h) => h.id));
+      }
+    });
+  }
+
+  Future<void> _handleBatchDelete() async {
+    if (_selectedIds.isEmpty) return;
+    final count = _selectedIds.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Hapus $count Jam Mengajar', style: const TextStyle(color: Colors.red)),
+        content: Text('Apakah Anda yakin ingin menghapus $count jam mengajar yang dipilih?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hapus Massal', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+      final idsToDelete = _selectedIds.toList();
+      final success = await masterProvider.deleteMultipleHours(idsToDelete);
+      if (!mounted) return;
+      if (success) {
+        AppHelper.showSnackBar(context, '$count jam mengajar berhasil dihapus.');
+        setState(() {
+          _selectedIds.clear();
+          _isSelectionMode = false;
+        });
+      } else {
+        AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menghapus jam mengajar.', isError: true);
+      }
+    }
   }
 
   Future<void> _refreshData() async {
@@ -179,9 +250,44 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
     final hours = masterProvider.hours;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Master Jam Pelajaran'),
-      ),
+      appBar: _isSelectionMode
+          ? AppBar(
+              backgroundColor: const Color(0xFF0F172A),
+              foregroundColor: Colors.white,
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => setState(() {
+                  _isSelectionMode = false;
+                  _selectedIds.clear();
+                }),
+              ),
+              title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    _selectedIds.length == hours.length ? Icons.deselect : Icons.select_all,
+                    color: Colors.white,
+                  ),
+                  tooltip: _selectedIds.length == hours.length ? 'Batal Pilih Semua' : 'Pilih Semua',
+                  onPressed: () => _selectAll(hours),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                  tooltip: 'Hapus Massal',
+                  onPressed: _selectedIds.isEmpty ? null : _handleBatchDelete,
+                ),
+              ],
+            )
+          : AppBar(
+              title: const Text('Master Jam Pelajaran'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.checklist_rounded),
+                  tooltip: 'Pilih Massal',
+                  onPressed: hours.isEmpty ? null : () => _toggleSelectionMode(),
+                ),
+              ],
+            ),
       drawer: const AdminDrawer(currentRoute: '/admin/master-data/hours'),
       body: RefreshIndicator(
         onRefresh: _refreshData,
@@ -199,44 +305,38 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                     separatorBuilder: (context, index) => SizedBox(height: 8.h),
                     itemBuilder: (context, index) {
                       final hour = hours[index];
-                      return Dismissible(
-                        key: Key(hour.id),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: EdgeInsets.only(right: 20.w),
-                          decoration: BoxDecoration(
-                            color: Colors.red[600],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.delete, color: Colors.white),
-                        ),
-                        onDismissed: (_) => _handleDelete(hour.id),
-                        confirmDismiss: (_) async {
-                          return await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Hapus Jam Pelajaran'),
-                              content: const Text('Apakah Anda yakin ingin menghapus jam pelajaran ini?'),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-                                ),
-                              ],
-                            ),
-                          );
+                      final isSelected = _selectedIds.contains(hour.id);
+
+                      return InkWell(
+                        onTap: _isSelectionMode ? () => _toggleSelectItem(hour.id) : null,
+                        onLongPress: () {
+                          if (!_isSelectionMode) {
+                            _toggleSelectionMode(initialId: hour.id);
+                          } else {
+                            _toggleSelectItem(hour.id);
+                          }
                         },
+                        borderRadius: BorderRadius.circular(12.r),
                         child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
                             borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                            border: Border.all(
+                              color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                              width: isSelected ? 1.5 : 1.0,
+                            ),
                           ),
                           child: Row(
                             children: [
+                              if (_isSelectionMode) ...[
+                                Checkbox(
+                                  value: isSelected,
+                                  activeColor: const Color(0xFF2563EB),
+                                  onChanged: (_) => _toggleSelectItem(hour.id),
+                                ),
+                                SizedBox(width: 4.w),
+                              ],
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,41 +359,42 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                                   ],
                                 ),
                               ),
-                              Row(
-                                 mainAxisSize: MainAxisSize.min,
-                                 children: [
-                                   IconButton(
-                                     icon: const Icon(Icons.edit_outlined, color: Colors.indigo, size: 18),
-                                     onPressed: () => _showFormDialog(hour: hour),
-                                     constraints: const BoxConstraints(),
-                                     padding: EdgeInsets.all(8.w),
-                                   ),
-                                   IconButton(
-                                     icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
-                                     onPressed: () async {
-                                       final confirm = await showDialog<bool>(
-                                         context: context,
-                                         builder: (context) => AlertDialog(
-                                           title: const Text('Hapus Jam Pelajaran'),
-                                           content: const Text('Apakah Anda yakin ingin menghapus jam pelajaran ini?'),
-                                           actions: [
-                                             TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-                                             TextButton(
-                                               onPressed: () => Navigator.pop(context, true),
-                                               child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-                                             ),
-                                           ],
-                                         ),
-                                       );
-                                       if (confirm == true) {
-                                         _handleDelete(hour.id);
-                                       }
-                                     },
-                                     constraints: const BoxConstraints(),
-                                     padding: EdgeInsets.all(8.w),
-                                   ),
-                                 ],
-                              ),
+                              if (!_isSelectionMode)
+                                Row(
+                                   mainAxisSize: MainAxisSize.min,
+                                   children: [
+                                     IconButton(
+                                       icon: const Icon(Icons.edit_outlined, color: Colors.indigo, size: 18),
+                                       onPressed: () => _showFormDialog(hour: hour),
+                                       constraints: const BoxConstraints(),
+                                       padding: EdgeInsets.all(8.w),
+                                     ),
+                                     IconButton(
+                                       icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                                       onPressed: () async {
+                                         final confirm = await showDialog<bool>(
+                                           context: context,
+                                           builder: (context) => AlertDialog(
+                                             title: const Text('Hapus Jam Pelajaran'),
+                                             content: const Text('Apakah Anda yakin ingin menghapus jam pelajaran ini?'),
+                                             actions: [
+                                               TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+                                               TextButton(
+                                                 onPressed: () => Navigator.pop(context, true),
+                                                 child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                                               ),
+                                             ],
+                                           ),
+                                         );
+                                         if (confirm == true) {
+                                           _handleDelete(hour.id);
+                                         }
+                                       },
+                                       constraints: const BoxConstraints(),
+                                       padding: EdgeInsets.all(8.w),
+                                     ),
+                                   ],
+                                ),
                             ],
                           ),
                         ),

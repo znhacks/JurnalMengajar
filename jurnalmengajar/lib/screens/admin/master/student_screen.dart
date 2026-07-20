@@ -20,6 +20,8 @@ class MasterStudentScreen extends StatefulWidget {
 class _MasterStudentScreenState extends State<MasterStudentScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _isSelectionMode = false;
+  final Set<String> _selectedIds = {};
 
   @override
   void initState() {
@@ -27,6 +29,74 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshData();
     });
+  }
+
+  void _toggleSelectionMode({String? initialId}) {
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      _selectedIds.clear();
+      if (_isSelectionMode && initialId != null) {
+        _selectedIds.add(initialId);
+      }
+    });
+  }
+
+  void _toggleSelectItem(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+        if (_selectedIds.isEmpty) {
+          _isSelectionMode = false;
+        }
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
+
+  void _selectAll(List<StudentModel> allStudents) {
+    setState(() {
+      if (_selectedIds.length == allStudents.length) {
+        _selectedIds.clear();
+      } else {
+        _selectedIds.addAll(allStudents.map((s) => s.id));
+      }
+    });
+  }
+
+  Future<void> _handleBatchDelete() async {
+    if (_selectedIds.isEmpty) return;
+    final count = _selectedIds.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Hapus $count Data Siswa', style: const TextStyle(color: Colors.red)),
+        content: Text('Apakah Anda yakin ingin menghapus $count data siswa yang dipilih secara permanen?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hapus Massal', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+      final idsToDelete = _selectedIds.toList();
+      final success = await masterProvider.deleteMultipleStudents(idsToDelete, widget.classId);
+      if (!mounted) return;
+      if (success) {
+        AppHelper.showSnackBar(context, '$count data siswa berhasil dihapus.');
+        setState(() {
+          _selectedIds.clear();
+          _isSelectionMode = false;
+        });
+      } else {
+        AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menghapus data siswa.', isError: true);
+      }
+    }
   }
 
   @override
@@ -43,6 +113,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
   void _showFormDialog({StudentModel? studentItem}) {
     final nameController = TextEditingController(text: studentItem?.name ?? '');
     final nisController = TextEditingController(text: studentItem?.nis ?? '');
+    final parentPhoneController = TextEditingController(text: studentItem?.parentPhoneNumber ?? '');
     String selectedGender = studentItem?.gender ?? 'L'; // Default Laki-laki
 
     final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
@@ -119,6 +190,26 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                       labelText: 'Nomor Induk Siswa (NIS)',
                       hintText: 'Masukkan NIS siswa (opsional)',
                       prefixIcon: const Icon(Icons.badge_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppTheme.outlineVariant),
+                      ),
+                    ),
+                    style: GoogleFonts.hankenGrotesk(fontSize: 14.sp),
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // Parent Phone Field
+                  TextField(
+                    controller: parentPhoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      labelText: 'Nomor Telepon Orang Tua',
+                      hintText: 'Masukkan No. HP ortu (opsional)',
+                      prefixIcon: const Icon(Icons.phone_android_outlined),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -217,6 +308,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                         name: nameController.text.trim(),
                         nis: nisController.text.trim().isEmpty ? null : nisController.text.trim(),
                         gender: selectedGender,
+                        parentPhoneNumber: parentPhoneController.text.trim().isEmpty ? null : parentPhoneController.text.trim(),
                       );
 
                       if (studentItem == null) {
@@ -303,18 +395,53 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        title: Text(
-          'Daftar Siswa',
-          style: GoogleFonts.hankenGrotesk(
-            fontWeight: FontWeight.bold,
-            color: AppTheme.onBackground,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppTheme.onBackground),
-      ),
+      appBar: _isSelectionMode
+          ? AppBar(
+              backgroundColor: const Color(0xFF0F172A),
+              foregroundColor: Colors.white,
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => setState(() {
+                  _isSelectionMode = false;
+                  _selectedIds.clear();
+                }),
+              ),
+              title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    _selectedIds.length == filteredStudents.length ? Icons.deselect : Icons.select_all,
+                    color: Colors.white,
+                  ),
+                  tooltip: _selectedIds.length == filteredStudents.length ? 'Batal Pilih Semua' : 'Pilih Semua',
+                  onPressed: () => _selectAll(filteredStudents),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                  tooltip: 'Hapus Massal',
+                  onPressed: _selectedIds.isEmpty ? null : _handleBatchDelete,
+                ),
+              ],
+            )
+          : AppBar(
+              title: Text(
+                'Daftar Siswa',
+                style: GoogleFonts.hankenGrotesk(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.onBackground,
+                ),
+              ),
+              backgroundColor: Colors.white,
+              elevation: 0,
+              iconTheme: const IconThemeData(color: AppTheme.onBackground),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.checklist_rounded),
+                  tooltip: 'Pilih Massal',
+                  onPressed: filteredStudents.isEmpty ? null : () => _toggleSelectionMode(),
+                ),
+              ],
+            ),
       body: RefreshIndicator(
         onRefresh: _refreshData,
         color: AppTheme.primaryColor,
@@ -435,107 +562,146 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                               final student = filteredStudents[index];
                               final isMale = student.gender == 'L';
                               final genderColor = isMale ? const Color(0xFF2563EB) : const Color(0xFFEC4899);
+                              final isSelected = _selectedIds.contains(student.id);
 
-                              return Container(
-                                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppTheme.outlineVariant),
-                                ),
-                                child: Row(
-                                  children: [
-                                    // Initials avatar
-                                    CircleAvatar(
-                                      radius: 17.r,
-                                      backgroundColor: genderColor.withValues(alpha: 0.1),
-                                      child: Text(
-                                        student.name.isNotEmpty
-                                            ? student.name.substring(0, 1).toUpperCase()
-                                            : 'S',
-                                        style: GoogleFonts.hankenGrotesk(
-                                          fontWeight: FontWeight.bold,
-                                          color: genderColor,
-                                          fontSize: 13.sp,
+                              return InkWell(
+                                onTap: _isSelectionMode
+                                    ? () => _toggleSelectItem(student.id)
+                                    : null,
+                                onLongPress: () {
+                                  if (!_isSelectionMode) {
+                                    _toggleSelectionMode(initialId: student.id);
+                                  } else {
+                                    _toggleSelectItem(student.id);
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isSelected ? const Color(0xFF2563EB) : AppTheme.outlineVariant,
+                                      width: isSelected ? 1.5 : 1.0,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      if (_isSelectionMode) ...[
+                                        Checkbox(
+                                          value: isSelected,
+                                          activeColor: const Color(0xFF2563EB),
+                                          onChanged: (_) => _toggleSelectItem(student.id),
+                                        ),
+                                        SizedBox(width: 4.w),
+                                      ],
+                                      // Initials avatar
+                                      CircleAvatar(
+                                        radius: 17.r,
+                                        backgroundColor: genderColor.withValues(alpha: 0.1),
+                                        child: Text(
+                                          student.name.isNotEmpty
+                                              ? student.name.substring(0, 1).toUpperCase()
+                                              : 'S',
+                                          style: GoogleFonts.hankenGrotesk(
+                                            fontWeight: FontWeight.bold,
+                                            color: genderColor,
+                                            fontSize: 13.sp,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    SizedBox(width: 10.w),
+                                      SizedBox(width: 10.w),
 
-                                    // Student details
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            student.name,
-                                            style: GoogleFonts.hankenGrotesk(
-                                              fontSize: 13.sp,
-                                              fontWeight: FontWeight.bold,
-                                              color: AppTheme.onBackground,
-                                            ),
-                                          ),
-                                          SizedBox(height: 2.h),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                student.nis != null ? 'NIS: ${student.nis}' : 'NIS: -',
-                                                style: GoogleFonts.hankenGrotesk(
-                                                  fontSize: 11.sp,
-                                                  color: AppTheme.onSurfaceVariant,
-                                                ),
+                                      // Student details
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              student.name,
+                                              style: GoogleFonts.hankenGrotesk(
+                                                fontSize: 13.sp,
+                                                fontWeight: FontWeight.bold,
+                                                color: AppTheme.onBackground,
                                               ),
+                                            ),
+                                            SizedBox(height: 2.h),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  student.nis != null ? 'NIS: ${student.nis}' : 'NIS: -',
+                                                  style: GoogleFonts.hankenGrotesk(
+                                                    fontSize: 11.sp,
+                                                    color: AppTheme.onSurfaceVariant,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '  ·  ${isMale ? 'L' : 'P'}',
+                                                  style: GoogleFonts.hankenGrotesk(
+                                                    fontSize: 11.sp,
+                                                    color: genderColor,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            if (student.parentPhoneNumber != null && student.parentPhoneNumber!.isNotEmpty) ...[
+                                              SizedBox(height: 2.h),
                                               Text(
-                                                '  ·  ${isMale ? 'L' : 'P'}',
+                                                'No. Ortu: ${student.parentPhoneNumber}',
                                                 style: GoogleFonts.hankenGrotesk(
-                                                  fontSize: 11.sp,
-                                                  color: genderColor,
-                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 10.sp,
+                                                  color: Colors.grey[600],
                                                 ),
                                               ),
                                             ],
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                    ),
 
-                                    // Compact action icons
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        _actionIcon(
-                                          Icons.edit_outlined,
-                                          Colors.indigo,
-                                          () => _showFormDialog(studentItem: student),
-                                        ),
-                                        _actionIcon(
-                                          Icons.delete_outline,
-                                          Colors.red,
-                                          () async {
-                                            final confirm = await showDialog<bool>(
-                                              context: context,
-                                              builder: (context) => AlertDialog(
-                                                title: const Text('Hapus Siswa'),
-                                                content: Text(
-                                                    'Apakah Anda yakin ingin menghapus data ${student.name} secara permanen?'),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () => Navigator.pop(context, false),
-                                                    child: const Text('Batal'),
+                                      // Compact action icons
+                                      if (!_isSelectionMode)
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            _actionIcon(
+                                              Icons.edit_outlined,
+                                              Colors.indigo,
+                                              () => _showFormDialog(studentItem: student),
+                                            ),
+                                            _actionIcon(
+                                              Icons.delete_outline,
+                                              Colors.red,
+                                              () async {
+                                                final confirm = await showDialog<bool>(
+                                                  context: context,
+                                                  builder: (context) => AlertDialog(
+                                                    title: const Text('Hapus Siswa'),
+                                                    content: Text(
+                                                        'Apakah Anda yakin ingin menghapus data ${student.name} secara permanen?'),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () => Navigator.pop(context, false),
+                                                        child: const Text('Batal'),
+                                                      ),
+                                                      TextButton(
+                                                        onPressed: () => Navigator.pop(context, true),
+                                                        child: const Text(
+                                                          'Hapus',
+                                                          style: TextStyle(color: Colors.red),
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                  TextButton(
-                                                    onPressed: () => Navigator.pop(context, true),
-                                                    child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                            if (confirm == true) _handleDelete(student.id);
-                                          },
+                                                );
+                                                if (confirm == true) _handleDelete(student.id);
+                                              },
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               );
                             },

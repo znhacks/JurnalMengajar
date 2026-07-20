@@ -203,4 +203,23 @@ class JournalProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<bool> deleteMultipleJournals(List<String> ids) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      for (final id in ids) {
+        await journalRepository.delete(id);
+      }
+      await loadAllJournals();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

@@ -727,7 +727,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                             currentUser.position ?? 'Administrator',
                             style: TextStyle(
                               fontSize: 13.sp,
-                              color: const Color(0xFF2DD4BF), // Light Teal
+                              color: Colors.white.withValues(alpha: 0.8),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -742,7 +742,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                               borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: Text(
-                              'ROLE: ADMIN',
+                              'JABATAN: ADMIN',
                               style: TextStyle(
                                 fontSize: 9.sp,
                                 fontWeight: FontWeight.bold,

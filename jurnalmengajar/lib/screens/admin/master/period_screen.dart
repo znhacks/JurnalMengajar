@@ -15,12 +15,83 @@ class MasterPeriodScreen extends StatefulWidget {
 }
 
 class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
+  bool _isSelectionMode = false;
+  final Set<String> _selectedIds = {};
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshData();
     });
+  }
+
+  void _toggleSelectionMode({String? initialId}) {
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      _selectedIds.clear();
+      if (_isSelectionMode && initialId != null) {
+        _selectedIds.add(initialId);
+      }
+    });
+  }
+
+  void _toggleSelectItem(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+        if (_selectedIds.isEmpty) {
+          _isSelectionMode = false;
+        }
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
+
+  void _selectAll(List<PeriodModel> allPeriods) {
+    setState(() {
+      if (_selectedIds.length == allPeriods.length) {
+        _selectedIds.clear();
+      } else {
+        _selectedIds.addAll(allPeriods.map((p) => p.id));
+      }
+    });
+  }
+
+  Future<void> _handleBatchDelete() async {
+    if (_selectedIds.isEmpty) return;
+    final count = _selectedIds.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Hapus $count Periode Akademik', style: const TextStyle(color: Colors.red)),
+        content: Text('Apakah Anda yakin ingin menghapus $count periode akademik yang dipilih?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hapus Massal', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+      final idsToDelete = _selectedIds.toList();
+      final success = await masterProvider.deleteMultiplePeriods(idsToDelete);
+      if (!mounted) return;
+      if (success) {
+        AppHelper.showSnackBar(context, '$count periode akademik berhasil dihapus.');
+        setState(() {
+          _selectedIds.clear();
+          _isSelectionMode = false;
+        });
+      } else {
+        AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menghapus periode akademik.', isError: true);
+      }
+    }
   }
 
   Future<void> _refreshData() async {
@@ -199,9 +270,44 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
     final periods = masterProvider.periods;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Master Periode'),
-      ),
+      appBar: _isSelectionMode
+          ? AppBar(
+              backgroundColor: const Color(0xFF0F172A),
+              foregroundColor: Colors.white,
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => setState(() {
+                  _isSelectionMode = false;
+                  _selectedIds.clear();
+                }),
+              ),
+              title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    _selectedIds.length == periods.length ? Icons.deselect : Icons.select_all,
+                    color: Colors.white,
+                  ),
+                  tooltip: _selectedIds.length == periods.length ? 'Batal Pilih Semua' : 'Pilih Semua',
+                  onPressed: () => _selectAll(periods),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                  tooltip: 'Hapus Massal',
+                  onPressed: _selectedIds.isEmpty ? null : _handleBatchDelete,
+                ),
+              ],
+            )
+          : AppBar(
+              title: const Text('Master Periode'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.checklist_rounded),
+                  tooltip: 'Pilih Massal',
+                  onPressed: periods.isEmpty ? null : () => _toggleSelectionMode(),
+                ),
+              ],
+            ),
       drawer: const AdminDrawer(currentRoute: '/admin/master-data/periods'),
       body: RefreshIndicator(
         onRefresh: _refreshData,
@@ -219,44 +325,38 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                     separatorBuilder: (context, index) => SizedBox(height: 12.h),
                     itemBuilder: (context, index) {
                       final period = periods[index];
-                      return Dismissible(
-                        key: Key(period.id),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: EdgeInsets.only(right: 20.w),
-                          decoration: BoxDecoration(
-                            color: Colors.red[600],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.delete, color: Colors.white),
-                        ),
-                        onDismissed: (_) => _handleDelete(period.id),
-                        confirmDismiss: (_) async {
-                          return await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Hapus Periode'),
-                              content: const Text('Apakah Anda yakin ingin menghapus periode akademik ini?'),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-                                ),
-                              ],
-                            ),
-                          );
+                      final isSelected = _selectedIds.contains(period.id);
+
+                      return InkWell(
+                        onTap: _isSelectionMode ? () => _toggleSelectItem(period.id) : null,
+                        onLongPress: () {
+                          if (!_isSelectionMode) {
+                            _toggleSelectionMode(initialId: period.id);
+                          } else {
+                            _toggleSelectItem(period.id);
+                          }
                         },
+                        borderRadius: BorderRadius.circular(12),
                         child: Container(
                           padding: EdgeInsets.all(16.w),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                            border: Border.all(
+                              color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                              width: isSelected ? 1.5 : 1.0,
+                            ),
                           ),
                           child: Row(
                             children: [
+                              if (_isSelectionMode) ...[
+                                Checkbox(
+                                  value: isSelected,
+                                  activeColor: const Color(0xFF2563EB),
+                                  onChanged: (_) => _toggleSelectItem(period.id),
+                                ),
+                                SizedBox(width: 4.w),
+                              ],
                               CircleAvatar(
                                 backgroundColor: period.isActive ? const Color(0xFF2563EB).withValues(alpha: 0.1) : Colors.grey[100],
                                 child: Icon(
@@ -285,37 +385,38 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                                   ],
                                 ),
                               ),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_outlined, color: Colors.indigo),
-                                    onPressed: () => _showFormDialog(period: period),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                    onPressed: () async {
-                                      final confirm = await showDialog<bool>(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          title: const Text('Hapus Periode'),
-                                          content: const Text('Apakah Anda yakin ingin menghapus periode akademik ini?'),
-                                          actions: [
-                                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(context, true),
-                                              child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                      if (confirm == true) {
-                                        _handleDelete(period.id);
-                                      }
-                                    },
-                                  ),
-                                ],
-                              ),
+                              if (!_isSelectionMode)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined, color: Colors.indigo),
+                                      onPressed: () => _showFormDialog(period: period),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                      onPressed: () async {
+                                        final confirm = await showDialog<bool>(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: const Text('Hapus Periode'),
+                                            content: const Text('Apakah Anda yakin ingin menghapus periode akademik ini?'),
+                                            actions: [
+                                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context, true),
+                                                child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        if (confirm == true) {
+                                          _handleDelete(period.id);
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ),
                             ],
                           ),
                         ),

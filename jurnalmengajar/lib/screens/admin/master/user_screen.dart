@@ -21,6 +21,8 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   final TextEditingController _searchController = TextEditingController();
+  bool _isSelectionMode = false;
+  final Set<String> _selectedIds = {};
 
   @override
   void initState() {
@@ -29,6 +31,77 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
       _fetchUsers();
     });
     _searchController.addListener(_onSearchChanged);
+  }
+
+  void _toggleSelectionMode({String? initialId}) {
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      _selectedIds.clear();
+      if (_isSelectionMode && initialId != null) {
+        _selectedIds.add(initialId);
+      }
+    });
+  }
+
+  void _toggleSelectItem(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+        if (_selectedIds.isEmpty) {
+          _isSelectionMode = false;
+        }
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
+
+  void _selectAll(List<UserModel> users, AuthProvider authProvider) {
+    final selectableUsers = users.where((u) => u.email.toLowerCase() != 'admin@jurnal.com' && u.id != authProvider.currentUser?.id).toList();
+    setState(() {
+      if (_selectedIds.length == selectableUsers.length) {
+        _selectedIds.clear();
+      } else {
+        _selectedIds.addAll(selectableUsers.map((u) => u.id));
+      }
+    });
+  }
+
+  Future<void> _handleBatchDeleteUsers() async {
+    if (_selectedIds.isEmpty) return;
+    final count = _selectedIds.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Hapus $count Akun User', style: const TextStyle(color: Colors.red)),
+        content: Text('Apakah Anda yakin ingin menghapus $count akun pengguna yang dipilih secara permanen?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hapus Massal', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      setState(() {
+        _isLoading = true;
+      });
+      final idsToDelete = _selectedIds.toList();
+      for (final id in idsToDelete) {
+        await authProvider.deleteAccount(id);
+      }
+      if (!mounted) return;
+      AppHelper.showSnackBar(context, '$count akun pengguna berhasil dihapus.');
+      setState(() {
+        _selectedIds.clear();
+        _isSelectionMode = false;
+      });
+      _fetchUsers();
+    }
   }
 
   @override
@@ -304,173 +377,227 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
         final isAdmin = user.role == 'admin';
         final isSuperAdmin = user.email.toLowerCase() == 'admin@jurnal.com';
         final isCurrentUser = user.id == authProvider.currentUser?.id;
+        final isSelectable = !isSuperAdmin && !isCurrentUser;
+        final isSelected = _selectedIds.contains(user.id);
 
-        return Container(
-          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+        return InkWell(
+          onTap: (_isSelectionMode && isSelectable)
+              ? () => _toggleSelectItem(user.id)
+              : null,
+          onLongPress: isSelectable
+              ? () {
+                  if (!_isSelectionMode) {
+                    _toggleSelectionMode(initialId: user.id);
+                  } else {
+                    _toggleSelectItem(user.id);
+                  }
+                }
+              : null,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+            decoration: BoxDecoration(
+              color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                width: isSelected ? 1.5 : 1.0,
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              // Avatar
-              CircleAvatar(
-                radius: 26.r,
-                backgroundColor: const Color(0xFFF1F5F9),
-                backgroundImage: user.photoUrl != null && user.photoUrl!.startsWith('http')
-                    ? NetworkImage(user.photoUrl!)
-                    : (user.photoUrl != null
-                        ? FileImage(File(user.photoUrl!))
-                        : null) as ImageProvider?,
-                child: user.photoUrl == null
-                    ? Icon(Icons.person_outline, size: 26.r, color: Colors.grey[400])
-                    : null,
-              ),
-              SizedBox(width: 14.w),
-              
-              // User Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                if (_isSelectionMode) ...[
+                  if (isSelectable)
+                    Checkbox(
+                      value: isSelected,
+                      activeColor: const Color(0xFF2563EB),
+                      onChanged: (_) => _toggleSelectItem(user.id),
+                    )
+                  else
+                    SizedBox(width: 24.w),
+                  SizedBox(width: 4.w),
+                ],
+                // Avatar & Role Tag
+                Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            user.fullName,
-                            style: TextStyle(
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF0F172A),
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                    CircleAvatar(
+                      radius: 24.r,
+                      backgroundColor: const Color(0xFFF1F5F9),
+                      backgroundImage: user.photoUrl != null && user.photoUrl!.startsWith('http')
+                          ? NetworkImage(user.photoUrl!)
+                          : (user.photoUrl != null
+                              ? FileImage(File(user.photoUrl!))
+                              : null) as ImageProvider?,
+                      child: user.photoUrl == null
+                          ? Icon(Icons.person_outline, size: 24.r, color: Colors.grey[400])
+                          : null,
+                    ),
+                    SizedBox(height: 4.h),
+                    // Role badge under avatar
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                      decoration: BoxDecoration(
+                        color: isPendingTab
+                            ? const Color(0xFFFFFBEB)
+                            : (isAdmin 
+                                ? const Color(0xFFEEF2FF) 
+                                : const Color(0xFFF0FDFA)),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isPendingTab
+                              ? const Color(0xFFFDE68A)
+                              : (isAdmin 
+                                  ? const Color(0xFFC7D2FE) 
+                                  : const Color(0xFFCCFBF1))
+                        ),
+                      ),
+                      child: Text(
+                        isPendingTab ? 'PENDING' : user.role.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 8.sp,
+                          fontWeight: FontWeight.bold,
+                          color: isPendingTab
+                              ? const Color(0xFFD97706)
+                              : (isAdmin 
+                                  ? const Color(0xFF4F46E5) 
+                                  : const Color(0xFF0D9488)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.fullName,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF0F172A),
+                        ),
+                      ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        user.email,
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: Colors.grey[600],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (user.position != null && user.position!.isNotEmpty) ...[
+                        SizedBox(height: 2.h),
+                        Text(
+                          user.position!,
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            color: const Color(0xFF475569),
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        SizedBox(width: 6.w),
-                        // Role badge
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                          decoration: BoxDecoration(
-                            color: isPendingTab
-                                ? const Color(0xFFFFFBEB)
-                                : (isAdmin 
-                                    ? const Color(0xFFEEF2FF) 
-                                    : const Color(0xFFF0FDFA)),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isPendingTab
-                                  ? const Color(0xFFFDE68A)
-                                  : (isAdmin 
-                                      ? const Color(0xFFC7D2FE) 
-                                      : const Color(0xFFCCFBF1))
-                            ),
+                      ],
+                      if (user.phoneNumber != null && user.phoneNumber!.isNotEmpty) ...[
+                        SizedBox(height: 2.h),
+                        Text(
+                          'Telp: ${user.phoneNumber}',
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            color: Colors.grey[500],
                           ),
-                          child: Text(
-                            isPendingTab ? 'PENDING' : user.role.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 9.sp,
-                              fontWeight: FontWeight.bold,
-                              color: isPendingTab
-                                  ? const Color(0xFFD97706)
-                                  : (isAdmin 
-                                      ? const Color(0xFF4F46E5) 
-                                      : const Color(0xFF2563EB))
-                            ),
+                        ),
+                      ],
+                      if (isCurrentUser) ...[
+                        SizedBox(height: 2.h),
+                        Text(
+                          '(Akun Anda)',
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            color: Colors.grey[450],
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                
+                // Action panel
+                if (!_isSelectionMode) ...[
+                  if (isPendingTab) ...[
+                    // Approval Action Buttons (Terima, Tolak)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.check_circle, color: Colors.green),
+                          tooltip: 'Setujui Pendaftaran',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () => _handleApproveUser(user),
+                        ),
+                        SizedBox(width: 8.w),
+                        IconButton(
+                          icon: const Icon(Icons.cancel, color: Colors.red),
+                          tooltip: 'Tolak Pendaftaran',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () => _handleRejectUser(user),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    // Switch to make admin, Delete button for Active Users
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Transform.scale(
+                          scale: 0.75,
+                          child: Switch(
+                            value: isAdmin,
+                            activeThumbColor: const Color(0xFF4F46E5),
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            onChanged: (isSuperAdmin || isCurrentUser)
+                                ? null
+                                : (val) => _handleRoleToggle(user, val),
+                          ),
+                        ),
+                        Text(
+                          'Admin',
+                          style: TextStyle(
+                            fontSize: 9.sp,
+                            color: (isSuperAdmin || isCurrentUser) 
+                                ? Colors.grey[400] 
+                                : Colors.grey[600],
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 3.h),
-                    Text(
-                      user.email,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    if (user.phoneNumber != null && user.phoneNumber!.isNotEmpty) ...[
-                      SizedBox(height: 2.h),
-                      Text(
-                        'Telp: ${user.phoneNumber}',
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
-                    if (isCurrentUser) ...[
-                      SizedBox(height: 4.h),
-                      Text(
-                        '(Akun Anda)',
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          color: Colors.grey[450],
-                          fontStyle: FontStyle.italic,
-                        ),
+                    if (!isSuperAdmin && !isCurrentUser) ...[
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => _handleDeleteUser(user),
                       ),
                     ],
                   ],
-                ),
-              ),
-              SizedBox(width: 12.w),
-              
-              // Action panel
-              if (isPendingTab) ...[
-                // Approval Action Buttons (Terima, Tolak)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.check_circle, color: Colors.green),
-                      tooltip: 'Setujui Pendaftaran',
-                      onPressed: () => _handleApproveUser(user),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.cancel, color: Colors.red),
-                      tooltip: 'Tolak Pendaftaran',
-                      onPressed: () => _handleRejectUser(user),
-                    ),
-                  ],
-                ),
-              ] else ...[
-                // Switch to make admin, Delete button for Active Users
-                Column(
-                  children: [
-                    Switch(
-                      value: isAdmin,
-                      activeThumbColor: const Color(0xFF4F46E5),
-                      onChanged: (isSuperAdmin || isCurrentUser)
-                          ? null
-                          : (val) => _handleRoleToggle(user, val),
-                    ),
-                    Text(
-                      'Admin',
-                      style: TextStyle(
-                        fontSize: 9.sp,
-                        color: (isSuperAdmin || isCurrentUser) 
-                            ? Colors.grey[400] 
-                            : Colors.grey[600],
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                if (!isSuperAdmin && !isCurrentUser) ...[
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    onPressed: () => _handleDeleteUser(user),
-                  ),
                 ],
               ],
-            ],
+            ),
           ),
         );
       },
@@ -487,25 +614,57 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Master User & Hak Akses'),
-          bottom: TabBar(
-            labelColor: const Color(0xFF2563EB),
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: const Color(0xFF2563EB),
-            tabs: [
-              const Tab(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.people_outline),
-                    SizedBox(width: 8),
-                    Text('Pengguna Aktif'),
-                  ],
+        appBar: _isSelectionMode
+            ? AppBar(
+                backgroundColor: const Color(0xFF0F172A),
+                foregroundColor: Colors.white,
+                leading: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => setState(() {
+                    _isSelectionMode = false;
+                    _selectedIds.clear();
+                  }),
                 ),
-              ),
-              Tab(
-                child: Row(
+                title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.select_all, color: Colors.white),
+                    tooltip: 'Pilih Semua',
+                    onPressed: () => _selectAll(_filteredUsers, authProvider),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    tooltip: 'Hapus Massal',
+                    onPressed: _selectedIds.isEmpty ? null : _handleBatchDeleteUsers,
+                  ),
+                ],
+              )
+            : AppBar(
+                title: const Text('Master User & Hak Akses'),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.checklist_rounded),
+                    tooltip: 'Pilih Massal',
+                    onPressed: _filteredUsers.isEmpty ? null : () => _toggleSelectionMode(),
+                  ),
+                ],
+                bottom: TabBar(
+                  labelColor: const Color(0xFF2563EB),
+                  unselectedLabelColor: Colors.grey,
+                  indicatorColor: const Color(0xFF2563EB),
+                  tabs: [
+                    const Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.people_outline),
+                          SizedBox(width: 8),
+                          Text('Pengguna Aktif'),
+                        ],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(Icons.person_add_outlined),

@@ -4,6 +4,7 @@ class StudentModel {
   final String name;
   final String? nis;
   final String? gender; // 'L' (Laki-laki) or 'P' (Perempuan)
+  final String? parentPhoneNumber;
 
   StudentModel({
     required this.id,
@@ -11,6 +12,7 @@ class StudentModel {
     required this.name,
     this.nis,
     this.gender,
+    this.parentPhoneNumber,
   });
 
   factory StudentModel.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class StudentModel {
       name: json['name'] as String,
       nis: json['nis'] as String?,
       gender: json['gender'] as String?,
+      parentPhoneNumber: json['parent_phone_number'] as String? ?? json['parent_phone'] as String? ?? json['parentPhoneNumber'] as String?,
     );
   }
 
@@ -37,6 +40,9 @@ class StudentModel {
     if (gender != null) {
       map['gender'] = gender;
     }
+    if (parentPhoneNumber != null) {
+      map['parent_phone_number'] = parentPhoneNumber;
+    }
     return map;
   }
 
@@ -46,6 +52,7 @@ class StudentModel {
     String? name,
     String? nis,
     String? gender,
+    String? parentPhoneNumber,
   }) {
     return StudentModel(
       id: id ?? this.id,
@@ -53,6 +60,7 @@ class StudentModel {
       name: name ?? this.name,
       nis: nis ?? this.nis,
       gender: gender ?? this.gender,
+      parentPhoneNumber: parentPhoneNumber ?? this.parentPhoneNumber,
     );
   }
 }

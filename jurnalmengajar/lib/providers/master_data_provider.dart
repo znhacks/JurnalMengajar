@@ -409,4 +409,113 @@ class MasterDataProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<bool> deleteMultiplePeriods(List<String> ids) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      for (final id in ids) {
+        await periodRepository.delete(id);
+      }
+      _periods = await periodRepository.getAll();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> deleteMultipleSubjects(List<String> ids) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      for (final id in ids) {
+        await subjectRepository.delete(id);
+      }
+      _subjects = await subjectRepository.getAll();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> deleteMultipleHours(List<String> ids) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      for (final id in ids) {
+        await hourRepository.delete(id);
+      }
+      _hours = await hourRepository.getAll();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> deleteMultipleClasses(List<String> ids) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      for (final id in ids) {
+        await classRepository.delete(id);
+      }
+      _classes = await classRepository.getAll();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> deleteMultipleTeachers(List<String> ids) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      for (final id in ids) {
+        await teacherRepository.delete(id);
+      }
+      _teachers = await teacherRepository.getAll();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> deleteMultipleStudents(List<String> ids, String classId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      for (final id in ids) {
+        await studentRepository.delete(id);
+      }
+      _students = await studentRepository.getAllByClass(classId);
+      _classes = await classRepository.getAll();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

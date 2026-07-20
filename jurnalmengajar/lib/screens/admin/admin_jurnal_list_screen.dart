@@ -31,6 +31,76 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   final Set<String> _expandedTeacherIds = {};
+  bool _isSelectionMode = false;
+  final Set<String> _selectedIds = {};
+
+  void _toggleSelectionMode({String? initialId}) {
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      _selectedIds.clear();
+      if (_isSelectionMode && initialId != null) {
+        _selectedIds.add(initialId);
+      }
+    });
+  }
+
+  void _toggleSelectItem(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+        if (_selectedIds.isEmpty) {
+          _isSelectionMode = false;
+        }
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
+
+  void _selectAll(List<JournalModel> journals) {
+    setState(() {
+      if (_selectedIds.length == journals.length) {
+        _selectedIds.clear();
+      } else {
+        _selectedIds.addAll(journals.map((j) => j.id));
+      }
+    });
+  }
+
+  Future<void> _handleBatchDelete() async {
+    if (_selectedIds.isEmpty) return;
+    final count = _selectedIds.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Hapus $count Jurnal', style: const TextStyle(color: Colors.red)),
+        content: Text('Apakah Anda yakin ingin menghapus $count data jurnal yang dipilih secara permanen?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hapus Massal', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+      final idsToDelete = _selectedIds.toList();
+      final success = await journalProvider.deleteMultipleJournals(idsToDelete);
+      if (!mounted) return;
+      if (success) {
+        AppHelper.showSnackBar(context, '$count data jurnal berhasil dihapus.');
+        setState(() {
+          _selectedIds.clear();
+          _isSelectionMode = false;
+        });
+      } else {
+        AppHelper.showSnackBar(context, journalProvider.errorMessage ?? 'Gagal menghapus jurnal.', isError: true);
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -88,34 +158,69 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        title: const Text('Jurnal Mengajar'),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(48.h),
-          child: Container(
-            color: Colors.white,
-            child: TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              indicatorColor: AppTheme.primaryColor,
-              indicatorWeight: 2.5,
-              indicatorSize: TabBarIndicatorSize.label,
-              dividerColor: AppTheme.outlineVariant,
-              dividerHeight: 1,
-              tabs: [
-                _buildTab('Semua', allJournals.length),
-                _buildTab('Belum Diisi', unfilledGroups.length,
-                    badgeColor: const Color(0xFFBA1A1A)),
-                _buildTab('Menunggu', pendingJournals.length,
-                    badgeColor: const Color(0xFF825100)),
-                _buildTab('Terverifikasi', verifiedJournals.length,
-                    badgeColor: AppTheme.primaryColor),
+      appBar: _isSelectionMode
+          ? AppBar(
+              backgroundColor: const Color(0xFF0F172A),
+              foregroundColor: Colors.white,
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => setState(() {
+                  _isSelectionMode = false;
+                  _selectedIds.clear();
+                }),
+              ),
+              title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    _selectedIds.length == allJournals.length ? Icons.deselect : Icons.select_all,
+                    color: Colors.white,
+                  ),
+                  tooltip: _selectedIds.length == allJournals.length ? 'Batal Pilih Semua' : 'Pilih Semua',
+                  onPressed: () => _selectAll(allJournals),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                  tooltip: 'Hapus Massal',
+                  onPressed: _selectedIds.isEmpty ? null : _handleBatchDelete,
+                ),
               ],
+            )
+          : AppBar(
+              title: const Text('Jurnal Mengajar'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.checklist_rounded),
+                  tooltip: 'Pilih Massal',
+                  onPressed: allJournals.isEmpty ? null : () => _toggleSelectionMode(),
+                ),
+              ],
+              bottom: PreferredSize(
+                preferredSize: Size.fromHeight(48.h),
+                child: Container(
+                  color: Colors.white,
+                  child: TabBar(
+                    controller: _tabController,
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
+                    indicatorColor: AppTheme.primaryColor,
+                    indicatorWeight: 2.5,
+                    indicatorSize: TabBarIndicatorSize.label,
+                    dividerColor: AppTheme.outlineVariant,
+                    dividerHeight: 1,
+                    tabs: [
+                      _buildTab('Semua', allJournals.length),
+                      _buildTab('Belum Diisi', unfilledGroups.length,
+                          badgeColor: const Color(0xFFBA1A1A)),
+                      _buildTab('Menunggu', pendingJournals.length,
+                          badgeColor: const Color(0xFF825100)),
+                      _buildTab('Terverifikasi', verifiedJournals.length,
+                          badgeColor: AppTheme.primaryColor),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
       drawer: const AdminDrawer(currentRoute: '/admin/journals'),
       body: SafeArea(
         child: isLoading
@@ -426,19 +531,42 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     );
 
     final statusColor = AppHelper.getStatusColor(journal.status);
+    final isSelected = _selectedIds.contains(journal.id);
 
     return InkWell(
-      onTap: () => context.push('/admin/journal/${journal.id}'),
+      onTap: _isSelectionMode
+          ? () => _toggleSelectItem(journal.id)
+          : () => context.push('/admin/journal/${journal.id}'),
+      onLongPress: () {
+        if (!_isSelectionMode) {
+          _toggleSelectionMode(initialId: journal.id);
+        } else {
+          _toggleSelectItem(journal.id);
+        }
+      },
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.outlineVariant),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF2563EB) : AppTheme.outlineVariant,
+            width: isSelected ? 1.5 : 1.0,
+          ),
         ),
         child: IntrinsicHeight(
           child: Row(
             children: [
+              if (_isSelectionMode) ...[
+                Padding(
+                  padding: EdgeInsets.only(left: 8.w),
+                  child: Checkbox(
+                    value: isSelected,
+                    activeColor: const Color(0xFF2563EB),
+                    onChanged: (_) => _toggleSelectItem(journal.id),
+                  ),
+                ),
+              ],
               // Status left accent bar
               Container(
                 width: 4.w,

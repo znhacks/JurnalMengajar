@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -13,7 +12,6 @@ import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
 import '../../models/teacher_model.dart';
 import '../../core/utils/helper.dart';
-import '../../core/utils/schedule_grouper.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/state_widgets.dart';
 
@@ -75,35 +73,8 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
     final verifiedJournals =
         teacherJournals.where((j) => j.status == 'verified').toList();
 
-    // Group active schedules up to today with no journal entries
-    final today = DateTime.now();
-    final todayOnly = DateTime(today.year, today.month, today.day);
-
-    final groupedSchedules = groupDailySchedules(scheduleProvider.cachedTeacherSchedules);
-    final unfilledGroups = groupedSchedules.where((group) {
-      if (!group.isActive) return false;
-      final sDateOnly = DateTime(group.date.year, group.date.month, group.date.day);
-      if (sDateOnly.isAfter(todayOnly)) return false;
-      
-      // Check if there is any journal that matches any schedule in the group
-      return !teacherJournals.any((j) => group.scheduleIds.contains(j.scheduleId));
-    }).toList();
-
-    final List<dynamic> allItems = [];
-    allItems.addAll(teacherJournals);
-    allItems.addAll(unfilledGroups);
-
-    // Sort by date descending (newest first)
-    allItems.sort((a, b) {
-      final dateA = a is JournalModel ? a.date : (a as GroupedDailySchedule).date;
-      final dateB = b is JournalModel ? b.date : (b as GroupedDailySchedule).date;
-      final comp = dateB.compareTo(dateA);
-      if (comp != 0) return comp;
-
-      final hourA = a is JournalModel ? 0 : (a as GroupedDailySchedule).primarySchedule.teachingHour;
-      final hourB = b is JournalModel ? 0 : (b as GroupedDailySchedule).primarySchedule.teachingHour;
-      return hourB.compareTo(hourA);
-    });
+    final List<JournalModel> allItems = List.from(teacherJournals);
+    allItems.sort((a, b) => b.date.compareTo(a.date));
 
     final isLoading = journalProvider.isLoading || scheduleProvider.isLoading;
 
@@ -176,7 +147,7 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
     );
   }
 
-  Widget _buildJournalList(List<dynamic> list, MasterDataProvider master) {
+  Widget _buildJournalList(List<JournalModel> list, MasterDataProvider master) {
     if (list.isEmpty) {
       return const AppEmptyWidget(
         title: 'Jurnal Kosong',
@@ -192,130 +163,13 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
         itemCount: list.length,
         separatorBuilder: (context, _) => SizedBox(height: 12.h),
         itemBuilder: (context, index) {
-          final item = list[index];
-          if (item is JournalModel) {
-            return _buildJournalCard(item, master);
-          } else {
-            return _buildUnfilledGroupCard(item as GroupedDailySchedule, master);
-          }
+          return _buildJournalCard(list[index], master);
         },
       ),
     );
   }
 
-  Widget _buildUnfilledGroupCard(GroupedDailySchedule group, MasterDataProvider master) {
-    final schedule = group.primarySchedule;
-    final cls = master.classes.firstWhere(
-      (c) => c.id == schedule.classId,
-      orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
-    );
-    final subject = master.subjects.firstWhere(
-      (s) => s.id == schedule.subjectId,
-      orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
-    );
 
-    const statusColor = Color(0xFFEA580C);
-    final hoursStr = group.teachingHours.join(', ');
-
-    return InkWell(
-      onTap: () => context.push('/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(group.date)}'),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFFED7AA), width: 1.2),
-        ),
-        child: IntrinsicHeight(
-          child: Row(
-            children: [
-              Container(
-                width: 4.w,
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    bottomLeft: Radius.circular(12),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${cls.name} • Jam Ke-$hoursStr',
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.onBackground,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                            decoration: BoxDecoration(
-                              color: statusColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              'Belum Diisi',
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 9.sp,
-                                color: statusColor,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 2.h),
-                      Text(
-                        subject.name,
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 12.sp,
-                          color: AppTheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(height: 6.h),
-                      Row(
-                        children: [
-                          const Icon(Icons.calendar_today_outlined, size: 11, color: AppTheme.outline),
-                          SizedBox(width: 4.w),
-                          Text(
-                            AppHelper.formatDateShort(group.date),
-                            style: GoogleFonts.hankenGrotesk(fontSize: 10.sp, color: AppTheme.outline),
-                          ),
-                          const Spacer(),
-                          Text(
-                            'Isi Jurnal',
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 11.sp,
-                              color: AppTheme.primaryColor,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(width: 2.w),
-                          const Icon(Icons.arrow_forward_rounded, size: 11, color: AppTheme.primaryColor),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildJournalCard(JournalModel journal, MasterDataProvider master) {
     final cls = master.classes.firstWhere(
