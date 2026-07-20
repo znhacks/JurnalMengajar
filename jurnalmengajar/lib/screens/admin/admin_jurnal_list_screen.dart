@@ -15,6 +15,7 @@ import '../../widgets/state_widgets.dart';
 import '../../core/utils/helper.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/schedule_grouper.dart';
+import '../../widgets/animated_widgets.dart';
 
 class AdminJurnalListScreen extends StatefulWidget {
   /// If non-null, jump directly to a specific tab index (0=Semua, 1=Belum Diisi, 2=Menunggu, 3=Terverifikasi)
@@ -533,29 +534,30 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     final statusColor = AppHelper.getStatusColor(journal.status);
     final isSelected = _selectedIds.contains(journal.id);
 
-    return InkWell(
-      onTap: _isSelectionMode
-          ? () => _toggleSelectItem(journal.id)
-          : () => context.push('/admin/journal/${journal.id}'),
-      onLongPress: () {
-        if (!_isSelectionMode) {
-          _toggleSelectionMode(initialId: journal.id);
-        } else {
-          _toggleSelectItem(journal.id);
-        }
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF2563EB) : AppTheme.outlineVariant,
-            width: isSelected ? 1.5 : 1.0,
+    return FadeSlideIn(
+      delay: const Duration(milliseconds: 60),
+      child: ScaleTap(
+        onTap: _isSelectionMode
+            ? () => _toggleSelectItem(journal.id)
+            : () => context.push('/admin/journal/${journal.id}'),
+        onLongPress: () {
+          if (!_isSelectionMode) {
+            _toggleSelectionMode(initialId: journal.id);
+          } else {
+            _toggleSelectItem(journal.id);
+          }
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? const Color(0xFF2563EB) : AppTheme.outlineVariant,
+              width: isSelected ? 1.5 : 1.0,
+            ),
           ),
-        ),
-        child: IntrinsicHeight(
-          child: Row(
+          child: IntrinsicHeight(
+            child: Row(
             children: [
               if (_isSelectionMode) ...[
                 Padding(
@@ -707,8 +709,9 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildUnfilledList(List<GroupedDailySchedule> list, MasterDataProvider master) {
     // 1. Filter list by universal search query

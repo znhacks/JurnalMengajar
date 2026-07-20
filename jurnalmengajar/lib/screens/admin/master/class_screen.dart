@@ -8,6 +8,7 @@ import '../../../models/period_model.dart';
 import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
+import '../../../widgets/animated_widgets.dart';
 
 class MasterClassScreen extends StatefulWidget {
   const MasterClassScreen({super.key});
@@ -337,32 +338,33 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                   );
                   final isSelected = _selectedIds.contains(item.id);
 
-                  return InkWell(
-                    onTap: _isSelectionMode
-                        ? () => _toggleSelectItem(item.id)
-                        : () => context.push(
-                            '/admin/master-data/classes/${item.id}/students',
+                  return FadeSlideIn(
+                    delay: Duration(milliseconds: (index * 40).clamp(0, 400)),
+                    child: ScaleTap(
+                      onTap: _isSelectionMode
+                          ? () => _toggleSelectItem(item.id)
+                          : () => context.push(
+                              '/admin/master-data/classes/${item.id}/students',
+                            ),
+                      onLongPress: () {
+                        if (!_isSelectionMode) {
+                          _toggleSelectionMode(initialId: item.id);
+                        } else {
+                          _toggleSelectItem(item.id);
+                        }
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                        decoration: BoxDecoration(
+                          color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                            width: isSelected ? 1.5 : 1.0,
                           ),
-                    onLongPress: () {
-                      if (!_isSelectionMode) {
-                        _toggleSelectionMode(initialId: item.id);
-                      } else {
-                        _toggleSelectItem(item.id);
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                      decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
-                          width: isSelected ? 1.5 : 1.0,
                         ),
-                      ),
-                      child: Row(
-                        children: [
+                        child: Row(
+                          children: [
                           if (_isSelectionMode) ...[
                             Checkbox(
                               value: isSelected,
@@ -464,9 +466,10 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                         ],
                       ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
+            ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),

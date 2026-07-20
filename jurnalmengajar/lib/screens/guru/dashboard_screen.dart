@@ -18,6 +18,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/schedule_grouper.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/warning_letter_provider.dart';
+import '../../widgets/animated_widgets.dart';
 
 class GuruDashboardScreen extends StatefulWidget {
   const GuruDashboardScreen({super.key});
@@ -372,7 +373,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ── Hero Header Card ──────────────────────────────────────
-                _buildHeroHeader(teacher, pendingJournals),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 50),
+                  child: _buildHeroHeader(teacher, pendingJournals),
+                ),
 
                 Padding(
                   padding: EdgeInsets.symmetric(
@@ -383,66 +387,68 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // ── Statistik Mengajar Button ──────────────────────────
-                      InkWell(
-                        onTap: () => context.push('/guru/statistik'),
-                        borderRadius: BorderRadius.circular(16.r),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16.r),
-                            border: Border.all(color: AppTheme.outlineVariant),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.primaryColor.withValues(alpha: 0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(8.w),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(12.r),
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 100),
+                        child: ScaleTap(
+                          onTap: () => context.push('/guru/statistik'),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16.r),
+                              border: Border.all(color: AppTheme.outlineVariant),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.primaryColor.withValues(alpha: 0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
                                 ),
-                                child: const Icon(
-                                  Icons.bar_chart_rounded,
-                                  color: AppTheme.primaryColor,
-                                  size: 20,
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(8.w),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(12.r),
+                                  ),
+                                  child: const Icon(
+                                    Icons.bar_chart_rounded,
+                                    color: AppTheme.primaryColor,
+                                    size: 20,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(width: 12.w),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Statistik Mengajar',
-                                      style: GoogleFonts.hankenGrotesk(
-                                        fontSize: 14.sp,
-                                        fontWeight: FontWeight.w800,
-                                        color: AppTheme.onBackground,
+                                SizedBox(width: 12.w),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Statistik Mengajar',
+                                        style: GoogleFonts.hankenGrotesk(
+                                          fontSize: 14.sp,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppTheme.onBackground,
+                                        ),
                                       ),
-                                    ),
-                                    Text(
-                                      'Klik untuk melihat laporan & realisasi lengkap',
-                                      style: GoogleFonts.hankenGrotesk(
-                                        fontSize: 11.sp,
-                                        color: AppTheme.outline,
-                                        fontWeight: FontWeight.w500,
+                                      Text(
+                                        'Klik untuk melihat laporan & realisasi lengkap',
+                                        style: GoogleFonts.hankenGrotesk(
+                                          fontSize: 11.sp,
+                                          color: AppTheme.outline,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const Icon(
-                                Icons.chevron_right_rounded,
-                                color: AppTheme.outline,
-                              ),
-                            ],
+                                const Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: AppTheme.outline,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

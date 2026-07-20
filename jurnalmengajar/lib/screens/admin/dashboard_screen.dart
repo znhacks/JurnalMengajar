@@ -18,6 +18,7 @@ import '../../models/schedule_model.dart';
 import '../../core/utils/schedule_grouper.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/warning_letter_provider.dart';
+import '../../widgets/animated_widgets.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final String? selectedTeacherId;
@@ -224,76 +225,92 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // 1. Calendar Card (di atas sendiri)
-                        _buildCalendarCard(
-                          scheduleProvider.schedules,
-                          hasHighlightBefore,
-                          hasHighlightAfter,
+                        FadeSlideIn(
+                          delay: const Duration(milliseconds: 50),
+                          child: _buildCalendarCard(
+                            scheduleProvider.schedules,
+                            hasHighlightBefore,
+                            hasHighlightAfter,
+                          ),
                         ),
                         SizedBox(height: 12.h),
 
                         // 2. Teacher Selector (opsi pemilihan dibawahnya)
-                        _buildTeacherSelectorCompact(masterProvider.teachers),
+                        FadeSlideIn(
+                          delay: const Duration(milliseconds: 100),
+                          child: _buildTeacherSelectorCompact(masterProvider.teachers),
+                        ),
                         SizedBox(height: 12.h),
 
                         // 3. Stat Cards Row (di Bawah bagian opsi)
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildStatCard(
-                                'Total Jadwal',
-                                '$totalSchedulesInWeek',
-                                Icons.calendar_month_outlined,
-                                const Color(0xFF565E74),
-                                subtitle: 'Minggu ini',
+                        FadeSlideIn(
+                          delay: const Duration(milliseconds: 150),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _buildStatCard(
+                                  'Total Jadwal',
+                                  '$totalSchedulesInWeek',
+                                  Icons.calendar_month_outlined,
+                                  const Color(0xFF565E74),
+                                  subtitle: 'Minggu ini',
+                                ),
                               ),
-                            ),
-                            SizedBox(width: 10.w),
-                            Expanded(
-                              child: _buildStatCard(
-                                'Total Jurnal',
-                                '$totalJournals',
-                                Icons.assignment_outlined,
-                                AppTheme.primaryColor,
-                                onTap: () => context.push('/admin/journals'),
+                              SizedBox(width: 10.w),
+                              Expanded(
+                                child: _buildStatCard(
+                                  'Total Jurnal',
+                                  '$totalJournals',
+                                  Icons.assignment_outlined,
+                                  AppTheme.primaryColor,
+                                  onTap: () => context.push('/admin/journals'),
+                                ),
                               ),
-                            ),
-                            SizedBox(width: 10.w),
-                            Expanded(
-                              child: _buildStatCard(
-                                'Approval',
-                                '$totalPending',
-                                Icons.rate_review_outlined,
-                                const Color(0xFF825100),
-                                onTap: () => context.push('/admin/journals?tab=2'),
+                              SizedBox(width: 10.w),
+                              Expanded(
+                                child: _buildStatCard(
+                                  'Approval',
+                                  '$totalPending',
+                                  Icons.rate_review_outlined,
+                                  const Color(0xFF825100),
+                                  onTap: () => context.push('/admin/journals?tab=2'),
+                                ),
                               ),
-                            ),
-                            SizedBox(width: 10.w),
-                            Expanded(
-                              child: _buildStatCard(
-                                'Blm Input',
-                                '$unsubmittedCount',
-                                Icons.pending_actions_outlined,
-                                const Color(0xFFBA1A1A),
-                                subtitle: 'Hari ini',
-                                onTap: () => context.push('/admin/journals?tab=1'),
+                              SizedBox(width: 10.w),
+                              Expanded(
+                                child: _buildStatCard(
+                                  'Blm Input',
+                                  '$unsubmittedCount',
+                                  Icons.pending_actions_outlined,
+                                  const Color(0xFFBA1A1A),
+                                  subtitle: 'Hari ini',
+                                  onTap: () => context.push('/admin/journals?tab=1'),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         SizedBox(height: 12.h),
 
                         // 4. Jadwal hari ini (sisanya di Bawah stats card)
-                        _buildSectionTitle(
-                          _selectedTeacherId == null
-                              ? 'Jadwal — ${AppHelper.formatDateShort(_selectedDay)}'
-                              : '${selectedTeacher?.name} — ${AppHelper.formatDateShort(_selectedDay)}',
-                        ),
-                        SizedBox(height: 8.h),
-
-                        _buildScheduleSection(
-                          filteredSchedulesForDay,
-                          masterProvider,
-                          journalProvider,
+                        FadeSlideIn(
+                          delay: const Duration(milliseconds: 200),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSectionTitle(
+                                _selectedTeacherId == null
+                                    ? 'Jadwal — ${AppHelper.formatDateShort(_selectedDay)}'
+                                    : '${selectedTeacher?.name} — ${AppHelper.formatDateShort(_selectedDay)}',
+                              ),
+                              SizedBox(height: 8.h),
+                              _buildScheduleSection(
+                                filteredSchedulesForDay,
+                                masterProvider,
+                                journalProvider,
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

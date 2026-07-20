@@ -30,6 +30,36 @@ import '../../screens/admin/master/student_screen.dart';
 import '../../screens/admin/master/teacher_detail_screen.dart';
 
 class AppRouter {
+  static CustomTransitionPage<void> _buildCustomTransition(
+      BuildContext context, GoRouterState state, Widget child) {
+    return CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionDuration: const Duration(milliseconds: 240),
+      reverseTransitionDuration: const Duration(milliseconds: 200),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final fadeAnimation = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
+        final slideAnimation = Tween<Offset>(
+          begin: const Offset(0, 0.05),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        ));
+        return FadeTransition(
+          opacity: fadeAnimation,
+          child: SlideTransition(
+            position: slideAnimation,
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
   static GoRouter router(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
@@ -52,16 +82,9 @@ class AppRouter {
             state.matchedLocation == '/' ||
             isResetPasswordRoute;
 
-        // Don't redirect from splash — it handles its own navigation
         if (isSplash) return null;
-
-        // Wait until AuthProvider has finished loading the initial user state.
-        // This prevents false redirects to /login while getCurrentUser() is
-        // still running async (e.g. after a Google OAuth callback).
         if (!isInitialized) return null;
 
-        // If recovery mode is active (either via AuthProvider or URL parameters/fragments),
-        // we must force navigation to /reset-password.
         if (isRecoveryMode) {
           if (state.matchedLocation != '/reset-password') {
             return '/reset-password';
@@ -70,18 +93,15 @@ class AppRouter {
         }
 
         if (!isLoggedIn) {
-          // If not logged in and not on auth pages, redirect to login
           if (!isAuthRoute) {
             return '/login';
           }
           return null;
         }
 
-        // User is logged in
         final user = authProvider.currentUser;
         if (user == null) return '/login';
 
-        // Redirect from auth routes to appropriate dashboard based on role
         if (isAuthRoute && !isRecoveryMode) {
           if (user.role == 'admin') {
             return '/admin/dashboard';
@@ -90,12 +110,10 @@ class AppRouter {
           }
         }
 
-        // Role-based route guard: Admin route check
         if (state.matchedLocation.startsWith('/admin') && user.role != 'admin') {
           return '/guru/dashboard';
         }
 
-        // Role-based route guard: Guru route check
         if (state.matchedLocation.startsWith('/guru') && user.role != 'guru') {
           return '/admin/dashboard';
         }
@@ -106,171 +124,203 @@ class AppRouter {
         // Root / Callback Routes
         GoRoute(
           path: '/',
-          builder: (context, state) => const SplashScreen(),
+          pageBuilder: (context, state) =>
+              _buildCustomTransition(context, state, const SplashScreen()),
         ),
         GoRoute(
           path: '/login-callback',
-          builder: (context, state) => const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
+          pageBuilder: (context, state) => _buildCustomTransition(
+            context,
+            state,
+            const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
             ),
           ),
         ),
-        // Splash Route
         GoRoute(
           path: '/splash',
-          builder: (context, state) => const SplashScreen(),
+          pageBuilder: (context, state) =>
+              _buildCustomTransition(context, state, const SplashScreen()),
         ),
-        // About App Route
         GoRoute(
           path: '/about',
-          builder: (context, state) => const AboutAppScreen(),
+          pageBuilder: (context, state) =>
+              _buildCustomTransition(context, state, const AboutAppScreen()),
         ),
-        // Auth Routes
         GoRoute(
           path: '/login',
-          builder: (context, state) => const LoginScreen(),
+          pageBuilder: (context, state) =>
+              _buildCustomTransition(context, state, const LoginScreen()),
         ),
         GoRoute(
           path: '/register',
-          builder: (context, state) => const RegisterScreen(),
+          pageBuilder: (context, state) =>
+              _buildCustomTransition(context, state, const RegisterScreen()),
         ),
         GoRoute(
           path: '/reset-password',
-          builder: (context, state) => ResetPasswordScreen(
-            queryParameters: state.uri.queryParameters,
+          pageBuilder: (context, state) => _buildCustomTransition(
+            context,
+            state,
+            ResetPasswordScreen(
+              queryParameters: state.uri.queryParameters,
+            ),
           ),
         ),
 
-        // Guru Module shell (Dashboard, Jadwal, Jurnal, Profil inside MainShell bottom nav)
+        // Guru Module
         GoRoute(
           path: '/guru/dashboard',
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final tabStr = state.uri.queryParameters['tab'];
             final initialIndex = tabStr != null ? int.tryParse(tabStr) : null;
-            return GuruMainShell(initialIndex: initialIndex);
+            return _buildCustomTransition(
+                context, state, GuruMainShell(initialIndex: initialIndex));
           },
         ),
-        // We can route detailed/form pages separately or as children
         GoRoute(
           path: '/guru/schedule/:id',
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final id = state.pathParameters['id']!;
-            return DetailJadwalScreen(scheduleId: id);
+            return _buildCustomTransition(
+                context, state, DetailJadwalScreen(scheduleId: id));
           },
         ),
         GoRoute(
           path: '/guru/journal-form',
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final scheduleId = state.uri.queryParameters['scheduleId'] ?? '';
             final dateStr = state.uri.queryParameters['date'];
-            return FormJurnalScreen(scheduleId: scheduleId, dateStr: dateStr);
+            return _buildCustomTransition(
+                context, state, FormJurnalScreen(scheduleId: scheduleId, dateStr: dateStr));
           },
         ),
         GoRoute(
           path: '/guru/journal/:id',
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final id = state.pathParameters['id']!;
-            return DetailJurnalScreen(journalId: id);
+            return _buildCustomTransition(
+                context, state, DetailJurnalScreen(journalId: id));
           },
         ),
         GoRoute(
           path: '/guru/warning-letters',
-          builder: (context, state) => const GuruWarningLetterListScreen(),
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const GuruWarningLetterListScreen()),
         ),
         GoRoute(
           path: '/guru/statistik',
-          builder: (context, state) => const GuruStatistikScreen(),
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const GuruStatistikScreen()),
         ),
 
-        // Admin Module Routes
+        // Admin Module
         GoRoute(
           path: '/admin/dashboard',
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final teacherId = state.uri.queryParameters['teacherId'];
-            return AdminDashboardScreen(selectedTeacherId: teacherId);
+            return _buildCustomTransition(
+                context, state, AdminDashboardScreen(selectedTeacherId: teacherId));
           },
         ),
         GoRoute(
           path: '/admin/approvals',
-          builder: (context, state) => const ApprovalJurnalScreen(),
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const ApprovalJurnalScreen()),
         ),
         GoRoute(
           path: '/admin/journals',
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final tab = int.tryParse(
                     state.uri.queryParameters['tab'] ?? '0') ??
                 0;
-            return AdminJurnalListScreen(initialTabIndex: tab);
+            return _buildCustomTransition(
+                context, state, AdminJurnalListScreen(initialTabIndex: tab));
           },
         ),
         GoRoute(
           path: '/admin/journal/:id',
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final id = state.pathParameters['id']!;
-            return DetailJurnalScreen(journalId: id);
+            return _buildCustomTransition(
+                context, state, DetailJurnalScreen(journalId: id));
           },
         ),
         GoRoute(
           path: '/admin/schedule/:id',
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final id = state.pathParameters['id']!;
-            return DetailJadwalScreen(scheduleId: id);
+            return _buildCustomTransition(
+                context, state, DetailJadwalScreen(scheduleId: id));
           },
         ),
         GoRoute(
           path: '/admin/warning-letters',
-          builder: (context, state) => const AdminWarningLetterListScreen(),
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const AdminWarningLetterListScreen()),
         ),
         GoRoute(
           path: '/admin/master-data/periods',
-          builder: (context, state) => const MasterPeriodScreen(),
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const MasterPeriodScreen()),
         ),
         GoRoute(
           path: '/admin/master-data/subjects',
-          builder: (context, state) => const MasterSubjectScreen(),
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const MasterSubjectScreen()),
         ),
         GoRoute(
           path: '/admin/master-data/hours',
-          builder: (context, state) => const MasterHourScreen(),
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const MasterHourScreen()),
         ),
         GoRoute(
           path: '/admin/master-data/classes',
-          builder: (context, state) => const MasterClassScreen(),
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const MasterClassScreen()),
         ),
         GoRoute(
           path: '/admin/master-data/classes/:classId/students',
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final classId = state.pathParameters['classId']!;
-            return MasterStudentScreen(classId: classId);
+            return _buildCustomTransition(
+                context, state, MasterStudentScreen(classId: classId));
           },
         ),
         GoRoute(
           path: '/admin/master-data/teachers',
-          builder: (context, state) => const MasterTeacherScreen(),
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const MasterTeacherScreen()),
         ),
         GoRoute(
           path: '/admin/master-data/teachers/:teacherId',
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final teacherId = state.pathParameters['teacherId']!;
-            return TeacherDetailScreen(teacherId: teacherId);
+            return _buildCustomTransition(
+                context, state, TeacherDetailScreen(teacherId: teacherId));
           },
         ),
         GoRoute(
           path: '/admin/schedules',
-          builder: (context, state) => const MasterScheduleScreen(),
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const MasterScheduleScreen()),
         ),
         GoRoute(
           path: '/admin/settings',
-          builder: (context, state) => const AdminSettingsScreen(),
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const AdminSettingsScreen()),
         ),
         GoRoute(
           path: '/admin/master-data/users',
-          builder: (context, state) => const MasterUserScreen(),
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const MasterUserScreen()),
         ),
         GoRoute(
           path: '/admin/profile',
-          builder: (context, state) => const AdminProfileScreen(),
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const AdminProfileScreen()),
         ),
       ],
     );

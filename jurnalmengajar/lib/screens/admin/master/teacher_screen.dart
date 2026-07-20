@@ -14,6 +14,7 @@ import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/utils/image_crop_helper.dart';
 import '../../../repositories/supabase_auth_repository.dart';
+import '../../../widgets/animated_widgets.dart';
 
 class MasterTeacherScreen extends StatefulWidget {
   const MasterTeacherScreen({super.key});
@@ -489,19 +490,9 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
           ),
         );
       },
-      child: Card(
-        margin: EdgeInsets.zero,
-        elevation: 0,
-        color: _selectedIds.contains(t.id) ? const Color(0xFFEFF6FF) : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: _selectedIds.contains(t.id) ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
-            width: _selectedIds.contains(t.id) ? 1.5 : 1.0,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
+      child: FadeSlideIn(
+        delay: const Duration(milliseconds: 60),
+        child: ScaleTap(
           onTap: _isSelectionMode
               ? () => _toggleSelectItem(t.id)
               : () => context.push('/admin/master-data/teachers/${t.id}'),
@@ -512,76 +503,96 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
               _toggleSelectItem(t.id);
             }
           },
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-            child: Row(
-              children: [
-                if (_isSelectionMode) ...[
-                  Checkbox(
-                    value: _selectedIds.contains(t.id),
-                    activeColor: const Color(0xFF2563EB),
-                    onChanged: (_) => _toggleSelectItem(t.id),
+          child: Card(
+            margin: EdgeInsets.zero,
+            elevation: 0,
+            color: _selectedIds.contains(t.id) ? const Color(0xFFEFF6FF) : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: _selectedIds.contains(t.id) ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                width: _selectedIds.contains(t.id) ? 1.5 : 1.0,
+              ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+              child: Row(
+                children: [
+                  if (_isSelectionMode) ...[
+                    Checkbox(
+                      value: _selectedIds.contains(t.id),
+                      activeColor: const Color(0xFF2563EB),
+                      onChanged: (_) => _toggleSelectItem(t.id),
+                    ),
+                    SizedBox(width: 4.w),
+                  ],
+                  CircleAvatar(
+                    radius: 20.r,
+                    backgroundColor: const Color(0xFFF1F5F9),
+                    backgroundImage: t.photoUrl != null && t.photoUrl!.startsWith('http')
+                        ? NetworkImage(t.photoUrl!)
+                        : (t.photoUrl != null ? FileImage(File(t.photoUrl!)) : null) as ImageProvider?,
+                    child: t.photoUrl == null
+                        ? Icon(Icons.person, size: 20.r, color: Colors.grey[400])
+                        : null,
                   ),
-                  SizedBox(width: 4.w),
-                ],
-                CircleAvatar(
-                  radius: 20.r,
-                  backgroundColor: const Color(0xFFF1F5F9),
-                  backgroundImage: t.photoUrl != null && t.photoUrl!.startsWith('http')
-                      ? NetworkImage(t.photoUrl!)
-                      : (t.photoUrl != null ? FileImage(File(t.photoUrl!)) : null) as ImageProvider?,
-                  child: t.photoUrl == null
-                      ? Icon(Icons.person, size: 20.r, color: Colors.grey[400])
-                      : null,
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        t.name,
-                        style: TextStyle(
-                            fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: 2.h),
-                      Text(
-                        t.email,
-                        style: TextStyle(fontSize: 11.sp, color: Colors.grey[600]),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                if (!_isSelectionMode)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.chat,
-                          color: t.phoneNumber.trim().isEmpty ? Colors.grey[400] : const Color(0xFF25D366),
-                          size: 20.sp,
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          t.name,
+                          style: TextStyle(
+                              fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        tooltip: 'WhatsApp',
-                        constraints: const BoxConstraints(),
-                        padding: EdgeInsets.all(2.w),
-                        onPressed: () => _launchWhatsApp(t.phoneNumber),
-                      ),
-                      SizedBox(width: 2.w),
-                      IconButton(
-                        icon: Icon(Icons.edit_outlined, color: Colors.indigo, size: 20.sp),
-                        tooltip: 'Edit Guru',
-                        constraints: const BoxConstraints(),
-                        padding: EdgeInsets.all(2.w),
-                        onPressed: () => _showFormDialog(teacher: t),
-                      ),
-                    ],
+                        SizedBox(height: 2.h),
+                        Text(
+                          t.position,
+                          style: TextStyle(
+                              fontSize: 12.sp, color: Colors.grey[600], fontWeight: FontWeight.w500),
+                        ),
+                        if (t.phoneNumber.isNotEmpty) ...[
+                          SizedBox(height: 2.h),
+                          Text(
+                            'Telp: ${t.phoneNumber}',
+                            style: TextStyle(fontSize: 11.sp, color: Colors.grey[500]),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-              ],
+                  SizedBox(width: 8.w),
+                  if (!_isSelectionMode)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            Icons.chat,
+                            color: t.phoneNumber.trim().isEmpty ? Colors.grey[400] : const Color(0xFF25D366),
+                            size: 20.sp,
+                          ),
+                          tooltip: 'WhatsApp',
+                          constraints: const BoxConstraints(),
+                          padding: EdgeInsets.all(2.w),
+                          onPressed: () => _launchWhatsApp(t.phoneNumber),
+                        ),
+                        SizedBox(width: 2.w),
+                        IconButton(
+                          icon: Icon(Icons.edit_outlined, color: Colors.indigo, size: 20.sp),
+                          tooltip: 'Edit Guru',
+                          constraints: const BoxConstraints(),
+                          padding: EdgeInsets.all(2.w),
+                          onPressed: () => _showFormDialog(teacher: t),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
             ),
           ),
         ),

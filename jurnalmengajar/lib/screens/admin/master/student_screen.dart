@@ -8,6 +8,7 @@ import '../../../models/class_model.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../widgets/animated_widgets.dart';
 
 class MasterStudentScreen extends StatefulWidget {
   final String classId;
@@ -564,29 +565,30 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                               final genderColor = isMale ? const Color(0xFF2563EB) : const Color(0xFFEC4899);
                               final isSelected = _selectedIds.contains(student.id);
 
-                              return InkWell(
-                                onTap: _isSelectionMode
-                                    ? () => _toggleSelectItem(student.id)
-                                    : null,
-                                onLongPress: () {
-                                  if (!_isSelectionMode) {
-                                    _toggleSelectionMode(initialId: student.id);
-                                  } else {
-                                    _toggleSelectItem(student.id);
-                                  }
-                                },
-                                borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                                  decoration: BoxDecoration(
-                                    color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: isSelected ? const Color(0xFF2563EB) : AppTheme.outlineVariant,
-                                      width: isSelected ? 1.5 : 1.0,
+                              return FadeSlideIn(
+                                delay: Duration(milliseconds: (index * 35).clamp(0, 400)),
+                                child: ScaleTap(
+                                  onTap: _isSelectionMode
+                                      ? () => _toggleSelectItem(student.id)
+                                      : null,
+                                  onLongPress: () {
+                                    if (!_isSelectionMode) {
+                                      _toggleSelectionMode(initialId: student.id);
+                                    } else {
+                                      _toggleSelectItem(student.id);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isSelected ? const Color(0xFF2563EB) : AppTheme.outlineVariant,
+                                        width: isSelected ? 1.5 : 1.0,
+                                      ),
                                     ),
-                                  ),
-                                  child: Row(
+                                    child: Row(
                                     children: [
                                       if (_isSelectionMode) ...[
                                         Checkbox(
@@ -703,9 +705,10 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                     ],
                                   ),
                                 ),
-                              );
-                            },
-                          ),
+                              ),
+                            );
+                          },
+                        ),
                   ),
                 ],
               ),
