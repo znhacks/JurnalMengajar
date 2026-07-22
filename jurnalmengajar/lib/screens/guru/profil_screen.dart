@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'main_shell.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
@@ -683,6 +684,19 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () {
+            final shellState = context.findAncestorStateOfType<GuruMainShellState>();
+            if (shellState != null) {
+              shellState.switchToTab(0);
+            } else if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/guru/dashboard?tab=0');
+            }
+          },
+        ),
         title: const Text('Profil Pengajar'),
         bottom: isLoading
             ? PreferredSize(

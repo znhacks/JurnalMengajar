@@ -20,13 +20,21 @@ class GuruMainShell extends StatefulWidget {
   const GuruMainShell({super.key, this.initialIndex});
 
   @override
-  State<GuruMainShell> createState() => _GuruMainShellState();
+  State<GuruMainShell> createState() => GuruMainShellState();
 }
 
-class _GuruMainShellState extends State<GuruMainShell> {
+class GuruMainShellState extends State<GuruMainShell> {
   late int _currentIndex;
   double? _xPosition;
   double? _yPosition;
+
+  void switchToTab(int index) {
+    if (_currentIndex != index) {
+      setState(() {
+        _currentIndex = index;
+      });
+    }
+  }
 
   final List<Widget> _screens = [
     const GuruDashboardScreen(),
@@ -70,7 +78,9 @@ class _GuruMainShellState extends State<GuruMainShell> {
   void didUpdateWidget(covariant GuruMainShell oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.initialIndex != null && widget.initialIndex != _currentIndex) {
-      _currentIndex = widget.initialIndex!;
+      setState(() {
+        _currentIndex = widget.initialIndex!;
+      });
     }
   }
 
@@ -185,67 +195,361 @@ class _GuruMainShellState extends State<GuruMainShell> {
         });
       },
       child: Scaffold(
+        drawer: _buildGuruDrawer(context, currentUser, unreadWarnings),
         body: Stack(
           children: [
             IndexedStack(index: _currentIndex, children: _screens),
-          if (unreadWarnings > 0)
-            _buildFloatingBadge(
-              count: unreadWarnings,
-              color: const Color(0xFFBA1A1A),
-              icon: Icons.assignment_late_rounded,
-              badgeColor: Colors.amber,
-              badgeTextColor: Colors.black,
-              onTap: () => context.push('/guru/warning-letters'),
-              screenWidth: screenWidth,
-              screenHeight: screenHeight,
-            ),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(
-            top: BorderSide(
-              color: Theme.of(context).colorScheme.outlineVariant,
-              width: 1,
-            ),
-          ),
-        ),
-        child: NavigationBar(
-          selectedIndex: _currentIndex,
-          onDestinationSelected: (index) {
-            context.go('/guru/dashboard?tab=$index');
-          },
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          elevation: 0,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.dashboard_outlined),
-              selectedIcon: Icon(Icons.dashboard),
-              label: 'Dashboard',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.calendar_month_outlined),
-              selectedIcon: Icon(Icons.calendar_month),
-              label: 'Jadwal',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.assignment_outlined),
-              selectedIcon: Icon(Icons.assignment),
-              label: 'Jurnal',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person),
-              label: 'Profil',
-            ),
+            if (unreadWarnings > 0)
+              _buildFloatingBadge(
+                count: unreadWarnings,
+                color: const Color(0xFFBA1A1A),
+                icon: Icons.assignment_late_rounded,
+                badgeColor: Colors.amber,
+                badgeTextColor: Colors.black,
+                onTap: () => context.push('/guru/warning-letters'),
+                screenWidth: screenWidth,
+                screenHeight: screenHeight,
+              ),
           ],
         ),
       ),
-    ),
-   );
+    );
+  }
+
+  Widget _buildGuruDrawer(BuildContext context, UserModel? currentUser, int unreadWarnings) {
+    final name = currentUser?.fullName ?? 'Guru Pengajar';
+    final email = currentUser?.email ?? '';
+    final photoUrl = currentUser?.photoUrl;
+
+    return Drawer(
+      backgroundColor: Colors.white,
+      child: Column(
+        children: [
+          // Drawer Header
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.fromLTRB(20.w, 48.h, 20.w, 20.h),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF4F46E5), // Vibrant Indigo
+                  Color(0xFF3730A3),
+                ],
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 52.w,
+                      height: 52.w,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFACC15),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(52.r),
+                        child: photoUrl != null && photoUrl.startsWith('http')
+                            ? Image.network(
+                                photoUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.person, color: Color(0xFF1E293B), size: 30),
+                              )
+                            : const Icon(Icons.person, color: Color(0xFF1E293B), size: 30),
+                      ),
+                    ),
+                    SizedBox(width: 14.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 2.h),
+                          Text(
+                            email,
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 12.sp,
+                              color: Colors.white.withValues(alpha: 0.8),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 14.h),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.verified_user_rounded, color: Colors.white, size: 14.w),
+                      SizedBox(width: 6.w),
+                      Text(
+                        'Guru Pengajar',
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 11.sp,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Drawer Menu List
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
+              children: [
+                _buildDrawerSectionHeader('MENU UTAMA'),
+                _buildDrawerItem(
+                  icon: Icons.grid_view_rounded,
+                  label: 'Dashboard',
+                  isSelected: _currentIndex == 0,
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _currentIndex = 0;
+                    });
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.calendar_month_rounded,
+                  label: 'Jadwal Mengajar',
+                  isSelected: _currentIndex == 1,
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _currentIndex = 1;
+                    });
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.assignment_rounded,
+                  label: 'Daftar Jurnal',
+                  isSelected: _currentIndex == 2,
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _currentIndex = 2;
+                    });
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.person_rounded,
+                  label: 'Profil Saya',
+                  isSelected: _currentIndex == 3,
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _currentIndex = 3;
+                    });
+                  },
+                ),
+
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                  child: const Divider(color: Color(0xFFE2E8F0), height: 1),
+                ),
+
+                _buildDrawerSectionHeader('FITUR LAINNYA'),
+                _buildDrawerItem(
+                  icon: Icons.bar_chart_rounded,
+                  label: 'Statistik Mengajar',
+                  isSelected: false,
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/guru/statistics');
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.assignment_late_rounded,
+                  label: 'Surat Peringatan (SP)',
+                  badgeCount: unreadWarnings,
+                  isSelected: false,
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/guru/warning-letters');
+                  },
+                ),
+
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                  child: const Divider(color: Color(0xFFE2E8F0), height: 1),
+                ),
+
+                _buildDrawerItem(
+                  icon: Icons.info_outline_rounded,
+                  label: 'Tentang Aplikasi',
+                  isSelected: false,
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/about');
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.logout_rounded,
+                  label: 'Keluar',
+                  isDestructive: true,
+                  isSelected: false,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showLogoutDialog(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerSectionHeader(String title) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 6.h),
+      child: Text(
+        title,
+        style: GoogleFonts.hankenGrotesk(
+          fontSize: 10.sp,
+          fontWeight: FontWeight.w800,
+          color: const Color(0xFF94A3B8),
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    int badgeCount = 0,
+    bool isDestructive = false,
+  }) {
+    final Color activeColor = isDestructive ? const Color(0xFFEF4444) : const Color(0xFF4F46E5);
+    final Color textColor = isDestructive
+        ? const Color(0xFFEF4444)
+        : (isSelected ? const Color(0xFF4F46E5) : const Color(0xFF334155));
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 4.h),
+      decoration: BoxDecoration(
+        color: isSelected ? const Color(0xFFEEF2FF) : Colors.transparent,
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: ListTile(
+        onTap: onTap,
+        dense: true,
+        contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.h),
+        leading: Icon(
+          icon,
+          color: isSelected ? activeColor : (isDestructive ? activeColor : const Color(0xFF64748B)),
+          size: 22,
+        ),
+        title: Text(
+          label,
+          style: GoogleFonts.hankenGrotesk(
+            fontSize: 13.sp,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            color: textColor,
+          ),
+        ),
+        trailing: badgeCount > 0
+            ? Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Text(
+                  '$badgeCount',
+                  style: GoogleFonts.hankenGrotesk(
+                    color: Colors.white,
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              )
+            : (isSelected
+                ? Container(
+                    width: 4.w,
+                    height: 18.h,
+                    decoration: BoxDecoration(
+                      color: activeColor,
+                      borderRadius: BorderRadius.circular(4.r),
+                    ),
+                  )
+                : null),
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        title: Text(
+          'Konfirmasi Keluar',
+          style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w800, fontSize: 16.sp),
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin keluar dari akun?',
+          style: GoogleFonts.hankenGrotesk(fontSize: 13.sp),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Batal', style: GoogleFonts.hankenGrotesk(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<AuthProvider>().logout();
+              context.go('/login');
+            },
+            child: Text('Keluar', style: GoogleFonts.hankenGrotesk(color: Colors.white, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
   }
 }

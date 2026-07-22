@@ -483,12 +483,14 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 builder: (ctx) {
                   return InkWell(
                     onTap: () {
-                      final scaffoldState = Scaffold.maybeOf(ctx);
-                      if (scaffoldState != null && scaffoldState.hasDrawer) {
-                        scaffoldState.openDrawer();
+                      final rootScaffold = ctx.findRootAncestorStateOfType<ScaffoldState>();
+                      if (rootScaffold != null && rootScaffold.hasDrawer) {
+                        rootScaffold.openDrawer();
                       } else {
-                        // Navigate to profile/settings if no drawer is active
-                        context.push('/guru/profile');
+                        final scaffoldState = Scaffold.maybeOf(ctx);
+                        if (scaffoldState != null && scaffoldState.hasDrawer) {
+                          scaffoldState.openDrawer();
+                        }
                       }
                     },
                     borderRadius: BorderRadius.circular(50.r),
@@ -520,7 +522,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
               // Avatar with soft yellow glow / rounded background matching reference
               InkWell(
-                onTap: () => context.push('/guru/profile'),
+                onTap: () => context.go('/guru/dashboard?tab=3'),
                 borderRadius: BorderRadius.circular(16.r),
                 child: Container(
                   width: 48.w,
@@ -620,14 +622,14 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   child: TextField(
                     controller: _searchController,
                     style: GoogleFonts.hankenGrotesk(
-                      fontSize: 14.sp,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF1E293B),
                     ),
                     decoration: InputDecoration(
                       hintText: 'Cari jadwal, kelas, atau mapel...',
                       hintStyle: GoogleFonts.hankenGrotesk(
-                        fontSize: 14.sp,
+                        fontSize: 12.sp,
                         color: const Color(0xFF94A3B8),
                         fontWeight: FontWeight.w500,
                       ),

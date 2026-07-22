@@ -222,6 +222,31 @@ class AppRouter {
           pageBuilder: (context, state) => _buildCustomTransition(
               context, state, const GuruStatistikScreen()),
         ),
+        GoRoute(
+          path: '/guru/statistics',
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const GuruStatistikScreen()),
+        ),
+        GoRoute(
+          path: '/guru/profile',
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const GuruMainShell(initialIndex: 3)),
+        ),
+        GoRoute(
+          path: '/guru/profil',
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const GuruMainShell(initialIndex: 3)),
+        ),
+        GoRoute(
+          path: '/guru/jadwal',
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const GuruMainShell(initialIndex: 1)),
+        ),
+        GoRoute(
+          path: '/guru/jurnal',
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const GuruMainShell(initialIndex: 2)),
+        ),
 
         // Admin Module
         GoRoute(
