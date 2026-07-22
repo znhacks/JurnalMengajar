@@ -66,9 +66,19 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
           j.date.month == _selectedMonth.month;
     }).toList();
 
-    // 3. Jurnal Terisi calculations
-    final int totalMeetings = schedulesInMonth.length;
-    final int filledMeetings = journalsInMonth.length;
+    // 3. Jurnal Terisi calculations (Grouped by unique session: date + classId + subjectId)
+    final Set<String> uniqueScheduledSessions = {};
+    for (final s in schedulesInMonth) {
+      uniqueScheduledSessions.add('${s.date.year}-${s.date.month}-${s.date.day}|${s.classId}|${s.subjectId}');
+    }
+    final int totalMeetings = uniqueScheduledSessions.length;
+
+    final Set<String> uniqueFilledSessions = {};
+    for (final j in journalsInMonth) {
+      uniqueFilledSessions.add('${j.date.year}-${j.date.month}-${j.date.day}|${j.classId}|${j.subjectId}');
+    }
+    final int filledMeetings = uniqueFilledSessions.length;
+
     final double fillRate = totalMeetings > 0
         ? (filledMeetings / totalMeetings) * 100
         : 0.0;
@@ -434,12 +444,18 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                         separatorBuilder: (context, _) => SizedBox(height: 10.h),
                         itemBuilder: (context, index) {
                           final cls = classesInMonth[index];
-                          final scheduledCount = schedulesInMonth
-                              .where((s) => s.classId == cls.id)
-                              .length;
-                          final filledCount = journalsInMonth
-                              .where((j) => j.classId == cls.id)
-                              .length;
+                          final Set<String> clsScheduledSessions = {};
+                          for (final s in schedulesInMonth.where((s) => s.classId == cls.id)) {
+                            clsScheduledSessions.add('${s.date.year}-${s.date.month}-${s.date.day}|${s.subjectId}');
+                          }
+                          final scheduledCount = clsScheduledSessions.length;
+
+                          final Set<String> clsFilledSessions = {};
+                          for (final j in journalsInMonth.where((j) => j.classId == cls.id)) {
+                            clsFilledSessions.add('${j.date.year}-${j.date.month}-${j.date.day}|${j.subjectId}');
+                          }
+                          final filledCount = clsFilledSessions.length;
+
                           final double rate = scheduledCount > 0
                               ? (filledCount / scheduledCount)
                               : 0.0;

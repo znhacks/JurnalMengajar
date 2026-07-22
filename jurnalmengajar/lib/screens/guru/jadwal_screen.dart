@@ -571,12 +571,41 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Jadwal Mengajar')),
+      appBar: AppBar(
+        title: const Text('Jadwal Mengajar'),
+        actions: [
+          Padding(
+            padding: EdgeInsets.only(right: 12.w),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                context.push('/guru/journal-form?date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
+              },
+              icon: const Icon(Icons.add, size: 16, color: Colors.white),
+              label: Text(
+                'Tambah Task',
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4F46E5),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [
             _buildCalendarCard(scheduleProvider, teacher),
-            SizedBox(height: 12.h),
+            SizedBox(height: 8.h),
 
             // Schedules list for selected day
             Expanded(
@@ -592,17 +621,46 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                           final groupedSchedules = groupDailySchedules(
                             scheduleProvider.teacherSchedulesForSelectedDate,
                           );
-                          return ListView.separated(
-                            padding: EdgeInsets.all(16.w),
+
+                          // Find index of the first schedule item without a completed/pending journal
+                          int activeHighlightIndex = -1;
+                          for (int i = 0; i < groupedSchedules.length; i++) {
+                            final group = groupedSchedules[i];
+                            final s = group.primarySchedule;
+                            final hasJournal = journalProvider.teacherJournals.any((j) {
+                              final sameDate = j.date.year == _selectedDay.year &&
+                                  j.date.month == _selectedDay.month &&
+                                  j.date.day == _selectedDay.day;
+                              final sameSchedule = j.scheduleId == s.id ||
+                                  group.scheduleIds.contains(j.scheduleId) ||
+                                  (j.classId == s.classId && j.subjectId == s.subjectId);
+                              return sameDate &&
+                                  sameSchedule &&
+                                  (j.status == 'pending' || j.status == 'verified');
+                            });
+                            if (!hasJournal) {
+                              activeHighlightIndex = i;
+                              break;
+                            }
+                          }
+                          if (activeHighlightIndex == -1 && groupedSchedules.isNotEmpty) {
+                            activeHighlightIndex = groupedSchedules.length - 1;
+                          }
+
+                          return ListView.builder(
+                            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                             itemCount: groupedSchedules.length,
-                            separatorBuilder: (context, index) =>
-                                SizedBox(height: 12.h),
                             itemBuilder: (context, index) {
                               final scheduleGroup = groupedSchedules[index];
-                              return _buildScheduleItem(
+                              final isLast = index == groupedSchedules.length - 1;
+                              final isHighlighted = index == activeHighlightIndex;
+                              return _buildTimelineScheduleItem(
                                 scheduleGroup,
                                 masterProvider,
                                 journalProvider,
+                                index,
+                                isLast,
+                                isHighlighted,
                               );
                             },
                           );
@@ -651,34 +709,32 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     );
   }
 
-  Widget _buildScheduleItem(
+  Widget _buildTimelineScheduleItem(
     GroupedDailySchedule scheduleGroup,
     MasterDataProvider master,
     JournalProvider journalProvider,
+    int index,
+    bool isLast,
+    bool isHighlighted,
   ) {
     final schedule = scheduleGroup.primarySchedule;
     final cls = master.classes.firstWhere(
       (c) => c.id == schedule.classId,
-      orElse: () =>
-          ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
+      orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
     );
-
     final subject = master.subjects.firstWhere(
       (s) => s.id == schedule.subjectId,
       orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
     );
 
-    final matchedHours =
-        master.hours
-            .where((h) => scheduleGroup.teachingHours.contains(h.teachingHour))
-            .toList()
-          ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
+    final matchedHours = master.hours
+        .where((h) => scheduleGroup.teachingHours.contains(h.teachingHour))
+        .toList()
+      ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
 
-    final hrStart = matchedHours.isNotEmpty
-        ? matchedHours.first.startTime
-        : '00:00';
-    final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '00:00';
+    final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '00:00';
     final hoursStr = AppHelper.formatTeachingHours(scheduleGroup.teachingHours);
+    final timeDisplay = matchedHours.isNotEmpty ? '$hrStart WIB' : 'Jam #$hoursStr';
 
     // Find matching journal for this schedule group on the selected day
     JournalModel? matchingJournal;
@@ -686,217 +742,223 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       final sameDate = j.date.year == _selectedDay.year &&
                       j.date.month == _selectedDay.month &&
                       j.date.day == _selectedDay.day;
-      if (sameDate && (j.scheduleId == schedule.id || scheduleGroup.scheduleIds.contains(j.scheduleId))) {
+      if (sameDate && (j.scheduleId == schedule.id || scheduleGroup.scheduleIds.contains(j.scheduleId) || (j.classId == schedule.classId && j.subjectId == schedule.subjectId))) {
         matchingJournal = j;
         break;
       }
     }
 
-    Color statusColor;
-    String statusLabel;
-    IconData statusIcon;
+    final String? journalStatus = matchingJournal?.status;
+    final bool isFilled = journalStatus != null;
 
-    if (matchingJournal == null) {
-      statusColor = AppTheme.outline;
-      statusLabel = 'Belum Input';
-      statusIcon = Icons.pending_actions_rounded;
-    } else if (matchingJournal.status == 'verified') {
-      statusColor = const Color(0xFF10B981);
-      statusLabel = 'Disetujui';
-      statusIcon = Icons.check_circle_rounded;
-    } else if (matchingJournal.status == 'rejected') {
-      statusColor = Colors.red;
-      statusLabel = 'Ditolak';
-      statusIcon = Icons.cancel_rounded;
+    // Color themes for soft non-highlighted items
+    final List<Map<String, dynamic>> softThemes = [
+      {
+        'bg': const Color(0xFFEEF2FF), // Soft Blue/Indigo
+        'text': const Color(0xFF1E293B),
+        'subtext': const Color(0xFF64748B),
+        'node': const Color(0xFF6366F1),
+      },
+      {
+        'bg': const Color(0xFFFEFCE8), // Soft Yellow
+        'text': const Color(0xFF1E293B),
+        'subtext': const Color(0xFF78350F),
+        'node': const Color(0xFFF59E0B),
+      },
+      {
+        'bg': const Color(0xFFECFDF5), // Soft Mint
+        'text': const Color(0xFF1E293B),
+        'subtext': const Color(0xFF047857),
+        'node': const Color(0xFF10B981),
+      },
+      {
+        'bg': const Color(0xFFFFF1F2), // Soft Coral
+        'text': const Color(0xFF1E293B),
+        'subtext': const Color(0xFFBE123C),
+        'node': const Color(0xFFF43F5E),
+      },
+    ];
+
+    final theme = softThemes[index % softThemes.length];
+
+    // Colors when highlighted
+    final Color cardBg = isHighlighted
+        ? const Color(0xFFF43F5E) // Vibrant Red/Pink for highlighted card
+        : (isFilled ? const Color(0xFFF8FAFC) : (theme['bg'] as Color));
+
+    final Color textColor = isHighlighted
+        ? Colors.white
+        : (theme['text'] as Color);
+
+    final Color subtextColor = isHighlighted
+        ? Colors.white.withValues(alpha: 0.9)
+        : (theme['subtext'] as Color);
+
+    Color nodeColor;
+    IconData? nodeIcon;
+    if (isHighlighted) {
+      nodeColor = const Color(0xFFF43F5E);
+    } else if (journalStatus == 'verified') {
+      nodeColor = const Color(0xFF10B981); // Green for ACC
+      nodeIcon = Icons.check;
+    } else if (journalStatus == 'pending') {
+      nodeColor = const Color(0xFFF59E0B); // Amber for Pending (Clock icon)
+      nodeIcon = Icons.access_time_rounded;
+    } else if (journalStatus == 'rejected') {
+      nodeColor = const Color(0xFFEF4444); // Red for Rejected
+      nodeIcon = Icons.priority_high_rounded;
     } else {
-      statusColor = const Color(0xFFF59E0B);
-      statusLabel = 'Menunggu';
-      statusIcon = Icons.hourglass_empty_rounded;
+      nodeColor = Colors.white; // Default unfilled
     }
 
-    return InkWell(
-      onTap: () {
-        if (matchingJournal != null) {
-          if (matchingJournal.status == 'rejected') {
-            context.push('/guru/journal-form?scheduleId=${schedule.id}&journalId=${matchingJournal.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
-          } else {
-            context.push('/guru/journal/${matchingJournal.id}');
-          }
-        } else {
-          context.push('/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
-        }
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.outlineVariant),
-        ),
-        child: IntrinsicHeight(
-          child: Row(
-            children: [
-              Container(
-                width: 4.w,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    bottomLeft: Radius.circular(12),
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Left Timeline Column (Node Circle + Connecting Line)
+          SizedBox(
+            width: 28.w,
+            child: Column(
+              children: [
+                SizedBox(height: 14.h),
+                // Node circle
+                Container(
+                  width: isHighlighted ? 20.w : 16.w,
+                  height: isHighlighted ? 20.w : 16.w,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: nodeColor,
+                    border: Border.all(
+                      color: isHighlighted
+                          ? Colors.white
+                          : (journalStatus != null ? nodeColor : (theme['node'] as Color)),
+                      width: isHighlighted ? 3.5 : 2.5,
+                    ),
+                    boxShadow: isHighlighted
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFFF43F5E).withValues(alpha: 0.4),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            )
+                          ]
+                        : null,
                   ),
+                  child: isHighlighted
+                      ? Center(
+                          child: Container(
+                            width: 6.w,
+                            height: 6.w,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                            ),
+                          ),
+                        )
+                      : (nodeIcon != null
+                          ? Icon(nodeIcon, size: 10.r, color: Colors.white)
+                          : null),
                 ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                  child: Row(
-                    children: [
-                      // Hour block
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8.w,
-                          vertical: 6.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Jam',
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 9.sp,
-                                color: AppTheme.primaryColor,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              '#$hoursStr',
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 14.sp,
-                                color: AppTheme.primaryColor,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ],
-                        ),
+                // Connecting line
+                if (!isLast)
+                  Expanded(
+                    child: Container(
+                      width: 2.w,
+                      margin: EdgeInsets.symmetric(vertical: 4.h),
+                      color: const Color(0xFFFDA4AF).withValues(alpha: 0.6),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          SizedBox(width: 8.w),
+
+          // Right Content Card
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 14.h),
+              child: InkWell(
+                onTap: () {
+                  if (matchingJournal != null) {
+                    if (matchingJournal.status == 'rejected') {
+                      context.push('/guru/journal-form?scheduleId=${schedule.id}&journalId=${matchingJournal.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
+                    } else {
+                      context.push('/guru/journal/${matchingJournal.id}');
+                    }
+                  } else {
+                    context.push('/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
+                  }
+                },
+                borderRadius: BorderRadius.circular(20.r),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(20.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isHighlighted
+                            ? const Color(0xFFF43F5E).withValues(alpha: 0.3)
+                            : Colors.black.withValues(alpha: 0.03),
+                        blurRadius: isHighlighted ? 12 : 8,
+                        offset: const Offset(0, 4),
                       ),
-                      SizedBox(width: 12.w),
-                      // Details block
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              cls.name,
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.onBackground,
-                              ),
-                            ),
-                            SizedBox(height: 2.h),
-                            Text(
+                    ],
+                    border: isHighlighted
+                        ? null
+                        : Border.all(
+                            color: isFilled ? const Color(0xFFCBD5E1) : const Color(0xFFE2E8F0),
+                            width: 1,
+                          ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header Row: Subject & Time
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
                               subject.name,
                               style: GoogleFonts.hankenGrotesk(
-                                fontSize: 12.sp,
-                                color: AppTheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w800,
+                                color: textColor,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            SizedBox(height: 4.h),
-                            Wrap(
-                              spacing: 8.w,
-                              runSpacing: 4.h,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.people_outline,
-                                      size: 11,
-                                      color: AppTheme.outline,
-                                    ),
-                                    SizedBox(width: 3.w),
-                                    Text(
-                                      '${cls.studentCount} Siswa',
-                                      style: GoogleFonts.hankenGrotesk(
-                                        fontSize: 10.sp,
-                                        color: AppTheme.outline,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.access_time_outlined,
-                                      size: 11,
-                                      color: AppTheme.outline,
-                                    ),
-                                    SizedBox(width: 3.w),
-                                    Text(
-                                      '$hrStart - $hrEnd',
-                                      style: GoogleFonts.hankenGrotesk(
-                                        fontSize: 10.sp,
-                                        color: AppTheme.outline,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                          ),
+                          Text(
+                            timeDisplay,
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                              color: subtextColor,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      // Status Badge
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: statusLabel == 'Belum Input' ? 6.w : 8.w,
-                            vertical: 2.h),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: statusColor.withValues(alpha: 0.3), width: 1),
+                      SizedBox(height: 6.h),
+                      Text(
+                        'Kelas ${cls.name} • Jam ke-$hoursStr\n${matchingJournal != null ? 'Jurnal: ${matchingJournal.material}' : 'Jurnal belum diisi. Ketuk untuk menginput jurnal.'}',
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 12.sp,
+                          color: subtextColor,
+                          fontWeight: FontWeight.w400,
+                          height: 1.3,
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(statusIcon, color: statusColor, size: 12.sp),
-                            if (statusLabel != 'Belum Input') ...[
-                              SizedBox(width: 4.w),
-                              Text(
-                                statusLabel,
-                                style: TextStyle(
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: statusColor,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      SizedBox(width: 8.w),
-                      const Icon(
-                        Icons.chevron_right,
-                        color: AppTheme.outline,
-                        size: 18,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

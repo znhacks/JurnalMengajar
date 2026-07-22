@@ -183,6 +183,19 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
 
     final statusColor = AppHelper.getStatusColor(journal.status);
 
+    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+    final groupSchedules = scheduleProvider.cachedTeacherSchedules.where((s) {
+      return s.date.year == journal.date.year &&
+          s.date.month == journal.date.month &&
+          s.date.day == journal.date.day &&
+          s.classId == journal.classId &&
+          s.subjectId == journal.subjectId;
+    }).toList();
+    final hoursList = groupSchedules.map((s) => s.teachingHour).toList()..sort();
+    final hoursStr = hoursList.isNotEmpty
+        ? AppHelper.formatTeachingHours(hoursList)
+        : '${journal.teachingHour}';
+
     return InkWell(
       onTap: () => context.push('/guru/journal/${journal.id}'),
       borderRadius: BorderRadius.circular(12),
@@ -216,7 +229,7 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
                         children: [
                           Expanded(
                             child: Text(
-                              '${cls.name} • Jam Ke-${journal.teachingHour}',
+                              '${cls.name} • Jam Ke-$hoursStr',
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.bold,
