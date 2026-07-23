@@ -22,8 +22,8 @@ serve(async (req) => {
     const { student_name, student_id, status_type, date, subject_name, class_name, parent_phone, note } = payload;
 
     // ExtId is the recipient phone number (e.g. 082230090067)
-    let rawPhone = parent_phone || DEFAULT_PARENT_PHONE;
-    if (!rawPhone || rawPhone.trim() === "") {
+    let rawPhone = parent_phone ? String(parent_phone).trim() : "";
+    if (!rawPhone || rawPhone === "" || rawPhone === "null" || rawPhone === "undefined") {
       rawPhone = DEFAULT_PARENT_PHONE;
     }
 

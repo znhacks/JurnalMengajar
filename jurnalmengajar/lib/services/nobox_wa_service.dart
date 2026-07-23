@@ -19,7 +19,9 @@ class NoboxWaService {
     String? note,
   }) async {
     try {
-      final parentPhone = student.parentPhoneNumber ?? '082230090067';
+      String parentPhone = (student.parentPhoneNumber != null && student.parentPhoneNumber!.trim().isNotEmpty)
+          ? student.parentPhoneNumber!.trim()
+          : '082230090067';
 
       final payload = {
         'student_id': student.id,
