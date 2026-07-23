@@ -27,30 +27,34 @@ serve(async (req) => {
       rawPhone = DEFAULT_PARENT_PHONE;
     }
 
-    // Determine message content (use custom_message if provided, else format absence template)
+    // Determine message content (use custom_message if provided, else format exact absence template)
     let waMessage = payload.custom_message || payload.message;
 
     if (!waMessage) {
-      const statusLabel =
+      const reasonText =
         status_type === "S" || status_type === "Sakit"
-          ? "Sakit 🟡"
+          ? "Sakit"
           : status_type === "I" || status_type === "Izin"
-          ? "Izin 🔵"
-          : "Alpha / Tanpa Keterangan 🔴";
+          ? "Izin"
+          : "Tanpa Keterangan (Alpha)";
 
-      // Build Nobox AI WhatsApp Message Template
-      waMessage = `🤖 *Pemberitahuan Kehadiran Siswa — Nobox AI*
+      const noteDetail = note && note.trim() !== "" ? ` (${note.trim()})` : "";
 
-Yth. Bapak/Ibu Wali Murid dari *${student_name || "Siswa"}*,
+      // Build User Requested WhatsApp Absence Template
+      waMessage = `📢 *NOTIFIKASI ABSENSI SISWA*
 
-Menginformasikan catatan presensi siswa pada kegiatan belajar mengajar:
-🏫 *Sekolah*: SMKN 11 Malang
-📅 *Tanggal*: ${date || new Date().toLocaleDateString("id-ID")}
-📚 *Mata Pelajaran*: ${subject_name || "Pelajaran"} (${class_name || "Kelas"})
-📌 *Status Presensi*: *${statusLabel}*
+Yth. Orang Tua/Wali dari *${student_name || "Siswa"}*,
 
-${note ? `📝 *Catatan*: ${note}\n` : ""}
-_Pesan ini dikirimkan secara otomatis oleh Sistem Jurnal Mengajar SMKN 11 Malang terintegrasi Nobox AI WA Gateway._`;
+Menginfokan bahwa pada:
+📅 Tanggal: ${date || new Date().toLocaleDateString("id-ID")}
+📚 Mata Pelajaran: ${subject_name || "Mata Pelajaran"}${class_name ? ` (${class_name})` : ""}
+
+Pemberitahuan: Anak Anda tidak masuk karena *${reasonText}*${noteDetail}.
+
+Mohon bantuannya untuk memantau putra/putri Bapak/Ibu.
+Terima kasih.
+
+_Sistem Jurnal Mengajar Otomatis_`;
     }
 
     // Prepare exact Postman body structure for Nobox API
