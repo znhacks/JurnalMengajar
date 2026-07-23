@@ -38,7 +38,7 @@ serve(async (req) => {
           ? "Izin"
           : "Tanpa Keterangan (Alpha)";
 
-      // Build User Requested WhatsApp Absence Template (clean & flexible without note)
+      // Build User Requested WhatsApp Absence Template
       waMessage = `📢 *NOTIFIKASI ABSENSI SISWA*
 
 Yth. Orang Tua/Wali dari *${student_name || "Siswa"}*,
@@ -47,12 +47,12 @@ Menginfokan bahwa pada:
 📅 Tanggal: ${date || new Date().toLocaleDateString("id-ID")}
 📚 Mata Pelajaran: ${subject_name || "Mata Pelajaran"}${class_name ? ` (${class_name})` : ""}
 
-Pemberitahuan: Anak Anda tidak masuk karena *${reasonText}*.
+Pemberitahuan: Anak Anda tidak masuk karena: *${reasonText}*
 
 Mohon bantuannya untuk memantau putra/putri Bapak/Ibu.
 Terima kasih.
 
-_Sistem Jurnal Mengajar Otomatis_`;
+_Auto-Notifier powered by Nobox AI_`;
     }
 
     // Prepare exact Postman body structure for Nobox API
