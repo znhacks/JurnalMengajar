@@ -28,9 +28,18 @@ import 'providers/warning_letter_provider.dart';
 // Router & Theme
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'services/fcm_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase init info: $e');
+  }
 
   // Initialize Indonesian date formatting for intl
   await initializeDateFormatting('id_ID', null);
@@ -90,8 +99,28 @@ void main() async {
   );
 }
 
-class JurnalMengajarApp extends StatelessWidget {
+class JurnalMengajarApp extends StatefulWidget {
   const JurnalMengajarApp({super.key});
+
+  @override
+  State<JurnalMengajarApp> createState() => _JurnalMengajarAppState();
+}
+
+class _JurnalMengajarAppState extends State<JurnalMengajarApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final router = AppRouter.router(context);
+      FcmService().initialize(
+        authProvider: authProvider,
+        onNavigate: (route) {
+          router.push(route);
+        },
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

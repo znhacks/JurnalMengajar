@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
+import '../services/fcm_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthRepository _authRepository;
@@ -83,6 +84,7 @@ class AuthProvider with ChangeNotifier {
       _currentUser = loggedInUser;
       _isLoading = false;
       notifyListeners();
+      FcmService().syncToken(this);
       return true;
     } catch (e) {
       _errorMessage = _cleanErrorMessage(e);
@@ -210,6 +212,12 @@ class AuthProvider with ChangeNotifier {
     _currentUser = null;
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<void> updateFcmToken(String token) async {
+    if (_currentUser != null) {
+      await authRepository.updateFcmToken(_currentUser!.id, token);
+    }
   }
 
   Future<bool> updateProfile(UserModel updatedUser) async {

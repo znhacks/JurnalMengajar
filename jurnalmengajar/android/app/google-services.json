@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "491982982413",
+    "project_id": "jurnal-mengajar-ebcc6",
+    "storage_bucket": "jurnal-mengajar-ebcc6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:491982982413:android:fe974721e0c8e7fa09b444",
+        "android_client_info": {
+          "package_name": "com.example.jurnal_mengajar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdKbpO6vLwpPZcZqBCGZbfTorZuMBB6qo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:491982982413:android:fe974721e0c8e7fa09b444",
+        "android_client_info": {
+          "package_name": "com.example.jurnalmengajar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdKbpO6vLwpPZcZqBCGZbfTorZuMBB6qo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

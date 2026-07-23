@@ -13,4 +13,5 @@ abstract class AuthRepository {
   Future<List<UserModel>> getAllUsers();
   Future<void> updateUserRole(String userId, String role);
   Future<void> deleteAccount(String userId);
+  Future<void> updateFcmToken(String userId, String token);
 }

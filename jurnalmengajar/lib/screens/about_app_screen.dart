@@ -1,34 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/admin_drawer.dart';
+import '../widgets/guru_drawer.dart';
 
 class AboutAppScreen extends StatelessWidget {
   const AboutAppScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isAdmin = authProvider.currentUser?.role == 'admin';
+
     return Scaffold(
+      drawer: isAdmin
+          ? const AdminDrawer(currentRoute: '/about')
+          : const GuruDrawer(currentRoute: '/about'),
       appBar: AppBar(
         title: const Text('Tentang Aplikasi'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              final authProvider = Provider.of<AuthProvider>(
-                context,
-                listen: false,
-              );
-              if (authProvider.currentUser?.role == 'admin') {
-                context.go('/admin/dashboard');
-              } else {
-                context.go('/guru/dashboard');
-              }
-            }
-          },
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded),
+            onPressed: () {
+              Scaffold.of(ctx).openDrawer();
+            },
+          ),
         ),
       ),
       body: SafeArea(

@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'main_shell.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
@@ -573,18 +572,18 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            final shellState = context.findAncestorStateOfType<GuruMainShellState>();
-            if (shellState != null) {
-              shellState.switchToTab(0);
-            } else if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/guru/dashboard?tab=0');
-            }
-          },
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded),
+            onPressed: () {
+              final rootScaffold = ctx.findRootAncestorStateOfType<ScaffoldState>();
+              if (rootScaffold != null && rootScaffold.hasDrawer) {
+                rootScaffold.openDrawer();
+              } else {
+                Scaffold.maybeOf(ctx)?.openDrawer();
+              }
+            },
+          ),
         ),
         title: const Text('Jadwal Mengajar'),
         actions: [

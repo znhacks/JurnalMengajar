@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'main_shell.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/journal_provider.dart';
@@ -82,18 +81,18 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            final shellState = context.findAncestorStateOfType<GuruMainShellState>();
-            if (shellState != null) {
-              shellState.switchToTab(0);
-            } else if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/guru/dashboard?tab=0');
-            }
-          },
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded),
+            onPressed: () {
+              final rootScaffold = ctx.findRootAncestorStateOfType<ScaffoldState>();
+              if (rootScaffold != null && rootScaffold.hasDrawer) {
+                rootScaffold.openDrawer();
+              } else {
+                Scaffold.maybeOf(ctx)?.openDrawer();
+              }
+            },
+          ),
         ),
         title: const Text('Riwayat Jurnal'),
         bottom: PreferredSize(

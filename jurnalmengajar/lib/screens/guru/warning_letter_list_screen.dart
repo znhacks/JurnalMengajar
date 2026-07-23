@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import '../../providers/warning_letter_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
@@ -12,6 +11,7 @@ import '../../models/schedule_model.dart';
 import '../../models/warning_letter_model.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/helper.dart';
+import '../../widgets/guru_drawer.dart';
 
 class GuruWarningLetterListScreen extends StatefulWidget {
   const GuruWarningLetterListScreen({super.key});
@@ -87,16 +87,15 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
 
     return Scaffold(
       backgroundColor: AppTheme.background,
+      drawer: const GuruDrawer(currentRoute: '/guru/warning-letters'),
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppTheme.onBackground),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/guru/dashboard?tab=0');
-            }
-          },
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: AppTheme.onBackground),
+            onPressed: () {
+              Scaffold.of(ctx).openDrawer();
+            },
+          ),
         ),
         title: Text(
           'Surat Peringatan Saya',

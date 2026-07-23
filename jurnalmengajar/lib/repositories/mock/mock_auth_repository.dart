@@ -176,4 +176,9 @@ class MockAuthRepository implements AuthRepository {
       _db.currentUser = null;
     }
   }
+
+  @override
+  Future<void> updateFcmToken(String userId, String token) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+  }
 }
