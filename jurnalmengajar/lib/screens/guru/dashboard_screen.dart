@@ -1196,7 +1196,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           else ...[
             Builder(
               builder: (context) {
-                final list = journals.length > 5 ? journals.sublist(0, 5) : journals;
+                final list = journals.length > 5
+                    ? journals.sublist(0, 5)
+                    : journals;
                 return Column(
                   children: List.generate(list.length, (index) {
                     final journal = list[index];
@@ -1236,8 +1238,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                             color: const Color(0xFFEF4444),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: const Color(0xFFEF4444)
-                                                    .withValues(alpha: 0.45),
+                                                color: const Color(
+                                                  0xFFEF4444,
+                                                ).withValues(alpha: 0.45),
                                                 blurRadius: 10,
                                                 spreadRadius: 2,
                                               ),
@@ -1267,10 +1270,18 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                           // Card Entry Column
                           Expanded(
                             child: Padding(
-                              padding: EdgeInsets.only(bottom: isLast ? 0 : 14.h),
+                              padding: EdgeInsets.only(
+                                bottom: isLast ? 0 : 14.h,
+                              ),
                               child: index == 0
-                                  ? _buildLatestTimelineCard(journal, masterProvider)
-                                  : _buildHistoryTimelineCard(journal, masterProvider),
+                                  ? _buildLatestTimelineCard(
+                                      journal,
+                                      masterProvider,
+                                    )
+                                  : _buildHistoryTimelineCard(
+                                      journal,
+                                      masterProvider,
+                                    ),
                             ),
                           ),
                         ],
@@ -1287,7 +1298,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   }
 
   // ─── Latest Timeline Card (Prominent & Detailed) ─────────────────────────
-  Widget _buildLatestTimelineCard(JournalModel journal, MasterDataProvider master) {
+  Widget _buildLatestTimelineCard(
+    JournalModel journal,
+    MasterDataProvider master,
+  ) {
     final cls = master.classes.firstWhere(
       (c) => c.id == journal.classId,
       orElse: () =>
@@ -1311,7 +1325,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           s.classId == journal.classId &&
           s.subjectId == journal.subjectId;
     }).toList();
-    final hoursList = groupSchedules.map((s) => s.teachingHour).toList()..sort();
+    final hoursList = groupSchedules.map((s) => s.teachingHour).toList()
+      ..sort();
     final hoursStr = hoursList.isNotEmpty
         ? AppHelper.formatTeachingHours(hoursList)
         : '${journal.teachingHour}';
@@ -1383,11 +1398,23 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                           ),
                           Row(
                             children: [
-                              _buildAttendancePill('S', journal.sickCount, const Color(0xFFF59E0B)),
+                              _buildAttendancePill(
+                                'S',
+                                journal.sickCount,
+                                const Color(0xFFF59E0B),
+                              ),
                               SizedBox(width: 5.w),
-                              _buildAttendancePill('I', journal.permissionCount, const Color(0xFF3B82F6)),
+                              _buildAttendancePill(
+                                'I',
+                                journal.permissionCount,
+                                const Color(0xFF3B82F6),
+                              ),
                               SizedBox(width: 5.w),
-                              _buildAttendancePill('A', journal.alphaCount, const Color(0xFFEF4444)),
+                              _buildAttendancePill(
+                                'A',
+                                journal.alphaCount,
+                                const Color(0xFFEF4444),
+                              ),
                             ],
                           ),
                         ],
@@ -1456,7 +1483,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   }
 
   // ─── History Timeline Card (Compact & Streamlined) ────────────────────────
-  Widget _buildHistoryTimelineCard(JournalModel journal, MasterDataProvider master) {
+  Widget _buildHistoryTimelineCard(
+    JournalModel journal,
+    MasterDataProvider master,
+  ) {
     final cls = master.classes.firstWhere(
       (c) => c.id == journal.classId,
       orElse: () =>
@@ -1544,10 +1574,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(
-          color: color.withValues(alpha: 0.15),
-          width: 0.5,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.15), width: 0.5),
       ),
       child: Text(
         '$label:$count',

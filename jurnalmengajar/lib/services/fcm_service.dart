@@ -57,34 +57,42 @@ class FcmService {
 
     // 3. Initialize Local Notifications for Foreground Display
     const initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/launcher_icon');
     const initializationSettingsIOS = DarwinInitializationSettings();
     const initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
     );
 
-    await _localNotifications.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        if (response.payload != null && response.payload!.isNotEmpty) {
-          try {
-            final data = jsonDecode(response.payload!);
-            if (data is Map && data.containsKey('route') && onNavigate != null) {
-              onNavigate(data['route']);
+    try {
+      await _localNotifications.initialize(
+        initializationSettings,
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+          if (response.payload != null && response.payload!.isNotEmpty) {
+            try {
+              final data = jsonDecode(response.payload!);
+              if (data is Map && data.containsKey('route') && onNavigate != null) {
+                onNavigate(data['route']);
+              }
+            } catch (e) {
+              if (kDebugMode) print('Error parsing notification payload: $e');
             }
-          } catch (e) {
-            if (kDebugMode) print('Error parsing notification payload: $e');
           }
-        }
-      },
-    );
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) print('Error initializing local notifications: $e');
+    }
 
     // Create Android Notification Channel
-    await _localNotifications
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(_channel);
+    try {
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(_channel);
+    } catch (e) {
+      if (kDebugMode) print('Error creating notification channel: $e');
+    }
 
     // 4. Set Foreground Presentation Options for iOS
     await _fcm.setForegroundNotificationPresentationOptions(
@@ -155,31 +163,36 @@ class FcmService {
 
   /// Show Local Heads-Up Notification when app is in Foreground
   void _showForegroundNotification(RemoteMessage message) {
-    final notification = message.notification;
-    final android = message.notification?.android;
+    try {
+      final notification = message.notification;
 
-    if (notification != null) {
-      _localNotifications.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            _channel.id,
-            _channel.name,
-            channelDescription: _channel.description,
-            icon: android?.smallIcon ?? '@mipmap/ic_launcher',
-            importance: Importance.max,
-            priority: Priority.high,
+      if (notification != null) {
+        _localNotifications.show(
+          notification.hashCode,
+          notification.title,
+          notification.body,
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              _channel.id,
+              _channel.name,
+              channelDescription: _channel.description,
+              icon: '@mipmap/launcher_icon',
+              importance: Importance.max,
+              priority: Priority.high,
+            ),
+            iOS: const DarwinNotificationDetails(
+              presentAlert: true,
+              presentBadge: true,
+              presentSound: true,
+            ),
           ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
-        payload: jsonEncode(message.data),
-      );
+          payload: jsonEncode(message.data),
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error displaying foreground notification: $e');
+      }
     }
   }
 }

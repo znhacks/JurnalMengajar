@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/journal_provider.dart';
@@ -12,10 +13,12 @@ import '../../models/journal_model.dart';
 import '../../models/journal_attachment_model.dart';
 import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
+import '../../models/student_model.dart';
 import '../../models/hour_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/helper.dart';
+import '../../services/nobox_wa_service.dart';
 
 class FormJurnalScreen extends StatefulWidget {
   final String scheduleId;
@@ -433,6 +436,39 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         );
 
         if (success && mounted) {
+          final cls = masterProvider.classes.firstWhere(
+            (c) => c.id == schedule.classId,
+            orElse: () => ClassModel(id: '', name: 'Kelas', periodId: '', studentCount: 0),
+          );
+          final subject = masterProvider.subjects.firstWhere(
+            (s) => s.id == schedule.subjectId,
+            orElse: () => SubjectModel(id: '', name: 'Mata Pelajaran', isActive: true),
+          );
+
+          // Automatically send Nobox AI WhatsApp Daily Report via Nobox WA Gateway
+          final currentUser = context.read<AuthProvider>().currentUser;
+          final teacherName = currentUser?.fullName ?? 'Ordi Kurniawan';
+          final schoolName = currentUser?.position != null && currentUser!.position!.isNotEmpty
+              ? currentUser.position!
+              : 'SMKN 11 Malang';
+
+          final journalItems = [
+            {
+              'hour': '${updatedJournal.teachingHour}',
+              'class': cls.name,
+              'subject': subject.name,
+              'material': _materialController.text.trim(),
+            }
+          ];
+
+          NoboxWaService.sendDailyJournalReport(
+            teacherName: teacherName,
+            schoolName: schoolName,
+            date: updatedJournal.date,
+            journalItems: journalItems,
+            parentPhone: '082230090067',
+          );
+
           if (journalProvider.errorMessage != null) {
             AppHelper.showSnackBar(
               context,
@@ -475,6 +511,62 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         );
 
         if (success && mounted) {
+          final cls = masterProvider.classes.firstWhere(
+            (c) => c.id == schedule.classId,
+            orElse: () => ClassModel(id: '', name: 'Kelas', periodId: '', studentCount: 0),
+          );
+          final subject = masterProvider.subjects.firstWhere(
+            (s) => s.id == schedule.subjectId,
+            orElse: () => SubjectModel(id: '', name: 'Mata Pelajaran', isActive: true),
+          );
+
+          // Automatically send Nobox AI WhatsApp Daily Report via Nobox WA Gateway
+          final currentUser = context.read<AuthProvider>().currentUser;
+          final teacherName = currentUser?.fullName ?? 'Ordi Kurniawan';
+          final schoolName = currentUser?.position != null && currentUser!.position!.isNotEmpty
+              ? currentUser.position!
+              : 'SMKN 11 Malang';
+
+          final journalItems = [
+            {
+              'hour': '${newJournal.teachingHour}',
+              'class': cls.name,
+              'subject': subject.name,
+              'material': _materialController.text.trim(),
+            }
+          ];
+
+          NoboxWaService.sendDailyJournalReport(
+            teacherName: teacherName,
+            schoolName: schoolName,
+            date: newJournal.date,
+            journalItems: journalItems,
+            parentPhone: '082230090067',
+          );
+
+          // Trigger Nobox AI WhatsApp notifications for absent/sick/permission students
+          _studentAttendance.forEach((studentId, status) {
+            if (status == 'S' || status == 'I' || status == 'A') {
+              final student = masterProvider.students.firstWhere(
+                (s) => s.id == studentId,
+                orElse: () => StudentModel(
+                  id: '',
+                  classId: '',
+                  name: 'Siswa',
+                  parentPhoneNumber: '082230090067',
+                ),
+              );
+              NoboxWaService.sendAbsenceNotification(
+                student: student,
+                statusType: status,
+                classModel: cls,
+                subjectModel: subject,
+                date: newJournal.date,
+                note: _materialController.text.trim(),
+              );
+            }
+          });
+
           if (journalProvider.errorMessage != null) {
             AppHelper.showSnackBar(
               context,

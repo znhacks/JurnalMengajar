@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // Firebase Admin Service Account details (can be set via Deno environment secrets or fallback)
 const SERVICE_ACCOUNT = JSON.parse(
   Deno.env.get("FCM_SERVICE_ACCOUNT") ||
-    `{
+  `{
   "type": "service_account",
   "project_id": "jurnal-mengajar-ebcc6",
   "private_key_id": "582ecb638a12d9a2d5784b43894e070fba37a6c8",
@@ -142,25 +142,18 @@ serve(async (req) => {
     if (table === "journals") {
       if (type === "UPDATE" && record.status !== old_record?.status) {
         targetUserId = record.teacher_id;
-        const isVerified = record.status === "approved" || record.status === "verified";
-        const isRejected = record.status === "rejected";
+        const statusLabel =
+          record.status === "approved" || record.status === "verified"
+            ? "telah Terverifikasi ✅"
+            : record.status === "rejected"
+              ? "Ditolak ❌"
+              : record.status;
 
-        if (isVerified) {
-          title = "Jurnal Terverifikasi ✅";
-          body = `Selamat! Jurnal mengajar Anda pada tanggal ${record.date || ''} telah disetujui/terverifikasi.`;
-        } else if (isRejected) {
-          title = "Jurnal Ditolak ❌";
-          const reason = record.rejection_note ? ` Catatan: "${record.rejection_note}"` : "";
-          body = `Jurnal mengajar Anda pada tanggal ${record.date || ''} ditolak.${reason}`;
-        } else {
-          title = "Status Jurnal Diperbarui 📝";
-          body = `Status jurnal mengajar Anda pada tanggal ${record.date || ''} diubah menjadi ${record.status}.`;
-        }
-
+        title = "Status Jurnal Diperbarui";
+        body = `Jurnal Anda pada tanggal ${record.date} ${statusLabel}.`;
         notificationData = {
-          route: `/guru/dashboard`,
+          route: `/guru/journal/${record.id}`,
           journalId: record.id,
-          status: record.status,
         };
       } else if (type === "INSERT") {
         // Find admin users to notify about new journal submission
