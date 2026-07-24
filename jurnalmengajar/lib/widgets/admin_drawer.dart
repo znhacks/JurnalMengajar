@@ -176,10 +176,9 @@ class AdminDrawer extends StatelessWidget {
                 ),
               ),
               onTap: () {
-                Navigator.pop(context); // Close Drawer
                 showDialog(
                   context: context,
-                  builder: (context) => AlertDialog(
+                  builder: (dialogCtx) => AlertDialog(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16.r),
                     ),
@@ -197,7 +196,7 @@ class AdminDrawer extends StatelessWidget {
                     ),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () => Navigator.pop(dialogCtx),
                         child: Text(
                           'Batal',
                           style: GoogleFonts.hankenGrotesk(
@@ -206,9 +205,13 @@ class AdminDrawer extends StatelessWidget {
                         ),
                       ),
                       TextButton(
-                        onPressed: () {
+                        onPressed: () async {
+                          Navigator.pop(dialogCtx);
                           Navigator.pop(context);
-                          authProvider.logout();
+                          await authProvider.logout();
+                          if (context.mounted) {
+                            context.go('/login');
+                          }
                         },
                         child: Text(
                           'Logout',

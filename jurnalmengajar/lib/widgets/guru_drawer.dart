@@ -260,6 +260,76 @@ class GuruDrawer extends StatelessWidget {
               ],
             ),
           ),
+
+          // Drawer Footer (Logout)
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+            child: _buildDrawerItem(
+              icon: Icons.logout_rounded,
+              label: 'Keluar / Logout',
+              isSelected: false,
+              isDestructive: true,
+              onTap: () {
+                _showLogoutDialog(context);
+              },
+            ),
+          ),
+          SizedBox(height: 6.h),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        title: Text(
+          'Konfirmasi Logout',
+          style: GoogleFonts.hankenGrotesk(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin keluar dari aplikasi?',
+          style: GoogleFonts.hankenGrotesk(
+            color: const Color(0xFF475569),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: Text(
+              'Batal',
+              style: GoogleFonts.hankenGrotesk(
+                color: const Color(0xFF64748B),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogCtx); // Close Dialog
+              Navigator.pop(context);   // Close Drawer
+              await authProvider.logout();
+              if (context.mounted) {
+                context.go('/login');
+              }
+            },
+            child: Text(
+              'Logout',
+              style: GoogleFonts.hankenGrotesk(
+                color: const Color(0xFFEF4444),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
         ],
       ),
     );

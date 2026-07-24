@@ -59,6 +59,9 @@ class AuthProvider with ChangeNotifier {
         }
       } else {
         _currentUser = user;
+        if (user != null) {
+          FcmService().syncToken(this);
+        }
       }
     } catch (e) {
       _errorMessage = _cleanErrorMessage(e);

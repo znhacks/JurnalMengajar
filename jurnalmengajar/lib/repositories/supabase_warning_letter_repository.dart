@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/warning_letter_model.dart';
 import 'warning_letter_repository.dart';
@@ -44,6 +45,17 @@ class SupabaseWarningLetterRepository implements WarningLetterRepository {
   Future<void> create(WarningLetterModel model) async {
     try {
       await _supabase.from('warning_letters').insert(model.toJson());
+
+      // Trigger push notification to teacher via Edge Function
+      try {
+        await _supabase.functions.invoke('send-fcm-notification', body: {
+          'table': 'warning_letters',
+          'type': 'INSERT',
+          'record': model.toJson(),
+        });
+      } catch (fcmErr) {
+        debugPrint('FCM Warning Letter notification log: $fcmErr');
+      }
     } catch (e) {
       // Ignore duplicate warnings or constraints
       if (e.toString().contains('duplicate key value') || e.toString().contains('23505')) {

@@ -8,7 +8,7 @@ const NOBOX_ACCOUNT_ID = Deno.env.get("NOBOX_ACCOUNT_ID") || "829936240919301";
 const NOBOX_CHANNEL_ID = Deno.env.get("NOBOX_CHANNEL_ID") || "1";
 
 // Default test phone number if student parent phone is not explicitly set
-const DEFAULT_PARENT_PHONE = "082230090067";
+const DEFAULT_PARENT_PHONE = "6282230090067";
 
 serve(async (req) => {
   try {
@@ -21,10 +21,16 @@ serve(async (req) => {
 
     const { student_name, student_id, status_type, date, subject_name, class_name, parent_phone, note } = payload;
 
-    // ExtId is the recipient phone number (e.g. 082230090067)
+    // ExtId is the recipient phone number (e.g. 6282230090067)
     let rawPhone = parent_phone ? String(parent_phone).trim() : "";
     if (!rawPhone || rawPhone === "" || rawPhone === "null" || rawPhone === "undefined") {
       rawPhone = DEFAULT_PARENT_PHONE;
+    }
+
+    // Format phone number to international format (e.g. 0822... -> 62822...)
+    let cleanPhone = rawPhone.replace(/\D/g, "");
+    if (cleanPhone.startsWith("0")) {
+      cleanPhone = "62" + cleanPhone.slice(1);
     }
 
     // Determine message content (use custom_message if provided, else format exact absence template)
@@ -57,7 +63,7 @@ _Auto-Notifier powered by Nobox AI_`;
 
     // Prepare exact Postman body structure for Nobox API
     const noboxPayload = {
-      ExtId: rawPhone,
+      ExtId: cleanPhone,
       ChannelId: NOBOX_CHANNEL_ID,
       AccountIds: NOBOX_ACCOUNT_ID,
       BodyType: "Text",

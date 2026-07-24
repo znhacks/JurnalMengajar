@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../providers/auth_provider.dart';
 
@@ -152,8 +153,13 @@ class FcmService {
         debugPrint(token);
         debugPrint('================================================');
 
-        if (authProvider != null && authProvider.isAuthenticated) {
-          await authProvider.updateFcmToken(token);
+        final userId = authProvider?.currentUser?.id ?? Supabase.instance.client.auth.currentUser?.id;
+        if (userId != null && userId.isNotEmpty) {
+          await Supabase.instance.client
+              .from('users')
+              .update({'fcm_token': token})
+              .eq('id', userId);
+          debugPrint('✅ FCM Token successfully synced to Supabase users table for user: $userId');
         }
       }
     } catch (e) {

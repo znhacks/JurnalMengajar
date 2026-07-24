@@ -21,7 +21,7 @@ class NoboxWaService {
     try {
       String parentPhone = (student.parentPhoneNumber != null && student.parentPhoneNumber!.trim().isNotEmpty)
           ? student.parentPhoneNumber!.trim()
-          : '082230090067';
+          : '6282230090067';
 
       final payload = {
         'student_id': student.id,
@@ -60,7 +60,7 @@ class NoboxWaService {
     required String schoolName,
     required DateTime date,
     required List<Map<String, String>> journalItems,
-    String parentPhone = '082230090067',
+    String parentPhone = '6282230090067',
   }) async {
     try {
       const months = [

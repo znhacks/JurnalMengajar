@@ -69,12 +69,6 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
     });
   }
 
-  Future<void> _handleLogout() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.logout();
-    // Router redirection handles steering to login
-  }
-
   Future<void> _handleDeleteAccount(UserModel user) async {
     final confirmed1 = await showDialog<bool>(
       context: context,
@@ -707,41 +701,6 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                 ),
               )
             : null,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.red),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16.r),
-                  ),
-                  title: const Text('Konfirmasi Logout'),
-                  content: const Text(
-                    'Apakah Anda yakin ingin keluar dari aplikasi?',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Batal'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _handleLogout();
-                      },
-                      child: const Text(
-                        'Logout',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(

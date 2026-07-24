@@ -207,14 +207,34 @@ serve(async (req) => {
     // Retrieve FCM Token if targetUserId is available
     let fcmToken = payload.fcm_token;
     if (!fcmToken && targetUserId) {
+      // 1. Try finding directly in users table by user ID
       const { data: user } = await supabase
         .from("users")
         .select("fcm_token")
         .eq("id", targetUserId)
-        .single();
+        .maybeSingle();
 
-      if (user) {
+      if (user && user.fcm_token) {
         fcmToken = user.fcm_token;
+      } else {
+        // 2. If targetUserId was a teacher record ID, lookup teacher email first, then find user by email
+        const { data: teacher } = await supabase
+          .from("teachers")
+          .select("email")
+          .eq("id", targetUserId)
+          .maybeSingle();
+
+        if (teacher && teacher.email) {
+          const { data: userByEmail } = await supabase
+            .from("users")
+            .select("fcm_token")
+            .eq("email", teacher.email)
+            .maybeSingle();
+
+          if (userByEmail && userByEmail.fcm_token) {
+            fcmToken = userByEmail.fcm_token;
+          }
+        }
       }
     }
 

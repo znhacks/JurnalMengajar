@@ -86,6 +86,17 @@ class SupabaseJournalRepository implements JournalRepository {
       await _supabase
           .from(SupabaseConstants.tableJournals)
           .insert(payload);
+
+      // Trigger push notification to admin users via Edge Function
+      try {
+        await _supabase.functions.invoke('send-fcm-notification', body: {
+          'table': 'journals',
+          'type': 'INSERT',
+          'record': payload,
+        });
+      } catch (fcmErr) {
+        debugPrint('FCM Notification to admin log: $fcmErr');
+      }
     } catch (e) {
       throw Exception('Gagal membuat jurnal: $e');
     }
@@ -152,13 +163,50 @@ class SupabaseJournalRepository implements JournalRepository {
       };
       if (status == 'rejected' && rejectionNote != null) {
         payload['rejection_note'] = rejectionNote;
-      } else if (status == 'approved') {
+      } else if (status == 'approved' || status == 'verified') {
         payload['rejection_note'] = null;
       }
       await _supabase
           .from(SupabaseConstants.tableJournals)
           .update(payload)
           .eq(SupabaseConstants.fieldId, journalId);
+
+      // Trigger FCM Push Notification to teacher
+      try {
+        final journalRes = await _supabase
+            .from(SupabaseConstants.tableJournals)
+            .select('id, date, teacher_id')
+            .eq('id', journalId)
+            .maybeSingle();
+
+        if (journalRes != null) {
+          final teacherId = journalRes['teacher_id'] as String?;
+          final journalDate = journalRes['date'] as String? ?? '';
+          final isApproved = status == 'approved' || status == 'verified';
+
+          if (teacherId != null && teacherId.isNotEmpty) {
+            final title = isApproved ? 'Jurnal Disetujui ✅' : 'Jurnal Ditolak ❌';
+            final body = isApproved
+                ? 'Jurnal Anda tanggal $journalDate telah diverifikasi dan disetujui.'
+                : 'Jurnal Anda tanggal $journalDate ditolak.${rejectionNote != null && rejectionNote.isNotEmpty ? " Catatan: $rejectionNote" : ""}';
+
+            await _supabase.functions.invoke(
+              'send-fcm-notification',
+              body: {
+                'user_id': teacherId,
+                'title': title,
+                'body': body,
+                'data': {
+                  'route': '/guru/journal/$journalId',
+                  'journalId': journalId,
+                },
+              },
+            );
+          }
+        }
+      } catch (fcmErr) {
+        debugPrint('FCM status update notification log: $fcmErr');
+      }
     } catch (e) {
       throw Exception('Gagal memperbarui status jurnal: $e');
     }
