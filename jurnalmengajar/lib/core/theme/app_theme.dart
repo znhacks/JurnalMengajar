@@ -2,44 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // ─── Stitch "Serene Academic" Design Tokens ───────────────────────────────
-  static const Color primaryColor = Color(0xFF1E40AF); // Premium Royal Blue
-  static const Color primaryAccent = Color(0xFF2563EB); // Vibrant Blue Accent
-  static const Color secondaryColor = Color(0xFF4F607A); // Slate Blue
-  static const Color tertiaryColor = Color(0xFFB45309); // Amber/Warning
-  static const Color errorColor = Color(0xFFBA1A1A);
+  // ─── Modern Clean Academic Design System ───────────────────────────────
+  static const Color primaryColor = Color(0xFF2563EB); // Vibrant Solid Blue
+  static const Color primaryAccent = Color(0xFF3B82F6); // Bright Blue Accent
+  static const Color secondaryColor = Color(0xFF475569); // Slate Gray
+  static const Color tertiaryColor = Color(0xFFD97706); // Amber/Warning
+  static const Color errorColor = Color(0xFFE11D48); // Rose Red
 
   // Surfaces
-  static const Color background = Color(0xFFF7F9FB);
-  static const Color surfaceColor = Color(0xFFFFFFFF);
-  static const Color surfaceContainer = Color(0xFFECEEF0);
-  static const Color surfaceContainerLow = Color(0xFFF2F4F6);
+  static const Color background = Color(0xFFF8FAFC); // Clean Light Slate BG
+  static const Color surfaceColor = Color(0xFFFFFFFF); // Solid White
+  static const Color surfaceContainer = Color(0xFFF1F5F9);
+  static const Color surfaceContainerLow = Color(0xFFF8FAFC);
 
   // On-colors
-  static const Color onBackground = Color(0xFF191C1E);
-  static const Color onSurface = Color(0xFF191C1E);
-  static const Color onSurfaceVariant = Color(0xFF43474E);
-  static const Color outline = Color(0xFF72777F);
-  static const Color outlineVariant = Color(0xFFC2C7D0);
+  static const Color onBackground = Color(0xFF0F172A);
+  static const Color onSurface = Color(0xFF0F172A);
+  static const Color onSurfaceVariant = Color(0xFF64748B);
+  static const Color outline = Color(0xFF94A3B8);
+  static const Color outlineVariant = Color(0xFFE2E8F0);
 
   // Tonal surface for primary
-  static const Color primaryContainer = Color(0xFFDBE2FF);
-  static const Color onPrimaryContainer = Color(0xFF00154B);
+  static const Color primaryContainer = Color(0xFFEFF6FF);
+  static const Color onPrimaryContainer = Color(0xFF1E40AF);
 
   static ThemeData get lightTheme {
     final textTheme = GoogleFonts.hankenGroteskTextTheme().copyWith(
       displayLarge: GoogleFonts.hankenGrotesk(
           fontSize: 28, fontWeight: FontWeight.w800, color: onBackground),
       headlineMedium: GoogleFonts.hankenGrotesk(
-          fontSize: 18, fontWeight: FontWeight.w700, color: onBackground),
+          fontSize: 18, fontWeight: FontWeight.w800, color: onBackground),
       headlineSmall: GoogleFonts.hankenGrotesk(
           fontSize: 16, fontWeight: FontWeight.w700, color: onBackground),
       titleMedium: GoogleFonts.hankenGrotesk(
-          fontSize: 14, fontWeight: FontWeight.w600, color: onBackground),
+          fontSize: 14, fontWeight: FontWeight.w700, color: onBackground),
       bodyLarge: GoogleFonts.hankenGrotesk(
-          fontSize: 14, fontWeight: FontWeight.w400, color: onSurface),
+          fontSize: 14, fontWeight: FontWeight.w500, color: onSurface),
       bodyMedium: GoogleFonts.hankenGrotesk(
-          fontSize: 13, fontWeight: FontWeight.w400, color: onSurfaceVariant),
+          fontSize: 13, fontWeight: FontWeight.w500, color: onSurfaceVariant),
       labelSmall: GoogleFonts.hankenGrotesk(
           fontSize: 11,
           fontWeight: FontWeight.w700,
@@ -57,46 +57,46 @@ class AppTheme {
         onPrimaryContainer: onPrimaryContainer,
         secondary: secondaryColor,
         onSecondary: Colors.white,
-        secondaryContainer: const Color(0xFFDAE2FD),
-        onSecondaryContainer: const Color(0xFF5C647A),
+        secondaryContainer: const Color(0xFFF1F5F9),
+        onSecondaryContainer: const Color(0xFF475569),
         tertiary: tertiaryColor,
         onTertiary: Colors.white,
-        tertiaryContainer: const Color(0xFFA36700),
-        onTertiaryContainer: const Color(0xFFFFFBFF),
+        tertiaryContainer: const Color(0xFFFEF3C7),
+        onTertiaryContainer: const Color(0xFFB45309),
         error: errorColor,
         onError: Colors.white,
-        errorContainer: const Color(0xFFFFDAD6),
-        onErrorContainer: const Color(0xFF93000A),
+        errorContainer: const Color(0xFFFFE4E6),
+        onErrorContainer: const Color(0xFFE11D48),
         surface: surfaceColor,
         onSurface: onSurface,
-        surfaceContainerHighest: const Color(0xFFE0E3E5),
+        surfaceContainerHighest: const Color(0xFFF1F5F9),
         onSurfaceVariant: onSurfaceVariant,
         outline: outline,
         outlineVariant: outlineVariant,
-        inverseSurface: const Color(0xFF2D3133),
-        onInverseSurface: const Color(0xFFEFF1F3),
-        inversePrimary: const Color(0xFFBAC3FF),
+        inverseSurface: const Color(0xFF0F172A),
+        onInverseSurface: const Color(0xFFF8FAFC),
+        inversePrimary: const Color(0xFF93C5FD),
         shadow: Colors.black,
         scrim: Colors.black,
-        surfaceTint: const Color(0xFF1E40AF),
+        surfaceTint: const Color(0xFF2563EB),
       ),
       scaffoldBackgroundColor: background,
       textTheme: textTheme,
 
       // ─── AppBar ───────────────────────────────────────────────────────────
       appBarTheme: AppBarTheme(
-        backgroundColor: const Color(0xFF0F172A),
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF0F172A),
         elevation: 0,
-        scrolledUnderElevation: 1,
+        scrolledUnderElevation: 0,
         shadowColor: Colors.transparent,
         centerTitle: true,
         titleTextStyle: GoogleFonts.hankenGrotesk(
-          color: Colors.white,
-          fontSize: 17,
-          fontWeight: FontWeight.w700,
+          color: const Color(0xFF0F172A),
+          fontSize: 16,
+          fontWeight: FontWeight.w800,
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
       ),
 
       // ─── Cards ────────────────────────────────────────────────────────────

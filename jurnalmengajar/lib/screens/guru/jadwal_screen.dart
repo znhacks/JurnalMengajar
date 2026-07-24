@@ -98,31 +98,28 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     final hasSchedule = _hasTeacherScheduleOnDay(schedules, day);
 
     Color bgColor = Colors.transparent;
-    Color textColor = isOutside ? AppTheme.outline : AppTheme.onBackground;
-    FontWeight fontWeight = FontWeight.w500;
+    Color textColor = isOutside ? const Color(0xFFCBD5E1) : const Color(0xFF334155);
+    FontWeight fontWeight = FontWeight.w600;
 
     if (isSelected) {
-      bgColor = AppTheme.primaryColor;
+      bgColor = const Color(0xFF2563EB); // Solid Blue accent
       textColor = Colors.white;
-      fontWeight = FontWeight.w700;
+      fontWeight = FontWeight.w800;
     } else if (hasSchedule) {
-      bgColor = const Color(0xFFFFEB3B).withValues(alpha: 0.35);
-      textColor = isOutside ? AppTheme.outline : AppTheme.onBackground;
+      bgColor = const Color(0xFFEFF6FF);
+      textColor = const Color(0xFF1D4ED8);
       fontWeight = FontWeight.w700;
     } else if (isToday) {
-      bgColor = AppTheme.primaryColor.withValues(alpha: 0.15);
-      textColor = AppTheme.primaryColor;
-      fontWeight = FontWeight.w700;
+      bgColor = const Color(0xFFF1F5F9);
+      textColor = const Color(0xFF2563EB);
+      fontWeight = FontWeight.w800;
     }
 
     return Container(
-      margin: const EdgeInsets.all(3),
+      margin: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,
-        border: hasSchedule && !isSelected
-            ? Border.all(color: const Color(0xFFF59E0B), width: 1.5)
-            : null,
       ),
       alignment: Alignment.center,
       child: Text(
@@ -140,85 +137,47 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     ScheduleProvider scheduleProvider,
     TeacherModel teacher,
   ) {
-    final startOfWeek = DateTime.utc(
-      _focusedDay.year,
-      _focusedDay.month,
-      _focusedDay.day,
-    ).subtract(Duration(days: _focusedDay.weekday - 1));
-
-    final endOfWeek = DateTime.utc(
-      startOfWeek.year,
-      startOfWeek.month,
-      startOfWeek.day,
-      23,
-      59,
-      59,
-    ).add(const Duration(days: 6));
-
-    final hasHighlightBefore = scheduleProvider.cachedTeacherSchedules.any((s) {
-      if (!s.isActive) return false;
-      final sDate = DateTime.utc(s.date.year, s.date.month, s.date.day);
-      return sDate.isBefore(startOfWeek);
-    });
-
-    final hasHighlightAfter = scheduleProvider.cachedTeacherSchedules.any((s) {
-      if (!s.isActive) return false;
-      final sDate = DateTime.utc(s.date.year, s.date.month, s.date.day);
-      return sDate.isAfter(endOfWeek);
-    });
-
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.outlineVariant),
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.chevron_left,
-                        color: AppTheme.onSurfaceVariant,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _focusedDay = _focusedDay.subtract(
-                            const Duration(days: 7),
-                          );
-                        });
-                      },
-                    ),
-                    if (hasHighlightBefore)
-                      Positioned(
-                        left: 8.w,
-                        top: 8.h,
-                        child: Container(
-                          width: 8.w,
-                          height: 8.w,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF59E0B),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 1),
-                          ),
-                        ),
-                      ),
-                  ],
+                IconButton(
+                  icon: const Icon(
+                    Icons.chevron_left_rounded,
+                    color: Color(0xFF64748B),
+                    size: 22,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _focusedDay = _focusedDay.subtract(
+                        const Duration(days: 7),
+                      );
+                    });
+                  },
                 ),
                 TextButton.icon(
                   onPressed: () => _showFullCalendarDialog(context, scheduleProvider, teacher),
                   icon: const Icon(
-                    Icons.calendar_month,
-                    color: AppTheme.primaryColor,
+                    Icons.calendar_month_rounded,
+                    color: Color(0xFF2563EB),
                     size: 18,
                   ),
                   label: Row(
@@ -228,46 +187,28 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                         DateFormat('MMMM yyyy', 'id_ID').format(_focusedDay),
                         style: GoogleFonts.hankenGrotesk(
                           fontSize: 15.sp,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.onBackground,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF0F172A),
                         ),
                       ),
                       const Icon(
-                        Icons.arrow_drop_down,
-                        color: AppTheme.onSurfaceVariant,
+                        Icons.arrow_drop_down_rounded,
+                        color: Color(0xFF64748B),
                       ),
                     ],
                   ),
                 ),
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.chevron_right,
-                        color: AppTheme.onSurfaceVariant,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _focusedDay = _focusedDay.add(const Duration(days: 7));
-                        });
-                      },
-                    ),
-                    if (hasHighlightAfter)
-                      Positioned(
-                        right: 8.w,
-                        top: 8.h,
-                        child: Container(
-                          width: 8.w,
-                          height: 8.w,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF59E0B),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 1),
-                          ),
-                        ),
-                      ),
-                  ],
+                IconButton(
+                  icon: const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Color(0xFF64748B),
+                    size: 22,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _focusedDay = _focusedDay.add(const Duration(days: 7));
+                    });
+                  },
                 ),
               ],
             ),
@@ -334,29 +275,29 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
             ),
             calendarStyle: CalendarStyle(
               selectedDecoration: const BoxDecoration(
-                color: AppTheme.primaryColor,
+                color: Color(0xFF2563EB),
                 shape: BoxShape.circle,
               ),
               selectedTextStyle: GoogleFonts.hankenGrotesk(
                 color: Colors.white,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
               ),
-              todayDecoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.15),
+              todayDecoration: const BoxDecoration(
+                color: Color(0xFFF1F5F9),
                 shape: BoxShape.circle,
               ),
               todayTextStyle: GoogleFonts.hankenGrotesk(
-                color: AppTheme.primaryColor,
-                fontWeight: FontWeight.w700,
+                color: Color(0xFF2563EB),
+                fontWeight: FontWeight.w800,
               ),
               weekendTextStyle: GoogleFonts.hankenGrotesk(
-                color: const Color(0xFF825100),
+                color: const Color(0xFF64748B),
               ),
               defaultTextStyle: GoogleFonts.hankenGrotesk(
-                color: AppTheme.onBackground,
+                color: const Color(0xFF334155),
               ),
               outsideTextStyle: GoogleFonts.hankenGrotesk(
-                color: AppTheme.outline,
+                color: const Color(0xFFCBD5E1),
               ),
             ),
           ),
@@ -371,15 +312,11 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
             child: Row(
               children: [
                 Container(
-                  width: 12.w,
-                  height: 12.w,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFEB3B).withValues(alpha: 0.35),
+                  width: 10.w,
+                  height: 10.w,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF2563EB),
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: const Color(0xFFF59E0B),
-                      width: 1.5,
-                    ),
                   ),
                 ),
                 SizedBox(width: 6.w),
@@ -387,8 +324,8 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                   'Ada jadwal mengajar',
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 11.sp,
-                    color: AppTheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF64748B),
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
