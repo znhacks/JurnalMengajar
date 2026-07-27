@@ -56,7 +56,7 @@ class AboutAppScreen extends StatelessWidget {
               ),
               SizedBox(height: 6.h),
               Text(
-                'Versi 1.0.0',
+                'Versi 1.0.1',
                 style: TextStyle(fontSize: 13.sp, color: Colors.grey[500]),
               ),
               SizedBox(height: 24.h),
