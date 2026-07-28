@@ -1,3 +1,4 @@
+/// <reference path="../global.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -121,7 +122,7 @@ async function getAccessToken(): Promise<string> {
 }
 
 // Serve Supabase Edge Function
-serve(async (req) => {
+serve(async (req: Request) => {
   try {
     const payload = await req.json();
     console.log("Received Webhook Payload:", JSON.stringify(payload));

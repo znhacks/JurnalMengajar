@@ -1,3 +1,4 @@
+/// <reference path="../global.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -10,7 +11,7 @@ const NOBOX_CHANNEL_ID = Deno.env.get("NOBOX_CHANNEL_ID") || "1";
 // Default test phone number if student parent phone is not explicitly set
 const DEFAULT_PARENT_PHONE = "6282230090067";
 
-serve(async (req) => {
+serve(async (req: Request) => {
   try {
     const payload = await req.json();
     console.log("Received Nobox AI WA Trigger Payload:", JSON.stringify(payload));

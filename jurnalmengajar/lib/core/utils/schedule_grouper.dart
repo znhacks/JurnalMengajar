@@ -58,7 +58,7 @@ List<GroupedMasterSchedule> groupMasterSchedules(List<ScheduleModel> flatSchedul
   final Map<String, List<ScheduleModel>> groups = {};
   for (final s in flatSchedules) {
     final noteKey = (s.note == null || s.note!.trim().isEmpty) ? "" : s.note!.trim();
-    final key = '${s.classId}_${s.subjectId}_${s.teacherId}_${s.periodId}_${s.isActive}_$noteKey';
+    final key = '${s.classId}_${s.subjectId}_${s.teacherId}_${s.periodId}_${s.isActive}_${s.date.weekday}_$noteKey';
     groups.putIfAbsent(key, () => []).add(s);
   }
 
@@ -101,6 +101,10 @@ List<GroupedMasterSchedule> groupMasterSchedules(List<ScheduleModel> flatSchedul
   result.sort((a, b) {
     final classCompare = a.classId.compareTo(b.classId);
     if (classCompare != 0) return classCompare;
+    final dayA = a.weekdays.isNotEmpty ? a.weekdays.first : 0;
+    final dayB = b.weekdays.isNotEmpty ? b.weekdays.first : 0;
+    final dayCompare = dayA.compareTo(dayB);
+    if (dayCompare != 0) return dayCompare;
     final hourA = a.teachingHours.isNotEmpty ? a.teachingHours.first : 0;
     final hourB = b.teachingHours.isNotEmpty ? b.teachingHours.first : 0;
     final hourCompare = hourA.compareTo(hourB);
