@@ -68,7 +68,7 @@ class ImageCompressor {
       );
     }
 
-    // 3. Encode to WebP (lossless)
-    return img.encodeWebP(resizedImage);
+    // 3. Encode to JPG (quality 80)
+    return img.encodeJpg(resizedImage, quality: 80);
   }
 }

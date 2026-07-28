@@ -218,6 +218,17 @@ class GuruDrawer extends StatelessWidget {
 
                 _buildDrawerSectionHeader('FITUR LAINNYA'),
                 _buildDrawerItem(
+                  icon: Icons.picture_as_pdf_rounded,
+                  label: 'Download & Setor Jurnal',
+                  isSelected: currentRoute == '/guru/download-jurnal',
+                  onTap: () {
+                    Navigator.pop(context);
+                    if (currentRoute != '/guru/download-jurnal') {
+                      context.push('/guru/download-jurnal');
+                    }
+                  },
+                ),
+                _buildDrawerItem(
                   icon: Icons.bar_chart_rounded,
                   label: 'Statistik Mengajar',
                   isSelected: currentRoute == '/guru/statistics' || currentRoute == '/guru/statistik',

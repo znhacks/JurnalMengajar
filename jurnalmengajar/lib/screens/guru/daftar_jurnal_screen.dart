@@ -95,6 +95,13 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
           ),
         ),
         title: const Text('Riwayat Jurnal'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf_rounded),
+            tooltip: 'Download / Cetak Jurnal',
+            onPressed: () => context.push('/guru/download-jurnal'),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(48.h),
           child: Container(
