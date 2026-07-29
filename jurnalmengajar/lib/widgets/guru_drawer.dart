@@ -11,11 +11,7 @@ class GuruDrawer extends StatelessWidget {
   final String? currentRoute;
   final int? selectedIndex;
 
-  const GuruDrawer({
-    super.key,
-    this.currentRoute,
-    this.selectedIndex,
-  });
+  const GuruDrawer({super.key, this.currentRoute, this.selectedIndex});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +19,9 @@ class GuruDrawer extends StatelessWidget {
     final currentUser = authProvider.currentUser;
 
     final warningProvider = context.watch<WarningLetterProvider>();
-    final unreadWarnings = warningProvider.warningLetters.where((w) => w.status == 'unread').length;
+    final unreadWarnings = warningProvider.warningLetters
+        .where((w) => w.status == 'unread')
+        .length;
 
     final name = currentUser?.fullName ?? 'Guru Pengajar';
     final email = currentUser?.email ?? '';
@@ -33,13 +31,18 @@ class GuruDrawer extends StatelessWidget {
 
     int activeIndex = selectedIndex ?? -1;
     if (activeIndex == -1 && currentRoute != null) {
-      if (currentRoute == '/guru/dashboard' || currentRoute == '/guru/dashboard?tab=0') {
+      if (currentRoute == '/guru/dashboard' ||
+          currentRoute == '/guru/dashboard?tab=0') {
         activeIndex = 0;
-      } else if (currentRoute == '/guru/jadwal' || currentRoute == '/guru/dashboard?tab=1') {
+      } else if (currentRoute == '/guru/jadwal' ||
+          currentRoute == '/guru/dashboard?tab=1') {
         activeIndex = 1;
-      } else if (currentRoute == '/guru/jurnal' || currentRoute == '/guru/dashboard?tab=2') {
+      } else if (currentRoute == '/guru/jurnal' ||
+          currentRoute == '/guru/dashboard?tab=2') {
         activeIndex = 2;
-      } else if (currentRoute == '/guru/profil' || currentRoute == '/guru/profile' || currentRoute == '/guru/dashboard?tab=3') {
+      } else if (currentRoute == '/guru/profil' ||
+          currentRoute == '/guru/profile' ||
+          currentRoute == '/guru/dashboard?tab=3') {
         activeIndex = 3;
       }
     }
@@ -52,7 +55,12 @@ class GuruDrawer extends StatelessWidget {
           // Drawer Header
           Container(
             width: double.infinity,
-            padding: EdgeInsets.fromLTRB(20.w, MediaQuery.of(context).padding.top + 20.h, 20.w, 20.h),
+            padding: EdgeInsets.fromLTRB(
+              20.w,
+              MediaQuery.of(context).padding.top + 20.h,
+              20.w,
+              20.h,
+            ),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -90,9 +98,17 @@ class GuruDrawer extends StatelessWidget {
                                 photoUrl,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.person, color: Color(0xFF1E293B), size: 30),
+                                    const Icon(
+                                      Icons.person,
+                                      color: Color(0xFF1E293B),
+                                      size: 30,
+                                    ),
                               )
-                            : const Icon(Icons.person, color: Color(0xFF1E293B), size: 30),
+                            : const Icon(
+                                Icons.person,
+                                color: Color(0xFF1E293B),
+                                size: 30,
+                              ),
                       ),
                     ),
                     SizedBox(width: 14.w),
@@ -127,7 +143,10 @@ class GuruDrawer extends StatelessWidget {
                 ),
                 SizedBox(height: 14.h),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 4.h,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20.r),
@@ -135,7 +154,11 @@ class GuruDrawer extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.verified_user_rounded, color: Colors.white, size: 14.w),
+                      Icon(
+                        Icons.verified_user_rounded,
+                        color: Colors.white,
+                        size: 14.w,
+                      ),
                       SizedBox(width: 6.w),
                       Text(
                         'Guru Pengajar',
@@ -231,10 +254,13 @@ class GuruDrawer extends StatelessWidget {
                 _buildDrawerItem(
                   icon: Icons.bar_chart_rounded,
                   label: 'Statistik Mengajar',
-                  isSelected: currentRoute == '/guru/statistics' || currentRoute == '/guru/statistik',
+                  isSelected:
+                      currentRoute == '/guru/statistics' ||
+                      currentRoute == '/guru/statistik',
                   onTap: () {
                     Navigator.pop(context);
-                    if (currentRoute != '/guru/statistics' && currentRoute != '/guru/statistik') {
+                    if (currentRoute != '/guru/statistics' &&
+                        currentRoute != '/guru/statistik') {
                       context.push('/guru/statistics');
                     }
                   },
@@ -278,7 +304,7 @@ class GuruDrawer extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
             child: _buildDrawerItem(
               icon: Icons.logout_rounded,
-              label: 'Keluar / Logout',
+              label: 'Keluar',
               isSelected: false,
               isDestructive: true,
               onTap: () {
@@ -303,15 +329,11 @@ class GuruDrawer extends StatelessWidget {
         ),
         title: Text(
           'Konfirmasi Logout',
-          style: GoogleFonts.hankenGrotesk(
-            fontWeight: FontWeight.w700,
-          ),
+          style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w700),
         ),
         content: Text(
           'Apakah Anda yakin ingin keluar dari aplikasi?',
-          style: GoogleFonts.hankenGrotesk(
-            color: const Color(0xFF475569),
-          ),
+          style: GoogleFonts.hankenGrotesk(color: const Color(0xFF475569)),
         ),
         actions: [
           TextButton(
@@ -327,7 +349,7 @@ class GuruDrawer extends StatelessWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(dialogCtx); // Close Dialog
-              Navigator.pop(context);   // Close Drawer
+              Navigator.pop(context); // Close Drawer
               await authProvider.logout();
               if (context.mounted) {
                 context.go('/login');
@@ -369,7 +391,9 @@ class GuruDrawer extends StatelessWidget {
     int badgeCount = 0,
     bool isDestructive = false,
   }) {
-    final Color activeColor = isDestructive ? const Color(0xFFEF4444) : const Color(0xFF4F46E5);
+    final Color activeColor = isDestructive
+        ? const Color(0xFFEF4444)
+        : const Color(0xFF4F46E5);
     final Color textColor = isDestructive
         ? const Color(0xFFEF4444)
         : (isSelected ? const Color(0xFF4F46E5) : const Color(0xFF334155));
@@ -386,7 +410,9 @@ class GuruDrawer extends StatelessWidget {
         contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.h),
         leading: Icon(
           icon,
-          color: isSelected ? activeColor : (isDestructive ? activeColor : const Color(0xFF64748B)),
+          color: isSelected
+              ? activeColor
+              : (isDestructive ? activeColor : const Color(0xFF64748B)),
           size: 22,
         ),
         title: Text(
@@ -414,15 +440,15 @@ class GuruDrawer extends StatelessWidget {
                 ),
               )
             : (isSelected
-                ? Container(
-                    width: 4.w,
-                    height: 18.h,
-                    decoration: BoxDecoration(
-                      color: activeColor,
-                      borderRadius: BorderRadius.circular(4.r),
-                    ),
-                  )
-                : null),
+                  ? Container(
+                      width: 4.w,
+                      height: 18.h,
+                      decoration: BoxDecoration(
+                        color: activeColor,
+                        borderRadius: BorderRadius.circular(4.r),
+                      ),
+                    )
+                  : null),
       ),
     );
   }

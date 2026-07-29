@@ -20,7 +20,8 @@ class GuruDownloadJurnalScreen extends StatefulWidget {
   const GuruDownloadJurnalScreen({super.key});
 
   @override
-  State<GuruDownloadJurnalScreen> createState() => _GuruDownloadJurnalScreenState();
+  State<GuruDownloadJurnalScreen> createState() =>
+      _GuruDownloadJurnalScreenState();
 }
 
 class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
@@ -31,10 +32,13 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
   String? _selectedClassId;
   String? _selectedSubjectId;
 
-  final TextEditingController _supervisorNameController = TextEditingController();
-  final TextEditingController _supervisorNipController = TextEditingController();
-  final TextEditingController _schoolNameController =
-      TextEditingController(text: 'SMA / SMK Jurnal Mengajar');
+  final TextEditingController _supervisorNameController =
+      TextEditingController();
+  final TextEditingController _supervisorNipController =
+      TextEditingController();
+  final TextEditingController _schoolNameController = TextEditingController(
+    text: 'SMA / SMK Jurnal Mengajar',
+  );
 
   String _presetRange = 'Bulan Ini';
 
@@ -54,15 +58,27 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
   Future<void> _loadInitialData() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+    final journalProvider = Provider.of<JournalProvider>(
+      context,
+      listen: false,
+    );
+    final masterProvider = Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    );
 
     final currentUser = authProvider.currentUser;
     if (currentUser != null) {
       final teacher = masterProvider.teachers.firstWhere(
         (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
         orElse: () => TeacherModel(
-            id: '', name: currentUser.fullName, position: '', address: '', phoneNumber: '', email: currentUser.email),
+          id: '',
+          name: currentUser.fullName,
+          position: '',
+          address: '',
+          phoneNumber: '',
+          email: currentUser.email,
+        ),
       );
       if (teacher.id.isNotEmpty) {
         await journalProvider.loadTeacherJournals(teacher.id);
@@ -135,7 +151,10 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     }
   }
 
-  TeacherModel _getCurrentTeacher(AuthProvider authProvider, MasterDataProvider masterProvider) {
+  TeacherModel _getCurrentTeacher(
+    AuthProvider authProvider,
+    MasterDataProvider masterProvider,
+  ) {
     final currentUser = authProvider.currentUser;
     if (currentUser == null) {
       return TeacherModel(
@@ -160,9 +179,25 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     );
   }
 
-  List<JournalModel> _getFilteredJournals(List<JournalModel> allTeacherJournals) {
-    final startOfDay = DateTime(_startDate.year, _startDate.month, _startDate.day, 0, 0, 0);
-    final endOfDay = DateTime(_endDate.year, _endDate.month, _endDate.day, 23, 59, 59);
+  List<JournalModel> _getFilteredJournals(
+    List<JournalModel> allTeacherJournals,
+  ) {
+    final startOfDay = DateTime(
+      _startDate.year,
+      _startDate.month,
+      _startDate.day,
+      0,
+      0,
+      0,
+    );
+    final endOfDay = DateTime(
+      _endDate.year,
+      _endDate.month,
+      _endDate.day,
+      23,
+      59,
+      59,
+    );
 
     return allTeacherJournals.where((j) {
       // Date Range Filter
@@ -170,7 +205,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         return false;
       }
       // Status Filter
-      if (_selectedStatus == 'verified' && j.status != 'verified' && j.status != 'approved') {
+      if (_selectedStatus == 'verified' &&
+          j.status != 'verified' &&
+          j.status != 'approved') {
         return false;
       }
       if (_selectedStatus == 'pending' && j.status != 'pending') {
@@ -185,8 +222,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         return false;
       }
       return true;
-    }).toList()
-      ..sort((a, b) => a.date.compareTo(b.date)); // Sort chronologically ascending for report
+    }).toList()..sort(
+      (a, b) => a.date.compareTo(b.date),
+    ); // Sort chronologically ascending for report
   }
 
   void _openPdfPreview(
@@ -199,7 +237,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     if (journals.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Tidak ada data jurnal yang sesuai dengan filter terpilih.'),
+          content: Text(
+            'Tidak ada data jurnal yang sesuai dengan filter terpilih.',
+          ),
           backgroundColor: Colors.orange,
         ),
       );
@@ -207,11 +247,22 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     }
 
     final selectedClassName = _selectedClassId != null
-        ? classes.firstWhere((c) => c.id == _selectedClassId, orElse: () => ClassModel(id: '', periodId: '', name: '', studentCount: 0)).name
+        ? classes
+              .firstWhere(
+                (c) => c.id == _selectedClassId,
+                orElse: () =>
+                    ClassModel(id: '', periodId: '', name: '', studentCount: 0),
+              )
+              .name
         : null;
 
     final selectedSubjectName = _selectedSubjectId != null
-        ? subjects.firstWhere((s) => s.id == _selectedSubjectId, orElse: () => SubjectModel(id: '', name: '', isActive: true)).name
+        ? subjects
+              .firstWhere(
+                (s) => s.id == _selectedSubjectId,
+                orElse: () => SubjectModel(id: '', name: '', isActive: true),
+              )
+              .name
         : null;
 
     Navigator.push(
@@ -219,7 +270,10 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       MaterialPageRoute(
         builder: (context) => Scaffold(
           appBar: AppBar(
-            title: const Text('Pratinjau Laporan PDF'),
+            title: const Text(
+              'Pratinjau Laporan PDF',
+              style: TextStyle(color: Colors.white),
+            ),
             backgroundColor: AppTheme.primaryColor,
             foregroundColor: Colors.white,
           ),
@@ -240,7 +294,8 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                   ? _schoolNameController.text.trim()
                   : 'Jurnal Mengajar Guru',
             ),
-            pdfFileName: 'Laporan_Jurnal_${teacher.name.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd').format(_startDate)}_${DateFormat('yyyyMMdd').format(_endDate)}.pdf',
+            pdfFileName:
+                'Laporan_Jurnal_${teacher.name.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd').format(_startDate)}_${DateFormat('yyyyMMdd').format(_endDate)}.pdf',
             canChangeOrientation: false,
             canChangePageFormat: false,
             initialPageFormat: PdfPageFormat.a4.landscape,
@@ -259,7 +314,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     if (journals.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Tidak ada data jurnal yang sesuai dengan filter terpilih.'),
+          content: Text(
+            'Tidak ada data jurnal yang sesuai dengan filter terpilih.',
+          ),
           backgroundColor: Colors.orange,
         ),
       );
@@ -267,11 +324,22 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     }
 
     final selectedClassName = _selectedClassId != null
-        ? classes.firstWhere((c) => c.id == _selectedClassId, orElse: () => ClassModel(id: '', periodId: '', name: '', studentCount: 0)).name
+        ? classes
+              .firstWhere(
+                (c) => c.id == _selectedClassId,
+                orElse: () =>
+                    ClassModel(id: '', periodId: '', name: '', studentCount: 0),
+              )
+              .name
         : null;
 
     final selectedSubjectName = _selectedSubjectId != null
-        ? subjects.firstWhere((s) => s.id == _selectedSubjectId, orElse: () => SubjectModel(id: '', name: '', isActive: true)).name
+        ? subjects
+              .firstWhere(
+                (s) => s.id == _selectedSubjectId,
+                orElse: () => SubjectModel(id: '', name: '', isActive: true),
+              )
+              .name
         : null;
 
     final pdfBytes = await JournalPdfService.generateJournalReportPdf(
@@ -291,12 +359,10 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
           : 'Jurnal Mengajar Guru',
     );
 
-    final fileName = 'Laporan_Jurnal_${teacher.name.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd').format(_startDate)}_${DateFormat('yyyyMMdd').format(_endDate)}.pdf';
+    final fileName =
+        'Laporan_Jurnal_${teacher.name.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd').format(_startDate)}_${DateFormat('yyyyMMdd').format(_endDate)}.pdf';
 
-    await Printing.sharePdf(
-      bytes: pdfBytes,
-      filename: fileName,
-    );
+    await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
   }
 
   @override
@@ -306,11 +372,17 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     final masterProvider = context.watch<MasterDataProvider>();
 
     final teacher = _getCurrentTeacher(authProvider, masterProvider);
-    final filteredJournals = _getFilteredJournals(journalProvider.teacherJournals);
+    final filteredJournals = _getFilteredJournals(
+      journalProvider.teacherJournals,
+    );
     final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
 
-    final verifiedCount = filteredJournals.where((j) => j.status == 'verified' || j.status == 'approved').length;
-    final pendingCount = filteredJournals.where((j) => j.status == 'pending').length;
+    final verifiedCount = filteredJournals
+        .where((j) => j.status == 'verified' || j.status == 'approved')
+        .length;
+    final pendingCount = filteredJournals
+        .where((j) => j.status == 'pending')
+        .length;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -319,7 +391,8 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
           builder: (ctx) => IconButton(
             icon: const Icon(Icons.menu_rounded),
             onPressed: () {
-              final rootScaffold = ctx.findRootAncestorStateOfType<ScaffoldState>();
+              final rootScaffold = ctx
+                  .findRootAncestorStateOfType<ScaffoldState>();
               if (rootScaffold != null && rootScaffold.hasDrawer) {
                 rootScaffold.openDrawer();
               } else {
@@ -364,7 +437,11 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         color: Colors.white.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.picture_as_pdf_rounded, color: Colors.white, size: 28.sp),
+                      child: Icon(
+                        Icons.picture_as_pdf_rounded,
+                        color: Colors.white,
+                        size: 28.sp,
+                      ),
                     ),
                     SizedBox(width: 14.w),
                     Expanded(
@@ -407,20 +484,32 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                     Wrap(
                       spacing: 8.w,
                       runSpacing: 8.h,
-                      children: ['Bulan Ini', '30 Hari Terakhir', 'Bulan Lalu', 'Semester Ini'].map((preset) {
-                        final isSelected = _presetRange == preset;
-                        return ChoiceChip(
-                          label: Text(preset),
-                          selected: isSelected,
-                          selectedColor: AppTheme.primaryColor.withValues(alpha: 0.15),
-                          labelStyle: GoogleFonts.hankenGrotesk(
-                            fontSize: 11.5.sp,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color: isSelected ? AppTheme.primaryColor : const Color(0xFF475569),
-                          ),
-                          onSelected: (_) => _applyPresetRange(preset),
-                        );
-                      }).toList(),
+                      children:
+                          [
+                            'Bulan Ini',
+                            '30 Hari Terakhir',
+                            'Bulan Lalu',
+                            'Semester Ini',
+                          ].map((preset) {
+                            final isSelected = _presetRange == preset;
+                            return ChoiceChip(
+                              label: Text(preset),
+                              selected: isSelected,
+                              selectedColor: AppTheme.primaryColor.withValues(
+                                alpha: 0.15,
+                              ),
+                              labelStyle: GoogleFonts.hankenGrotesk(
+                                fontSize: 11.5.sp,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: isSelected
+                                    ? AppTheme.primaryColor
+                                    : const Color(0xFF475569),
+                              ),
+                              onSelected: (_) => _applyPresetRange(preset),
+                            );
+                          }).toList(),
                     ),
 
                     SizedBox(height: 14.h),
@@ -433,9 +522,14 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                             onTap: () => _selectDate(context, true),
                             borderRadius: BorderRadius.circular(10.r),
                             child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12.w,
+                                vertical: 10.h,
+                              ),
                               decoration: BoxDecoration(
-                                border: Border.all(color: const Color(0xFFCBD5E1)),
+                                border: Border.all(
+                                  color: const Color(0xFFCBD5E1),
+                                ),
                                 borderRadius: BorderRadius.circular(10.r),
                               ),
                               child: Column(
@@ -452,7 +546,11 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                                   SizedBox(height: 4.h),
                                   Row(
                                     children: [
-                                      const Icon(Icons.calendar_today_rounded, size: 14, color: AppTheme.primaryColor),
+                                      const Icon(
+                                        Icons.calendar_today_rounded,
+                                        size: 14,
+                                        color: AppTheme.primaryColor,
+                                      ),
                                       SizedBox(width: 6.w),
                                       Text(
                                         dateFormat.format(_startDate),
@@ -470,16 +568,25 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                           ),
                         ),
                         SizedBox(width: 10.w),
-                        Icon(Icons.arrow_forward_rounded, size: 18, color: const Color(0xFF94A3B8)),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 18,
+                          color: const Color(0xFF94A3B8),
+                        ),
                         SizedBox(width: 10.w),
                         Expanded(
                           child: InkWell(
                             onTap: () => _selectDate(context, false),
                             borderRadius: BorderRadius.circular(10.r),
                             child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12.w,
+                                vertical: 10.h,
+                              ),
                               decoration: BoxDecoration(
-                                border: Border.all(color: const Color(0xFFCBD5E1)),
+                                border: Border.all(
+                                  color: const Color(0xFFCBD5E1),
+                                ),
                                 borderRadius: BorderRadius.circular(10.r),
                               ),
                               child: Column(
@@ -496,7 +603,11 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                                   SizedBox(height: 4.h),
                                   Row(
                                     children: [
-                                      const Icon(Icons.calendar_today_rounded, size: 14, color: AppTheme.primaryColor),
+                                      const Icon(
+                                        Icons.calendar_today_rounded,
+                                        size: 14,
+                                        color: AppTheme.primaryColor,
+                                      ),
                                       SizedBox(width: 6.w),
                                       Text(
                                         dateFormat.format(_endDate),
@@ -532,14 +643,31 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       initialValue: _selectedStatus,
                       decoration: InputDecoration(
                         labelText: 'Status Verifikasi Jurnal',
-                        prefixIcon: const Icon(Icons.verified_rounded, size: 20),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
+                        prefixIcon: const Icon(
+                          Icons.verified_rounded,
+                          size: 20,
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 10.h,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'all', child: Text('Semua Status (Terverifikasi & Pending)')),
-                        DropdownMenuItem(value: 'verified', child: Text('Hanya Terverifikasi / Disetujui')),
-                        DropdownMenuItem(value: 'pending', child: Text('Hanya Menunggu Approval')),
+                        DropdownMenuItem(
+                          value: 'all',
+                          child: Text('Semua Status (Terverifikasi & Pending)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'verified',
+                          child: Text('Hanya Terverifikasi / Disetujui'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'pending',
+                          child: Text('Hanya Menunggu Approval'),
+                        ),
                       ],
                       onChanged: (val) {
                         if (val != null) setState(() => _selectedStatus = val);
@@ -554,16 +682,28 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       decoration: InputDecoration(
                         labelText: 'Filter Kelas',
                         prefixIcon: const Icon(Icons.class_rounded, size: 20),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 10.h,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
                       ),
                       items: [
-                        const DropdownMenuItem<String?>(value: null, child: Text('Semua Kelas')),
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Semua Kelas'),
+                        ),
                         ...masterProvider.classes.map(
-                          (c) => DropdownMenuItem<String?>(value: c.id, child: Text(c.name)),
+                          (c) => DropdownMenuItem<String?>(
+                            value: c.id,
+                            child: Text(c.name),
+                          ),
                         ),
                       ],
-                      onChanged: (val) => setState(() => _selectedClassId = val),
+                      onChanged: (val) =>
+                          setState(() => _selectedClassId = val),
                     ),
 
                     SizedBox(height: 12.h),
@@ -574,16 +714,28 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       decoration: InputDecoration(
                         labelText: 'Filter Mata Pelajaran',
                         prefixIcon: const Icon(Icons.book_rounded, size: 20),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 10.h,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
                       ),
                       items: [
-                        const DropdownMenuItem<String?>(value: null, child: Text('Semua Mata Pelajaran')),
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Semua Mata Pelajaran'),
+                        ),
                         ...masterProvider.subjects.map(
-                          (s) => DropdownMenuItem<String?>(value: s.id, child: Text(s.name)),
+                          (s) => DropdownMenuItem<String?>(
+                            value: s.id,
+                            child: Text(s.name),
+                          ),
                         ),
                       ],
-                      onChanged: (val) => setState(() => _selectedSubjectId = val),
+                      onChanged: (val) =>
+                          setState(() => _selectedSubjectId = val),
                     ),
                   ],
                 ),
@@ -603,30 +755,48 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         labelText: 'Nama Sekolah / Instansi',
                         hintText: 'Misal: SMA Negeri 1 Jakarta',
                         prefixIcon: const Icon(Icons.school_rounded, size: 20),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 10.h,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
                       ),
                     ),
                     SizedBox(height: 12.h),
                     TextField(
                       controller: _supervisorNameController,
                       decoration: InputDecoration(
-                        labelText: 'Nama Supervisor / Kepala Sekolah (Opsional)',
+                        labelText: 'Nama (Opsional)',
                         hintText: 'Misal: Dr. H. Ahmad Dahlan, M.Pd.',
-                        prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
+                        prefixIcon: const Icon(
+                          Icons.person_outline_rounded,
+                          size: 20,
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 10.h,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
                       ),
                     ),
                     SizedBox(height: 12.h),
                     TextField(
                       controller: _supervisorNipController,
                       decoration: InputDecoration(
-                        labelText: 'NIP / ID Supervisor (Opsional)',
+                        labelText: 'NIP / ID (Opsional)',
                         hintText: 'Misal: 19780512 200312 1 002',
                         prefixIcon: const Icon(Icons.badge_outlined, size: 20),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 10.h,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
                       ),
                     ),
                   ],
@@ -658,7 +828,10 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                           ),
                         ),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10.w,
+                            vertical: 3.h,
+                          ),
                           decoration: BoxDecoration(
                             color: AppTheme.primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12.r),
@@ -678,8 +851,16 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildBadgeInfo('Terverifikasi', '$verifiedCount', const Color(0xFF10B981)),
-                        _buildBadgeInfo('Menunggu', '$pendingCount', const Color(0xFFF59E0B)),
+                        _buildBadgeInfo(
+                          'Terverifikasi',
+                          '$verifiedCount',
+                          const Color(0xFF10B981),
+                        ),
+                        _buildBadgeInfo(
+                          'Menunggu',
+                          '$pendingCount',
+                          const Color(0xFFF59E0B),
+                        ),
                       ],
                     ),
                   ],
@@ -703,12 +884,19 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       icon: const Icon(Icons.remove_red_eye_rounded),
                       label: Text(
                         'Pratinjau PDF',
-                        style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w700),
+                        style: GoogleFonts.hankenGrotesk(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       style: OutlinedButton.styleFrom(
                         padding: EdgeInsets.symmetric(vertical: 14.h),
-                        side: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                        side: const BorderSide(
+                          color: AppTheme.primaryColor,
+                          width: 1.5,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
                       ),
                     ),
                   ),
@@ -721,7 +909,10 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         masterProvider.classes,
                         masterProvider.subjects,
                       ),
-                      icon: const Icon(Icons.download_rounded, color: Colors.white),
+                      icon: const Icon(
+                        Icons.download_rounded,
+                        color: Colors.white,
+                      ),
                       label: Text(
                         'Unduh / Cetak',
                         style: GoogleFonts.hankenGrotesk(
@@ -733,7 +924,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         backgroundColor: AppTheme.primaryColor,
                         padding: EdgeInsets.symmetric(vertical: 14.h),
                         elevation: 2,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
                       ),
                     ),
                   ),
@@ -803,11 +996,18 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         SizedBox(width: 6.w),
         Text(
           '$label: ',
-          style: GoogleFonts.hankenGrotesk(fontSize: 11.5.sp, color: const Color(0xFF64748B)),
+          style: GoogleFonts.hankenGrotesk(
+            fontSize: 11.5.sp,
+            color: const Color(0xFF64748B),
+          ),
         ),
         Text(
           value,
-          style: GoogleFonts.hankenGrotesk(fontSize: 12.sp, fontWeight: FontWeight.w700, color: color),
+          style: GoogleFonts.hankenGrotesk(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
         ),
       ],
     );

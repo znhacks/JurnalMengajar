@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/admin_drawer.dart';
@@ -55,9 +56,17 @@ class AboutAppScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 6.h),
-              Text(
-                'Versi 1.0.1',
-                style: TextStyle(fontSize: 13.sp, color: Colors.grey[500]),
+              FutureBuilder<PackageInfo>(
+                future: PackageInfo.fromPlatform(),
+                builder: (context, snapshot) {
+                  final versionText = snapshot.hasData
+                      ? 'Versi ${snapshot.data!.version} (${snapshot.data!.buildNumber})'
+                      : 'Versi ...';
+                  return Text(
+                    versionText,
+                    style: TextStyle(fontSize: 13.sp, color: Colors.grey[500]),
+                  );
+                },
               ),
               SizedBox(height: 24.h),
 
