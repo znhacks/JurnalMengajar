@@ -127,6 +127,7 @@ class AuthProvider with ChangeNotifier {
     required String address,
     String role = 'guru',
     String? photoUrl,
+    String? schoolName,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -141,6 +142,7 @@ class AuthProvider with ChangeNotifier {
         position: position,
         address: address,
         photoUrl: photoUrl,
+        schoolName: schoolName ?? 'SMKN 11 Malang',
       );
       await authRepository.register(user, password);
       _isLoading = false;

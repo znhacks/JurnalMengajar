@@ -7,6 +7,7 @@ class UserModel {
   final String? phoneNumber;
   final String? position;
   final String? address;
+  final String? schoolName; // e.g. 'SMKN 11 Malang'
 
   UserModel({
     required this.id,
@@ -17,6 +18,7 @@ class UserModel {
     this.phoneNumber,
     this.position,
     this.address,
+    this.schoolName = 'SMKN 11 Malang',
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class UserModel {
       phoneNumber: json['phone'] as String? ?? json['phoneNumber'] as String?,
       position: json['position'] as String?,
       address: json['address'] as String?,
+      schoolName: json['school_name'] as String? ?? json['schoolName'] as String? ?? 'SMKN 11 Malang',
     );
   }
 
@@ -42,6 +45,7 @@ class UserModel {
       'phone': phoneNumber,
       'position': position,
       'address': address,
+      'school_name': schoolName ?? 'SMKN 11 Malang',
     };
   }
 
@@ -54,6 +58,7 @@ class UserModel {
     String? phoneNumber,
     String? position,
     String? address,
+    String? schoolName,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -64,6 +69,7 @@ class UserModel {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       position: position ?? this.position,
       address: address ?? this.address,
+      schoolName: schoolName ?? this.schoolName,
     );
   }
 }

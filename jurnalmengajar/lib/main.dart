@@ -16,6 +16,7 @@ import 'repositories/supabase_journal_repository.dart';
 import 'repositories/supabase_settings_repository.dart';
 import 'repositories/supabase_warning_letter_repository.dart';
 import 'repositories/supabase_student_repository.dart';
+import 'repositories/supabase_school_repository.dart';
 
 // Providers
 import 'providers/auth_provider.dart';
@@ -64,6 +65,7 @@ void main() async {
   final settingsRepo = SupabaseSettingsRepository(supabaseClient);
   final warningRepo = SupabaseWarningLetterRepository(supabaseClient);
   final studentRepo = SupabaseStudentRepository(supabaseClient);
+  final schoolRepo = SupabaseSchoolRepository(supabaseClient);
 
   runApp(
     MultiProvider(
@@ -79,6 +81,7 @@ void main() async {
             classRepository: classRepo,
             teacherRepository: teacherRepo,
             studentRepository: studentRepo,
+            schoolRepository: schoolRepo,
           ),
         ),
         ChangeNotifierProvider(

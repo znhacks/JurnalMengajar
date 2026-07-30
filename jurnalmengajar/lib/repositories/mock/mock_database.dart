@@ -87,11 +87,11 @@ class MockDatabase {
       ),
       TeacherModel(
         id: 't3',
-        name: 'Admin Utama',
-        position: 'Kepala Tata Usaha',
-        address: 'Gedung Sekolah R.102',
+        name: 'Admin SMKN 11 Malang',
+        position: 'Admin Sekolah',
+        address: 'SMKN 11 Malang R.102',
         phoneNumber: '08554433221',
-        email: 'admin@jurnal.com',
+        email: 'smkn11malang@jurnal.com',
         photoUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop',
       ),
     ]);
@@ -107,6 +107,7 @@ class MockDatabase {
         phoneNumber: '08123456789',
         position: 'Guru Matematika',
         address: 'Jl. Merdeka No. 10, Jakarta',
+        schoolName: 'SMKN 11 Malang',
       ),
       UserModel(
         id: 'u2',
@@ -117,16 +118,18 @@ class MockDatabase {
         phoneNumber: '08139876543',
         position: 'Guru Bahasa Inggris',
         address: 'Jl. Mawar No. 5, Bogor',
+        schoolName: 'SMKN 11 Malang',
       ),
       UserModel(
         id: 'u3',
-        email: 'admin@jurnal.com',
-        fullName: 'Admin Utama',
+        email: 'smkn11malang@jurnal.com',
+        fullName: 'Admin SMKN 11 Malang',
         role: 'admin',
         photoUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop',
         phoneNumber: '08554433221',
-        position: 'Kepala Tata Usaha',
-        address: 'Gedung Sekolah R.102',
+        position: 'Admin Sekolah',
+        address: 'SMKN 11 Malang R.102',
+        schoolName: 'SMKN 11 Malang',
       ),
       // Generic test login users
       UserModel(

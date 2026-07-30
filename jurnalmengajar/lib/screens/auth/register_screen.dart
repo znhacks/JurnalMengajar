@@ -30,6 +30,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   final String _selectedRole = 'pending_guru';
+  final List<String> _selectedSchools = ['SMKN 11 Malang'];
 
   @override
   void initState() {
@@ -144,6 +145,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
+      if (_selectedSchools.isEmpty) {
+        AppHelper.showSnackBar(
+          context,
+          'Silakan pilih minimal 1 sekolah tempat Anda mengajar.',
+          isError: true,
+        );
+        return;
+      }
+
       if (_passwordController.text != _confirmPasswordController.text) {
         AppHelper.showSnackBar(
           context,
@@ -163,6 +173,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         address: _addressController.text.trim(),
         role: _selectedRole,
         photoUrl: _profileImage?.path,
+        schoolName: _selectedSchools.join(', '),
       );
 
       if (success && mounted) {
@@ -339,6 +350,90 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ),
                               SizedBox(height: 24.h),
+
+                               // Sekolah Tempat Mengajar (Wajib, Multi-Select)
+                               _buildFieldLabel('SEKOLAH TEMPAT MENGAJAR'),
+                               GestureDetector(
+                                 onTap: () {
+                                   _showSchoolSelector(context, masterProvider);
+                                 },
+                                 child: Container(
+                                   padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                                   decoration: BoxDecoration(
+                                     color: const Color(0xFFEFF6FF).withValues(alpha: 0.5),
+                                     borderRadius: BorderRadius.circular(16.r),
+                                     border: Border.all(
+                                       color: _selectedSchools.isEmpty ? Colors.red : const Color(0xFFE2E8F0),
+                                       width: _selectedSchools.isEmpty ? 1.5 : 1,
+                                     ),
+                                   ),
+                                   child: Row(
+                                     children: [
+                                       const Icon(Icons.school_outlined, color: Color.fromARGB(255, 37, 99, 235)),
+                                       SizedBox(width: 12.w),
+                                       Expanded(
+                                         child: _selectedSchools.isEmpty
+                                             ? Text(
+                                                 'Pilih sekolah tempat mengajar...',
+                                                 style: TextStyle(
+                                                   fontSize: 14.sp,
+                                                   color: Colors.grey[400],
+                                                 ),
+                                               )
+                                             : Wrap(
+                                                 spacing: 6.w,
+                                                 runSpacing: 4.h,
+                                                 children: _selectedSchools.map((sch) {
+                                                   return Container(
+                                                     padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                                                     decoration: BoxDecoration(
+                                                       color: const Color.fromARGB(255, 37, 99, 235).withValues(alpha: 0.1),
+                                                       borderRadius: BorderRadius.circular(8.r),
+                                                       border: Border.all(
+                                                         color: const Color.fromARGB(255, 37, 99, 235).withValues(alpha: 0.3),
+                                                       ),
+                                                     ),
+                                                     child: Row(
+                                                       mainAxisSize: MainAxisSize.min,
+                                                       children: [
+                                                         Text(
+                                                           sch,
+                                                           style: TextStyle(
+                                                             fontSize: 12.sp,
+                                                             fontWeight: FontWeight.bold,
+                                                             color: const Color.fromARGB(255, 37, 99, 235),
+                                                           ),
+                                                         ),
+                                                         if (_selectedSchools.length > 1) ...[
+                                                           SizedBox(width: 4.w),
+                                                           GestureDetector(
+                                                             onTap: () {
+                                                               setState(() {
+                                                                 _selectedSchools.remove(sch);
+                                                               });
+                                                             },
+                                                             child: Icon(
+                                                               Icons.close_rounded,
+                                                               size: 14.r,
+                                                               color: const Color.fromARGB(255, 37, 99, 235),
+                                                             ),
+                                                           ),
+                                                         ],
+                                                       ],
+                                                     ),
+                                                   );
+                                                 }).toList(),
+                                               ),
+                                       ),
+                                       Icon(
+                                         Icons.arrow_drop_down,
+                                         color: const Color.fromARGB(255, 37, 99, 235),
+                                       ),
+                                     ],
+                                   ),
+                                 ),
+                               ),
+                               SizedBox(height: 16.h),
 
                               // Nama Lengkap
                               _buildFieldLabel('NAMA LENGKAP'),
@@ -703,6 +798,128 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             },
                           ),
                   ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showSchoolSelector(
+    BuildContext context,
+    MasterDataProvider masterProvider,
+  ) {
+    // Collect school names from DB masterProvider, with fallback default list
+    final dbSchools = masterProvider.schools.map((s) => s.name).toList();
+    final allSchoolNames = dbSchools.isNotEmpty
+        ? dbSchools
+        : ['SMKN 11 Malang', 'SMKN 777 Ngawi'];
+
+    final tempSelected = List<String>.from(_selectedSchools);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (sheetCtx, setSheetState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(sheetCtx).viewInsets.bottom,
+              top: 20.h,
+              left: 20.w,
+              right: 20.w,
+            ),
+            child: SizedBox(
+              height: 380.h,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Pilih Sekolah Tempat Mengajar',
+                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 6.h),
+                  Text(
+                    'Anda dapat memilih lebih dari 1 sekolah',
+                    style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 16.h),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: allSchoolNames.length,
+                      itemBuilder: (sheetCtx, index) {
+                        final schoolName = allSchoolNames[index];
+                        final isChecked = tempSelected.contains(schoolName);
+                        return CheckboxListTile(
+                          activeColor: const Color.fromARGB(255, 37, 99, 235),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          title: Text(
+                            schoolName,
+                            style: TextStyle(
+                              fontWeight: isChecked ? FontWeight.bold : FontWeight.normal,
+                              color: const Color(0xFF0F172A),
+                            ),
+                          ),
+                          subtitle: Text(
+                            isChecked ? 'Terpilih' : 'Ketuk untuk memilih',
+                            style: TextStyle(fontSize: 11.sp),
+                          ),
+                          value: isChecked,
+                          onChanged: (val) {
+                            setSheetState(() {
+                              if (val == true) {
+                                if (!tempSelected.contains(schoolName)) {
+                                  tempSelected.add(schoolName);
+                                }
+                              } else {
+                                if (tempSelected.length > 1) {
+                                  tempSelected.remove(schoolName);
+                                } else {
+                                  AppHelper.showSnackBar(
+                                    sheetCtx,
+                                    'Minimal pilih 1 sekolah.',
+                                    isError: true,
+                                  );
+                                }
+                              }
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedSchools.clear();
+                        _selectedSchools.addAll(tempSelected);
+                      });
+                      Navigator.pop(sheetCtx);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 37, 99, 235),
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14.r),
+                      ),
+                    ),
+                    child: Text(
+                      'Simpan Pilihan (${tempSelected.length} Sekolah)',
+                      style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
                 ],
               ),
             ),

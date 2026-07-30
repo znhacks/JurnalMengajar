@@ -5,6 +5,7 @@ import '../models/subject_model.dart';
 import '../models/hour_model.dart';
 import '../models/class_model.dart';
 import '../models/teacher_model.dart';
+import '../models/school_model.dart';
 import '../repositories/period_repository.dart';
 import '../repositories/subject_repository.dart';
 import '../repositories/hour_repository.dart';
@@ -12,6 +13,7 @@ import '../repositories/class_repository.dart';
 import '../repositories/teacher_repository.dart';
 import '../models/student_model.dart';
 import '../repositories/student_repository.dart';
+import '../repositories/school_repository.dart';
 
 class MasterDataProvider with ChangeNotifier {
   final PeriodRepository periodRepository;
@@ -20,6 +22,7 @@ class MasterDataProvider with ChangeNotifier {
   final ClassRepository classRepository;
   final TeacherRepository teacherRepository;
   final StudentRepository studentRepository;
+  final SchoolRepository? schoolRepository;
 
   List<PeriodModel> _periods = [];
   List<SubjectModel> _subjects = [];
@@ -27,6 +30,7 @@ class MasterDataProvider with ChangeNotifier {
   List<ClassModel> _classes = [];
   List<TeacherModel> _teachers = [];
   List<StudentModel> _students = [];
+  List<SchoolModel> _schools = [];
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -38,6 +42,7 @@ class MasterDataProvider with ChangeNotifier {
     required this.classRepository,
     required this.teacherRepository,
     required this.studentRepository,
+    this.schoolRepository,
   }) {
     loadAllData();
   }
@@ -49,6 +54,7 @@ class MasterDataProvider with ChangeNotifier {
   List<ClassModel> get classes => _classes;
   List<TeacherModel> get teachers => _teachers;
   List<StudentModel> get students => _students;
+  List<SchoolModel> get schools => _schools;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -71,12 +77,17 @@ class MasterDataProvider with ChangeNotifier {
         hourRepository.getAll().catchError((_) => <HourModel>[]),
         classRepository.getAll().catchError((_) => <ClassModel>[]),
         teacherRepository.getAll().catchError((_) => <TeacherModel>[]),
+        if (schoolRepository != null)
+          schoolRepository!.getAll().catchError((_) => <SchoolModel>[])
+        else
+          Future.value(<SchoolModel>[]),
       ]);
       _periods = results[0] as List<PeriodModel>;
       _subjects = results[1] as List<SubjectModel>;
       _hours = results[2] as List<HourModel>;
       _classes = results[3] as List<ClassModel>;
       _teachers = results[4] as List<TeacherModel>;
+      _schools = results[5] as List<SchoolModel>;
     } catch (e) {
       _errorMessage = e.toString();
     } finally {

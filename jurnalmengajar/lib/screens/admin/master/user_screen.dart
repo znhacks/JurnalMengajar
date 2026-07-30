@@ -57,7 +57,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
   }
 
   void _selectAll(List<UserModel> users, AuthProvider authProvider) {
-    final selectableUsers = users.where((u) => u.email.toLowerCase() != 'admin@jurnal.com' && u.id != authProvider.currentUser?.id).toList();
+    final selectableUsers = users.where((u) => u.email.toLowerCase() != 'smkn11malang@jurnal.com' && u.id != authProvider.currentUser?.id).toList();
     setState(() {
       if (_selectedIds.length == selectableUsers.length) {
         _selectedIds.clear();
@@ -220,10 +220,10 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
     // Safety checks
-    if (user.email.toLowerCase() == 'admin@jurnal.com') {
+    if (user.email.toLowerCase() == 'smkn11malang@jurnal.com') {
       AppHelper.showSnackBar(
         context, 
-        'Akun admin utama tidak boleh dihapus.', 
+        'Akun admin sekolah utama tidak boleh dihapus.', 
         isError: true
       );
       return;

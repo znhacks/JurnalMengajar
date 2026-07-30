@@ -31,10 +31,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
 
   Future<void> _handleDeleteAccount(UserModel user) async {
     // Safety check for main admin
-    if (user.email.toLowerCase() == 'admin@jurnal.com') {
+    if (user.email.toLowerCase() == 'smkn11malang@jurnal.com') {
       AppHelper.showSnackBar(
         context,
-        'Akun admin utama (admin@jurnal.com) tidak dapat dihapus.',
+        'Akun admin sekolah utama (smkn11malang@jurnal.com) tidak dapat dihapus.',
         isError: true,
       );
       return;
@@ -738,17 +738,26 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                               vertical: 4.h,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.12),
+                              color: Colors.white.withValues(alpha: 0.18),
                               borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: Text(
-                              'JABATAN: ADMIN',
+                              'ROLE: ADMIN SEKOLAH (${(currentUser.schoolName ?? 'SMKN 11 Malang').toUpperCase()})',
                               style: TextStyle(
                                 fontSize: 9.sp,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                                 letterSpacing: 0.5,
                               ),
+                            ),
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            'Mengelola operasional guru & data ${currentUser.schoolName ?? "SMKN 11 Malang"}',
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              color: Colors.white.withValues(alpha: 0.75),
+                              fontStyle: FontStyle.italic,
                             ),
                           ),
                         ],

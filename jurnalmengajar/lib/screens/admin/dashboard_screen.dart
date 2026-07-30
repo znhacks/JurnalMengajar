@@ -205,13 +205,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
-        title: Text(
-          'Dashboard Admin',
-          style: GoogleFonts.hankenGrotesk(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w800,
-            color: const Color(0xFF0F172A),
-          ),
+        title: Column(
+          children: [
+            Text(
+              'Dashboard Admin Sekolah',
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF0F172A),
+              ),
+            ),
+            Text(
+              'SMKN 11 Malang',
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF2563EB),
+              ),
+            ),
+          ],
         ),
       ),
       drawer: const AdminDrawer(currentRoute: '/admin/dashboard'),
