@@ -6,6 +6,7 @@ import '../../../models/period_model.dart';
 import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
+import '../../../providers/auth_provider.dart';
 
 class MasterPeriodScreen extends StatefulWidget {
   const MasterPeriodScreen({super.key});
@@ -95,7 +96,8 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
   }
 
   Future<void> _refreshData() async {
-    await Provider.of<MasterDataProvider>(context, listen: false).loadAllData();
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await Provider.of<MasterDataProvider>(context, listen: false).loadAllData(authProvider.activeSchoolId);
   }
 
   void _showFormDialog({PeriodModel? period}) {

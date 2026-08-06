@@ -6,7 +6,7 @@ class MockSubjectRepository implements SubjectRepository {
   final MockDatabase _db = MockDatabase();
 
   @override
-  Future<List<SubjectModel>> getAll() async {
+  Future<List<SubjectModel>> getAll([String? schoolId]) async {
     await Future.delayed(const Duration(milliseconds: 300));
     return List.from(_db.subjects);
   }

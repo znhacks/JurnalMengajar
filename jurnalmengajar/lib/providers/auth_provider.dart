@@ -35,6 +35,11 @@ class AuthProvider with ChangeNotifier {
     });
   }
 
+  List<dynamic> _userMemberships = [];
+  String? _activeSchoolId;
+  String _activeSchoolName = 'Sekolah';
+  String _activeRole = 'guru';
+
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   bool get initialized => _initialized;
@@ -42,6 +47,118 @@ class AuthProvider with ChangeNotifier {
   bool get isAuthenticated => _currentUser != null;
   bool get isRecoveryMode => _isRecoveryMode;
   AuthRepository get authRepository => _authRepository;
+
+  List<dynamic> get userMemberships => _userMemberships;
+  String? get activeSchoolId => _activeSchoolId;
+  String get activeSchoolName => _activeSchoolName;
+  String get activeRole => _activeRole;
+
+  void switchActiveSchool(String schoolId, String schoolName, String role) {
+    _activeSchoolId = schoolId;
+    _activeSchoolName = schoolName;
+    _activeRole = role;
+    if (_currentUser != null) {
+      _currentUser = _currentUser!.copyWith(
+        schoolName: schoolName,
+        role: role,
+      );
+    }
+    notifyListeners();
+  }
+
+  Future<bool> joinSchoolWithCode(String code, {String role = 'guru'}) async {
+    if (_currentUser == null) return false;
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final supabase = Supabase.instance.client;
+      final cleanCode = code.trim().toUpperCase().replaceAll(RegExp(r'\s+'), '');
+
+      // 1. Fetch matching school from schools table by code or npsn or id
+      final schoolsRes = await supabase
+          .from('schools')
+          .select();
+
+      Map<String, dynamic>? matchedSchool;
+      for (final s in (schoolsRes as List)) {
+        final sCode = ((s['code'] as String?) ?? '').toUpperCase().replaceAll(RegExp(r'\s+'), '');
+        final sNpsn = ((s['npsn'] as String?) ?? '').toUpperCase().replaceAll(RegExp(r'\s+'), '');
+        final sId = ((s['id'] as String?) ?? '').toUpperCase().replaceAll(RegExp(r'\s+'), '');
+        final sName = ((s['name'] as String?) ?? '').toUpperCase().replaceAll(RegExp(r'\s+'), '');
+
+        if ((sCode.isNotEmpty && sCode == cleanCode) ||
+            (sNpsn.isNotEmpty && sNpsn == cleanCode) ||
+            (sId.isNotEmpty && sId == cleanCode) ||
+            (sName.isNotEmpty && (sName == cleanCode || sName.contains(cleanCode)))) {
+          matchedSchool = Map<String, dynamic>.from(s);
+          break;
+        }
+      }
+
+      if (matchedSchool == null) {
+        throw Exception('Kode / NPSN Sekolah tidak ditemukan.');
+      }
+
+      final schoolId = matchedSchool['id'] as String;
+      final schoolName = matchedSchool['name'] as String? ?? 'Sekolah';
+
+      final effectiveRole = role;
+
+      // 2. Insert or update user_schools relationship
+      try {
+        await supabase.from('user_schools').upsert({
+          'user_id': _currentUser!.id,
+          'school_id': schoolId,
+          'role': effectiveRole,
+        });
+      } catch (dbErr) {
+        debugPrint('Note inserting user_schools: $dbErr');
+      }
+
+      // 3. Update active school locally
+      switchActiveSchool(schoolId, schoolName, effectiveRole);
+      await loadUserMemberships();
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = _cleanErrorMessage(e);
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<void> loadUserMemberships() async {
+    if (_currentUser == null) return;
+    try {
+      final supabase = Supabase.instance.client;
+      final res = await supabase
+          .from('user_schools')
+          .select('*, schools(name, code)')
+          .eq('user_id', _currentUser!.id);
+
+      _userMemberships = (res as List).map((item) {
+        final m = Map<String, dynamic>.from(item);
+        m['role'] = item['role'] ?? _currentUser!.role;
+        return m;
+      }).toList();
+
+      if (_userMemberships.isNotEmpty) {
+        final first = _userMemberships.first;
+        final schData = first['schools'];
+        _activeSchoolId = first['school_id'];
+        _activeRole = first['role'] ?? _currentUser!.role;
+        _activeSchoolName = (schData != null && schData['name'] != null) ? schData['name'] : 'Sekolah';
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading user memberships: $e');
+      _userMemberships = [];
+    }
+  }
+
 
   Future<void> _loadCurrentUser({bool isInitialBoot = false}) async {
     // Prevent concurrent executions to avoid race conditions with OAuth callback
@@ -55,12 +172,19 @@ class AuthProvider with ChangeNotifier {
         _currentUser = null;
         await authRepository.logout();
         if (!isInitialBoot) {
-          _errorMessage = 'Pendaftaran Anda sedang menunggu persetujuan Admin. Silakan hubungi Admin untuk konfirmasi.';
+          _errorMessage = 'Pendaftaran Guru Anda sedang menunggu persetujuan Admin Sekolah. Silakan hubungi Admin Sekolah Anda untuk konfirmasi.';
+        }
+      } else if (user?.role == 'pending_admin') {
+        _currentUser = null;
+        await authRepository.logout();
+        if (!isInitialBoot) {
+          _errorMessage = 'Pendaftaran Admin Sekolah Anda sedang menunggu pengaktifan Kode Sekolah dari Superadmin. Silakan hubungi Superadmin.';
         }
       } else {
         _currentUser = user;
         if (user != null) {
           FcmService().syncToken(this);
+          await loadUserMemberships();
         }
       }
     } catch (e) {
@@ -82,9 +206,13 @@ class AuthProvider with ChangeNotifier {
       final loggedInUser = await authRepository.login(email, password);
       if (loggedInUser.role == 'pending_guru') {
         await authRepository.logout();
-        throw Exception('Pendaftaran Anda sedang menunggu persetujuan Admin. Silakan hubungi Admin untuk konfirmasi.');
+        throw Exception('Pendaftaran Guru Anda sedang menunggu persetujuan Admin Sekolah. Silakan hubungi Admin Sekolah Anda untuk konfirmasi.');
+      } else if (loggedInUser.role == 'pending_admin') {
+        await authRepository.logout();
+        throw Exception('Pendaftaran Admin Sekolah Anda sedang menunggu pengaktifan Kode Sekolah dari Superadmin. Silakan hubungi Superadmin.');
       }
       _currentUser = loggedInUser;
+      await loadUserMemberships();
       _isLoading = false;
       notifyListeners();
       FcmService().syncToken(this);
@@ -142,7 +270,7 @@ class AuthProvider with ChangeNotifier {
         position: position,
         address: address,
         photoUrl: photoUrl,
-        schoolName: schoolName ?? 'SMKN 11 Malang',
+        schoolName: schoolName,
       );
       await authRepository.register(user, password);
       _isLoading = false;
@@ -215,6 +343,10 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     await authRepository.logout();
     _currentUser = null;
+    _activeSchoolId = null;
+    _activeSchoolName = 'Sekolah';
+    _activeRole = 'guru';
+    _userMemberships = [];
     _isLoading = false;
     notifyListeners();
   }
@@ -242,12 +374,15 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<List<UserModel>> getAllUsers() async {
+  Future<List<UserModel>> getAllUsers([String? schoolId]) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      final users = await authRepository.getAllUsers();
+      final targetSchoolId = schoolId ?? _activeSchoolId;
+      final users = (targetSchoolId != null && targetSchoolId.isNotEmpty)
+          ? await authRepository.getAllUsersForSchool(targetSchoolId)
+          : await authRepository.getAllUsers();
       _isLoading = false;
       notifyListeners();
       return users;

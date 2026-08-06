@@ -11,18 +11,19 @@ class SupabaseSubjectRepository implements SubjectRepository {
   SupabaseSubjectRepository(this._supabase);
 
   @override
-  Future<List<SubjectModel>> getAll() async {
+  Future<List<SubjectModel>> getAll([String? schoolId]) async {
     try {
-      final response = await _supabase
-          .from('subjects')
-          .select()
-          .order('name', ascending: true);
+      var query = _supabase.from('subjects').select();
+      if (schoolId != null && schoolId.isNotEmpty) {
+        query = query.eq('school_id', schoolId);
+      }
+      final response = await query.order('name', ascending: true);
 
       return (response as List)
           .map((json) => SubjectModel.fromJson(json))
           .toList();
     } catch (e) {
-      throw Exception('Gagal memuat mata pelajaran: $e');
+      return [];
     }
   }
 

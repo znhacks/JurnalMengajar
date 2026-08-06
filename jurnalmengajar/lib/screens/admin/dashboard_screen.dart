@@ -8,6 +8,8 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/journal_provider.dart';
+import '../../providers/holiday_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../core/utils/helper.dart';
 import '../../models/class_model.dart';
@@ -32,6 +34,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   DateTime _focusedDay = DateTime.now();
   String? _selectedTeacherId;
 
+  String? _lastLoadedSchoolId;
+  String? _lastLoadedUserId;
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +44,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshData();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authProvider = Provider.of<AuthProvider>(context);
+    final currentSchoolId = authProvider.activeSchoolId;
+    final currentUserId = authProvider.currentUser?.id;
+
+    if ((_lastLoadedSchoolId != null && _lastLoadedSchoolId != currentSchoolId) ||
+        (_lastLoadedUserId != null && _lastLoadedUserId != currentUserId)) {
+      _lastLoadedSchoolId = currentSchoolId;
+      _lastLoadedUserId = currentUserId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _refreshData();
+      });
+    } else {
+      _lastLoadedSchoolId = currentSchoolId;
+      _lastLoadedUserId = currentUserId;
+    }
   }
 
   @override
@@ -66,10 +91,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       listen: false,
     );
 
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final schoolId = authProvider.activeSchoolId ?? 'a1111111-1111-1111-1111-111111111111';
+
     await Future.wait([
-      masterProvider.loadAllData(),
+      masterProvider.loadAllData(authProvider.activeSchoolId),
       scheduleProvider.loadAllSchedules(),
       journalProvider.loadAllJournals(),
+      Provider.of<HolidayProvider>(context, listen: false).loadHolidays(schoolId),
     ]);
 
     // Run Warning Letters Check & Issue if late
@@ -98,13 +127,37 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
     final journalProvider = context.watch<JournalProvider>();
 
+    final schoolTeacherIds = masterProvider.teachers.map((t) => t.id).toSet();
+
+    final schoolSchedules = scheduleProvider.schedules.where((s) {
+      return schoolTeacherIds.contains(s.teacherId);
+    }).toList();
+
+    final schoolJournals = journalProvider.journals.where((j) {
+      final sched = scheduleProvider.schedules.firstWhere(
+        (s) => s.id == j.scheduleId,
+        orElse: () => ScheduleModel(
+          id: '',
+          periodId: '',
+          date: DateTime.now(),
+          teachingHour: 0,
+          classId: '',
+          subjectId: '',
+          teacherId: '',
+          isActive: false,
+        ),
+      );
+      return schoolTeacherIds.contains(sched.teacherId) || schoolTeacherIds.contains(j.teacherId);
+    }).toList();
+
     final filteredJournals = _selectedTeacherId == null
-        ? journalProvider.journals
-        : journalProvider.journals.where((j) {
+        ? schoolJournals
+        : schoolJournals.where((j) {
             final sched = scheduleProvider.schedules.firstWhere(
               (s) => s.id == j.scheduleId,
               orElse: () => ScheduleModel(
@@ -118,7 +171,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 isActive: false,
               ),
             );
-            return sched.teacherId == _selectedTeacherId;
+            return sched.teacherId == _selectedTeacherId || j.teacherId == _selectedTeacherId;
           }).toList();
 
     final totalJournals = filteredJournals.length;
@@ -141,16 +194,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       59,
     ).add(const Duration(days: 6));
 
-
-
-    final hasHighlightBefore = scheduleProvider.schedules.any((s) {
+    final hasHighlightBefore = schoolSchedules.any((s) {
       if (!s.isActive) return false;
       if (_selectedTeacherId != null && s.teacherId != _selectedTeacherId) return false;
       final sDate = DateTime.utc(s.date.year, s.date.month, s.date.day);
       return sDate.isBefore(startOfWeek);
     });
 
-    final hasHighlightAfter = scheduleProvider.schedules.any((s) {
+    final hasHighlightAfter = schoolSchedules.any((s) {
       if (!s.isActive) return false;
       if (_selectedTeacherId != null && s.teacherId != _selectedTeacherId) return false;
       final sDate = DateTime.utc(s.date.year, s.date.month, s.date.day);
@@ -158,7 +209,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     });
 
     // Calculate unsubmitted schedules for selected day using UTC calendar date comparison to avoid timezone shifts
-    final schedulesForDay = scheduleProvider.schedules.where((s) {
+    final schedulesForDay = schoolSchedules.where((s) {
       return s.date.year == _selectedDay.year &&
           s.date.month == _selectedDay.month &&
           s.date.day == _selectedDay.day;
@@ -216,7 +267,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
             ),
             Text(
-              'SMKN 11 Malang',
+              authProvider.activeSchoolName,
               style: GoogleFonts.hankenGrotesk(
                 fontSize: 11.sp,
                 fontWeight: FontWeight.w600,
@@ -481,13 +532,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   ) {
     final hasSchedule = _hasTeacherScheduleOnDay(schedules, day);
 
+    final holidayProvider = Provider.of<HolidayProvider>(context, listen: false);
+    final holiday = holidayProvider.getHolidayForDate(day);
+    final isHoliday = holiday != null;
+
     Color bgColor = Colors.transparent;
     Color textColor = isOutside ? const Color(0xFFCBD5E1) : const Color(0xFF334155);
     FontWeight fontWeight = FontWeight.w600;
 
     if (isSelected) {
-      bgColor = const Color(0xFF2563EB); // Solid Blue accent from Ref B
+      bgColor = isHoliday ? const Color(0xFFDC2626) : const Color(0xFF2563EB);
       textColor = Colors.white;
+      fontWeight = FontWeight.w800;
+    } else if (isHoliday) {
+      bgColor = const Color(0xFFFEE2E2);
+      textColor = const Color(0xFFDC2626);
       fontWeight = FontWeight.w800;
     } else if (hasSchedule) {
       bgColor = const Color(0xFFEFF6FF);

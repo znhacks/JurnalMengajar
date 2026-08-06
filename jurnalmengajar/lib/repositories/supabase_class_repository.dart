@@ -11,18 +11,19 @@ class SupabaseClassRepository implements ClassRepository {
   SupabaseClassRepository(this._supabase);
 
   @override
-  Future<List<ClassModel>> getAll() async {
+  Future<List<ClassModel>> getAll([String? schoolId]) async {
     try {
-      final response = await _supabase
-          .from('classes')
-          .select()
-          .order('name', ascending: true);
+      var query = _supabase.from('classes').select();
+      if (schoolId != null && schoolId.isNotEmpty) {
+        query = query.eq('school_id', schoolId);
+      }
+      final response = await query.order('name', ascending: true);
 
       return (response as List)
           .map((json) => ClassModel.fromJson(json))
           .toList();
     } catch (e) {
-      throw Exception('Gagal memuat kelas: $e');
+      return [];
     }
   }
 

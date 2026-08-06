@@ -6,7 +6,7 @@ class MockPeriodRepository implements PeriodRepository {
   final MockDatabase _db = MockDatabase();
 
   @override
-  Future<List<PeriodModel>> getAll() async {
+  Future<List<PeriodModel>> getAll([String? schoolId]) async {
     await Future.delayed(const Duration(milliseconds: 300));
     return List.from(_db.periods);
   }

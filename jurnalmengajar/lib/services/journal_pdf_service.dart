@@ -7,6 +7,7 @@ import '../models/journal_model.dart';
 import '../models/teacher_model.dart';
 import '../models/class_model.dart';
 import '../models/subject_model.dart';
+import '../models/school_model.dart';
 
 class JournalPdfService {
   /// Generates a PDF byte array for teaching journals report tailored for supervisors.
@@ -17,6 +18,7 @@ class JournalPdfService {
     required DateTime endDate,
     required List<ClassModel> classes,
     required List<SubjectModel> subjects,
+    SchoolModel? school,
     String? supervisorName,
     String? supervisorNip,
     String statusFilter = 'all',
@@ -62,6 +64,7 @@ class JournalPdfService {
         margin: const pw.EdgeInsets.all(28),
         theme: theme,
         header: (pw.Context context) => _buildHeader(
+          school: school,
           schoolName: schoolName,
           periodStr: periodStr,
           ttfBold: ttfBold,
@@ -75,6 +78,31 @@ class JournalPdfService {
         ),
         build: (pw.Context context) {
           return [
+            pw.SizedBox(height: 8),
+
+            // Document Title
+            pw.Center(
+              child: pw.Text(
+                'LAPORAN JURNAL MENGAJAR GURU',
+                style: pw.TextStyle(
+                  font: ttfBold,
+                  fontSize: 12,
+                  color: PdfColors.black,
+                  decoration: pw.TextDecoration.underline,
+                ),
+              ),
+            ),
+            pw.Center(
+              child: pw.Text(
+                'Periode Tanggal: $periodStr',
+                style: pw.TextStyle(
+                  font: ttfRegular,
+                  fontSize: 9,
+                  color: PdfColors.grey800,
+                ),
+              ),
+            ),
+
             pw.SizedBox(height: 10),
 
             // Teacher Metadata Box & Filter Badges
@@ -154,8 +182,9 @@ class JournalPdfService {
     return pdf.save();
   }
 
-  /// Header widget rendered at top of each page
+  /// Header widget rendered at top of each page - Official School Kop Format
   static pw.Widget _buildHeader({
+    SchoolModel? school,
     required String schoolName,
     required String periodStr,
     required pw.Font ttfBold,
@@ -163,60 +192,174 @@ class JournalPdfService {
     required int pageNumber,
     required int totalPages,
   }) {
+    final gov = (school?.governmentHeader != null && school!.governmentHeader!.isNotEmpty)
+        ? school.governmentHeader!
+        : 'PEMERINTAH KABUPATEN SIAK';
+    final dept = (school?.departmentHeader != null && school!.departmentHeader!.isNotEmpty)
+        ? school.departmentHeader!
+        : 'DINAS PENDIDIKAN DAN KEBUDAYAAN';
+    final sName = (school?.name != null && school!.name.isNotEmpty)
+        ? school.name
+        : schoolName;
+    final addr = (school?.address != null && school!.address!.isNotEmpty)
+        ? school.address!
+        : 'Jl. Perjuangan Dusun II Sungai Niur Desa Koto Ringin Kecamatan Mempura Kabupaten Siak Provinsi Riau';
+    final postCode = (school?.postalCode != null && school!.postalCode!.isNotEmpty)
+        ? school.postalCode!
+        : '28651';
+    final phone = (school?.phone != null && school!.phone!.isNotEmpty)
+        ? school.phone!
+        : '081378770847';
+    
+    // Website & Email Sanitization & Validation
+    String web = (school?.website != null && school!.website!.isNotEmpty)
+        ? school.website!
+        : 'http://smpn1satapmempura.besaba.com';
+
+    String email = (school?.email != null && school!.email!.isNotEmpty)
+        ? school.email!
+        : 'smpn.1satapmempura@gmail.com';
+
+    final nss = (school?.nss != null && school!.nss!.isNotEmpty) ? school.nss! : '201091112001';
+    final npsn = (school?.npsn != null && school!.npsn!.isNotEmpty) ? school.npsn! : '69727270';
+
     return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           crossAxisAlignment: pw.CrossAxisAlignment.center,
           children: [
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(
-                  'LAPORAN JURNAL MENGAJAR GURU',
-                  style: pw.TextStyle(
-                    font: ttfBold,
-                    fontSize: 14,
-                    color: PdfColors.indigo900,
+            // Left Side: Presisi Lambang Kabupaten Siak / Tut Wuri Handayani
+            pw.Container(
+              width: 58,
+              height: 70,
+              padding: const pw.EdgeInsets.all(3),
+              decoration: pw.BoxDecoration(
+                color: PdfColor.fromHex('#0E6235'), // Green Siak emblem
+                borderRadius: const pw.BorderRadius.only(
+                  topLeft: pw.Radius.circular(10),
+                  topRight: pw.Radius.circular(10),
+                  bottomLeft: pw.Radius.circular(26),
+                  bottomRight: pw.Radius.circular(26),
+                ),
+                border: pw.Border.all(color: PdfColors.amber, width: 2.5),
+              ),
+              child: pw.Container(
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.white,
+                  borderRadius: const pw.BorderRadius.only(
+                    topLeft: pw.Radius.circular(7),
+                    topRight: pw.Radius.circular(7),
+                    bottomLeft: pw.Radius.circular(23),
+                    bottomRight: pw.Radius.circular(23),
                   ),
                 ),
-                pw.SizedBox(height: 2),
-                pw.Text(
-                  'Periode Tanggal: $periodStr',
-                  style: pw.TextStyle(
-                    font: ttfRegular,
-                    fontSize: 9,
-                    color: PdfColors.grey800,
-                  ),
+                child: pw.Column(
+                  mainAxisAlignment: pw.MainAxisAlignment.center,
+                  children: [
+                    // Top Yellow Star
+                    pw.Text('★', style: pw.TextStyle(font: ttfBold, fontSize: 10, color: PdfColors.amber800)),
+                    pw.SizedBox(height: 1),
+                    // Istana Siak / Crown Icon symbol
+                    pw.Container(
+                      width: 26,
+                      height: 14,
+                      alignment: pw.Alignment.center,
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColors.green900, width: 1),
+                        color: PdfColor.fromHex('#E8F5E9'),
+                      ),
+                      child: pw.Text('🏛️', style: pw.TextStyle(fontSize: 8)),
+                    ),
+                    pw.SizedBox(height: 2),
+                    // Ribbon SIAK
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColor.fromHex('#C62828'), // Red Ribbon
+                        borderRadius: pw.BorderRadius.circular(3),
+                      ),
+                      child: pw.Text(
+                        'SIAK',
+                        style: pw.TextStyle(font: ttfBold, fontSize: 6.5, color: PdfColors.white),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.end,
-              children: [
-                pw.Text(
-                  schoolName,
-                  style: pw.TextStyle(
-                    font: ttfBold,
-                    fontSize: 10,
-                    color: PdfColors.indigo700,
+            pw.SizedBox(width: 12),
+
+            // Middle: Official Kop Header Text
+            pw.Expanded(
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Text(
+                    gov.toUpperCase(),
+                    style: pw.TextStyle(font: ttfBold, fontSize: 11, letterSpacing: 0.5, color: PdfColors.black),
                   ),
-                ),
-                pw.Text(
-                  'Halaman $pageNumber dari $totalPages',
-                  style: pw.TextStyle(
-                    font: ttfRegular,
-                    fontSize: 8,
-                    color: PdfColors.grey600,
+                  pw.Text(
+                    dept.toUpperCase(),
+                    style: pw.TextStyle(font: ttfBold, fontSize: 12, letterSpacing: 0.5, color: PdfColors.black),
                   ),
-                ),
-              ],
+                  pw.Text(
+                    sName.toUpperCase(),
+                    style: pw.TextStyle(font: ttfBold, fontSize: 14, letterSpacing: 0.8, color: PdfColors.black),
+                  ),
+                  pw.SizedBox(height: 2),
+                  pw.Text(
+                    '$addr Kode Pos: $postCode Telp. $phone',
+                    style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.black),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                  pw.SizedBox(height: 1),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.center,
+                    children: [
+                      pw.Text('Website: ', style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.black)),
+                      pw.Text(web, style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.blue900, decoration: pw.TextDecoration.underline)),
+                      pw.SizedBox(width: 10),
+                      pw.Text('Email: ', style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.black)),
+                      pw.Text(email, style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.blue900, decoration: pw.TextDecoration.underline)),
+                    ],
+                  ),
+                  pw.SizedBox(height: 1),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.center,
+                    children: [
+                      pw.Text('NSS: $nss', style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.black)),
+                      pw.SizedBox(width: 40),
+                      pw.Text('NPSN: $npsn', style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.black)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            pw.SizedBox(width: 8),
+
+            // Right side: Page Numbering indicator
+            pw.Container(
+              width: 50,
+              alignment: pw.Alignment.topRight,
+              child: pw.Text(
+                'Hal. $pageNumber/$totalPages',
+                style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.grey700),
+              ),
             ),
           ],
         ),
         pw.SizedBox(height: 6),
-        pw.Divider(color: PdfColors.indigo700, thickness: 1.5),
+
+        // Double Horizontal Line (Kop Divider line - 1 thick line, 1 thin line)
+        pw.Container(
+          height: 2.2,
+          color: PdfColors.black,
+        ),
+        pw.SizedBox(height: 1.2),
+        pw.Container(
+          height: 0.7,
+          color: PdfColors.black,
+        ),
       ],
     );
   }

@@ -72,6 +72,12 @@ class AdminDrawer extends StatelessWidget {
                 ),
                 _buildMenuItem(
                   context,
+                  Icons.event_busy_rounded,
+                  'Hari Libur / Cuti',
+                  '/admin/holidays',
+                ),
+                _buildMenuItem(
+                  context,
                   Icons.info_rounded,
                   'Tentang Aplikasi',
                   '/about',

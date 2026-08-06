@@ -55,7 +55,9 @@ class MockAuthRepository implements AuthRepository {
     if (checkIndex != -1) {
       final existingUser = _db.users[checkIndex];
       if (existingUser.role == 'pending_guru') {
-        throw Exception('Pendaftaran Anda sedang menunggu persetujuan Admin. Silakan hubungi Admin untuk konfirmasi.');
+        throw Exception('Pendaftaran Guru Anda sedang menunggu persetujuan Admin Sekolah. Silakan hubungi Admin Sekolah Anda untuk konfirmasi.');
+      } else if (existingUser.role == 'pending_admin') {
+        throw Exception('Pendaftaran Admin Sekolah Anda sedang menunggu pengaktifan Kode Sekolah dari Superadmin. Silakan hubungi Superadmin.');
       } else {
         throw Exception('Email sudah terdaftar!');
       }
@@ -180,5 +182,15 @@ class MockAuthRepository implements AuthRepository {
   @override
   Future<void> updateFcmToken(String userId, String token) async {
     await Future.delayed(const Duration(milliseconds: 100));
+  }
+
+  @override
+  Future<List<UserModel>> getAllUsersForSchool(String schoolId) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    return _db.users.where((u) {
+      if (u.schoolIds.contains(schoolId)) return true;
+      if (u.schoolName != null && u.schoolName!.toLowerCase().contains(schoolId.toLowerCase())) return true;
+      return true; // Fallback untuk mock database
+    }).toList();
   }
 }

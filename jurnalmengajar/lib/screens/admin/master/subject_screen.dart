@@ -7,6 +7,8 @@ import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 
+import '../../../providers/auth_provider.dart';
+
 class MasterSubjectScreen extends StatefulWidget {
   const MasterSubjectScreen({super.key});
 
@@ -95,7 +97,8 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
   }
 
   Future<void> _refreshData() async {
-    await Provider.of<MasterDataProvider>(context, listen: false).loadAllData();
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await Provider.of<MasterDataProvider>(context, listen: false).loadAllData(authProvider.activeSchoolId);
   }
 
   void _showFormDialog({SubjectModel? subject}) {

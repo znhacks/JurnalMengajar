@@ -70,4 +70,10 @@ class MockTeacherRepository implements TeacherRepository {
     // Also remove from user list to prevent ghost logins
     _db.users.removeWhere((u) => u.email.toLowerCase() == teacher.email.toLowerCase());
   }
+
+  @override
+  Future<List<TeacherModel>> getAllForSchool(String schoolId) async {``
+    await Future.delayed(const Duration(milliseconds: 300));
+    return List.from(_db.teachers);
+  }
 }

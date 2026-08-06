@@ -6,6 +6,7 @@ import '../../../models/hour_model.dart';
 import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
+import '../../../providers/auth_provider.dart';
 
 class MasterHourScreen extends StatefulWidget {
   const MasterHourScreen({super.key});
@@ -95,7 +96,8 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
   }
 
   Future<void> _refreshData() async {
-    await Provider.of<MasterDataProvider>(context, listen: false).loadAllData();
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await Provider.of<MasterDataProvider>(context, listen: false).loadAllData(authProvider.activeSchoolId);
   }
 
   Future<void> _showFormDialog({HourModel? hour}) async {

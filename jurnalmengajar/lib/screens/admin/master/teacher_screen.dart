@@ -117,7 +117,8 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
   }
 
   Future<void> _refreshData() async {
-    await Provider.of<MasterDataProvider>(context, listen: false).loadAllData();
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await Provider.of<MasterDataProvider>(context, listen: false).loadAllData(authProvider.activeSchoolId);
   }
 
   void _showFormDialog({TeacherModel? teacher}) {

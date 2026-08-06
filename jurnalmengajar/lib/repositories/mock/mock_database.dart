@@ -9,6 +9,8 @@ import '../../models/journal_model.dart';
 import '../../models/journal_attachment_model.dart';
 import '../../models/settings_model.dart';
 
+import '../../models/school_model.dart';
+
 class MockDatabase {
   static final MockDatabase _instance = MockDatabase._internal();
   factory MockDatabase() => _instance;
@@ -28,9 +30,41 @@ class MockDatabase {
   final List<ClassModel> classes = [];
   final List<ScheduleModel> schedules = [];
   final List<JournalModel> journals = [];
+  final List<SchoolModel> schools = [];
   SettingsModel settings = SettingsModel(id: 'default', maxJournalInputDays: 3);
 
   void _initData() {
+    // 0. Schools
+    schools.addAll([
+      SchoolModel(
+        id: 'sch1',
+        name: 'SMP NEGERI 1 SATU ATAP MEMPURA',
+        code: '201091112001',
+        address: 'Jl. Perjuangan Dusun II Sungai Niur Desa Koto Ringin Kecamatan Mempura Kabupaten Siak Provinsi Riau',
+        phone: '081378770847',
+        governmentHeader: 'PEMERINTAH KABUPATEN SIAK',
+        departmentHeader: 'DINAS PENDIDIKAN DAN KEBUDAYAAN',
+        website: 'http://smpn1satapmempura.besaba.com',
+        email: 'smpn.1satapmempura@gmail.com',
+        nss: '201091112001',
+        npsn: '69727270',
+        postalCode: '28651',
+      ),
+      SchoolModel(
+        id: 'sch2',
+        name: 'SMKN 11 Malang',
+        code: '302056001011',
+        address: 'Jl. Pelabuhan Bakahuni No.1, Bakalankrajan, Sukun, Malang',
+        phone: '0341-801395',
+        governmentHeader: 'PEMERINTAH PROVINSI JAWA TIMUR',
+        departmentHeader: 'DINAS PENDIDIKAN',
+        website: 'http://smkn11malang.sch.id',
+        email: 'info@smkn11malang.sch.id',
+        nss: '302056001011',
+        npsn: '20536830',
+        postalCode: '65148',
+      ),
+    ]);
     // 1. Periods
     periods.addAll([
       PeriodModel(id: 'p1', name: '2025/2026 Ganjil', isActive: true),

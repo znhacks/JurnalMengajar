@@ -27,6 +27,7 @@ import '../../screens/guru/warning_letter_list_screen.dart';
 import '../../screens/guru/statistik_screen.dart';
 import '../../screens/guru/download_jurnal_screen.dart';
 import '../../screens/admin/admin_jurnal_list_screen.dart';
+import '../../screens/admin/holidays_screen.dart';
 import '../../screens/admin/master/student_screen.dart';
 import '../../screens/admin/master/teacher_detail_screen.dart';
 
@@ -349,6 +350,11 @@ class AppRouter {
           path: '/admin/settings',
           pageBuilder: (context, state) => _buildCustomTransition(
               context, state, const AdminSettingsScreen()),
+        ),
+        GoRoute(
+          path: '/admin/holidays',
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const AdminHolidaysScreen()),
         ),
         GoRoute(
           path: '/admin/master-data/users',

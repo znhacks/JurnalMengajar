@@ -17,6 +17,8 @@ class JournalModel {
   final String status; // 'pending' | 'approved' | 'rejected'
   final String? attachmentUrl;
   final String? rejectionNote;
+  final bool isSoftDeleted;
+  final DateTime? deletedAt;
 
   JournalModel({
     required this.id,
@@ -35,6 +37,8 @@ class JournalModel {
     required this.status,
     this.attachmentUrl,
     this.rejectionNote,
+    this.isSoftDeleted = false,
+    this.deletedAt,
   });
 
   factory JournalModel.fromJson(Map<String, dynamic> json) {
@@ -74,6 +78,10 @@ class JournalModel {
       status: json['status'] as String,
       attachmentUrl: attachmentUrl,
       rejectionNote: json['rejection_note'] as String? ?? json['rejectionNote'] as String?,
+      isSoftDeleted: json['is_soft_deleted'] as bool? ?? json['isSoftDeleted'] as bool? ?? false,
+      deletedAt: json['deleted_at'] != null
+          ? DateTime.tryParse(json['deleted_at'] as String)
+          : null,
     );
   }
 
@@ -94,6 +102,8 @@ class JournalModel {
       'status': status,
       'attachment_url': attachmentUrl,
       'rejection_note': rejectionNote,
+      'is_soft_deleted': isSoftDeleted,
+      'deleted_at': deletedAt?.toIso8601String(),
     };
   }
 
@@ -114,6 +124,8 @@ class JournalModel {
     String? status,
     String? attachmentUrl,
     String? rejectionNote,
+    bool? isSoftDeleted,
+    DateTime? deletedAt,
   }) {
     return JournalModel(
       id: id ?? this.id,
@@ -132,6 +144,8 @@ class JournalModel {
       status: status ?? this.status,
       attachmentUrl: attachmentUrl ?? this.attachmentUrl,
       rejectionNote: rejectionNote ?? this.rejectionNote,
+      isSoftDeleted: isSoftDeleted ?? this.isSoftDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
     );
   }
 }

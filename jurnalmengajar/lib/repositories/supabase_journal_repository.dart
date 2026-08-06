@@ -19,6 +19,7 @@ class SupabaseJournalRepository implements JournalRepository {
       final response = await _supabase
           .from(SupabaseConstants.tableJournals)
           .select()
+          .eq('is_soft_deleted', false)
           .order(SupabaseConstants.fieldDate, ascending: false);
 
       return (response as List)
@@ -36,6 +37,7 @@ class SupabaseJournalRepository implements JournalRepository {
           .from(SupabaseConstants.tableJournals)
           .select()
           .eq(SupabaseConstants.fieldTeacherId, teacherId)
+          .eq('is_soft_deleted', false)
           .order(SupabaseConstants.fieldDate, ascending: false);
 
       return (response as List)

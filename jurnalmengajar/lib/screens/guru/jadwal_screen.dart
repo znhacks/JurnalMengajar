@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/journal_provider.dart';
+import '../../providers/holiday_provider.dart';
 import '../../models/journal_model.dart';
 import '../../models/teacher_model.dart';
 import '../../models/class_model.dart';
@@ -51,6 +52,10 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       context,
       listen: false,
     );
+    final holidayProvider = Provider.of<HolidayProvider>(
+      context,
+      listen: false,
+    );
 
     final currentUser = authProvider.currentUser;
     if (currentUser != null) {
@@ -70,9 +75,11 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       );
 
       if (teacher.id.isNotEmpty) {
+        final schoolId = authProvider.activeSchoolId ?? 'a1111111-1111-1111-1111-111111111111';
         await Future.wait([
           scheduleProvider.loadTeacherSchedules(teacher.id, _selectedDay),
           journalProvider.loadTeacherJournals(teacher.id),
+          holidayProvider.loadHolidays(schoolId),
         ]);
       }
     }
@@ -96,14 +103,21 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     List<ScheduleModel> schedules,
   ) {
     final hasSchedule = _hasTeacherScheduleOnDay(schedules, day);
+    final holidayProvider = Provider.of<HolidayProvider>(context, listen: false);
+    final holiday = holidayProvider.getHolidayForDate(day);
+    final isHoliday = holiday != null;
 
     Color bgColor = Colors.transparent;
     Color textColor = isOutside ? const Color(0xFFCBD5E1) : const Color(0xFF334155);
     FontWeight fontWeight = FontWeight.w600;
 
     if (isSelected) {
-      bgColor = const Color(0xFF2563EB); // Solid Blue accent
+      bgColor = isHoliday ? const Color(0xFFDC2626) : const Color(0xFF2563EB);
       textColor = Colors.white;
+      fontWeight = FontWeight.w800;
+    } else if (isHoliday) {
+      bgColor = const Color(0xFFFEE2E2);
+      textColor = const Color(0xFFDC2626);
       fontWeight = FontWeight.w800;
     } else if (hasSchedule) {
       bgColor = const Color(0xFFEFF6FF);
@@ -557,65 +571,134 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
             _buildCalendarCard(scheduleProvider, teacher),
             SizedBox(height: 8.h),
 
+            // Holiday Banner on Schedule Screen
+            Builder(
+              builder: (context) {
+                final holidayProvider = context.watch<HolidayProvider>();
+                final holiday = holidayProvider.getHolidayForDate(_selectedDay);
+                if (holiday == null) return const SizedBox.shrink();
+
+                return Container(
+                  width: double.infinity,
+                  margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  padding: EdgeInsets.all(14.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(16.r),
+                    border: Border.all(color: const Color(0xFFFCA5A5)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(8.w),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFDC2626),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.event_busy_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'HARI LIBUR: ${holiday.title.toUpperCase()}',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF991B1B),
+                              ),
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              holiday.description != null && holiday.description!.isNotEmpty
+                                  ? holiday.description!
+                                  : 'KBM ditiadakan. Kegiatan mengajar tidak perlu diisi.',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 11.sp,
+                                color: const Color(0xFFB91C1C),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+
             // Schedules list for selected day
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _loadData,
                 color: const Color(0xFF2563EB),
-                child: scheduleProvider.isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : scheduleProvider.teacherSchedulesForSelectedDate.isEmpty
-                    ? _buildEmptyState()
-                    : Builder(
-                        builder: (context) {
-                          final groupedSchedules = groupDailySchedules(
-                            scheduleProvider.teacherSchedulesForSelectedDate,
-                          );
+                child: Builder(
+                  builder: (context) {
+                    if (scheduleProvider.isLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                          // Find index of the first schedule item without a completed/pending journal
-                          int activeHighlightIndex = -1;
-                          for (int i = 0; i < groupedSchedules.length; i++) {
-                            final group = groupedSchedules[i];
-                            final s = group.primarySchedule;
-                            final hasJournal = journalProvider.teacherJournals.any((j) {
-                              final sameDate = j.date.year == _selectedDay.year &&
-                                  j.date.month == _selectedDay.month &&
-                                  j.date.day == _selectedDay.day;
-                              final sameSchedule = j.scheduleId == s.id ||
-                                  group.scheduleIds.contains(j.scheduleId) ||
-                                  (j.classId == s.classId && j.subjectId == s.subjectId);
-                              return sameDate &&
-                                  sameSchedule &&
-                                  (j.status == 'pending' || j.status == 'verified');
-                            });
-                            if (!hasJournal) {
-                              activeHighlightIndex = i;
-                              break;
-                            }
-                          }
-                          if (activeHighlightIndex == -1 && groupedSchedules.isNotEmpty) {
-                            activeHighlightIndex = groupedSchedules.length - 1;
-                          }
+                    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
+                    final filteredSchedules = scheduleProvider.teacherSchedulesForSelectedDate.where((s) {
+                      return validClassIds.contains(s.classId);
+                    }).toList();
 
-                          return ListView.builder(
-                            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                            itemCount: groupedSchedules.length,
-                            itemBuilder: (context, index) {
-                              final scheduleGroup = groupedSchedules[index];
-                              final isLast = index == groupedSchedules.length - 1;
-                              final isHighlighted = index == activeHighlightIndex;
-                              return _buildTimelineScheduleItem(
-                                scheduleGroup,
-                                masterProvider,
-                                journalProvider,
-                                index,
-                                isLast,
-                                isHighlighted,
-                              );
-                            },
-                          );
-                        },
-                      ),
+                    if (filteredSchedules.isEmpty) {
+                      return _buildEmptyState();
+                    }
+
+                    final groupedSchedules = groupDailySchedules(filteredSchedules);
+
+                    // Find index of the first schedule item without a completed/pending journal
+                    int activeHighlightIndex = -1;
+                    for (int i = 0; i < groupedSchedules.length; i++) {
+                      final group = groupedSchedules[i];
+                      final s = group.primarySchedule;
+                      final hasJournal = journalProvider.teacherJournals.any((j) {
+                        final sameDate = j.date.year == _selectedDay.year &&
+                            j.date.month == _selectedDay.month &&
+                            j.date.day == _selectedDay.day;
+                        final sameSchedule = j.scheduleId == s.id ||
+                            group.scheduleIds.contains(j.scheduleId) ||
+                            (j.classId == s.classId && j.subjectId == s.subjectId);
+                        return sameDate &&
+                            sameSchedule &&
+                            (j.status == 'pending' || j.status == 'verified');
+                      });
+                      if (!hasJournal) {
+                        activeHighlightIndex = i;
+                        break;
+                      }
+                    }
+                    if (activeHighlightIndex == -1 && groupedSchedules.isNotEmpty) {
+                      activeHighlightIndex = groupedSchedules.length - 1;
+                    }
+
+                    return ListView.builder(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                      itemCount: groupedSchedules.length,
+                      itemBuilder: (context, index) {
+                        final scheduleGroup = groupedSchedules[index];
+                        final isLast = index == groupedSchedules.length - 1;
+                        final isHighlighted = index == activeHighlightIndex;
+                        return _buildTimelineScheduleItem(
+                          scheduleGroup,
+                          masterProvider,
+                          journalProvider,
+                          index,
+                          isLast,
+                          isHighlighted,
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ),
           ],

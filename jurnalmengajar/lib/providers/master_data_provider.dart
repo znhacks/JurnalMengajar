@@ -43,9 +43,7 @@ class MasterDataProvider with ChangeNotifier {
     required this.teacherRepository,
     required this.studentRepository,
     this.schoolRepository,
-  }) {
-    loadAllData();
-  }
+  });
 
   // Getters
   List<PeriodModel> get periods => _periods;
@@ -66,17 +64,19 @@ class MasterDataProvider with ChangeNotifier {
     }
   }
 
-  Future<void> loadAllData() async {
+  Future<void> loadAllData([String? schoolId]) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
       final results = await Future.wait([
-        periodRepository.getAll().catchError((_) => <PeriodModel>[]),
-        subjectRepository.getAll().catchError((_) => <SubjectModel>[]),
-        hourRepository.getAll().catchError((_) => <HourModel>[]),
-        classRepository.getAll().catchError((_) => <ClassModel>[]),
-        teacherRepository.getAll().catchError((_) => <TeacherModel>[]),
+        periodRepository.getAll(schoolId).catchError((_) => <PeriodModel>[]),
+        subjectRepository.getAll(schoolId).catchError((_) => <SubjectModel>[]),
+        hourRepository.getAll(schoolId).catchError((_) => <HourModel>[]),
+        classRepository.getAll(schoolId).catchError((_) => <ClassModel>[]),
+        (schoolId != null && schoolId.isNotEmpty)
+            ? teacherRepository.getAllForSchool(schoolId).catchError((_) => <TeacherModel>[])
+            : teacherRepository.getAll().catchError((_) => <TeacherModel>[]),
         if (schoolRepository != null)
           schoolRepository!.getAll().catchError((_) => <SchoolModel>[])
         else

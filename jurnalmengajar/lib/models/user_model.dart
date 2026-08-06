@@ -9,6 +9,8 @@ class UserModel {
   final String? address;
   final String? schoolName; // e.g. 'SMKN 11 Malang'
 
+  final List<String> schoolIds;
+
   UserModel({
     required this.id,
     required this.email,
@@ -18,10 +20,27 @@ class UserModel {
     this.phoneNumber,
     this.position,
     this.address,
-    this.schoolName = 'SMKN 11 Malang',
+    this.schoolName,
+    this.schoolIds = const [],
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    List<String> parsedSchoolIds = [];
+    if (json['school_ids'] != null) {
+      if (json['school_ids'] is List) {
+        parsedSchoolIds = (json['school_ids'] as List).map((e) => e.toString().trim()).toList();
+      } else if (json['school_ids'] is String) {
+        parsedSchoolIds = (json['school_ids'] as String).split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      }
+    } else if (json['school_id'] != null) {
+      final sId = json['school_id'].toString().trim();
+      if (sId.contains(',')) {
+        parsedSchoolIds = sId.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      } else if (sId.isNotEmpty) {
+        parsedSchoolIds = [sId];
+      }
+    }
+
     return UserModel(
       id: json['id'] as String,
       email: json['email'] as String,
@@ -31,7 +50,8 @@ class UserModel {
       phoneNumber: json['phone'] as String? ?? json['phoneNumber'] as String?,
       position: json['position'] as String?,
       address: json['address'] as String?,
-      schoolName: json['school_name'] as String? ?? json['schoolName'] as String? ?? 'SMKN 11 Malang',
+      schoolName: json['school_name'] as String? ?? json['schoolName'] as String?,
+      schoolIds: parsedSchoolIds,
     );
   }
 
@@ -45,7 +65,8 @@ class UserModel {
       'phone': phoneNumber,
       'position': position,
       'address': address,
-      'school_name': schoolName ?? 'SMKN 11 Malang',
+      'school_name': schoolName,
+      'school_ids': schoolIds,
     };
   }
 
@@ -59,6 +80,7 @@ class UserModel {
     String? position,
     String? address,
     String? schoolName,
+    List<String>? schoolIds,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -70,6 +92,8 @@ class UserModel {
       position: position ?? this.position,
       address: address ?? this.address,
       schoolName: schoolName ?? this.schoolName,
+      schoolIds: schoolIds ?? this.schoolIds,
     );
   }
 }
+

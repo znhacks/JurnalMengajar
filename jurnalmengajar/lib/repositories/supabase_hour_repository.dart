@@ -11,18 +11,19 @@ class SupabaseHourRepository implements HourRepository {
   SupabaseHourRepository(this._supabase);
 
   @override
-  Future<List<HourModel>> getAll() async {
+  Future<List<HourModel>> getAll([String? schoolId]) async {
     try {
-      final response = await _supabase
-          .from('lesson_hours')
-          .select()
-          .order('teaching_hour', ascending: true);
+      var query = _supabase.from('lesson_hours').select();
+      if (schoolId != null && schoolId.isNotEmpty) {
+        query = query.eq('school_id', schoolId);
+      }
+      final response = await query.order('teaching_hour', ascending: true);
 
       return (response as List)
           .map((json) => HourModel.fromJson(json))
           .toList();
     } catch (e) {
-      throw Exception('Gagal memuat jam pelajaran: $e');
+      return [];
     }
   }
 

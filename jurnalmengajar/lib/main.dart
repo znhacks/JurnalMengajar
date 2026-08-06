@@ -23,6 +23,7 @@ import 'providers/auth_provider.dart';
 import 'providers/master_data_provider.dart';
 import 'providers/schedule_provider.dart';
 import 'providers/journal_provider.dart';
+import 'providers/holiday_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/warning_letter_provider.dart';
 
@@ -89,6 +90,9 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => JournalProvider(journalRepository: journalRepo),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => HolidayProvider(),
         ),
         ChangeNotifierProvider(
           create: (_) => SettingsProvider(settingsRepository: settingsRepo),

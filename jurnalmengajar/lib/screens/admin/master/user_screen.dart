@@ -119,7 +119,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final users = await authProvider.getAllUsers();
+      final users = await authProvider.getAllUsers(authProvider.activeSchoolId);
       setState(() {
         _allUsers = users;
         _filteredUsers = users;
@@ -608,8 +608,26 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
 
+    final currentUserSchool = authProvider.currentUser?.schoolName ?? '';
+    final isSuperAdminUser = authProvider.currentUser?.email.toLowerCase() == 'admin@jurnal.com';
+
     final activeUsers = _filteredUsers.where((u) => u.role == 'guru' || u.role == 'admin').toList();
-    final pendingUsers = _filteredUsers.where((u) => u.role == 'pending_guru').toList();
+
+    // Filtering pending users:
+    // Superadmin sees all pending (guru & admin), Admin Sekolah only sees pending guru for their own school.
+    final pendingUsers = _filteredUsers.where((u) {
+      if (u.role == 'pending_guru') {
+        if (isSuperAdminUser) return true;
+        if (currentUserSchool.isEmpty) return true;
+        final uSchools = (u.schoolName ?? '').split(',').map((s) => s.trim().toLowerCase()).toList();
+        return uSchools.any((s) => s.contains(currentUserSchool.toLowerCase()) || currentUserSchool.toLowerCase().contains(s));
+      }
+      if (u.role == 'pending_admin') {
+        // Only Superadmin can accept/activate pending_admin via school code verification
+        return isSuperAdminUser;
+      }
+      return false;
+    }).toList();
 
     return DefaultTabController(
       length: 2,

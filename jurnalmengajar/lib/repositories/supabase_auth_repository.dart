@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../models/user_model.dart';
 import 'auth_repository.dart';
 import '../core/utils/image_compressor.dart';
+
+const _uuid = Uuid();
 
 class SupabaseAuthRepository implements AuthRepository {
   final SupabaseClient _supabase;
@@ -150,7 +153,9 @@ class SupabaseAuthRepository implements AuthRepository {
       if (checkUser != null) {
         final role = checkUser['role'] as String;
         if (role == 'pending_guru') {
-          throw Exception('Pendaftaran Anda sedang menunggu persetujuan Admin. Silakan hubungi Admin untuk konfirmasi.');
+          throw Exception('Pendaftaran Guru Anda sedang menunggu persetujuan Admin Sekolah. Silakan hubungi Admin Sekolah Anda untuk konfirmasi.');
+        } else if (role == 'pending_admin') {
+          throw Exception('Pendaftaran Admin Sekolah Anda sedang menunggu pengaktifan Kode Sekolah dari Superadmin. Silakan hubungi Superadmin.');
         } else {
           throw Exception('Email ini sudah terdaftar.');
         }
@@ -183,12 +188,65 @@ class SupabaseAuthRepository implements AuthRepository {
         }
       }
 
-      // 3. Create user in database
+      // 3. Create or update user profile in database
       final userData = user.copyWith(
         id: userId,
+        role: user.role,
         photoUrl: finalPhotoUrl,
       ).toJson();
-      await _supabase.from('users').insert(userData);
+      await _supabase
+          .from('users')
+          .upsert(userData, onConflict: 'id');
+
+      // 4. Connect user to school in user_schools table
+      if (user.schoolName != null && user.schoolName!.isNotEmpty) {
+        try {
+          // Find matching school by code, npsn, or name
+          final schoolsRes = await _supabase.from('schools').select('id, name, code, npsn');
+          Map<String, dynamic>? matchedSchool;
+          final target = user.schoolName!.toUpperCase().trim();
+
+          for (final s in (schoolsRes as List)) {
+            final sName = ((s['name'] as String?) ?? '').toUpperCase().trim();
+            final sCode = ((s['code'] as String?) ?? '').toUpperCase().trim();
+            final sNpsn = ((s['npsn'] as String?) ?? '').toUpperCase().trim();
+
+            if ((sCode.isNotEmpty && target == sCode) ||
+                (sNpsn.isNotEmpty && target == sNpsn) ||
+                (sName.isNotEmpty && (target == sName || target.contains(sName) || sName.contains(target)))) {
+              matchedSchool = Map<String, dynamic>.from(s);
+              break;
+            }
+          }
+
+          String schoolId;
+          if (matchedSchool != null) {
+            schoolId = matchedSchool['id'] as String;
+          } else {
+            // Auto create new school entry if school code/name does not exist yet
+            final newSchoolId = _uuid.v4();
+            final schoolInsert = {
+              'id': newSchoolId,
+              'name': user.schoolName,
+              'code': target,
+            };
+            final insertedSchool = await _supabase
+                .from('schools')
+                .insert(schoolInsert)
+                .select('id')
+                .single();
+            schoolId = insertedSchool['id'] as String;
+          }
+
+          await _supabase.from('user_schools').upsert({
+            'user_id': userId,
+            'school_id': schoolId,
+            'role': user.role,
+          });
+        } catch (schoolRelErr) {
+          debugPrint('Error inserting user_schools during registration: $schoolRelErr');
+        }
+      }
     } catch (e) {
       if (e.toString().contains('Pendaftaran Anda sedang menunggu') || e.toString().contains('Email ini sudah terdaftar')) {
         rethrow;
@@ -275,6 +333,34 @@ class SupabaseAuthRepository implements AuthRepository {
           .toList();
     } catch (e) {
       throw Exception('Gagal memuat semua pengguna: $e');
+    }
+  }
+
+  @override
+  Future<List<UserModel>> getAllUsersForSchool(String schoolId) async {
+    try {
+      final userSchoolsRes = await _supabase
+          .from('user_schools')
+          .select('user_id')
+          .eq('school_id', schoolId);
+
+      final userIds = (userSchoolsRes as List)
+          .map((row) => row['user_id'] as String)
+          .toList();
+
+      if (userIds.isEmpty) return [];
+
+      final response = await _supabase
+          .from('users')
+          .select()
+          .inFilter('id', userIds)
+          .order('full_name', ascending: true);
+
+      return (response as List)
+          .map((json) => UserModel.fromJson(json))
+          .toList();
+    } catch (e) {
+      return [];
     }
   }
 

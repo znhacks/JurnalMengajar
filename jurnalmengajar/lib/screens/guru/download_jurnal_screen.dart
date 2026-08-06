@@ -10,6 +10,7 @@ import '../../models/class_model.dart';
 import '../../models/journal_model.dart';
 import '../../models/subject_model.dart';
 import '../../models/teacher_model.dart';
+import '../../models/school_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/journal_provider.dart';
 import '../../providers/master_data_provider.dart';
@@ -31,13 +32,14 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
   String _selectedStatus = 'all'; // 'all', 'verified', 'pending'
   String? _selectedClassId;
   String? _selectedSubjectId;
+  String? _selectedSchoolId;
 
   final TextEditingController _supervisorNameController =
       TextEditingController();
   final TextEditingController _supervisorNipController =
       TextEditingController();
   final TextEditingController _schoolNameController = TextEditingController(
-    text: 'SMA / SMK Jurnal Mengajar',
+    text: 'SMP NEGERI 1 SATU ATAP MEMPURA',
   );
 
   String _presetRange = 'Bulan Ini';
@@ -82,6 +84,20 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       );
       if (teacher.id.isNotEmpty) {
         await journalProvider.loadTeacherJournals(teacher.id);
+      }
+
+      // Auto match teacher's school from user profile
+      if (masterProvider.schools.isNotEmpty) {
+        final teacherSchoolName = currentUser.schoolName ?? '';
+        final matchedSchool = masterProvider.schools.firstWhere(
+          (s) => s.name.toLowerCase().contains(teacherSchoolName.toLowerCase()) ||
+                 teacherSchoolName.toLowerCase().contains(s.name.toLowerCase()),
+          orElse: () => masterProvider.schools.first,
+        );
+        setState(() {
+          _selectedSchoolId = matchedSchool.id;
+          _schoolNameController.text = matchedSchool.name;
+        });
       }
     }
   }
@@ -233,6 +249,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     List<JournalModel> journals,
     List<ClassModel> classes,
     List<SubjectModel> subjects,
+    MasterDataProvider masterProvider,
   ) {
     if (journals.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -265,6 +282,20 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
               .name
         : null;
 
+    final selectedSchool = _selectedSchoolId != null
+        ? masterProvider.schools.firstWhere(
+            (s) => s.id == _selectedSchoolId,
+            orElse: () => masterProvider.schools.isNotEmpty
+                ? masterProvider.schools.first
+                : SchoolModel(
+                    id: 'default',
+                    name: _schoolNameController.text.trim(),
+                  ),
+          )
+        : (masterProvider.schools.isNotEmpty
+            ? masterProvider.schools.first
+            : null);
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -283,16 +314,18 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
               journals: journals,
               startDate: _startDate,
               endDate: _endDate,
-              classes: classes,
+              classes: classes,                                                                                                             
               subjects: subjects,
+              school: selectedSchool,
               supervisorName: _supervisorNameController.text.trim(),
               supervisorNip: _supervisorNipController.text.trim(),
               statusFilter: _selectedStatus,
               selectedClassName: selectedClassName,
               selectedSubjectName: selectedSubjectName,
-              schoolName: _schoolNameController.text.trim().isNotEmpty
-                  ? _schoolNameController.text.trim()
-                  : 'Jurnal Mengajar Guru',
+              schoolName: selectedSchool?.name ??
+                  (_schoolNameController.text.trim().isNotEmpty
+                      ? _schoolNameController.text.trim()
+                      : 'SMP NEGERI 1 SATU ATAP MEMPURA'),
             ),
             pdfFileName:
                 'Laporan_Jurnal_${teacher.name.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd').format(_startDate)}_${DateFormat('yyyyMMdd').format(_endDate)}.pdf',
@@ -310,6 +343,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     List<JournalModel> journals,
     List<ClassModel> classes,
     List<SubjectModel> subjects,
+    MasterDataProvider masterProvider,
   ) async {
     if (journals.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -342,6 +376,20 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
               .name
         : null;
 
+    final selectedSchool = _selectedSchoolId != null
+        ? masterProvider.schools.firstWhere(
+            (s) => s.id == _selectedSchoolId,
+            orElse: () => masterProvider.schools.isNotEmpty
+                ? masterProvider.schools.first
+                : SchoolModel(
+                    id: 'default',
+                    name: _schoolNameController.text.trim(),
+                  ),
+          )
+        : (masterProvider.schools.isNotEmpty
+            ? masterProvider.schools.first
+            : null);
+
     final pdfBytes = await JournalPdfService.generateJournalReportPdf(
       teacher: teacher,
       journals: journals,
@@ -349,14 +397,16 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       endDate: _endDate,
       classes: classes,
       subjects: subjects,
+      school: selectedSchool,
       supervisorName: _supervisorNameController.text.trim(),
       supervisorNip: _supervisorNipController.text.trim(),
       statusFilter: _selectedStatus,
       selectedClassName: selectedClassName,
       selectedSubjectName: selectedSubjectName,
-      schoolName: _schoolNameController.text.trim().isNotEmpty
-          ? _schoolNameController.text.trim()
-          : 'Jurnal Mengajar Guru',
+      schoolName: selectedSchool?.name ??
+          (_schoolNameController.text.trim().isNotEmpty
+              ? _schoolNameController.text.trim()
+              : 'SMP NEGERI 1 SATU ATAP MEMPURA'),
     );
 
     final fileName =
@@ -743,17 +793,89 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
               SizedBox(height: 16.h),
 
-              // Section 3: Informasi Penandatangan (Supervisor / Kepala Sekolah)
+              // Section 3: Identitas Sekolah Tempat Cetak Jurnal
               _buildSectionCard(
-                title: '3. Data Supervisor / Penandatangan',
+                title: '3. Identitas Sekolah Untuk Kop Dokumen',
+                icon: Icons.school_rounded,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DropdownButtonFormField<String?>(
+                      initialValue: _selectedSchoolId ??
+                          (masterProvider.schools.isNotEmpty
+                              ? masterProvider.schools.first.id
+                              : null),
+                      decoration: InputDecoration(
+                        labelText: 'Pilih Sekolah',
+                        hintText: 'Pilih sekolah tempat cetak jurnal',
+                        prefixIcon: const Icon(
+                          Icons.account_balance_rounded,
+                          size: 20,
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 10.h,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                      ),
+                      items: masterProvider.schools.isNotEmpty
+                          ? masterProvider.schools
+                              .map(
+                                (s) => DropdownMenuItem<String?>(
+                                  value: s.id,
+                                  child: Text(
+                                    s.name,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              )
+                              .toList()
+                          : [
+                              const DropdownMenuItem<String?>(
+                                value: null,
+                                child: Text('SMP NEGERI 1 SATU ATAP MEMPURA'),
+                              ),
+                            ],
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedSchoolId = val;
+                          if (val != null && masterProvider.schools.isNotEmpty) {
+                            final sch = masterProvider.schools.firstWhere(
+                              (s) => s.id == val,
+                            );
+                            _schoolNameController.text = sch.name;
+                          }
+                        });
+                      },
+                    ),
+                    SizedBox(height: 10.h),
+                    Text(
+                      'Kop dokumen PDF akan menggunakan format resmi instansi sesuai sekolah yang dipilih guru.',
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 11.sp,
+                        color: const Color(0xFF64748B),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 16.h),
+
+              // Section 4: Informasi Penandatangan (Supervisor / Kepala Sekolah)
+              _buildSectionCard(
+                title: '4. Data Supervisor / Penandatangan',
                 icon: Icons.draw_rounded,
                 child: Column(
                   children: [
                     TextField(
                       controller: _schoolNameController,
                       decoration: InputDecoration(
-                        labelText: 'Nama Sekolah / Instansi',
-                        hintText: 'Misal: SMA Negeri 1 Jakarta',
+                        labelText: 'Nama Sekolah (Custom/Manual)',
+                        hintText: 'Misal: SMP NEGERI 1 SATU ATAP MEMPURA',
                         prefixIcon: const Icon(Icons.school_rounded, size: 20),
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 12.w,
@@ -880,6 +1002,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         filteredJournals,
                         masterProvider.classes,
                         masterProvider.subjects,
+                        masterProvider,
                       ),
                       icon: const Icon(Icons.remove_red_eye_rounded),
                       label: Text(
@@ -908,6 +1031,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         filteredJournals,
                         masterProvider.classes,
                         masterProvider.subjects,
+                        masterProvider,
                       ),
                       icon: const Icon(
                         Icons.download_rounded,

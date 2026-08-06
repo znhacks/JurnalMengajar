@@ -9,6 +9,7 @@ import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../widgets/animated_widgets.dart';
+import '../../../providers/auth_provider.dart';
 
 class MasterClassScreen extends StatefulWidget {
   const MasterClassScreen({super.key});
@@ -98,7 +99,8 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
   }
 
   Future<void> _refreshData() async {
-    await Provider.of<MasterDataProvider>(context, listen: false).loadAllData();
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await Provider.of<MasterDataProvider>(context, listen: false).loadAllData(authProvider.activeSchoolId);
   }
 
   void _showFormDialog({ClassModel? classItem}) {

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/journal_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
 import '../../models/teacher_model.dart';
@@ -32,10 +33,11 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
     if (!mounted) return;
     final journalProvider = Provider.of<JournalProvider>(context, listen: false);
     final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     await Future.wait([
       journalProvider.loadAllJournals(),
-      masterProvider.loadAllData(),
+      masterProvider.loadAllData(authProvider.activeSchoolId),
     ]);
   }
 

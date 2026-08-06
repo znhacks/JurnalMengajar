@@ -43,6 +43,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
 
       final currentUser = authProvider.currentUser;
       if (currentUser != null) {
+        await authProvider.loadUserMemberships();
         await masterProvider.loadAllData();
         if (!mounted) return;
         final teacher = masterProvider.teachers.firstWhere(
@@ -413,62 +414,6 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     ),
                   ),
                   SizedBox(height: 16.h),
-                  // Sekolah Tempat Mengajar (Editable)
-                  GestureDetector(
-                    onTap: isSaving
-                        ? null
-                        : () {
-                            final masterProvider = Provider.of<MasterDataProvider>(
-                              context,
-                              listen: false,
-                            );
-                            _showSchoolSelectorModal(
-                              context,
-                              masterProvider,
-                              selectedSchools,
-                              (newSelection) {
-                                setDialogState(() {
-                                  selectedSchools.clear();
-                                  selectedSchools.addAll(newSelection);
-                                });
-                              },
-                            );
-                          },
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Sekolah Tempat Mengajar',
-                        prefixIcon: Icon(Icons.school_outlined),
-                        suffixIcon: Icon(Icons.arrow_drop_down),
-                      ),
-                      child: selectedSchools.isEmpty
-                          ? Text(
-                              'Pilih sekolah tempat mengajar...',
-                              style: TextStyle(color: Colors.grey[400]),
-                            )
-                          : Wrap(
-                              spacing: 6.w,
-                              runSpacing: 4.h,
-                              children: selectedSchools.map((sch) {
-                                return Chip(
-                                  visualDensity: VisualDensity.compact,
-                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  padding: EdgeInsets.zero,
-                                  labelPadding: EdgeInsets.symmetric(horizontal: 6.w),
-                                  backgroundColor: const Color(0xFFEFF6FF),
-                                  label: Text(
-                                    sch,
-                                    style: TextStyle(
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF2563EB),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
                   TextField(
                     controller: phoneController,
                     enabled: !isSaving,
@@ -649,6 +594,197 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                 ],
               ),
             ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showJoinSchoolDialog(AuthProvider authProvider) {
+    final codeController = TextEditingController();
+    String requestedRole = 'guru';
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: const Icon(
+                    Icons.school_rounded,
+                    color: Color(0xFF2563EB),
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                const Expanded(
+                  child: Text(
+                    'Gabung Sekolah Baru',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Masukkan Kode Sekolah / NPSN yang ingin Anda gabungkan:',
+                    style: TextStyle(fontSize: 13.sp, color: const Color(0xFF475569)),
+                  ),
+                  SizedBox(height: 12.h),
+                  TextField(
+                    controller: codeController,
+                    enabled: !isSubmitting,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: InputDecoration(
+                      labelText: 'Kode / NPSN Sekolah',
+                      hintText: 'Contoh: 20533811',
+                      prefixIcon: const Icon(Icons.vpn_key_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 14.h),
+                  Text(
+                    'Peran / Hak Akses:',
+                    style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold, color: const Color(0xFF334155)),
+                  ),
+                  SizedBox(height: 6.h),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ChoiceChip(
+                          label: const Text('Guru'),
+                          selected: requestedRole == 'guru',
+                          selectedColor: const Color(0xFFDBEAFE),
+                          onSelected: isSubmitting
+                              ? null
+                              : (selected) {
+                                  if (selected) {
+                                    setDialogState(() => requestedRole = 'guru');
+                                  }
+                                },
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: ChoiceChip(
+                          label: const Text('Admin Sekolah'),
+                          selected: requestedRole == 'admin',
+                          selectedColor: const Color(0xFFFED7AA),
+                          onSelected: isSubmitting
+                              ? null
+                              : (selected) {
+                                  if (selected) {
+                                    setDialogState(() => requestedRole = 'admin');
+                                  }
+                                },
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (requestedRole == 'admin') ...[
+                    SizedBox(height: 10.h),
+                    Container(
+                      padding: EdgeInsets.all(10.w),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF7ED),
+                        borderRadius: BorderRadius.circular(10.r),
+                        border: Border.all(color: const Color(0xFFFFEDD5)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline, color: Color(0xFFC2410C), size: 18),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: Text(
+                              'Untuk akses Admin Sekolah, akun Anda memerlukan verifikasi & persetujuan Superadmin.',
+                              style: TextStyle(fontSize: 11.sp, color: const Color(0xFF9A3412)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        final code = codeController.text.trim();
+                        if (code.isEmpty) {
+                          AppHelper.showSnackBar(
+                            context,
+                            'Kode undangan tidak boleh kosong',
+                            isError: true,
+                          );
+                          return;
+                        }
+                        final messenger = ScaffoldMessenger.of(context);
+                        final navigator = Navigator.of(dialogCtx);
+                        setDialogState(() => isSubmitting = true);
+                        final success = await authProvider.joinSchoolWithCode(code, role: requestedRole);
+                        if (mounted) {
+                          if (success) {
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text('Berhasil bergabung ke sekolah!'),
+                              ),
+                            );
+                            navigator.pop();
+                          } else {
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  authProvider.errorMessage ?? 'Gagal bergabung ke sekolah.',
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            setDialogState(() => isSubmitting = false);
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                ),
+                child: isSubmitting
+                    ? SizedBox(
+                        width: 18.w,
+                        height: 18.h,
+                        child: const CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text('Gabung'),
+              ),
+            ],
           );
         },
       ),
@@ -914,18 +1050,212 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: Text(
-                              'JABATAN: ${currentUser.role.toUpperCase()}',
+                              'PERAN: ${authProvider.activeRole.toUpperCase()}',
                               style: TextStyle(
                                 fontSize: 9.sp,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
-                                letterSpacing: 0.5,
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 16.h),
+
+              // ── Multi-Tenant / Daftar Sekolah Section ───────────────────────
+              Container(
+                padding: EdgeInsets.all(16.w),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16.r),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.apartment_rounded,
+                              color: Color(0xFF2563EB),
+                              size: 20,
+                            ),
+                            SizedBox(width: 8.w),
+                            Text(
+                              'Sekolah / Tenant Anda',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF0F172A),
+                              ),
+                            ),
+                          ],
+                        ),
+                        TextButton.icon(
+                          onPressed: () => _showJoinSchoolDialog(authProvider),
+                          icon: const Icon(Icons.add_link_rounded, size: 16),
+                          label: Text(
+                            '+ Gabung Kode',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF2563EB),
+                            padding: EdgeInsets.symmetric(horizontal: 8.w),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8.h),
+                    if (authProvider.userMemberships.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(12.w),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.school, color: Color(0xFF2563EB)),
+                            SizedBox(width: 10.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    authProvider.activeSchoolName,
+                                    style: TextStyle(
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                  Text(
+                                    'Peran: ${authProvider.activeRole.toUpperCase()}',
+                                    style: TextStyle(
+                                      fontSize: 11.sp,
+                                      color: const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Chip(
+                              label: const Text('Aktif'),
+                              backgroundColor: const Color(0xFFDCFCE7),
+                              labelStyle: TextStyle(
+                                fontSize: 10.sp,
+                                color: const Color(0xFF166534),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Column(
+                        children: authProvider.userMemberships.map((m) {
+                          final sch = m['schools'];
+                          final sName = sch != null ? sch['name'] : 'Sekolah';
+                          final sRole = m['role'] ?? 'guru';
+                          final sId = m['school_id'];
+                          final isActive = sId == authProvider.activeSchoolId;
+
+                          return InkWell(
+                            onTap: () async {
+                              final messenger = ScaffoldMessenger.of(context);
+                              authProvider.switchActiveSchool(sId, sName, sRole);
+                              final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+                              scheduleProvider.clearTeacherSchedulesCache();
+                              await masterProvider.loadAllData();
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text('Berhasil beralih ke $sName'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(12.r),
+                            child: Container(
+                              margin: EdgeInsets.only(bottom: 8.h),
+                              padding: EdgeInsets.all(12.w),
+                              decoration: BoxDecoration(
+                                color: isActive
+                                    ? const Color(0xFFEFF6FF)
+                                    : const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(12.r),
+                                border: Border.all(
+                                  color: isActive
+                                      ? const Color(0xFFBFDBFE)
+                                      : const Color(0xFFE2E8F0),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.school,
+                                    color: isActive
+                                        ? const Color(0xFF2563EB)
+                                        : const Color(0xFF64748B),
+                                  ),
+                                  SizedBox(width: 10.w),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          sName,
+                                          style: TextStyle(
+                                            fontSize: 13.sp,
+                                            fontWeight: FontWeight.bold,
+                                            color: const Color(0xFF1E293B),
+                                          ),
+                                        ),
+                                        Text(
+                                          'Peran: ${sRole.toUpperCase()}',
+                                          style: TextStyle(
+                                            fontSize: 11.sp,
+                                            color: const Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (isActive)
+                                    Chip(
+                                      label: const Text('Aktif'),
+                                      backgroundColor: const Color(0xFFDCFCE7),
+                                      labelStyle: TextStyle(
+                                        fontSize: 10.sp,
+                                        color: const Color(0xFF166534),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )
+                                  else
+                                    const Text(
+                                      'Pilih',
+                                      style: TextStyle(
+                                        color: Color(0xFF2563EB),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
                   ],
                 ),
               ),

@@ -46,7 +46,10 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
     final masterProvider = context.watch<MasterDataProvider>();
     final isLoading = warningProvider.isLoading;
 
+    final schoolTeacherIds = masterProvider.teachers.map((t) => t.id).toSet();
+
     final filteredWarnings = warningProvider.warningLetters.where((warning) {
+      if (!schoolTeacherIds.contains(warning.teacherId)) return false;
       final teacher = masterProvider.teachers.firstWhere(
         (t) => t.id == warning.teacherId,
         orElse: () => TeacherModel(id: '', name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''),

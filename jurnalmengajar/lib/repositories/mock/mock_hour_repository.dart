@@ -6,7 +6,7 @@ class MockHourRepository implements HourRepository {
   final MockDatabase _db = MockDatabase();
 
   @override
-  Future<List<HourModel>> getAll() async {
+  Future<List<HourModel>> getAll([String? schoolId]) async {
     await Future.delayed(const Duration(milliseconds: 300));
     final sortedList = List<HourModel>.from(_db.hours);
     sortedList.sort((a, b) => a.teachingHour.compareTo(b.teachingHour));

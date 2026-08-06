@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../providers/master_data_provider.dart';
 import '../../../providers/schedule_provider.dart';
 import '../../../providers/journal_provider.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../models/schedule_model.dart';
 import '../../../models/teacher_model.dart';
 import '../../../models/class_model.dart';
@@ -35,9 +36,10 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
     final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
     final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
     final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     await Future.wait([
-      masterProvider.loadAllData(),
+      masterProvider.loadAllData(authProvider.activeSchoolId),
       scheduleProvider.loadAllSchedules(),
       journalProvider.loadAllJournals(),
     ]);
