@@ -20,6 +20,8 @@ import '../../core/utils/schedule_grouper.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/warning_letter_provider.dart';
 import '../../widgets/animated_widgets.dart';
+import '../../widgets/role_badge.dart';
+import '../../widgets/school_switcher_modal.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final String? selectedTeacherId;
@@ -256,26 +258,50 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
-        title: Column(
-          children: [
-            Text(
-              'Dashboard Admin Sekolah',
-              style: GoogleFonts.hankenGrotesk(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF0F172A),
-              ),
+        title: InkWell(
+          onTap: () => SchoolSwitcherModal.show(context),
+          borderRadius: BorderRadius.circular(8.r),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+            child: Column(
+              children: [
+                Text(
+                  'Dashboard Admin',
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF0F172A),
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      authProvider.activeSchoolName,
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF2563EB),
+                      ),
+                    ),
+                    SizedBox(width: 4.w),
+                    Icon(
+                      Icons.unfold_more_rounded,
+                      size: 14.sp,
+                      color: const Color(0xFF2563EB),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            Text(
-              authProvider.activeSchoolName,
-              style: GoogleFonts.hankenGrotesk(
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF2563EB),
-              ),
-            ),
-          ],
+          ),
         ),
+        actions: [
+          Padding(
+            padding: EdgeInsets.only(right: 14.w),
+            child: RoleBadge(role: authProvider.activeRole, fontSize: 10.sp),
+          ),
+        ],
       ),
       drawer: const AdminDrawer(currentRoute: '/admin/dashboard'),
       body: isLoading

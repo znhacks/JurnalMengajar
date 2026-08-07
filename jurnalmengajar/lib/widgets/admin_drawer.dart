@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../core/theme/app_theme.dart';
+import 'role_badge.dart';
+import 'school_switcher_modal.dart';
 
 class AdminDrawer extends StatelessWidget {
   final String currentRoute;
@@ -20,7 +22,7 @@ class AdminDrawer extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Header (Logo) ──────────────────────────────────────────────────
+          // ── Header (Logo & Active School) ──────────────────────────────────
           Container(
             color: Colors.white,
             padding: EdgeInsets.only(
@@ -29,13 +31,53 @@ class AdminDrawer extends StatelessWidget {
               left: 16.w,
               right: 16.w,
             ),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Image.asset(
-                'assets/LogoJr.png',
-                height: 38.h,
-                fit: BoxFit.contain,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Image.asset(
+                      'assets/LogoJr.png',
+                      height: 34.h,
+                      fit: BoxFit.contain,
+                    ),
+                    RoleBadge(role: authProvider.activeRole),
+                  ],
+                ),
+                SizedBox(height: 12.h),
+                InkWell(
+                  onTap: () => SchoolSwitcherModal.show(context),
+                  borderRadius: BorderRadius.circular(12.r),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12.r),
+                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.business_rounded, color: Color(0xFF4F46E5), size: 16),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: Text(
+                            authProvider.activeSchoolName,
+                            style: GoogleFonts.hankenGrotesk(
+                              color: const Color(0xFF0F172A),
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const Icon(Icons.swap_vert_rounded, color: Color(0xFF64748B), size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 

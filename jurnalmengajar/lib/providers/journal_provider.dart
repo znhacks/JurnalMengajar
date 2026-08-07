@@ -47,6 +47,11 @@ class JournalProvider with ChangeNotifier {
     }
   }
 
+  void clearTeacherJournalsCache() {
+    _teacherJournals = [];
+    notifyListeners();
+  }
+
   Future<JournalModel?> getJournalForSchedule(String scheduleId, {DateTime? date}) async {
     try {
       return await journalRepository.getJournalForSchedule(scheduleId, date: date);

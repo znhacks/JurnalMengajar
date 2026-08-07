@@ -499,27 +499,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 ),
                                 onChanged: (val) {
-                                  if (val.trim().isEmpty) {
-                                    setState(() {
-                                      _selectedSchools.clear();
-                                    });
-                                  } else {
-                                    _resolveSchoolCode(val.trim(), masterProvider, showSnackBar: false);
-                                  }
+                                  setState(() {
+                                    _selectedSchools.clear();
+                                  });
                                 },
                                 onFieldSubmitted: (val) {
                                   _resolveSchoolCode(val.trim(), masterProvider, showSnackBar: true);
                                 },
                                 validator: (value) {
-                                  if (_selectedSchools.isEmpty && (value == null || value.trim().isEmpty)) {
-                                    return 'Masukkan Kode Sekolah / NPSN yang valid';
+                                  if (_selectedSchools.isEmpty) {
+                                    return 'Tekan tombol centang biru untuk verifikasi NPSN Sekolah';
                                   }
                                   return null;
                                 },
                               ),
+                              if (_selectedSchools.isNotEmpty) ...[
+                                SizedBox(height: 8.h),
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF0FDF4),
+                                    borderRadius: BorderRadius.circular(12.r),
+                                    border: Border.all(color: const Color(0xFF86EFAC)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.check_circle_rounded, color: Color(0xFF166534), size: 18),
+                                      SizedBox(width: 8.w),
+                                      Expanded(
+                                        child: Text(
+                                          'Terverifikasi: ${_selectedSchools.join(', ')}',
+                                          style: TextStyle(
+                                            fontSize: 12.sp,
+                                            fontWeight: FontWeight.bold,
+                                            color: const Color(0xFF166534),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                               SizedBox(height: 16.h),
-
-                               SizedBox(height: 8.h),
 
                                // Nama Lengkap
                                _buildFieldLabel('NAMA LENGKAP'),
@@ -907,34 +928,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final sId = s.id.toUpperCase().replaceAll(RegExp(r'\s+'), '');
       final sName = s.name.toUpperCase().replaceAll(RegExp(r'\s+'), '');
 
+      // Strict exact match for Code, NPSN, NSS, ID, or exact School Name
       if ((sCode.isNotEmpty && sCode == cleanCode) ||
           (sNpsn.isNotEmpty && sNpsn == cleanCode) ||
           (sNss.isNotEmpty && sNss == cleanCode) ||
           (sId.isNotEmpty && sId == cleanCode) ||
-          (sName.isNotEmpty && (sName == cleanCode || sName.contains(cleanCode)))) {
+          (sName.isNotEmpty && sName == cleanCode)) {
         matchedSchool = s;
         break;
       }
     }
 
     String? foundName = matchedSchool?.name;
-    if (foundName == null || foundName.isEmpty) {
-      if (cleanCode.contains('11') || cleanCode.contains('SMKN11')) {
-        foundName = 'SMKN 11 Malang';
-      } else if (cleanCode.contains('777') || cleanCode.contains('TIKI')) {
-        foundName = 'SMKN 777 Tikiland';
-      }
-    }
 
     if (foundName != null && foundName.isNotEmpty) {
       final validSchoolName = foundName;
       setState(() {
         _selectedSchools.clear();
         _selectedSchools.add(validSchoolName);
-        _schoolCodeController.text = validSchoolName;
       });
       if (showSnackBar) {
         AppHelper.showSnackBar(context, 'Sekolah ditemukan: $validSchoolName');
+      }
+    } else {
+      setState(() {
+        _selectedSchools.clear();
+      });
+      if (showSnackBar) {
+        AppHelper.showSnackBar(context, 'Kode / NPSN Sekolah tidak ditemukan.', isError: true);
       }
     }
   }
@@ -1165,7 +1186,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           (sNpsn.isNotEmpty && sNpsn == cleanCode) ||
           (sNss.isNotEmpty && sNss == cleanCode) ||
           (sId.isNotEmpty && sId == cleanCode) ||
-          (sName.isNotEmpty && (sName == cleanCode || sName.contains(cleanCode)))) {
+          (sName.isNotEmpty && sName == cleanCode)) {
         matchedSchool = s;
         break;
       }
@@ -1173,13 +1194,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     String? foundName = matchedSchool?.name;
     if (foundName == null || foundName.isEmpty) {
-      if (cleanCode.contains('11') || cleanCode.contains('SMKN11')) {
-        foundName = 'SMKN 11 Malang';
-      } else if (cleanCode.contains('777') || cleanCode.contains('TIKI')) {
-        foundName = 'SMKN 777 Tikiland';
-      } else {
-        foundName = inputCode;
-      }
+      setSheetState(() {
+        setError('Kode / NPSN Sekolah tidak terdaftar');
+      });
+      return;
     }
 
     setSheetState(() {

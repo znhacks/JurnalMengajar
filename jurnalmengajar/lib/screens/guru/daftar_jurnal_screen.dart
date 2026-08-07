@@ -25,12 +25,34 @@ class GuruDaftarJurnalScreen extends StatefulWidget {
 class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  String? _lastLoadedSchoolId;
+  String? _lastLoadedUserId;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _loadJournals();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authProvider = Provider.of<AuthProvider>(context);
+    final currentSchoolId = authProvider.activeSchoolId;
+    final currentUserId = authProvider.currentUser?.id;
+
+    if ((_lastLoadedSchoolId != null && _lastLoadedSchoolId != currentSchoolId) ||
+        (_lastLoadedUserId != null && _lastLoadedUserId != currentUserId)) {
+      _lastLoadedSchoolId = currentSchoolId;
+      _lastLoadedUserId = currentUserId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadJournals();
+      });
+    } else {
+      _lastLoadedSchoolId = currentSchoolId;
+      _lastLoadedUserId = currentUserId;
+    }
   }
 
   @override
@@ -47,6 +69,9 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
 
     final currentUser = authProvider.currentUser;
     if (currentUser != null) {
+      final schoolId = authProvider.activeSchoolId;
+      await masterProvider.loadAllData(schoolId);
+
       final teacher = masterProvider.teachers.firstWhere(
         (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
         orElse: () => TeacherModel(
@@ -57,6 +82,9 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
           journalProvider.loadTeacherJournals(teacher.id),
           scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
         ]);
+      } else {
+        scheduleProvider.clearTeacherSchedulesCache();
+        journalProvider.clearTeacherJournalsCache();
       }
     }
   }

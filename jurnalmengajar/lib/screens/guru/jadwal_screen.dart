@@ -29,6 +29,8 @@ class GuruJadwalScreen extends StatefulWidget {
 class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
+  String? _lastLoadedSchoolId;
+  String? _lastLoadedUserId;
 
   @override
   void initState() {
@@ -36,6 +38,26 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authProvider = Provider.of<AuthProvider>(context);
+    final currentSchoolId = authProvider.activeSchoolId;
+    final currentUserId = authProvider.currentUser?.id;
+
+    if ((_lastLoadedSchoolId != null && _lastLoadedSchoolId != currentSchoolId) ||
+        (_lastLoadedUserId != null && _lastLoadedUserId != currentUserId)) {
+      _lastLoadedSchoolId = currentSchoolId;
+      _lastLoadedUserId = currentUserId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadData();
+      });
+    } else {
+      _lastLoadedSchoolId = currentSchoolId;
+      _lastLoadedUserId = currentUserId;
+    }
   }
 
   Future<void> _loadData() async {
@@ -59,9 +81,9 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
 
     final currentUser = authProvider.currentUser;
     if (currentUser != null) {
-      if (masterProvider.teachers.isEmpty) {
-        await masterProvider.loadAllData();
-      }
+      final schoolId = authProvider.activeSchoolId;
+      await masterProvider.loadAllData(schoolId);
+
       final teacher = masterProvider.teachers.firstWhere(
         (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
         orElse: () => TeacherModel(
@@ -75,12 +97,15 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       );
 
       if (teacher.id.isNotEmpty) {
-        final schoolId = authProvider.activeSchoolId ?? 'a1111111-1111-1111-1111-111111111111';
+        final targetSchoolId = schoolId ?? 'a1111111-1111-1111-1111-111111111111';
         await Future.wait([
           scheduleProvider.loadTeacherSchedules(teacher.id, _selectedDay),
           journalProvider.loadTeacherJournals(teacher.id),
-          holidayProvider.loadHolidays(schoolId),
+          holidayProvider.loadHolidays(targetSchoolId),
         ]);
+      } else {
+        scheduleProvider.clearTeacherSchedulesCache();
+        journalProvider.clearTeacherJournalsCache();
       }
     }
   }

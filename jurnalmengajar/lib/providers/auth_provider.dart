@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
+import '../models/user_school_model.dart';
 import '../repositories/auth_repository.dart';
 import '../services/fcm_service.dart';
 
 class AuthProvider with ChangeNotifier {
+  static const String _kActiveSchoolIdKey = 'active_school_id';
+  static const String _kActiveRoleKey = 'active_role';
   final AuthRepository _authRepository;
 
   UserModel? _currentUser;
@@ -35,7 +39,7 @@ class AuthProvider with ChangeNotifier {
     });
   }
 
-  List<dynamic> _userMemberships = [];
+  List<UserSchoolModel> _userMemberships = [];
   String? _activeSchoolId;
   String _activeSchoolName = 'Sekolah';
   String _activeRole = 'guru';
@@ -48,12 +52,12 @@ class AuthProvider with ChangeNotifier {
   bool get isRecoveryMode => _isRecoveryMode;
   AuthRepository get authRepository => _authRepository;
 
-  List<dynamic> get userMemberships => _userMemberships;
+  List<UserSchoolModel> get userMemberships => _userMemberships;
   String? get activeSchoolId => _activeSchoolId;
   String get activeSchoolName => _activeSchoolName;
   String get activeRole => _activeRole;
 
-  void switchActiveSchool(String schoolId, String schoolName, String role) {
+  Future<void> switchActiveSchool(String schoolId, String schoolName, String role) async {
     _activeSchoolId = schoolId;
     _activeSchoolName = schoolName;
     _activeRole = role;
@@ -63,6 +67,16 @@ class AuthProvider with ChangeNotifier {
         role: role,
       );
     }
+    
+    // Persist active school & role locally to SharedPreferences
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kActiveSchoolIdKey, schoolId);
+      await prefs.setString(_kActiveRoleKey, role);
+    } catch (e) {
+      debugPrint('Error saving active school to SharedPreferences: $e');
+    }
+
     notifyListeners();
   }
 
@@ -116,8 +130,8 @@ class AuthProvider with ChangeNotifier {
         debugPrint('Note inserting user_schools: $dbErr');
       }
 
-      // 3. Update active school locally
-      switchActiveSchool(schoolId, schoolName, effectiveRole);
+      // 3. Update active school locally & persist
+      await switchActiveSchool(schoolId, schoolName, effectiveRole);
       await loadUserMemberships();
       _isLoading = false;
       notifyListeners();
@@ -139,18 +153,39 @@ class AuthProvider with ChangeNotifier {
           .select('*, schools(name, code)')
           .eq('user_id', _currentUser!.id);
 
-      _userMemberships = (res as List).map((item) {
+      final loadedMemberships = (res as List).map((item) {
         final m = Map<String, dynamic>.from(item);
         m['role'] = item['role'] ?? _currentUser!.role;
-        return m;
+        return UserSchoolModel.fromJson(m);
       }).toList();
 
+      _userMemberships = loadedMemberships;
+
       if (_userMemberships.isNotEmpty) {
-        final first = _userMemberships.first;
-        final schData = first['schools'];
-        _activeSchoolId = first['school_id'];
-        _activeRole = first['role'] ?? _currentUser!.role;
-        _activeSchoolName = (schData != null && schData['name'] != null) ? schData['name'] : 'Sekolah';
+        // Load saved preference if available
+        final prefs = await SharedPreferences.getInstance();
+        final savedSchoolId = prefs.getString(_kActiveSchoolIdKey);
+
+        UserSchoolModel? activeMember;
+        if (savedSchoolId != null && savedSchoolId.isNotEmpty) {
+          activeMember = _userMemberships.firstWhere(
+            (m) => m.schoolId == savedSchoolId,
+            orElse: () => _userMemberships.first,
+          );
+        } else {
+          activeMember = _userMemberships.first;
+        }
+
+        _activeSchoolId = activeMember.schoolId;
+        _activeRole = activeMember.role;
+        _activeSchoolName = activeMember.schoolName;
+
+        if (_currentUser != null) {
+          _currentUser = _currentUser!.copyWith(
+            schoolName: _activeSchoolName,
+            role: _activeRole,
+          );
+        }
       }
       notifyListeners();
     } catch (e) {

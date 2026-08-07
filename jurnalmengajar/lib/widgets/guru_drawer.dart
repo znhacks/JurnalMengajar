@@ -6,6 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../providers/warning_letter_provider.dart';
 import '../screens/guru/main_shell.dart';
+import 'role_badge.dart';
+import 'school_switcher_modal.dart';
 
 class GuruDrawer extends StatelessWidget {
   final String? currentRoute;
@@ -75,6 +77,7 @@ class GuruDrawer extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
                       width: 52.w,
@@ -97,78 +100,84 @@ class GuruDrawer extends StatelessWidget {
                             ? Image.network(
                                 photoUrl,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(
-                                      Icons.person,
-                                      color: Color(0xFF1E293B),
-                                      size: 30,
+                                errorBuilder: (context, error, stackTrace) => Center(
+                                  child: Text(
+                                    name.isNotEmpty ? name[0].toUpperCase() : 'G',
+                                    style: GoogleFonts.hankenGrotesk(
+                                      color: const Color(0xFF1E1B4B),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 22.sp,
                                     ),
+                                  ),
+                                ),
                               )
-                            : const Icon(
-                                Icons.person,
-                                color: Color(0xFF1E293B),
-                                size: 30,
+                            : Center(
+                                child: Text(
+                                  name.isNotEmpty ? name[0].toUpperCase() : 'G',
+                                  style: GoogleFonts.hankenGrotesk(
+                                    color: const Color(0xFF1E1B4B),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 22.sp,
+                                  ),
+                                ),
                               ),
                       ),
                     ),
-                    SizedBox(width: 14.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            name,
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 2.h),
-                          Text(
-                            email,
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 12.sp,
-                              color: Colors.white.withValues(alpha: 0.8),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
+                    RoleBadge(role: authProvider.activeRole),
                   ],
                 ),
                 SizedBox(height: 14.h),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10.w,
-                    vertical: 4.h,
+                Text(
+                  name,
+                  style: GoogleFonts.hankenGrotesk(
+                    color: Colors.white,
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20.r),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  email,
+                  style: GoogleFonts.hankenGrotesk(
+                    color: Colors.white70,
+                    fontSize: 12.sp,
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.verified_user_rounded,
-                        color: Colors.white,
-                        size: 14.w,
-                      ),
-                      SizedBox(width: 6.w),
-                      Text(
-                        'Guru Pengajar',
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 11.sp,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 12.h),
+                // Interactive School Switcher Banner
+                InkWell(
+                  onTap: () => SchoolSwitcherModal.show(context),
+                  borderRadius: BorderRadius.circular(12.r),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12.r),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.business_rounded, color: Colors.white, size: 16),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: Text(
+                            authProvider.activeSchoolName,
+                            style: GoogleFonts.hankenGrotesk(
+                              color: Colors.white,
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                    ],
+                        const Icon(Icons.swap_vert_rounded, color: Colors.white, size: 18),
+                      ],
+                    ),
                   ),
                 ),
               ],

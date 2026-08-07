@@ -1166,10 +1166,9 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     else
                       Column(
                         children: authProvider.userMemberships.map((m) {
-                          final sch = m['schools'];
-                          final sName = sch != null ? sch['name'] : 'Sekolah';
-                          final sRole = m['role'] ?? 'guru';
-                          final sId = m['school_id'];
+                          final sName = m.schoolName;
+                          final sRole = m.role;
+                          final sId = m.schoolId;
                           final isActive = sId == authProvider.activeSchoolId;
 
                           return InkWell(

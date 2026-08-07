@@ -72,7 +72,7 @@ class MockTeacherRepository implements TeacherRepository {
   }
 
   @override
-  Future<List<TeacherModel>> getAllForSchool(String schoolId) async {``
+  Future<List<TeacherModel>> getAllForSchool(String schoolId) async {
     await Future.delayed(const Duration(milliseconds: 300));
     return List.from(_db.teachers);
   }
