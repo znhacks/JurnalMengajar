@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../providers/journal_provider.dart';
-import '../models/user_school_model.dart';
 
 class SchoolSwitcherModal extends StatelessWidget {
   const SchoolSwitcherModal({super.key});

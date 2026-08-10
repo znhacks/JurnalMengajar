@@ -204,13 +204,16 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     MasterDataProvider masterProvider,
   ) {
     final today = DateTime.now();
-    final activeSchedulesToday = scheduleProvider.cachedTeacherSchedules.where((
-      s,
-    ) {
+    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
+    final validSubjectIds = masterProvider.subjects.map((sb) => sb.id).toSet();
+
+    final activeSchedulesToday = scheduleProvider.cachedTeacherSchedules.where((s) {
       return s.isActive &&
           s.date.year == today.year &&
           s.date.month == today.month &&
-          s.date.day == today.day;
+          s.date.day == today.day &&
+          validClassIds.contains(s.classId) &&
+          validSubjectIds.contains(s.subjectId);
     }).toList();
 
     if (activeSchedulesToday.isEmpty) return;
@@ -435,16 +438,34 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     );
 
     final today = DateTime.now();
-    final activeSchedulesToday = scheduleProvider.cachedTeacherSchedules.where((
-      s,
-    ) {
-      return s.isActive &&
-          s.date.year == today.year &&
-          s.date.month == today.month &&
-          s.date.day == today.day;
+    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
+    final validSubjectIds = masterProvider.subjects.map((sb) => sb.id).toSet();
+
+    final activeSchedulesThisMonth = scheduleProvider.cachedTeacherSchedules.where((s) {
+      if (!s.isActive) return false;
+      if (s.date.year != today.year || s.date.month != today.month) return false;
+      if (!validClassIds.contains(s.classId)) return false;
+      if (!validSubjectIds.contains(s.subjectId)) return false;
+      return true;
     }).toList();
-    final groupedToday = groupDailySchedules(activeSchedulesToday);
-    final todayScheduleCount = groupedToday.length;
+
+    final groupedMonthSchedules = groupDailySchedules(activeSchedulesThisMonth);
+
+    final unfinishedMonthSchedules = groupedMonthSchedules.where((group) {
+      final s = group.primarySchedule;
+      final hasJournal = journalProvider.teacherJournals.any((j) {
+        return j.scheduleId == s.id ||
+            group.scheduleIds.contains(j.scheduleId) ||
+            (j.date.year == group.date.year &&
+                j.date.month == group.date.month &&
+                j.date.day == group.date.day &&
+                j.classId == group.classId &&
+                j.subjectId == group.subjectId);
+      });
+      return !hasJournal;
+    }).toList();
+
+    final monthScheduleCount = unfinishedMonthSchedules.length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFF),
@@ -460,7 +481,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 // ── 1. HEADER SECTION ─────────────────────────────────────────
                 FadeSlideIn(
                   delay: const Duration(milliseconds: 50),
-                  child: _buildModernHeader(teacher, todayScheduleCount),
+                  child: _buildModernHeader(teacher, monthScheduleCount),
                 ),
 
                 Padding(
@@ -584,7 +605,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   }
 
   // ─── 1. HEADER ─────────────────────────────────────────────────────────────
-  Widget _buildModernHeader(TeacherModel teacher, int todayScheduleCount) {
+  Widget _buildModernHeader(TeacherModel teacher, int monthScheduleCount) {
     final greeting = _getTimeGreeting();
 
     return Container(
@@ -739,7 +760,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
           SizedBox(height: 4.h),
 
-          // Big Headline: "Anda memiliki X jadwal hari ini 👍"
+          // Big Headline: "Anda memiliki X jadwal bulan ini 👍"
           RichText(
             text: TextSpan(
               style: GoogleFonts.hankenGrotesk(
@@ -751,13 +772,13 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
               children: [
                 const TextSpan(text: 'Anda memiliki '),
                 TextSpan(
-                  text: '$todayScheduleCount jadwal ',
+                  text: '$monthScheduleCount jadwal ',
                   style: const TextStyle(
                     color: Color(0xFF4F7CFF),
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const TextSpan(text: 'hari ini 👍'),
+                const TextSpan(text: 'bulan ini 👍'),
               ],
             ),
           ),
@@ -1113,7 +1134,15 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       );
     }
 
-    var list = scheduleProvider.teacherSchedulesForSelectedDate;
+    final validClassIds = master.classes.map((c) => c.id).toSet();
+    final validSubjectIds = master.subjects.map((sb) => sb.id).toSet();
+
+    var rawList = scheduleProvider.teacherSchedulesForSelectedDate;
+    var list = rawList.where((s) {
+      if (!validClassIds.contains(s.classId)) return false;
+      if (!validSubjectIds.contains(s.subjectId)) return false;
+      return true;
+    }).toList();
 
     // ── EMPTY STATE ──────────────────────────────────────────────────────────
     if (list.isEmpty) {
@@ -1457,7 +1486,12 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     JournalProvider journalProvider,
     MasterDataProvider masterProvider,
   ) {
-    var journals = journalProvider.teacherJournals;
+    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
+    final validSubjectIds = masterProvider.subjects.map((s) => s.id).toSet();
+
+    var journals = journalProvider.teacherJournals.where((j) {
+      return validClassIds.contains(j.classId) && validSubjectIds.contains(j.subjectId);
+    }).toList();
 
     if (_searchQuery.isNotEmpty) {
       journals = journals.where((j) {

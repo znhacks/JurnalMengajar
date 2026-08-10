@@ -95,7 +95,12 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
 
-    final teacherJournals = journalProvider.teacherJournals;
+    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
+    final validSubjectIds = masterProvider.subjects.map((s) => s.id).toSet();
+
+    final teacherJournals = journalProvider.teacherJournals.where((j) {
+      return validClassIds.contains(j.classId) && validSubjectIds.contains(j.subjectId);
+    }).toList();
     final pendingJournals =
         teacherJournals.where((j) => j.status == 'pending').toList();
     final verifiedJournals =

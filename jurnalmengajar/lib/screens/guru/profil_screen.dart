@@ -1176,7 +1176,9 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               final messenger = ScaffoldMessenger.of(context);
                               authProvider.switchActiveSchool(sId, sName, sRole);
                               final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+                              final journalProvider = Provider.of<JournalProvider>(context, listen: false);
                               scheduleProvider.clearTeacherSchedulesCache();
+                              journalProvider.clearTeacherJournalsCache();
                               await masterProvider.loadAllData();
                               messenger.showSnackBar(
                                 SnackBar(
@@ -1683,124 +1685,5 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
       ),
     );
   }
-
-  void _showSchoolSelectorModal(
-    BuildContext context,
-    MasterDataProvider masterProvider,
-    List<String> currentSelected,
-    Function(List<String>) onConfirm,
-  ) {
-    final dbSchools = masterProvider.schools.map((s) => s.name).toList();
-    final allSchoolNames = dbSchools.isNotEmpty
-        ? dbSchools
-        : ['SMKN 11 Malang', 'SMKN 777 Ngawi'];
-
-    final tempSelected = List<String>.from(currentSelected);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetCtx) => StatefulBuilder(
-        builder: (sheetCtx, setSheetState) {
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(sheetCtx).viewInsets.bottom,
-              top: 20.h,
-              left: 20.w,
-              right: 20.w,
-            ),
-            child: SizedBox(
-              height: 380.h,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Pilih Sekolah Tempat Mengajar',
-                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 6.h),
-                  Text(
-                    'Anda dapat memilih lebih dari 1 sekolah',
-                    style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 16.h),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: allSchoolNames.length,
-                      itemBuilder: (sheetCtx, index) {
-                        final schoolName = allSchoolNames[index];
-                        final isChecked = tempSelected.contains(schoolName);
-                        return CheckboxListTile(
-                          activeColor: const Color(0xFF2563EB),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                          title: Text(
-                            schoolName,
-                            style: TextStyle(
-                              fontWeight: isChecked ? FontWeight.bold : FontWeight.normal,
-                              color: const Color(0xFF0F172A),
-                            ),
-                          ),
-                          subtitle: Text(
-                            isChecked ? 'Terpilih' : 'Ketuk untuk memilih',
-                            style: TextStyle(fontSize: 11.sp),
-                          ),
-                          value: isChecked,
-                          onChanged: (val) {
-                            setSheetState(() {
-                              if (val == true) {
-                                if (!tempSelected.contains(schoolName)) {
-                                  tempSelected.add(schoolName);
-                                }
-                              } else {
-                                if (tempSelected.length > 1) {
-                                  tempSelected.remove(schoolName);
-                                } else {
-                                  AppHelper.showSnackBar(
-                                    sheetCtx,
-                                    'Minimal pilih 1 sekolah.',
-                                    isError: true,
-                                  );
-                                }
-                              }
-                            });
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                  SizedBox(height: 12.h),
-                  ElevatedButton(
-                    onPressed: () {
-                      onConfirm(tempSelected);
-                      Navigator.pop(sheetCtx);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 14.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14.r),
-                      ),
-                    ),
-                    child: Text(
-                      'Simpan Pilihan (${tempSelected.length} Sekolah)',
-                      style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
 }
+
