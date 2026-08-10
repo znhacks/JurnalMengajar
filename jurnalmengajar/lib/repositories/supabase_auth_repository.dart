@@ -161,10 +161,21 @@ class SupabaseAuthRepository implements AuthRepository {
         }
       }
 
-      // 1. Create auth account
+      // 1. Create auth account with user metadata payload
       final authResponse = await _supabase.auth.signUp(
         email: user.email,
         password: password,
+        data: {
+          'full_name': user.fullName,
+          'role': user.role,
+          'phone': user.phoneNumber,
+          'phone_number': user.phoneNumber,
+          'position': user.position,
+          'address': user.address,
+          'school_name': user.schoolName,
+          'schoolName': user.schoolName,
+          'school': user.schoolName,
+        },
       );
 
       final userId = authResponse.user?.id;
@@ -194,9 +205,13 @@ class SupabaseAuthRepository implements AuthRepository {
         role: user.role,
         photoUrl: finalPhotoUrl,
       ).toJson();
-      await _supabase
-          .from('users')
-          .upsert(userData, onConflict: 'id');
+      try {
+        await _supabase
+            .from('users')
+            .upsert(userData, onConflict: 'id');
+      } catch (upsertErr) {
+        debugPrint('Note: Upserting public.users during registration skipped due to RLS: $upsertErr');
+      }
 
       // 4. Connect user to school in user_schools table
       if (user.schoolName != null && user.schoolName!.isNotEmpty) {
@@ -213,15 +228,17 @@ class SupabaseAuthRepository implements AuthRepository {
 
             if ((sCode.isNotEmpty && target == sCode) ||
                 (sNpsn.isNotEmpty && target == sNpsn) ||
-                (sName.isNotEmpty && (target == sName || target.contains(sName) || sName.contains(target)))) {
+                (sName.isNotEmpty && target == sName)) {
               matchedSchool = Map<String, dynamic>.from(s);
               break;
             }
           }
 
           String schoolId;
+          String canonicalSchoolName = user.schoolName!;
           if (matchedSchool != null) {
             schoolId = matchedSchool['id'] as String;
+            canonicalSchoolName = (matchedSchool['name'] as String?) ?? user.schoolName!;
           } else {
             // Auto create new school entry if school code/name does not exist yet
             final newSchoolId = _uuid.v4();
@@ -238,6 +255,13 @@ class SupabaseAuthRepository implements AuthRepository {
             schoolId = insertedSchool['id'] as String;
           }
 
+          // Update users table with resolved school_id and canonical school_name
+          await _supabase.from('users').update({
+            'school_id': schoolId,
+            'school_name': canonicalSchoolName,
+          }).eq('id', userId);
+
+          // Connect user to school in user_schools table
           await _supabase.from('user_schools').upsert({
             'user_id': userId,
             'school_id': schoolId,
@@ -339,27 +363,89 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<List<UserModel>> getAllUsersForSchool(String schoolId) async {
     try {
-      final userSchoolsRes = await _supabase
-          .from('user_schools')
-          .select('user_id')
-          .eq('school_id', schoolId);
+      // 1. Fetch school info to get school name
+      String schoolName = '';
+      try {
+        final schoolRes = await _supabase
+            .from('schools')
+            .select('name')
+            .eq('id', schoolId)
+            .maybeSingle();
+        if (schoolRes != null) {
+          schoolName = (schoolRes['name'] as String? ?? '').trim();
+        }
+      } catch (_) {}
 
-      final userIds = (userSchoolsRes as List)
-          .map((row) => row['user_id'] as String)
-          .toList();
+      // 2. Fetch user IDs linked in user_schools
+      Set<String> userIds = {};
+      try {
+        final userSchoolsRes = await _supabase
+            .from('user_schools')
+            .select('user_id')
+            .eq('school_id', schoolId);
 
-      if (userIds.isEmpty) return [];
+        userIds = (userSchoolsRes as List)
+            .map((row) => row['user_id'] as String)
+            .toSet();
+      } catch (_) {}
 
-      final response = await _supabase
-          .from('users')
-          .select()
-          .inFilter('id', userIds)
-          .order('full_name', ascending: true);
+      // 3. Query users safely without PostgREST string syntax errors
+      final Map<String, UserModel> usersMap = {};
 
-      return (response as List)
-          .map((json) => UserModel.fromJson(json))
-          .toList();
+      // Query A: users matching school_id
+      try {
+        final res1 = await _supabase
+            .from('users')
+            .select()
+            .eq('school_id', schoolId)
+            .order('full_name', ascending: true);
+        for (final json in (res1 as List)) {
+          final u = UserModel.fromJson(json);
+          usersMap[u.id] = u;
+        }
+      } catch (e) {
+        debugPrint('Note: querying users by school_id: $e');
+      }
+
+      // Query B: users matching userIds from user_schools
+      if (userIds.isNotEmpty) {
+        try {
+          final res2 = await _supabase
+              .from('users')
+              .select()
+              .or('id.in.(${userIds.join(",")})')
+              .order('full_name', ascending: true);
+          for (final json in (res2 as List)) {
+            final u = UserModel.fromJson(json);
+            usersMap[u.id] = u;
+          }
+        } catch (e) {
+          debugPrint('Note: querying users by userIds: $e');
+        }
+      }
+
+      // Query C: users matching school_name if available
+      if (schoolName.isNotEmpty) {
+        try {
+          final res3 = await _supabase
+              .from('users')
+              .select()
+              .eq('school_name', schoolName)
+              .order('full_name', ascending: true);
+          for (final json in (res3 as List)) {
+            final u = UserModel.fromJson(json);
+            usersMap[u.id] = u;
+          }
+        } catch (e) {
+          debugPrint('Note: querying users by school_name: $e');
+        }
+      }
+
+      final result = usersMap.values.toList();
+      result.sort((a, b) => a.fullName.compareTo(b.fullName));
+      return result;
     } catch (e) {
+      debugPrint('Error in getAllUsersForSchool: $e');
       return [];
     }
   }
@@ -368,6 +454,9 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> updateUserRole(String userId, String role) async {
     try {
       await _supabase.from('users').update({'role': role}).eq('id', userId);
+      try {
+        await _supabase.from('user_schools').update({'role': role}).eq('user_id', userId);
+      } catch (_) {}
     } catch (e) {
       throw Exception('Gagal memperbarui peran pengguna: $e');
     }

@@ -104,7 +104,7 @@ class AuthProvider with ChangeNotifier {
         if ((sCode.isNotEmpty && sCode == cleanCode) ||
             (sNpsn.isNotEmpty && sNpsn == cleanCode) ||
             (sId.isNotEmpty && sId == cleanCode) ||
-            (sName.isNotEmpty && (sName == cleanCode || sName.contains(cleanCode)))) {
+            (sName.isNotEmpty && sName == cleanCode)) {
           matchedSchool = Map<String, dynamic>.from(s);
           break;
         }

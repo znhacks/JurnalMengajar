@@ -760,26 +760,43 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
           SizedBox(height: 4.h),
 
-          // Big Headline: "Anda memiliki X jadwal bulan ini 👍"
-          RichText(
-            text: TextSpan(
-              style: GoogleFonts.hankenGrotesk(
-                fontSize: 21.sp,
-                height: 1.25,
-                color: const Color(0xFF0F172A),
-                fontWeight: FontWeight.w800,
-              ),
-              children: [
-                const TextSpan(text: 'Anda memiliki '),
-                TextSpan(
-                  text: '$monthScheduleCount jadwal ',
-                  style: const TextStyle(
-                    color: Color(0xFF4F7CFF),
-                    fontWeight: FontWeight.w900,
+          // Big Headline: "Anda memiliki X jadwal bulan ini 👍" (Clickable to open Jadwal tab)
+          InkWell(
+            onTap: () {
+              final shellState =
+                  context.findAncestorStateOfType<GuruMainShellState>();
+              if (shellState != null) {
+                shellState.switchToTab(1);
+              } else {
+                context.go('/guru/dashboard?tab=1');
+              }
+            },
+            borderRadius: BorderRadius.circular(8.r),
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 2.h),
+              child: RichText(
+                text: TextSpan(
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 21.sp,
+                    height: 1.25,
+                    color: const Color(0xFF0F172A),
+                    fontWeight: FontWeight.w800,
                   ),
+                  children: [
+                    const TextSpan(text: 'Anda memiliki '),
+                    TextSpan(
+                      text: '$monthScheduleCount jadwal ',
+                      style: const TextStyle(
+                        color: Color(0xFF4F7CFF),
+                        fontWeight: FontWeight.w900,
+                        decoration: TextDecoration.underline,
+                        decorationStyle: TextDecorationStyle.dotted,
+                      ),
+                    ),
+                    const TextSpan(text: 'bulan ini 👍'),
+                  ],
                 ),
-                const TextSpan(text: 'bulan ini 👍'),
-              ],
+              ),
             ),
           ),
           SizedBox(height: 12.h),

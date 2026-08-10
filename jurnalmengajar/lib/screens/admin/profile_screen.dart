@@ -769,41 +769,56 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
               SizedBox(height: 16.h),
 
               // Quick Stats Section (New Hub Widget)
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      context,
-                      title: 'Guru',
-                      value: '${masterProvider.teachers.length}',
-                      icon: Icons.people_alt_outlined,
-                      color: const Color(0xFF0F172A),
-                      onTap: () => context.push('/admin/master-data/teachers'),
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: _buildStatCard(
-                      context,
-                      title: 'Kelas',
-                      value: '${masterProvider.classes.length}',
-                      icon: Icons.class_outlined,
-                      color: const Color(0xFF2563EB),
-                      onTap: () => context.push('/admin/master-data/classes'),
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: _buildStatCard(
-                      context,
-                      title: 'Pending',
-                      value: '${journalProvider.journals.where((j) => j.status == 'pending').length}',
-                      icon: Icons.pending_actions_outlined,
-                      color: const Color(0xFFF59E0B),
-                      onTap: () => context.push('/admin/approvals'),
-                    ),
-                  ),
-                ],
+              Builder(
+                builder: (context) {
+                  final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
+                  final validSubjectIds = masterProvider.subjects.map((s) => s.id).toSet();
+                  final schoolTeacherIds = masterProvider.teachers.map((t) => t.id).toSet();
+
+                  final pendingCount = journalProvider.journals.where((j) {
+                    final matchClass = validClassIds.contains(j.classId);
+                    final matchSubject = validSubjectIds.contains(j.subjectId);
+                    final matchTeacher = schoolTeacherIds.isEmpty || schoolTeacherIds.contains(j.teacherId);
+                    return j.status == 'pending' && matchClass && matchSubject && matchTeacher;
+                  }).length;
+
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          context,
+                          title: 'Guru',
+                          value: '${masterProvider.teachers.length}',
+                          icon: Icons.people_alt_outlined,
+                          color: const Color(0xFF0F172A),
+                          onTap: () => context.push('/admin/master-data/teachers'),
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: _buildStatCard(
+                          context,
+                          title: 'Kelas',
+                          value: '${masterProvider.classes.length}',
+                          icon: Icons.class_outlined,
+                          color: const Color(0xFF2563EB),
+                          onTap: () => context.push('/admin/master-data/classes'),
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: _buildStatCard(
+                          context,
+                          title: 'Pending',
+                          value: '$pendingCount',
+                          icon: Icons.pending_actions_outlined,
+                          color: const Color(0xFFF59E0B),
+                          onTap: () => context.push('/admin/approvals'),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               SizedBox(height: 16.h),
 

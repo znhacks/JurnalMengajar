@@ -185,20 +185,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (success && mounted) {
-        final dialogMessage = isTeacherRegister
-            ? 'Akun Guru Anda telah berhasil didaftarkan.\n\nHarap tunggu persetujuan dan verifikasi dari Admin Sekolah tempat Anda mengajar (${_selectedSchools.join(', ')}) sebelum dapat masuk.'
-            : 'Akun Admin Sekolah Anda telah berhasil didaftarkan.\n\nSilakan masuk dengan email dan password Anda.';
+        if (!isTeacherRegister) {
+          // Auto login admin upon registration
+          await authProvider.login(
+            _emailController.text.trim(),
+            _passwordController.text,
+          );
+          if (mounted) {
+            AppHelper.showSnackBar(
+              context,
+              'Registrasi Admin Sekolah Berhasil! Selamat datang.',
+            );
+            context.go('/admin/dashboard');
+          }
+          return;
+        }
 
+        // For Teacher registration (pending verification)
         showDialog(
           context: context,
           barrierDismissible: false,
           builder: (dialogContext) => AlertDialog(
-            title: Text(
-              isTeacherRegister
-                  ? 'Registrasi Guru Berhasil'
-                  : 'Registrasi Admin Sekolah Berhasil',
+            title: const Text('Registrasi Guru Berhasil'),
+            content: Text(
+              'Akun Guru Anda telah berhasil didaftarkan.\n\nHarap tunggu persetujuan dan verifikasi dari Admin Sekolah tempat Anda mengajar (${_selectedSchools.join(', ')}) sebelum dapat masuk.',
             ),
-            content: Text(dialogMessage),
             actions: [
               TextButton(
                 onPressed: () {

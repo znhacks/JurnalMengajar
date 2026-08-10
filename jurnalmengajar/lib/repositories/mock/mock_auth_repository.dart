@@ -187,10 +187,18 @@ class MockAuthRepository implements AuthRepository {
   @override
   Future<List<UserModel>> getAllUsersForSchool(String schoolId) async {
     await Future.delayed(const Duration(milliseconds: 300));
+    final schoolObj = _db.schools.firstWhere(
+      (s) => s.id == schoolId,
+      orElse: () => SchoolModel(id: '', name: '', code: ''),
+    );
+    final targetSchoolName = schoolObj.name.toLowerCase();
+
     return _db.users.where((u) {
-      if (u.schoolIds.contains(schoolId)) return true;
-      if (u.schoolName != null && u.schoolName!.toLowerCase().contains(schoolId.toLowerCase())) return true;
-      return true; // Fallback untuk mock database
+      if (u.schoolId == schoolId || u.schoolIds.contains(schoolId)) return true;
+      if (u.schoolName != null && u.schoolName!.toLowerCase() == schoolId.toLowerCase()) return true;
+      if (targetSchoolName.isNotEmpty && u.schoolName != null && u.schoolName!.toLowerCase() == targetSchoolName) return true;
+      if (schoolId == 'sch2' && u.schoolName == 'SMKN 11 Malang') return true;
+      return false;
     }).toList();
   }
 }
