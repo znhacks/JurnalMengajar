@@ -611,26 +611,33 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
         builder: (context, setDialogState) {
           return AlertDialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20.r),
+              borderRadius: BorderRadius.circular(24.r),
             ),
+            contentPadding: EdgeInsets.all(20.w),
+            titlePadding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 0),
             title: Row(
               children: [
                 Container(
-                  padding: EdgeInsets.all(8.w),
+                  padding: EdgeInsets.all(10.w),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEFF6FF),
-                    borderRadius: BorderRadius.circular(10.r),
+                    borderRadius: BorderRadius.circular(14.r),
                   ),
                   child: const Icon(
                     Icons.school_rounded,
                     color: Color(0xFF2563EB),
+                    size: 24,
                   ),
                 ),
                 SizedBox(width: 12.w),
                 const Expanded(
                   child: Text(
                     'Gabung Sekolah Baru',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
                   ),
                 ),
               ],
@@ -641,10 +648,10 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Masukkan Kode Sekolah / NPSN yang ingin Anda gabungkan:',
-                    style: TextStyle(fontSize: 13.sp, color: const Color(0xFF475569)),
+                    'Masukkan Kode Sekolah atau NPSN untuk bergabung:',
+                    style: TextStyle(fontSize: 13.sp, color: const Color(0xFF64748B)),
                   ),
-                  SizedBox(height: 12.h),
+                  SizedBox(height: 14.h),
                   TextField(
                     controller: codeController,
                     enabled: !isSubmitting,
@@ -652,63 +659,154 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     decoration: InputDecoration(
                       labelText: 'Kode / NPSN Sekolah',
                       hintText: 'Contoh: 20533811',
-                      prefixIcon: const Icon(Icons.vpn_key_outlined),
+                      prefixIcon: const Icon(Icons.vpn_key_rounded, color: Color(0xFF2563EB)),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
+                        borderRadius: BorderRadius.circular(14.r),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14.r),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14.r),
+                        borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
                       ),
                     ),
                   ),
-                  SizedBox(height: 14.h),
+                  SizedBox(height: 16.h),
                   Text(
                     'Peran / Hak Akses:',
-                    style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold, color: const Color(0xFF334155)),
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1E293B),
+                    ),
                   ),
-                  SizedBox(height: 6.h),
+                  SizedBox(height: 8.h),
                   Row(
                     children: [
+                      // Role Card: Guru
                       Expanded(
-                        child: ChoiceChip(
-                          label: const Text('Guru'),
-                          selected: requestedRole == 'guru',
-                          selectedColor: const Color(0xFFDBEAFE),
-                          onSelected: isSubmitting
+                        child: GestureDetector(
+                          onTap: isSubmitting
                               ? null
-                              : (selected) {
-                                  if (selected) {
-                                    setDialogState(() => requestedRole = 'guru');
-                                  }
-                                },
+                              : () => setDialogState(() => requestedRole = 'guru'),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
+                            decoration: BoxDecoration(
+                              color: requestedRole == 'guru'
+                                  ? const Color(0xFFEFF6FF)
+                                  : const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(14.r),
+                              border: Border.all(
+                                color: requestedRole == 'guru'
+                                    ? const Color(0xFF2563EB)
+                                    : const Color(0xFFE2E8F0),
+                                width: requestedRole == 'guru' ? 1.5 : 1.0,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  requestedRole == 'guru'
+                                      ? Icons.check_circle_rounded
+                                      : Icons.person_outline_rounded,
+                                  size: 16.sp,
+                                  color: requestedRole == 'guru'
+                                      ? const Color(0xFF2563EB)
+                                      : const Color(0xFF64748B),
+                                ),
+                                SizedBox(width: 6.w),
+                                Flexible(
+                                  child: Text(
+                                    'Guru',
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: requestedRole == 'guru'
+                                          ? const Color(0xFF1E40AF)
+                                          : const Color(0xFF475569),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                      SizedBox(width: 8.w),
+                      SizedBox(width: 10.w),
+                      // Role Card: Admin Sekolah
                       Expanded(
-                        child: ChoiceChip(
-                          label: const Text('Admin Sekolah'),
-                          selected: requestedRole == 'admin',
-                          selectedColor: const Color(0xFFFED7AA),
-                          onSelected: isSubmitting
+                        child: GestureDetector(
+                          onTap: isSubmitting
                               ? null
-                              : (selected) {
-                                  if (selected) {
-                                    setDialogState(() => requestedRole = 'admin');
-                                  }
-                                },
+                              : () => setDialogState(() => requestedRole = 'admin'),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
+                            decoration: BoxDecoration(
+                              color: requestedRole == 'admin'
+                                  ? const Color(0xFFFFF7ED)
+                                  : const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(14.r),
+                              border: Border.all(
+                                color: requestedRole == 'admin'
+                                    ? const Color(0xFFEA580C)
+                                    : const Color(0xFFE2E8F0),
+                                width: requestedRole == 'admin' ? 1.5 : 1.0,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  requestedRole == 'admin'
+                                      ? Icons.check_circle_rounded
+                                      : Icons.admin_panel_settings_outlined,
+                                  size: 16.sp,
+                                  color: requestedRole == 'admin'
+                                      ? const Color(0xFFEA580C)
+                                      : const Color(0xFF64748B),
+                                ),
+                                SizedBox(width: 6.w),
+                                Flexible(
+                                  child: Text(
+                                    'Admin Sekolah',
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: requestedRole == 'admin'
+                                          ? const Color(0xFFC2410C)
+                                          : const Color(0xFF475569),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
                   if (requestedRole == 'admin') ...[
-                    SizedBox(height: 10.h),
+                    SizedBox(height: 12.h),
                     Container(
                       padding: EdgeInsets.all(10.w),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFFF7ED),
-                        borderRadius: BorderRadius.circular(10.r),
+                        borderRadius: BorderRadius.circular(12.r),
                         border: Border.all(color: const Color(0xFFFFEDD5)),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.info_outline, color: Color(0xFFC2410C), size: 18),
+                          const Icon(Icons.info_outline_rounded, color: Color(0xFFC2410C), size: 18),
                           SizedBox(width: 8.w),
                           Expanded(
                             child: Text(
@@ -723,66 +821,98 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                 ],
               ),
             ),
+            actionsPadding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 20.h),
             actions: [
-              TextButton(
-                onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
-                child: const Text('Batal'),
-              ),
-              ElevatedButton(
-                onPressed: isSubmitting
-                    ? null
-                    : () async {
-                        final code = codeController.text.trim();
-                        if (code.isEmpty) {
-                          AppHelper.showSnackBar(
-                            context,
-                            'Kode undangan tidak boleh kosong',
-                            isError: true,
-                          );
-                          return;
-                        }
-                        final messenger = ScaffoldMessenger.of(context);
-                        final navigator = Navigator.of(dialogCtx);
-                        setDialogState(() => isSubmitting = true);
-                        final success = await authProvider.joinSchoolWithCode(code, role: requestedRole);
-                        if (mounted) {
-                          if (success) {
-                            messenger.showSnackBar(
-                              const SnackBar(
-                                content: Text('Berhasil bergabung ke sekolah!'),
-                              ),
-                            );
-                            navigator.pop();
-                          } else {
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  authProvider.errorMessage ?? 'Gagal bergabung ke sekolah.',
-                                ),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            setDialogState(() => isSubmitting = false);
-                          }
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2563EB),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                ),
-                child: isSubmitting
-                    ? SizedBox(
-                        width: 18.w,
-                        height: 18.h,
-                        child: const CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14.r),
                         ),
-                      )
-                    : const Text('Gabung'),
+                      ),
+                      child: Text(
+                        'Batal',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: const Color(0xFF64748B),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              final code = codeController.text.trim();
+                              if (code.isEmpty) {
+                                AppHelper.showSnackBar(
+                                  context,
+                                  'Kode undangan tidak boleh kosong',
+                                  isError: true,
+                                );
+                                return;
+                              }
+                              final messenger = ScaffoldMessenger.of(context);
+                              final navigator = Navigator.of(dialogCtx);
+                              setDialogState(() => isSubmitting = true);
+                              final success = await authProvider.joinSchoolWithCode(code, role: requestedRole);
+                              if (mounted) {
+                                if (success) {
+                                  messenger.showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Berhasil bergabung ke sekolah!'),
+                                    ),
+                                  );
+                                  navigator.pop();
+                                } else {
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        authProvider.errorMessage ?? 'Gagal bergabung ke sekolah.',
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  setDialogState(() => isSubmitting = false);
+                                }
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        backgroundColor: const Color(0xFF2563EB),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14.r),
+                        ),
+                      ),
+                      child: isSubmitting
+                          ? SizedBox(
+                              width: 18.w,
+                              height: 18.h,
+                              child: const CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              'Gabung',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
               ),
             ],
           );
