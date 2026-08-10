@@ -815,8 +815,18 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
   Widget build(BuildContext context) {
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
-    final schedules = scheduleProvider.schedules;
-    final allGroupedSchedules = groupMasterSchedules(schedules);
+    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
+    final validSubjectIds = masterProvider.subjects.map((s) => s.id).toSet();
+    final schoolTeacherIds = masterProvider.teachers.map((t) => t.id).toSet();
+
+    final validSchedules = scheduleProvider.schedules.where((s) {
+      final matchClass = validClassIds.contains(s.classId);
+      final matchSubject = validSubjectIds.contains(s.subjectId);
+      final matchTeacher = schoolTeacherIds.isEmpty || schoolTeacherIds.contains(s.teacherId);
+      return matchClass && matchSubject && matchTeacher;
+    }).toList();
+
+    final allGroupedSchedules = groupMasterSchedules(validSchedules);
 
     // Filter by search query
     final filteredGroupedSchedules = allGroupedSchedules.where((sched) {

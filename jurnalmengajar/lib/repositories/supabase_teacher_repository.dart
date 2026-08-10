@@ -34,8 +34,9 @@ class SupabaseTeacherRepository implements TeacherRepository {
 
   @override
   Future<List<TeacherModel>> getAllForSchool(String schoolId) async {
+    if (schoolId.isEmpty) return [];
     try {
-      // 1. Coba query dari user_schools (many-to-many)
+      // 1. Query user_schools for userIds belonging to this schoolId
       List<String> userIds = [];
       try {
         final userSchoolsRes = await _supabase
@@ -48,47 +49,53 @@ class SupabaseTeacherRepository implements TeacherRepository {
             .toList();
       } catch (_) {}
 
-      // 2. Query dari tabel users (termasuk matching ARRAY school_ids atau string koma school_id '0001,0002')
+      // 2. Query users where role = 'guru' AND belonging to schoolId
+      List<dynamic> response = [];
       if (userIds.isNotEmpty) {
-        final response = await _supabase
+        final res = await _supabase
             .from('users')
             .select()
-            .or('id.in.(${userIds.join(",")}),school_id.ilike.%$schoolId%,school_ids.cs.{"$schoolId"}')
+            .eq('role', 'guru')
+            .or('id.in.(${userIds.join(",")})')
             .order('full_name', ascending: true);
-
-        return (response as List)
-            .map((json) => TeacherModel(
-                  id: json['id'] as String,
-                  name: json['full_name'] as String,
-                  position: json['position'] as String? ?? 'Guru Bidang Studi',
-                  address: json['address'] as String? ?? '',
-                  phoneNumber: json['phone'] as String? ?? '',
-                  email: json['email'] as String,
-                  photoUrl: json['photo_url'] as String?,
-                ))
-            .toList();
+        response = res as List;
       } else {
-        final response = await _supabase
-            .from('users')
-            .select()
-            .or('school_id.ilike.%$schoolId%,school_ids.cs.{"$schoolId"}')
-            .order('full_name', ascending: true);
-
-        return (response as List)
-            .map((json) => TeacherModel(
-                  id: json['id'] as String,
-                  name: json['full_name'] as String,
-                  position: json['position'] as String? ?? 'Guru Bidang Studi',
-                  address: json['address'] as String? ?? '',
-                  phoneNumber: json['phone'] as String? ?? '',
-                  email: json['email'] as String,
-                  photoUrl: json['photo_url'] as String?,
-                ))
-            .toList();
+        try {
+          final res = await _supabase
+              .from('users')
+              .select()
+              .eq('role', 'guru')
+              .or('school_id.ilike.%$schoolId%,school_ids.cs.{"$schoolId"}')
+              .order('full_name', ascending: true);
+          response = res as List;
+        } catch (_) {
+          try {
+            final res = await _supabase
+                .from('users')
+                .select()
+                .eq('role', 'guru')
+                .eq('school_id', schoolId)
+                .order('full_name', ascending: true);
+            response = res as List;
+          } catch (_) {
+            response = [];
+          }
+        }
       }
+
+      return response
+          .map((json) => TeacherModel(
+                id: json['id'] as String,
+                name: json['full_name'] as String,
+                position: json['position'] as String? ?? 'Guru Bidang Studi',
+                address: json['address'] as String? ?? '',
+                phoneNumber: json['phone'] as String? ?? '',
+                email: json['email'] as String,
+                photoUrl: json['photo_url'] as String?,
+              ))
+          .toList();
     } catch (e) {
-      // Fallback ke getAll jika query spesifik gagal
-      return getAll();
+      return [];
     }
   }
 

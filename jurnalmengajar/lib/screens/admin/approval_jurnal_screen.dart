@@ -66,7 +66,14 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
     final journalProvider = context.watch<JournalProvider>();
     final masterProvider = context.watch<MasterDataProvider>();
 
-    final pendingJournals = journalProvider.journals.where((j) => j.status == 'pending').toList();
+    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
+    final validSubjectIds = masterProvider.subjects.map((s) => s.id).toSet();
+
+    final pendingJournals = journalProvider.journals.where((j) {
+      return j.status == 'pending' &&
+          validClassIds.contains(j.classId) &&
+          validSubjectIds.contains(j.subjectId);
+    }).toList();
     final isLoading = journalProvider.isLoading || masterProvider.isLoading;
 
     return Scaffold(

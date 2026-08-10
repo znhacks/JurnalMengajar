@@ -74,6 +74,20 @@ class MockTeacherRepository implements TeacherRepository {
   @override
   Future<List<TeacherModel>> getAllForSchool(String schoolId) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    return List.from(_db.teachers);
+    return _db.teachers.where((t) {
+      final user = _db.users.firstWhere(
+        (u) => u.email.toLowerCase() == t.email.toLowerCase(),
+        orElse: () => UserModel(id: '', email: '', fullName: '', role: 'guru'),
+      );
+      if (user.schoolId != null && user.schoolId!.isNotEmpty) {
+        return user.schoolId == schoolId || user.schoolIds.contains(schoolId);
+      }
+      if (user.schoolName != null && user.schoolName!.isNotEmpty) {
+        if (schoolId == 'sch2' && user.schoolName == 'SMKN 11 Malang') return true;
+        if (schoolId == 'sch1' && user.schoolName == 'SMP NEGERI 1 SATU ATAP MEMPURA') return true;
+        return false;
+      }
+      return schoolId == 'sch2' || schoolId == 'a1111111-1111-1111-1111-111111111111';
+    }).toList();
   }
 }

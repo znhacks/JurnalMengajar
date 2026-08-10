@@ -134,27 +134,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final scheduleProvider = context.watch<ScheduleProvider>();
     final journalProvider = context.watch<JournalProvider>();
 
+    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
+    final validSubjectIds = masterProvider.subjects.map((s) => s.id).toSet();
     final schoolTeacherIds = masterProvider.teachers.map((t) => t.id).toSet();
 
     final schoolSchedules = scheduleProvider.schedules.where((s) {
-      return schoolTeacherIds.contains(s.teacherId);
+      final matchClass = validClassIds.contains(s.classId);
+      final matchSubject = validSubjectIds.contains(s.subjectId);
+      final matchTeacher = schoolTeacherIds.isEmpty || schoolTeacherIds.contains(s.teacherId);
+      return matchClass && matchSubject && matchTeacher;
     }).toList();
 
     final schoolJournals = journalProvider.journals.where((j) {
-      final sched = scheduleProvider.schedules.firstWhere(
-        (s) => s.id == j.scheduleId,
-        orElse: () => ScheduleModel(
-          id: '',
-          periodId: '',
-          date: DateTime.now(),
-          teachingHour: 0,
-          classId: '',
-          subjectId: '',
-          teacherId: '',
-          isActive: false,
-        ),
-      );
-      return schoolTeacherIds.contains(sched.teacherId) || schoolTeacherIds.contains(j.teacherId);
+      final matchClass = validClassIds.contains(j.classId);
+      final matchSubject = validSubjectIds.contains(j.subjectId);
+      final matchTeacher = schoolTeacherIds.isEmpty || schoolTeacherIds.contains(j.teacherId);
+      return matchClass && matchSubject && matchTeacher;
     }).toList();
 
     final filteredJournals = _selectedTeacherId == null

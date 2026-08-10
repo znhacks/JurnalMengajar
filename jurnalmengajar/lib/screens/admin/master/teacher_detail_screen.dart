@@ -65,13 +65,18 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
   }
 
   bool _hasTeacherScheduleOnDay(List<ScheduleModel> schedules, DateTime day) {
+    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
+    final validSubjectIds = masterProvider.subjects.map((s) => s.id).toSet();
     return schedules.any(
       (s) =>
           s.teacherId == widget.teacherId &&
           s.isActive &&
           s.date.year == day.year &&
           s.date.month == day.month &&
-          s.date.day == day.day,
+          s.date.day == day.day &&
+          validClassIds.contains(s.classId) &&
+          validSubjectIds.contains(s.subjectId),
     );
   }
 
@@ -141,13 +146,18 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
       ),
     );
 
+    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
+    final validSubjectIds = masterProvider.subjects.map((s) => s.id).toSet();
+
     // Filter schedules for this teacher on selected day
     final dailySchedules = scheduleProvider.schedules.where((s) {
       return s.teacherId == widget.teacherId &&
           s.isActive &&
           s.date.year == _selectedDay.year &&
           s.date.month == _selectedDay.month &&
-          s.date.day == _selectedDay.day;
+          s.date.day == _selectedDay.day &&
+          validClassIds.contains(s.classId) &&
+          validSubjectIds.contains(s.subjectId);
     }).toList();
 
     // Filter journals for this teacher on selected day
@@ -155,7 +165,9 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
       return j.teacherId == widget.teacherId &&
           j.date.year == _selectedDay.year &&
           j.date.month == _selectedDay.month &&
-          j.date.day == _selectedDay.day;
+          j.date.day == _selectedDay.day &&
+          validClassIds.contains(j.classId) &&
+          validSubjectIds.contains(j.subjectId);
     }).toList();
 
     return Scaffold(
