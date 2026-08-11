@@ -8,7 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'repositories/supabase_auth_repository.dart';
 import 'repositories/supabase_period_repository.dart';
 import 'repositories/supabase_subject_repository.dart';
-import 'repositories/supabase_hour_repository.dart';
+import 'repositories/supabase_hour_repository.dart';    
 import 'repositories/supabase_class_repository.dart';
 import 'repositories/supabase_teacher_repository.dart';
 import 'repositories/supabase_schedule_repository.dart';

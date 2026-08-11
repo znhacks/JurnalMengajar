@@ -15,6 +15,7 @@ import '../../models/teacher_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/journal_provider.dart';
+import '../../widgets/web_responsive_container.dart';
 
 class GuruMainShell extends StatefulWidget {
   final int? initialIndex;
@@ -195,23 +196,25 @@ class GuruMainShellState extends State<GuruMainShell> {
           _currentIndex = 0;
         });
       },
-      child: Scaffold(
-        drawer: GuruDrawer(selectedIndex: _currentIndex),
-        body: Stack(
-          children: [
-            IndexedStack(index: _currentIndex, children: _screens),
-            if (unreadWarnings > 0)
-              _buildFloatingBadge(
-                count: unreadWarnings,
-                color: const Color(0xFFBA1A1A),
-                icon: Icons.assignment_late_rounded,
-                badgeColor: Colors.amber,
-                badgeTextColor: Colors.black,
-                onTap: () => context.push('/guru/warning-letters'),
-                screenWidth: screenWidth,
-                screenHeight: screenHeight,
-              ),
-          ],
+      child: WebResponsiveContainer(
+        child: Scaffold(
+          drawer: GuruDrawer(selectedIndex: _currentIndex),
+          body: Stack(
+            children: [
+              IndexedStack(index: _currentIndex, children: _screens),
+              if (unreadWarnings > 0)
+                _buildFloatingBadge(
+                  count: unreadWarnings,
+                  color: const Color(0xFFBA1A1A),
+                  icon: Icons.assignment_late_rounded,
+                  badgeColor: Colors.amber,
+                  badgeTextColor: Colors.black,
+                  onTap: () => context.push('/guru/warning-letters'),
+                  screenWidth: screenWidth,
+                  screenHeight: screenHeight,
+                ),
+            ],
+          ),
         ),
       ),
     );
