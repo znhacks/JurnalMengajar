@@ -1,6 +1,7 @@
 import '../auth_repository.dart';
 import '../../models/user_model.dart';
 import '../../models/teacher_model.dart';
+import '../../models/school_model.dart';
 import 'mock_database.dart';
 
 class MockAuthRepository implements AuthRepository {
@@ -194,7 +195,7 @@ class MockAuthRepository implements AuthRepository {
     final targetSchoolName = schoolObj.name.toLowerCase();
 
     return _db.users.where((u) {
-      if (u.schoolId == schoolId || u.schoolIds.contains(schoolId)) return true;
+      if (u.schoolIds.contains(schoolId)) return true;
       if (u.schoolName != null && u.schoolName!.toLowerCase() == schoolId.toLowerCase()) return true;
       if (targetSchoolName.isNotEmpty && u.schoolName != null && u.schoolName!.toLowerCase() == targetSchoolName) return true;
       if (schoolId == 'sch2' && u.schoolName == 'SMKN 11 Malang') return true;

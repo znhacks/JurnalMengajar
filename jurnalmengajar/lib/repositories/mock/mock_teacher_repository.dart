@@ -79,8 +79,8 @@ class MockTeacherRepository implements TeacherRepository {
         (u) => u.email.toLowerCase() == t.email.toLowerCase(),
         orElse: () => UserModel(id: '', email: '', fullName: '', role: 'guru'),
       );
-      if (user.schoolId != null && user.schoolId!.isNotEmpty) {
-        return user.schoolId == schoolId || user.schoolIds.contains(schoolId);
+      if (user.schoolIds.contains(schoolId)) {
+        return true;
       }
       if (user.schoolName != null && user.schoolName!.isNotEmpty) {
         if (schoolId == 'sch2' && user.schoolName == 'SMKN 11 Malang') return true;
