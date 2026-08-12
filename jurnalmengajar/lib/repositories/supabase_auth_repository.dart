@@ -105,15 +105,14 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<UserModel> loginWithGoogle() async {
     try {
       final String redirectTo = kIsWeb
-          ? Uri
-                .base
-                .origin // e.g. "http://localhost:52512"
+          ? (Uri.base.origin.contains('localhost') || Uri.base.origin.contains('127.0.0.1')
+              ? Uri.base.origin
+              : 'https://jurnalmengajarku.netlify.app')
           : 'io.supabase.jurnalmengajar://login-callback';
 
       if (kIsWeb) {
         // On web: full-page redirect — the browser navigates to Google then
-        // comes back to the app URL. Supabase SDK picks up the token on reload.
-        // No authScreenLaunchMode needed (omitting it = default browser redirect).
+        // comes back to the app Netlify domain. Supabase SDK picks up token on reload.
         await _supabase.auth.signInWithOAuth(
           OAuthProvider.google,
           redirectTo: redirectTo,
