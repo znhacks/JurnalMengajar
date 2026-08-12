@@ -22,7 +22,6 @@ import '../../providers/warning_letter_provider.dart';
 import '../../widgets/animated_widgets.dart';
 import '../../widgets/role_badge.dart';
 import '../../widgets/school_switcher_modal.dart';
-import '../../widgets/web_responsive_container.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final String? selectedTeacherId;
@@ -246,8 +245,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         scheduleProvider.isLoading ||
         journalProvider.isLoading;
 
-    return WebResponsiveContainer(
-      child: Scaffold(
+    return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         centerTitle: true,
@@ -418,8 +416,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
               ),
             ),
-      ),
-    );
+      );
   }
 
   // ─── Section Title ─────────────────────────────────────────────────────────

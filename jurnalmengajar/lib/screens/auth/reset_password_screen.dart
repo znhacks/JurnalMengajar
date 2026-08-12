@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -112,14 +113,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+              padding: EdgeInsets.symmetric(
+                horizontal: kIsWeb ? 16 : 24.w,
+                vertical: kIsWeb ? 16 : 32.h,
+              ),
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: 420.w),
+                constraints: BoxConstraints(maxWidth: kIsWeb ? 380 : 440),
                 child: Card(
                   elevation: 12,
                   shadowColor: Colors.black.withValues(alpha: 0.2),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(32.r),
+                    borderRadius: BorderRadius.circular(24.r),
                   ),
                   color: Colors.white,
                   clipBehavior: Clip.antiAlias,
@@ -132,7 +136,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           ClipPath(
                             clipper: const WaveClipper(),
                             child: Container(
-                              height: 120.h,
+                              height: kIsWeb ? 100 : 120.h,
                               decoration: const BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [

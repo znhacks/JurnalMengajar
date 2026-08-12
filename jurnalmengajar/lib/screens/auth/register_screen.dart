@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -253,14 +254,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+              padding: EdgeInsets.symmetric(
+                horizontal: kIsWeb ? 16 : 24.w,
+                vertical: kIsWeb ? 16 : 32.h,
+              ),
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: 420.w),
+                constraints: BoxConstraints(maxWidth: kIsWeb ? 420 : 480),
                 child: Card(
                   elevation: 12,
                   shadowColor: Colors.black.withValues(alpha: 0.2),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(32.r),
+                    borderRadius: BorderRadius.circular(24.r),
                   ),
                   color: Colors.white,
                   clipBehavior: Clip.antiAlias,
@@ -273,7 +277,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ClipPath(
                             clipper: const WaveClipper(),
                             child: Container(
-                              height: 160.h,
+                              height: kIsWeb ? 110 : 160.h,
                               decoration: const BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
@@ -289,7 +293,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Positioned.fill(
                             child: Padding(
                               padding: EdgeInsets.only(
-                                bottom: 20.h,
+                                bottom: kIsWeb ? 12 : 20.h,
                                 left: 16.w,
                                 right: 16.w,
                               ),
@@ -298,7 +302,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 children: [
                                   Image.asset(
                                     'assets/logoJurnalMengajarLogin.png',
-                                    height: 50.h,
+                                    height: kIsWeb ? 38 : 50.h,
                                     fit: BoxFit.contain,
                                   ),
                                 ],
@@ -310,7 +314,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       // Form Section
                       Padding(
-                        padding: EdgeInsets.fromLTRB(28.w, 8.h, 28.w, 28.h),
+                        padding: EdgeInsets.fromLTRB(
+                          kIsWeb ? 20 : 28.w,
+                          kIsWeb ? 8 : 8.h,
+                          kIsWeb ? 20 : 28.w,
+                          kIsWeb ? 20 : 28.h,
+                        ),
                         child: Form(
                           key: _formKey,
                           child: Column(

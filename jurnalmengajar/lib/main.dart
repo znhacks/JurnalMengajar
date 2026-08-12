@@ -132,17 +132,24 @@ class _JurnalMengajarAppState extends State<JurnalMengajarApp> {
   @override
   Widget build(BuildContext context) {
     // Wrap with ScreenUtilInit for fully responsive UI sizes across different screens
-    return ScreenUtilInit(
-      designSize: const Size(360, 690), // Standard layout design base
-      minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (context, child) {
-        return MaterialApp.router(
-          title: 'Jurnal Mengajar',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          // Injecting GoRouter table
-          routerConfig: AppRouter.router(context),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth > 600;
+        return ScreenUtilInit(
+          designSize: isDesktop
+              ? Size(constraints.maxWidth, constraints.maxHeight)
+              : const Size(360, 690),
+          minTextAdapt: true,
+          splitScreenMode: true,
+          builder: (context, child) {
+            return MaterialApp.router(
+              title: 'Jurnal Mengajar',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.lightTheme,
+              // Injecting GoRouter table
+              routerConfig: AppRouter.router(context),
+            );
+          },
         );
       },
     );

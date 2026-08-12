@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -139,14 +140,17 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+              padding: EdgeInsets.symmetric(
+                horizontal: kIsWeb ? 16 : 24.w,
+                vertical: kIsWeb ? 16 : 32.h,
+              ),
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: 420.w),
+                constraints: BoxConstraints(maxWidth: kIsWeb ? 380 : 440),
                 child: Card(
                   elevation: 12,
                   shadowColor: Colors.black.withValues(alpha: 0.2),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(32.r),
+                    borderRadius: BorderRadius.circular(24.r),
                   ),
                   color: Colors.white,
                   clipBehavior: Clip.antiAlias,
@@ -159,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ClipPath(
                             clipper: const WaveClipper(),
                             child: Container(
-                              height: 130.h,
+                              height: kIsWeb ? 100 : 130.h,
                               decoration: const BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
@@ -175,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Positioned.fill(
                             child: Padding(
                               padding: EdgeInsets.only(
-                                bottom: 24.h,
+                                bottom: kIsWeb ? 12 : 24.h,
                                 left: 16.w,
                                 right: 16.w,
                               ),
@@ -184,7 +188,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 children: [
                                   Image.asset(
                                     'assets/logoJurnalMengajarLogin.png',
-                                    height: 50.h,
+                                    height: kIsWeb ? 38 : 50.h,
                                     fit: BoxFit.contain,
                                   ),
                                 ],
@@ -196,7 +200,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // Form Section
                       Padding(
-                        padding: EdgeInsets.fromLTRB(24.w, 12.h, 24.w, 20.h),
+                        padding: EdgeInsets.fromLTRB(
+                          kIsWeb ? 20 : 24.w,
+                          kIsWeb ? 8 : 12.h,
+                          kIsWeb ? 20 : 24.w,
+                          kIsWeb ? 16 : 20.h,
+                        ),
                         child: Form(
                           key: _formKey,
                           child: Column(
@@ -205,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               Text(
                                 'Selamat Datang Kembali',
                                 style: TextStyle(
-                                  fontSize: 22.sp,
+                                  fontSize: kIsWeb ? 18 : 22.sp,
                                   fontWeight: FontWeight.bold,
                                   color: const Color(0xFF1E293B),
                                 ),
@@ -214,11 +223,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               Text(
                                 'Silakan masuk ke akun Anda',
                                 style: TextStyle(
-                                  fontSize: 13.sp,
+                                  fontSize: kIsWeb ? 12 : 13.sp,
                                   color: const Color(0xFF64748B),
                                 ),
                               ),
-                              SizedBox(height: 24.h),
+                              SizedBox(height: kIsWeb ? 14 : 24.h),
 
                               // Email Input
                               Text(
@@ -230,7 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   letterSpacing: 0.5,
                                 ),
                               ),
-                              SizedBox(height: 6.h),
+                              SizedBox(height: 4.h),
                               TextFormField(
                                 controller: _emailController,
                                 keyboardType: TextInputType.emailAddress,
@@ -272,12 +281,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   contentPadding: EdgeInsets.symmetric(
-                                    vertical: 10.h,
+                                    vertical: kIsWeb ? 8 : 10.h,
                                     horizontal: 12.w,
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 10.h),
+                              SizedBox(height: kIsWeb ? 8 : 10.h),
 
                               // Password Input
                               Text(
@@ -289,7 +298,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   letterSpacing: 0.5,
                                 ),
                               ),
-                              SizedBox(height: 6.h),
+                              SizedBox(height: 4.h),
                               TextFormField(
                                 controller: _passwordController,
                                 obscureText: _obscurePassword,
@@ -347,12 +356,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   contentPadding: EdgeInsets.symmetric(
-                                    vertical: 10.h,
+                                    vertical: kIsWeb ? 8 : 10.h,
                                     horizontal: 12.w,
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 6.h),
+                              SizedBox(height: 4.h),
 
                               // Forgot Password
                               Align(
@@ -362,7 +371,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: Text(
                                     'Lupa Password?',
                                     style: TextStyle(
-                                      fontSize: 13.sp,
+                                      fontSize: kIsWeb ? 12 : 13.sp,
                                       fontWeight: FontWeight.bold,
                                       color: const Color.fromARGB(
                                         255,
@@ -374,7 +383,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 14.h),
+                              SizedBox(height: kIsWeb ? 10 : 14.h),
 
                               // Submit Button
                               ElevatedButton(
@@ -394,7 +403,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                     99,
                                     235,
                                   ).withValues(alpha: 0.4),
-                                  padding: EdgeInsets.symmetric(vertical: 13.h),
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: kIsWeb ? 10 : 13.h,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16.r),
                                   ),
@@ -414,12 +425,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                     : Text(
                                         'Masuk',
                                         style: TextStyle(
-                                          fontSize: 15.sp,
+                                          fontSize: kIsWeb ? 14 : 15.sp,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                               ),
-                              SizedBox(height: 24.h),
+                              SizedBox(height: kIsWeb ? 14 : 24.h),
 
                               // Divider
                               Row(
@@ -451,7 +462,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 20.h),
+                              SizedBox(height: kIsWeb ? 12 : 20.h),
 
                               // Google Social Login
                               OutlinedButton(
@@ -463,7 +474,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                     color: Color(0xFFE2E8F0),
                                     width: 1.5,
                                   ),
-                                  padding: EdgeInsets.symmetric(vertical: 10.h),
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: kIsWeb ? 8 : 10.h,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16.r),
                                   ),
@@ -474,8 +487,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   children: [
                                     Image.asset(
                                       'assets/google_logo.png',
-                                      height: 20.w,
-                                      width: 20.w,
+                                      height: 20,
+                                      width: 20,
                                       fit: BoxFit.contain,
                                     ),
                                     SizedBox(width: 12.w),
@@ -490,7 +503,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ],
                                 ),
                               ),
-                              SizedBox(height: 24.h),
+                              SizedBox(height: kIsWeb ? 14 : 24.h),
 
                               // Register Link
                               Row(
@@ -499,7 +512,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Text(
                                     'Belum punya akun? ',
                                     style: TextStyle(
-                                      fontSize: 13.sp,
+                                      fontSize: kIsWeb ? 12.5 : 13.sp,
                                       color: const Color(0xFF64748B),
                                     ),
                                   ),
@@ -508,7 +521,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     child: Text(
                                       'Daftar Sekarang',
                                       style: TextStyle(
-                                        fontSize: 13.sp,
+                                        fontSize: kIsWeb ? 12.5 : 13.sp,
                                         fontWeight: FontWeight.bold,
                                         color: const Color.fromARGB(
                                           255,
