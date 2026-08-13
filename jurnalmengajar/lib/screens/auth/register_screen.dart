@@ -277,7 +277,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ClipPath(
                             clipper: const WaveClipper(),
                             child: Container(
-                              height: kIsWeb ? 110 : 160.h,
+                              height: kIsWeb ? 130 : 155.h,
                               decoration: const BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
@@ -293,7 +293,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Positioned.fill(
                             child: Padding(
                               padding: EdgeInsets.only(
-                                bottom: kIsWeb ? 12 : 20.h,
+                                top: kIsWeb ? 16 : 20.h,
+                                bottom: kIsWeb ? 28 : 36.h,
                                 left: 16.w,
                                 right: 16.w,
                               ),
@@ -302,7 +303,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 children: [
                                   Image.asset(
                                     'assets/logoJurnalMengajarLogin.png',
-                                    height: kIsWeb ? 38 : 50.h,
+                                    height: kIsWeb ? 40 : 52.h,
                                     fit: BoxFit.contain,
                                   ),
                                 ],

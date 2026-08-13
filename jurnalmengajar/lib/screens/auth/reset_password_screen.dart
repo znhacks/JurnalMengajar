@@ -136,7 +136,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           ClipPath(
                             clipper: const WaveClipper(),
                             child: Container(
-                              height: kIsWeb ? 100 : 120.h,
+                              height: kIsWeb ? 130 : 155.h,
                               decoration: const BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
@@ -152,7 +152,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           Positioned.fill(
                             child: Padding(
                               padding: EdgeInsets.only(
-                                bottom: 20.h,
+                                top: kIsWeb ? 16 : 20.h,
+                                bottom: kIsWeb ? 28 : 36.h,
                                 left: 16.w,
                                 right: 16.w,
                               ),

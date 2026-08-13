@@ -163,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ClipPath(
                             clipper: const WaveClipper(),
                             child: Container(
-                              height: kIsWeb ? 100 : 130.h,
+                              height: kIsWeb ? 130 : 155.h,
                               decoration: const BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
@@ -179,7 +179,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           Positioned.fill(
                             child: Padding(
                               padding: EdgeInsets.only(
-                                bottom: kIsWeb ? 12 : 24.h,
+                                top: kIsWeb ? 16 : 20.h,
+                                bottom: kIsWeb ? 28 : 36.h,
                                 left: 16.w,
                                 right: 16.w,
                               ),
@@ -188,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 children: [
                                   Image.asset(
                                     'assets/logoJurnalMengajarLogin.png',
-                                    height: kIsWeb ? 38 : 50.h,
+                                    height: kIsWeb ? 40 : 52.h,
                                     fit: BoxFit.contain,
                                   ),
                                 ],
