@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "jurnalmengajarku",
     "public": "jurnalmengajar/build/web",
     "ignore": [
       "firebase.json",
