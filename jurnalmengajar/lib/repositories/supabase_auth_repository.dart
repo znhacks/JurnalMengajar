@@ -105,9 +105,7 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<UserModel> loginWithGoogle() async {
     try {
       final String redirectTo = kIsWeb
-          ? (Uri.base.origin.contains('localhost') || Uri.base.origin.contains('127.0.0.1')
-              ? Uri.base.origin
-              : 'https://jurnalmengajarku.netlify.app')
+          ? Uri.base.origin
           : 'io.supabase.jurnalmengajar://login-callback';
 
       if (kIsWeb) {
