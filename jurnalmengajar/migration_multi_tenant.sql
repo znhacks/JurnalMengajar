@@ -53,6 +53,8 @@ ALTER TABLE public.classes ADD COLUMN IF NOT EXISTS school_id UUID REFERENCES pu
 ALTER TABLE public.subjects ADD COLUMN IF NOT EXISTS school_id UUID REFERENCES public.schools(id) DEFAULT 'a1111111-1111-1111-1111-111111111111';
 ALTER TABLE public.journals ADD COLUMN IF NOT EXISTS school_id UUID REFERENCES public.schools(id) DEFAULT 'a1111111-1111-1111-1111-111111111111';
 ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS school_id UUID REFERENCES public.schools(id) DEFAULT 'a1111111-1111-1111-1111-111111111111';
+ALTER TABLE public.periods ADD COLUMN IF NOT EXISTS school_id UUID REFERENCES public.schools(id) DEFAULT 'a1111111-1111-1111-1111-111111111111';
+ALTER TABLE public.lesson_hours ADD COLUMN IF NOT EXISTS school_id UUID REFERENCES public.schools(id) DEFAULT 'a1111111-1111-1111-1111-111111111111';
 
 -- Migrasi existing users ke school_memberships
 INSERT INTO public.school_memberships (user_id, school_id, role)
