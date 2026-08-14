@@ -28,6 +28,14 @@ class JournalPdfService {
   }) async {
     final pdf = pw.Document();
 
+    // Fetch logo if available
+    pw.ImageProvider? logoImage;
+    if (school?.logoUrl != null && school!.logoUrl!.isNotEmpty) {
+      try {
+        logoImage = await networkImage(school.logoUrl!);
+      } catch (_) {}
+    }
+
     // Setup Indonesian Date Formatters
     final dateFormat = DateFormat('dd/MM/yyyy');
     final fullDateFormat = DateFormat('d MMMM yyyy', 'id_ID');
@@ -71,6 +79,7 @@ class JournalPdfService {
           ttfRegular: ttfRegular,
           pageNumber: context.pageNumber,
           totalPages: context.pagesCount,
+          logoImage: logoImage,
         ),
         footer: (pw.Context context) => _buildFooter(
           context: context,
@@ -191,102 +200,67 @@ class JournalPdfService {
     required pw.Font ttfRegular,
     required int pageNumber,
     required int totalPages,
+    pw.ImageProvider? logoImage,
   }) {
     final gov = (school?.governmentHeader != null && school!.governmentHeader!.isNotEmpty)
         ? school.governmentHeader!
-        : 'PEMERINTAH KABUPATEN SIAK';
+        : '';
     final dept = (school?.departmentHeader != null && school!.departmentHeader!.isNotEmpty)
         ? school.departmentHeader!
-        : 'DINAS PENDIDIKAN DAN KEBUDAYAAN';
+        : '';
     final sName = (school?.name != null && school!.name.isNotEmpty)
         ? school.name
         : schoolName;
     final addr = (school?.address != null && school!.address!.isNotEmpty)
         ? school.address!
-        : 'Jl. Perjuangan Dusun II Sungai Niur Desa Koto Ringin Kecamatan Mempura Kabupaten Siak Provinsi Riau';
+        : '-';
     final postCode = (school?.postalCode != null && school!.postalCode!.isNotEmpty)
         ? school.postalCode!
-        : '28651';
+        : '-';
     final phone = (school?.phone != null && school!.phone!.isNotEmpty)
         ? school.phone!
-        : '081378770847';
+        : '-';
     
     // Website & Email Sanitization & Validation
     String web = (school?.website != null && school!.website!.isNotEmpty)
         ? school.website!
-        : 'http://smpn1satapmempura.besaba.com';
+        : '-';
 
     String email = (school?.email != null && school!.email!.isNotEmpty)
         ? school.email!
-        : 'smpn.1satapmempura@gmail.com';
+        : '-';
 
-    final nss = (school?.nss != null && school!.nss!.isNotEmpty) ? school.nss! : '201091112001';
-    final npsn = (school?.npsn != null && school!.npsn!.isNotEmpty) ? school.npsn! : '69727270';
+    final nss = (school?.nss != null && school!.nss!.isNotEmpty) ? school.nss! : '-';
+    final npsn = (school?.npsn != null && school!.npsn!.isNotEmpty) ? school.npsn! : '-';
 
     return pw.Column(
       children: [
         pw.Row(
           crossAxisAlignment: pw.CrossAxisAlignment.center,
           children: [
-            // Left Side: Presisi Lambang Kabupaten Siak / Tut Wuri Handayani
-            pw.Container(
-              width: 58,
-              height: 70,
-              padding: const pw.EdgeInsets.all(3),
-              decoration: pw.BoxDecoration(
-                color: PdfColor.fromHex('#0E6235'), // Green Siak emblem
-                borderRadius: const pw.BorderRadius.only(
-                  topLeft: pw.Radius.circular(10),
-                  topRight: pw.Radius.circular(10),
-                  bottomLeft: pw.Radius.circular(26),
-                  bottomRight: pw.Radius.circular(26),
-                ),
-                border: pw.Border.all(color: PdfColors.amber, width: 2.5),
-              ),
-              child: pw.Container(
+            // Left Side: Logo Sekolah
+            if (logoImage != null)
+              pw.Container(
+                width: 60,
+                height: 70,
+                alignment: pw.Alignment.center,
+                child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+              )
+            else
+              pw.Container(
+                width: 60,
+                height: 70,
+                alignment: pw.Alignment.center,
                 decoration: pw.BoxDecoration(
-                  color: PdfColors.white,
-                  borderRadius: const pw.BorderRadius.only(
-                    topLeft: pw.Radius.circular(7),
-                    topRight: pw.Radius.circular(7),
-                    bottomLeft: pw.Radius.circular(23),
-                    bottomRight: pw.Radius.circular(23),
-                  ),
+                  shape: pw.BoxShape.circle,
+                  border: pw.Border.all(color: PdfColors.black, width: 1),
                 ),
-                child: pw.Column(
-                  mainAxisAlignment: pw.MainAxisAlignment.center,
-                  children: [
-                    // Top Yellow Star
-                    pw.Text('★', style: pw.TextStyle(font: ttfBold, fontSize: 10, color: PdfColors.amber800)),
-                    pw.SizedBox(height: 1),
-                    // Istana Siak / Crown Icon symbol
-                    pw.Container(
-                      width: 26,
-                      height: 14,
-                      alignment: pw.Alignment.center,
-                      decoration: pw.BoxDecoration(
-                        border: pw.Border.all(color: PdfColors.green900, width: 1),
-                        color: PdfColor.fromHex('#E8F5E9'),
-                      ),
-                      child: pw.Text('🏛️', style: pw.TextStyle(fontSize: 8)),
-                    ),
-                    pw.SizedBox(height: 2),
-                    // Ribbon SIAK
-                    pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                      decoration: pw.BoxDecoration(
-                        color: PdfColor.fromHex('#C62828'), // Red Ribbon
-                        borderRadius: pw.BorderRadius.circular(3),
-                      ),
-                      child: pw.Text(
-                        'SIAK',
-                        style: pw.TextStyle(font: ttfBold, fontSize: 6.5, color: PdfColors.white),
-                      ),
-                    ),
-                  ],
+                child: pw.Text(
+                  'LOGO',
+                  textAlign: pw.TextAlign.center,
+                  style: pw.TextStyle(font: ttfBold, fontSize: 10, color: PdfColors.black),
                 ),
               ),
-            ),
             pw.SizedBox(width: 12),
 
             // Middle: Official Kop Header Text
@@ -294,14 +268,16 @@ class JournalPdfService {
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
-                  pw.Text(
-                    gov.toUpperCase(),
-                    style: pw.TextStyle(font: ttfBold, fontSize: 11, letterSpacing: 0.5, color: PdfColors.black),
-                  ),
-                  pw.Text(
-                    dept.toUpperCase(),
-                    style: pw.TextStyle(font: ttfBold, fontSize: 12, letterSpacing: 0.5, color: PdfColors.black),
-                  ),
+                  if (gov.isNotEmpty)
+                    pw.Text(
+                      gov.toUpperCase(),
+                      style: pw.TextStyle(font: ttfBold, fontSize: 11, letterSpacing: 0.5, color: PdfColors.black),
+                    ),
+                  if (dept.isNotEmpty)
+                    pw.Text(
+                      dept.toUpperCase(),
+                      style: pw.TextStyle(font: ttfBold, fontSize: 12, letterSpacing: 0.5, color: PdfColors.black),
+                    ),
                   pw.Text(
                     sName.toUpperCase(),
                     style: pw.TextStyle(font: ttfBold, fontSize: 14, letterSpacing: 0.8, color: PdfColors.black),

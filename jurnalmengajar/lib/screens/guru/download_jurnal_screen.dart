@@ -89,14 +89,20 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       // Auto match teacher's school from user profile
       if (masterProvider.schools.isNotEmpty) {
         final teacherSchoolName = currentUser.schoolName ?? '';
-        final matchedSchool = masterProvider.schools.firstWhere(
-          (s) => s.name.toLowerCase().contains(teacherSchoolName.toLowerCase()) ||
-                 teacherSchoolName.toLowerCase().contains(s.name.toLowerCase()),
-          orElse: () => masterProvider.schools.first,
+        final matchedSchool = masterProvider.schools.cast<SchoolModel?>().firstWhere(
+          (s) => s != null && teacherSchoolName.isNotEmpty && (
+                 s.name.toLowerCase().contains(teacherSchoolName.toLowerCase()) ||
+                 teacherSchoolName.toLowerCase().contains(s.name.toLowerCase())),
+          orElse: () => null,
         );
         setState(() {
-          _selectedSchoolId = matchedSchool.id;
-          _schoolNameController.text = matchedSchool.name;
+          _selectedSchoolId = matchedSchool?.id;
+          _schoolNameController.text = matchedSchool?.name ?? (teacherSchoolName.isNotEmpty ? teacherSchoolName : 'Nama Sekolah');
+        });
+      } else {
+        setState(() {
+          _selectedSchoolId = null;
+          _schoolNameController.text = currentUser.schoolName ?? 'Nama Sekolah';
         });
       }
     }
@@ -801,10 +807,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     DropdownButtonFormField<String?>(
-                      initialValue: _selectedSchoolId ??
-                          (masterProvider.schools.isNotEmpty
-                              ? masterProvider.schools.first.id
-                              : null),
+                      initialValue: _selectedSchoolId,
                       decoration: InputDecoration(
                         labelText: 'Pilih Sekolah',
                         hintText: 'Pilih sekolah tempat cetak jurnal',
@@ -820,24 +823,22 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                           borderRadius: BorderRadius.circular(10.r),
                         ),
                       ),
-                      items: masterProvider.schools.isNotEmpty
-                          ? masterProvider.schools
-                              .map(
-                                (s) => DropdownMenuItem<String?>(
-                                  value: s.id,
-                                  child: Text(
-                                    s.name,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              )
-                              .toList()
-                          : [
-                              const DropdownMenuItem<String?>(
-                                value: null,
-                                child: Text('SMP NEGERI 1 SATU ATAP MEMPURA'),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Sekolah Lainnya (Manual)'),
+                        ),
+                        if (masterProvider.schools.isNotEmpty)
+                          ...masterProvider.schools.map(
+                            (s) => DropdownMenuItem<String?>(
+                              value: s.id,
+                              child: Text(
+                                s.name,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ],
+                            ),
+                          )
+                      ],
                       onChanged: (val) {
                         setState(() {
                           _selectedSchoolId = val;
