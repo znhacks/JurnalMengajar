@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -137,7 +138,9 @@ class _JurnalMengajarAppState extends State<JurnalMengajarApp> {
         final isDesktop = constraints.maxWidth > 600;
         return ScreenUtilInit(
           designSize: isDesktop
-              ? Size(constraints.maxWidth, constraints.maxHeight)
+              ? (kIsWeb
+                  ? const Size(1280, 800) // Fixed design size on Web to prevent page/route reload on zoom/resize
+                  : Size(constraints.maxWidth, constraints.maxHeight))
               : const Size(360, 690),
           minTextAdapt: true,
           splitScreenMode: true,
