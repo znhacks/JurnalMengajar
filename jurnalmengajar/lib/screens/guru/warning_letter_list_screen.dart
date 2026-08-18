@@ -32,7 +32,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
 
       final currentUser = authProvider.currentUser;
       if (currentUser != null) {
-        await masterProvider.loadAllData();
+        await masterProvider.loadAllData(authProvider.activeSchoolId);
         final teacher = masterProvider.teachers.firstWhere(
           (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
           orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),

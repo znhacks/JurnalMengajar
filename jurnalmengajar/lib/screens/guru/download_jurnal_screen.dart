@@ -86,25 +86,13 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         await journalProvider.loadTeacherJournals(teacher.id);
       }
 
-      // Auto match teacher's school from user profile
-      if (masterProvider.schools.isNotEmpty) {
-        final teacherSchoolName = currentUser.schoolName ?? '';
-        final matchedSchool = masterProvider.schools.cast<SchoolModel?>().firstWhere(
-          (s) => s != null && teacherSchoolName.isNotEmpty && (
-                 s.name.toLowerCase().contains(teacherSchoolName.toLowerCase()) ||
-                 teacherSchoolName.toLowerCase().contains(s.name.toLowerCase())),
-          orElse: () => null,
-        );
-        setState(() {
-          _selectedSchoolId = matchedSchool?.id;
-          _schoolNameController.text = matchedSchool?.name ?? (teacherSchoolName.isNotEmpty ? teacherSchoolName : 'Nama Sekolah');
-        });
-      } else {
-        setState(() {
-          _selectedSchoolId = null;
-          _schoolNameController.text = currentUser.schoolName ?? 'Nama Sekolah';
-        });
-      }
+      // Auto match teacher's school from active school provider
+      final activeId = authProvider.activeSchoolId;
+      final activeSchool = authProvider.activeSchool;
+      setState(() {
+        _selectedSchoolId = activeId;
+        _schoolNameController.text = activeSchool?.name ?? authProvider.activeSchoolName;
+      });
     }
   }
 
@@ -256,6 +244,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     List<ClassModel> classes,
     List<SubjectModel> subjects,
     MasterDataProvider masterProvider,
+    AuthProvider authProvider,
   ) {
     if (journals.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -289,18 +278,16 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         : null;
 
     final selectedSchool = _selectedSchoolId != null
-        ? masterProvider.schools.firstWhere(
-            (s) => s.id == _selectedSchoolId,
-            orElse: () => masterProvider.schools.isNotEmpty
-                ? masterProvider.schools.first
-                : SchoolModel(
-                    id: 'default',
-                    name: _schoolNameController.text.trim(),
-                  ),
-          )
-        : (masterProvider.schools.isNotEmpty
-            ? masterProvider.schools.first
-            : null);
+        ? (_selectedSchoolId == authProvider.activeSchoolId
+            ? authProvider.activeSchool
+            : masterProvider.schools.firstWhere(
+                (s) => s.id == _selectedSchoolId,
+                orElse: () => SchoolModel(
+                  id: 'default',
+                  name: _schoolNameController.text.trim(),
+                ),
+              ))
+        : null;
 
     Navigator.push(
       context,
@@ -331,7 +318,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
               schoolName: selectedSchool?.name ??
                   (_schoolNameController.text.trim().isNotEmpty
                       ? _schoolNameController.text.trim()
-                      : 'SMP NEGERI 1 SATU ATAP MEMPURA'),
+                      : authProvider.activeSchoolName),
             ),
             pdfFileName:
                 'Laporan_Jurnal_${teacher.name.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd').format(_startDate)}_${DateFormat('yyyyMMdd').format(_endDate)}.pdf',
@@ -350,6 +337,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     List<ClassModel> classes,
     List<SubjectModel> subjects,
     MasterDataProvider masterProvider,
+    AuthProvider authProvider,
   ) async {
     if (journals.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -383,18 +371,16 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         : null;
 
     final selectedSchool = _selectedSchoolId != null
-        ? masterProvider.schools.firstWhere(
-            (s) => s.id == _selectedSchoolId,
-            orElse: () => masterProvider.schools.isNotEmpty
-                ? masterProvider.schools.first
-                : SchoolModel(
-                    id: 'default',
-                    name: _schoolNameController.text.trim(),
-                  ),
-          )
-        : (masterProvider.schools.isNotEmpty
-            ? masterProvider.schools.first
-            : null);
+        ? (_selectedSchoolId == authProvider.activeSchoolId
+            ? authProvider.activeSchool
+            : masterProvider.schools.firstWhere(
+                (s) => s.id == _selectedSchoolId,
+                orElse: () => SchoolModel(
+                  id: 'default',
+                  name: _schoolNameController.text.trim(),
+                ),
+              ))
+        : null;
 
     final pdfBytes = await JournalPdfService.generateJournalReportPdf(
       teacher: teacher,
@@ -412,7 +398,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       schoolName: selectedSchool?.name ??
           (_schoolNameController.text.trim().isNotEmpty
               ? _schoolNameController.text.trim()
-              : 'SMP NEGERI 1 SATU ATAP MEMPURA'),
+              : authProvider.activeSchoolName),
     );
 
     final fileName =
@@ -876,7 +862,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       controller: _schoolNameController,
                       decoration: InputDecoration(
                         labelText: 'Nama Sekolah (Custom/Manual)',
-                        hintText: 'Misal: SMP NEGERI 1 SATU ATAP MEMPURA',
+                        hintText: 'Misal: ${authProvider.activeSchoolName}',
                         prefixIcon: const Icon(Icons.school_rounded, size: 20),
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 12.w,
@@ -1004,6 +990,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         masterProvider.classes,
                         masterProvider.subjects,
                         masterProvider,
+                        authProvider,
                       ),
                       icon: const Icon(Icons.remove_red_eye_rounded),
                       label: Text(
@@ -1033,6 +1020,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         masterProvider.classes,
                         masterProvider.subjects,
                         masterProvider,
+                        authProvider,
                       ),
                       icon: const Icon(
                         Icons.download_rounded,

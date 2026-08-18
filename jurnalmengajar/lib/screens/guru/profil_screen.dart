@@ -44,7 +44,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
       final currentUser = authProvider.currentUser;
       if (currentUser != null) {
         await authProvider.loadUserMemberships();
-        await masterProvider.loadAllData();
+        await masterProvider.loadAllData(authProvider.activeSchoolId);
         if (!mounted) return;
         final teacher = masterProvider.teachers.firstWhere(
           (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
@@ -151,6 +151,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
   }
 
   void _showEditProfileDialog(UserModel user, TeacherModel teacher) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final nameController = TextEditingController(text: user.fullName);
     final emailController = TextEditingController(text: user.email);
     final posController = TextEditingController(
@@ -162,7 +163,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
     final addrController = TextEditingController(
       text: user.address ?? teacher.address,
     );
-    final initialSchoolName = user.schoolName ?? 'SMKN 11 Malang';
+    final initialSchoolName = user.schoolName ?? authProvider.activeSchoolName;
     final selectedSchools = initialSchoolName
         .split(',')
         .map((s) => s.trim())
@@ -518,7 +519,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               address: addrController.text.trim(),
                               photoUrl: uploadedPhotoUrl,
                               schoolName: selectedSchools.isEmpty
-                                  ? 'SMKN 11 Malang'
+                                  ? authProvider.activeSchoolName
                                   : selectedSchools.join(', '),
                             );
 
@@ -987,7 +988,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                 SizedBox(height: 24.h),
                 ElevatedButton.icon(
                   onPressed: () {
-                    masterProvider.loadAllData();
+                    masterProvider.loadAllData(authProvider.activeSchoolId);
                   },
                   icon: const Icon(Icons.refresh),
                   label: const Text('Coba Lagi'),
@@ -1295,97 +1296,180 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                       )
                     else
                       Column(
-                        children: authProvider.userMemberships.map((m) {
-                          final sName = m.schoolName;
-                          final sRole = m.role;
-                          final sId = m.schoolId;
-                          final isActive = sId == authProvider.activeSchoolId;
+                        children: [
+                          ...authProvider.userMemberships.map((m) {
+                            final sName = m.schoolName;
+                            final sRole = m.role;
+                            final sId = m.schoolId;
+                            final isActive = sId == authProvider.activeSchoolId;
 
-                          return InkWell(
-                            onTap: () async {
-                              final messenger = ScaffoldMessenger.of(context);
-                              authProvider.switchActiveSchool(sId, sName, sRole);
-                              final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-                              final journalProvider = Provider.of<JournalProvider>(context, listen: false);
-                              scheduleProvider.clearTeacherSchedulesCache();
-                              journalProvider.clearTeacherJournalsCache();
-                              await masterProvider.loadAllData();
-                              messenger.showSnackBar(
-                                SnackBar(
-                                  content: Text('Berhasil beralih ke $sName'),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                            },
-                            borderRadius: BorderRadius.circular(12.r),
-                            child: Container(
-                              margin: EdgeInsets.only(bottom: 8.h),
-                              padding: EdgeInsets.all(12.w),
-                              decoration: BoxDecoration(
-                                color: isActive
-                                    ? const Color(0xFFEFF6FF)
-                                    : const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(12.r),
-                                border: Border.all(
+                            return InkWell(
+                              onTap: () async {
+                                final messenger = ScaffoldMessenger.of(context);
+                                final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+                                final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+                                
+                                await authProvider.switchActiveSchool(sId, sName, sRole);
+                                
+                                scheduleProvider.clearTeacherSchedulesCache();
+                                journalProvider.clearTeacherJournalsCache();
+                                await masterProvider.loadAllData(sId);
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text('Berhasil beralih ke $sName'),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(12.r),
+                              child: Container(
+                                margin: EdgeInsets.only(bottom: 8.h),
+                                padding: EdgeInsets.all(12.w),
+                                decoration: BoxDecoration(
                                   color: isActive
-                                      ? const Color(0xFFBFDBFE)
-                                      : const Color(0xFFE2E8F0),
+                                      ? const Color(0xFFEFF6FF)
+                                      : const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  border: Border.all(
+                                    color: isActive
+                                        ? const Color(0xFF3B82F6)
+                                        : const Color(0xFFCBD5E1),
+                                    width: isActive ? 1.5.r : 1.r,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundColor: isActive
+                                          ? const Color(0xFF3B82F6)
+                                          : const Color(0xFF64748B),
+                                      radius: 18.r,
+                                      child: Text(
+                                        sName.isNotEmpty
+                                            ? sName[0].toUpperCase()
+                                            : 'S',
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 10.w),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            sName,
+                                            style: TextStyle(
+                                              fontSize: 13.sp,
+                                              fontWeight: FontWeight.bold,
+                                              color: const Color(0xFF1E293B),
+                                            ),
+                                          ),
+                                          Text(
+                                            'Peran: ${sRole.toUpperCase()}',
+                                            style: TextStyle(
+                                              fontSize: 11.sp,
+                                              color: const Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (isActive)
+                                      Chip(
+                                        label: const Text('Aktif'),
+                                        backgroundColor: const Color(0xFFDCFCE7),
+                                        labelStyle: TextStyle(
+                                          fontSize: 10.sp,
+                                          color: const Color(0xFF166534),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )
+                                    else
+                                      const Text(
+                                        'Pilih',
+                                        style: TextStyle(
+                                          color: Color(0xFF2563EB),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
-                              child: Row(
+                            );
+                          }),
+                          if (authProvider.activeSchool != null) ...[
+                            SizedBox(height: 12.h),
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(12.w),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEEF2FF),
+                                borderRadius: BorderRadius.circular(12.r),
+                                border: Border.all(color: const Color(0xFFCBD5E1)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(
-                                    Icons.school,
-                                    color: isActive
-                                        ? const Color(0xFF2563EB)
-                                        : const Color(0xFF64748B),
-                                  ),
-                                  SizedBox(width: 10.w),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          sName,
-                                          style: TextStyle(
-                                            fontSize: 13.sp,
-                                            fontWeight: FontWeight.bold,
-                                            color: const Color(0xFF1E293B),
-                                          ),
+                                  Row(
+                                    children: [
+                                      if (authProvider.activeSchool!.logoUrl != null && authProvider.activeSchool!.logoUrl!.isNotEmpty)
+                                        Image.network(
+                                          authProvider.activeSchool!.logoUrl!,
+                                          height: 36.h,
+                                          width: 36.h,
+                                          fit: BoxFit.contain,
+                                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.school, color: Color(0xFF4F46E5)),
+                                        )
+                                      else
+                                        const Icon(Icons.school, color: Color(0xFF4F46E5)),
+                                      SizedBox(width: 8.w),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            if (authProvider.activeSchool!.governmentHeader != null && authProvider.activeSchool!.governmentHeader!.isNotEmpty)
+                                              Text(
+                                                authProvider.activeSchool!.governmentHeader!.toUpperCase(),
+                                                style: GoogleFonts.hankenGrotesk(fontSize: 9.sp, fontWeight: FontWeight.w700, color: const Color(0xFF64748B)),
+                                              ),
+                                            if (authProvider.activeSchool!.departmentHeader != null && authProvider.activeSchool!.departmentHeader!.isNotEmpty)
+                                              Text(
+                                                authProvider.activeSchool!.departmentHeader!.toUpperCase(),
+                                                style: GoogleFonts.hankenGrotesk(fontSize: 10.sp, fontWeight: FontWeight.w700, color: const Color(0xFF475569)),
+                                              ),
+                                            Text(
+                                              authProvider.activeSchool!.name,
+                                              style: GoogleFonts.hankenGrotesk(fontSize: 13.sp, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                                            ),
+                                          ],
                                         ),
-                                        Text(
-                                          'Peran: ${sRole.toUpperCase()}',
-                                          style: TextStyle(
-                                            fontSize: 11.sp,
-                                            color: const Color(0xFF64748B),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
-                                  if (isActive)
-                                    Chip(
-                                      label: const Text('Aktif'),
-                                      backgroundColor: const Color(0xFFDCFCE7),
-                                      labelStyle: TextStyle(
-                                        fontSize: 10.sp,
-                                        color: const Color(0xFF166534),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )
-                                  else
-                                    const Text(
-                                      'Pilih',
-                                      style: TextStyle(
-                                        color: Color(0xFF2563EB),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                                  const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                                  if (authProvider.activeSchool!.address != null && authProvider.activeSchool!.address!.isNotEmpty)
+                                    _buildSchoolMetaItem(Icons.location_on_outlined, 'Alamat', authProvider.activeSchool!.address!),
+                                  if (authProvider.activeSchool!.postalCode != null && authProvider.activeSchool!.postalCode!.isNotEmpty)
+                                    _buildSchoolMetaItem(Icons.local_post_office_outlined, 'Kode Pos', authProvider.activeSchool!.postalCode!),
+                                  if (authProvider.activeSchool!.phone != null && authProvider.activeSchool!.phone!.isNotEmpty)
+                                    _buildSchoolMetaItem(Icons.phone_outlined, 'Telepon', authProvider.activeSchool!.phone!),
+                                  if (authProvider.activeSchool!.email != null && authProvider.activeSchool!.email!.isNotEmpty)
+                                    _buildSchoolMetaItem(Icons.email_outlined, 'Email', authProvider.activeSchool!.email!),
+                                  if (authProvider.activeSchool!.website != null && authProvider.activeSchool!.website!.isNotEmpty)
+                                    _buildSchoolMetaItem(Icons.language_outlined, 'Website', authProvider.activeSchool!.website!),
+                                  _buildSchoolMetaItem(Icons.fingerprint_rounded, 'NPSN', authProvider.activeSchool!.npsn ?? '-'),
+                                  if (authProvider.activeSchool!.nss != null && authProvider.activeSchool!.nss!.isNotEmpty)
+                                    _buildSchoolMetaItem(Icons.numbers_rounded, 'NSS', authProvider.activeSchool!.nss!),
                                 ],
                               ),
                             ),
-                          );
-                        }).toList(),
+                          ],
+                        ],
                       ),
                   ],
                 ),
@@ -1421,7 +1505,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     _buildProfileDetailItem(
                       Icons.school_outlined,
                       'Sekolah Mengajar',
-                      currentUser.schoolName ?? 'SMKN 11 Malang',
+                      authProvider.activeSchoolName,
                     ),
                     const Divider(height: 1, color: Color(0xFFF1F5F9)),
                     _buildProfileDetailItem(
@@ -1812,6 +1896,29 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSchoolMetaItem(IconData icon, String label, String value) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 4.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 12.sp, color: const Color(0xFF64748B)),
+          SizedBox(width: 6.w),
+          Text(
+            '$label: ',
+            style: GoogleFonts.hankenGrotesk(fontSize: 11.sp, fontWeight: FontWeight.bold, color: const Color(0xFF64748B)),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.hankenGrotesk(fontSize: 11.sp, color: const Color(0xFF334155)),
+            ),
+          ),
+        ],
       ),
     );
   }

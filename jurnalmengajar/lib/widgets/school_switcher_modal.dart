@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../providers/journal_provider.dart';
+import '../providers/master_data_provider.dart';
 
 class SchoolSwitcherModal extends StatelessWidget {
   const SchoolSwitcherModal({super.key});
@@ -138,6 +139,8 @@ class SchoolSwitcherModal extends StatelessWidget {
                       onTap: () async {
                         final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
                         final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+                        final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+                        
                         scheduleProvider.clearTeacherSchedulesCache();
                         journalProvider.clearTeacherJournalsCache();
                         
@@ -146,6 +149,9 @@ class SchoolSwitcherModal extends StatelessWidget {
                           item.schoolName,
                           item.role,
                         );
+                        
+                        await masterProvider.loadAllData(item.schoolId);
+                        
                         if (context.mounted) {
                           Navigator.pop(context);
                         }

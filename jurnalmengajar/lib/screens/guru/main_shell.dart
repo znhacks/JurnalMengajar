@@ -53,12 +53,13 @@ class GuruMainShellState extends State<GuruMainShell> {
   }
 
   Future<void> _loadUserData(UserModel currentUser) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
     final warningProvider = Provider.of<WarningLetterProvider>(context, listen: false);
     final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
     final journalProvider = Provider.of<JournalProvider>(context, listen: false);
 
-    await masterProvider.loadAllData();
+    await masterProvider.loadAllData(authProvider.activeSchoolId);
     if (!mounted) return;
     
     final teacher = masterProvider.teachers.firstWhere(

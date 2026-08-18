@@ -431,7 +431,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                 emailSuccess = await authProvider.changeEmail(newEmail);
                               }
 
-                              await masterProvider.loadAllData();
+                              await masterProvider.loadAllData(authProvider.activeSchoolId);
                               
                               if (context.mounted) {
                                 if (isEmailChanged && emailSuccess) {
@@ -539,7 +539,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                 SizedBox(height: 24.h),
                 ElevatedButton.icon(
                   onPressed: () {
-                    masterProvider.loadAllData();
+                    masterProvider.loadAllData(authProvider.activeSchoolId);
                   },
                   icon: const Icon(Icons.refresh),
                   label: const Text('Coba Lagi'),
@@ -742,7 +742,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                               borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: Text(
-                              'ROLE: ADMIN SEKOLAH (${(currentUser.schoolName ?? 'SMKN 11 Malang').toUpperCase()})',
+                               'ROLE: ADMIN SEKOLAH (${authProvider.activeSchoolName.toUpperCase()})',
                               style: TextStyle(
                                 fontSize: 9.sp,
                                 fontWeight: FontWeight.bold,
@@ -753,7 +753,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                           ),
                           SizedBox(height: 4.h),
                           Text(
-                            'Mengelola operasional guru & data ${currentUser.schoolName ?? "SMKN 11 Malang"}',
+                            'Mengelola operasional guru & data ${authProvider.activeSchoolName}',
                             style: TextStyle(
                               fontSize: 10.sp,
                               color: Colors.white.withValues(alpha: 0.75),

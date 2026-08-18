@@ -221,14 +221,25 @@ class JournalPdfService {
         ? school.phone!
         : '-';
     
-    // Website & Email Sanitization & Validation
-    String web = (school?.website != null && school!.website!.isNotEmpty)
-        ? school.website!
-        : '-';
-
-    String email = (school?.email != null && school!.email!.isNotEmpty)
-        ? school.email!
-        : '-';
+    // Website & Email Sanitization & Validation - Conditionally rendered
+    final List<pw.Widget> webEmailRowChildren = [];
+    final website = school?.website;
+    if (website != null && website.isNotEmpty) {
+      webEmailRowChildren.addAll([
+        pw.Text('Website: ', style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.black)),
+        pw.Text(website, style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.blue900, decoration: pw.TextDecoration.underline)),
+      ]);
+    }
+    final email = school?.email;
+    if (email != null && email.isNotEmpty) {
+      if (webEmailRowChildren.isNotEmpty) {
+        webEmailRowChildren.add(pw.SizedBox(width: 10));
+      }
+      webEmailRowChildren.addAll([
+        pw.Text('Email: ', style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.black)),
+        pw.Text(email, style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.blue900, decoration: pw.TextDecoration.underline)),
+      ]);
+    }
 
     final nss = (school?.nss != null && school!.nss!.isNotEmpty) ? school.nss! : '-';
     final npsn = (school?.npsn != null && school!.npsn!.isNotEmpty) ? school.npsn! : '-';
@@ -288,17 +299,13 @@ class JournalPdfService {
                     style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.black),
                     textAlign: pw.TextAlign.center,
                   ),
-                  pw.SizedBox(height: 1),
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.center,
-                    children: [
-                      pw.Text('Website: ', style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.black)),
-                      pw.Text(web, style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.blue900, decoration: pw.TextDecoration.underline)),
-                      pw.SizedBox(width: 10),
-                      pw.Text('Email: ', style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.black)),
-                      pw.Text(email, style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.blue900, decoration: pw.TextDecoration.underline)),
-                    ],
-                  ),
+                  if (webEmailRowChildren.isNotEmpty) ...[
+                    pw.SizedBox(height: 1),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.center,
+                      children: webEmailRowChildren,
+                    ),
+                  ],
                   pw.SizedBox(height: 1),
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.center,

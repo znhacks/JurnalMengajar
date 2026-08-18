@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
 import '../models/user_school_model.dart';
+import '../models/school_model.dart';
 import '../repositories/auth_repository.dart';
 import '../services/fcm_service.dart';
 
@@ -43,6 +44,7 @@ class AuthProvider with ChangeNotifier {
   String? _activeSchoolId;
   String _activeSchoolName = 'Sekolah';
   String _activeRole = 'guru';
+  SchoolModel? _activeSchool;
 
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
@@ -56,6 +58,30 @@ class AuthProvider with ChangeNotifier {
   String? get activeSchoolId => _activeSchoolId;
   String get activeSchoolName => _activeSchoolName;
   String get activeRole => _activeRole;
+  SchoolModel? get activeSchool => _activeSchool;
+
+  Future<void> fetchActiveSchoolDetails() async {
+    if (_activeSchoolId == null) {
+      _activeSchool = null;
+      return;
+    }
+    try {
+      final res = await Supabase.instance.client
+          .from('schools')
+          .select()
+          .eq('id', _activeSchoolId!)
+          .maybeSingle();
+      if (res != null) {
+        _activeSchool = SchoolModel.fromJson(res);
+        _activeSchoolName = _activeSchool!.name;
+      } else {
+        _activeSchool = null;
+      }
+    } catch (e) {
+      debugPrint('Error fetching active school details: $e');
+      _activeSchool = null;
+    }
+  }
 
   Future<void> switchActiveSchool(String schoolId, String schoolName, String role) async {
     _activeSchoolId = schoolId;
@@ -77,6 +103,7 @@ class AuthProvider with ChangeNotifier {
       debugPrint('Error saving active school to SharedPreferences: $e');
     }
 
+    await fetchActiveSchoolDetails();
     notifyListeners();
   }
 
@@ -186,6 +213,7 @@ class AuthProvider with ChangeNotifier {
             role: _activeRole,
           );
         }
+        await fetchActiveSchoolDetails();
       }
       notifyListeners();
     } catch (e) {
@@ -381,6 +409,7 @@ class AuthProvider with ChangeNotifier {
     _activeSchoolId = null;
     _activeSchoolName = 'Sekolah';
     _activeRole = 'guru';
+    _activeSchool = null;
     _userMemberships = [];
     _isLoading = false;
     notifyListeners();
