@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -337,9 +338,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           kIsWeb ? 20 : 28.w,
                           kIsWeb ? 20 : 28.h,
                         ),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
+                        child: CallbackShortcuts(
+                          bindings: {
+                            const SingleActivator(LogicalKeyboardKey.enter): () {
+                              if (_schoolCodeFocusNode.hasFocus) {
+                                _resolveSchoolCode(_schoolCodeController.text.trim(), masterProvider, showSnackBar: true);
+                                FocusScope.of(context).requestFocus(_fullNameFocusNode);
+                              } else {
+                                if (!isLoading) {
+                                  _handleRegister();
+                                }
+                              }
+                            },
+                            const SingleActivator(LogicalKeyboardKey.numpadEnter): () {
+                              if (_schoolCodeFocusNode.hasFocus) {
+                                _resolveSchoolCode(_schoolCodeController.text.trim(), masterProvider, showSnackBar: true);
+                                FocusScope.of(context).requestFocus(_fullNameFocusNode);
+                              } else {
+                                if (!isLoading) {
+                                  _handleRegister();
+                                }
+                              }
+                            },
+                          },
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               // Toggle Switch Opsi Pendaftaran (Guru vs Admin Sekolah)
@@ -839,6 +863,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                       ),
+                    ),
                     ],
                   ),
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -211,9 +212,22 @@ class _LoginScreenState extends State<LoginScreen> {
                           kIsWeb ? 20 : 24.w,
                           kIsWeb ? 16 : 20.h,
                         ),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
+                        child: CallbackShortcuts(
+                          bindings: {
+                            const SingleActivator(LogicalKeyboardKey.enter): () {
+                              if (!isLoading) {
+                                _handleLogin();
+                              }
+                            },
+                            const SingleActivator(LogicalKeyboardKey.numpadEnter): () {
+                              if (!isLoading) {
+                                _handleLogin();
+                              }
+                            },
+                          },
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Text(
@@ -551,6 +565,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
+                    ),
                     ],
                   ),
                 ),
