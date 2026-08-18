@@ -251,25 +251,31 @@ class JournalPdfService {
           children: [
             // Left Side: Logo Sekolah
             if (logoImage != null)
-              pw.Container(
-                width: 60,
-                height: 70,
-                alignment: pw.Alignment.center,
-                child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+              pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 6),
+                child: pw.Container(
+                  width: 60,
+                  height: 70,
+                  alignment: pw.Alignment.center,
+                  child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+                ),
               )
             else
-              pw.Container(
-                width: 60,
-                height: 70,
-                alignment: pw.Alignment.center,
-                decoration: pw.BoxDecoration(
-                  shape: pw.BoxShape.circle,
-                  border: pw.Border.all(color: PdfColors.black, width: 1),
-                ),
-                child: pw.Text(
-                  'LOGO',
-                  textAlign: pw.TextAlign.center,
-                  style: pw.TextStyle(font: ttfBold, fontSize: 10, color: PdfColors.black),
+              pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 6),
+                child: pw.Container(
+                  width: 60,
+                  height: 70,
+                  alignment: pw.Alignment.center,
+                  decoration: pw.BoxDecoration(
+                    shape: pw.BoxShape.circle,
+                    border: pw.Border.all(color: PdfColors.black, width: 1),
+                  ),
+                  child: pw.Text(
+                    'LOGO',
+                    textAlign: pw.TextAlign.center,
+                    style: pw.TextStyle(font: ttfBold, fontSize: 10, color: PdfColors.black),
+                  ),
                 ),
               ),
             pw.SizedBox(width: 12),
