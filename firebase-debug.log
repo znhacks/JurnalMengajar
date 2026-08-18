@@ -1,0 +1,386 @@
+[debug] [2026-08-18T06:16:32.715Z] ----------------------------------------------------------------------
+[debug] [2026-08-18T06:16:32.724Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\ASUS\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --project jurnal-mengajar-84ebe --only hosting
+[debug] [2026-08-18T06:16:32.724Z] CLI Version:   15.24.0
+[debug] [2026-08-18T06:16:32.724Z] Platform:      win32
+[debug] [2026-08-18T06:16:32.725Z] Node Version:  v24.18.0
+[debug] [2026-08-18T06:16:32.725Z] Detected Agent: antigravity
+[debug] [2026-08-18T06:16:32.725Z] Time:          Tue Aug 18 2026 13:16:32 GMT+0700 (Indochina Time)
+[debug] [2026-08-18T06:16:32.725Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-08-18T06:16:35.524Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-08-18T06:16:35.525Z] > authorizing via signed-in user (dfawwas23@gmail.com)
+[debug] [2026-08-18T06:16:35.525Z] [iam] checking project jurnal-mengajar-84ebe for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-08-18T06:16:35.550Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:16:35.551Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:16:35.551Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions [none]
+[debug] [2026-08-18T06:16:35.552Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions  x-goog-user-project=jurnal-mengajar-84ebe
+[debug] [2026-08-18T06:16:35.552Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-08-18T06:16:37.919Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions 200
+[debug] [2026-08-18T06:16:37.919Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-08-18T06:16:37.920Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:16:37.920Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:16:37.920Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe [none]
+[debug] [2026-08-18T06:16:40.568Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe 200
+[debug] [2026-08-18T06:16:40.568Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe {"projectId":"jurnal-mengajar-84ebe","projectNumber":"384851481624","displayName":"Jurnal Mengajar","name":"projects/jurnal-mengajar-84ebe","resources":{"hostingSite":"jurnal-mengajar-84ebe"},"state":"ACTIVE","labels":{"firebase":"enabled"},"etag":"1_0c2fdc22-b8ca-4e73-9376-4b3088bc3b17"}
+[info] 
+[info] === Deploying to 'jurnal-mengajar-84ebe'...
+[info] 
+[info] i  deploying hosting 
+[debug] [2026-08-18T06:16:40.571Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:16:40.571Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:16:40.572Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe/sites/jurnalmengajarku [none]
+[debug] [2026-08-18T06:16:51.289Z] *** [apiv2] error from fetch(https://firebasehosting.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe/sites/jurnalmengajarku, {"headers":{},"method":"GET"}): ConnectTimeoutError: Connect Timeout Error (attempted addresses: 172.217.119.4:443, 2001:4860:4845:400:::443, 172.217.113.4:443, 2001:4860:4847:400:::443, 172.217.117.4:443, 2001:4860:4840:400:::443, 172.217.115.4:443, 2001:4860:4842:400:::443, 172.217.116.4:443, 2001:4860:4843:400:::443, 172.217.114.4:443, 2001:4860:4846:400:::443, 172.217.112.4:443, 2001:4860:4844:400:::443, 172.217.118.4:443, 2001:4860:4841:400:::443, timeout: 10000ms)
+[debug] [2026-08-18T06:16:56.304Z] Error: Timed out.
+    at Timeout._onTimeout (C:\Users\ASUS\AppData\Roaming\npm\node_modules\firebase-tools\lib\utils.js:296:49)
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-08-18T06:17:20.759Z] ----------------------------------------------------------------------
+[debug] [2026-08-18T06:17:20.761Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\ASUS\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --project jurnal-mengajar-84ebe --only hosting
+[debug] [2026-08-18T06:17:20.761Z] CLI Version:   15.24.0
+[debug] [2026-08-18T06:17:20.762Z] Platform:      win32
+[debug] [2026-08-18T06:17:20.762Z] Node Version:  v24.18.0
+[debug] [2026-08-18T06:17:20.762Z] Detected Agent: antigravity
+[debug] [2026-08-18T06:17:20.762Z] Time:          Tue Aug 18 2026 13:17:20 GMT+0700 (Indochina Time)
+[debug] [2026-08-18T06:17:20.762Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-08-18T06:17:22.494Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-08-18T06:17:22.494Z] > authorizing via signed-in user (dfawwas23@gmail.com)
+[debug] [2026-08-18T06:17:22.494Z] [iam] checking project jurnal-mengajar-84ebe for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-08-18T06:17:22.506Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:17:22.506Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:17:22.507Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions [none]
+[debug] [2026-08-18T06:17:22.507Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions  x-goog-user-project=jurnal-mengajar-84ebe
+[debug] [2026-08-18T06:17:22.507Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-08-18T06:17:23.336Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions 200
+[debug] [2026-08-18T06:17:23.337Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-08-18T06:17:23.337Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:17:23.337Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:17:23.337Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe [none]
+[debug] [2026-08-18T06:17:26.200Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe 200
+[debug] [2026-08-18T06:17:26.200Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe {"projectId":"jurnal-mengajar-84ebe","projectNumber":"384851481624","displayName":"Jurnal Mengajar","name":"projects/jurnal-mengajar-84ebe","resources":{"hostingSite":"jurnal-mengajar-84ebe"},"state":"ACTIVE","labels":{"firebase":"enabled"},"etag":"1_0c2fdc22-b8ca-4e73-9376-4b3088bc3b17"}
+[info] 
+[info] === Deploying to 'jurnal-mengajar-84ebe'...
+[info] 
+[info] i  deploying hosting 
+[debug] [2026-08-18T06:17:26.204Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:17:26.204Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:17:26.204Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe/sites/jurnalmengajarku [none]
+[debug] [2026-08-18T06:17:29.911Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe/sites/jurnalmengajarku 200
+[debug] [2026-08-18T06:17:29.911Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe/sites/jurnalmengajarku {"name":"projects/jurnal-mengajar-84ebe/sites/jurnalmengajarku","defaultUrl":"https://jurnalmengajarku.web.app","type":"USER_SITE"}
+[debug] [2026-08-18T06:17:29.917Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:17:29.917Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:17:29.918Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions [none]
+[debug] [2026-08-18T06:17:29.918Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2026-08-18T06:17:31.710Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions 200
+[debug] [2026-08-18T06:17:31.710Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions {"name":"projects/384851481624/sites/jurnalmengajarku/versions/c7c80982cf7481d0","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+[info] i  hosting[jurnalmengajarku]: beginning deploy... 
+[info] i  hosting[jurnalmengajarku]: found 41 files in jurnalmengajar/build/web 
+[debug] [2026-08-18T06:17:35.037Z] [hosting] uploading with 200 concurrency
+[debug] [2026-08-18T06:17:35.328Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:17:35.329Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:17:35.330Z] [hosting] hash cache [anVybmFsbWVuZ2FqYXJcYnVpbGRcd2Vi] stored for 41 files
+[debug] [2026-08-18T06:17:35.330Z] [hosting][hash queue][FINAL] {"max":286,"min":1,"avg":11.073170731707316,"active":0,"complete":41,"success":41,"errored":0,"retried":0,"total":41,"elapsed":290}
+[debug] [2026-08-18T06:17:35.330Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/384851481624/sites/jurnalmengajarku/versions/c7c80982cf7481d0:populateFiles [none]
+[debug] [2026-08-18T06:17:35.330Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/384851481624/sites/jurnalmengajarku/versions/c7c80982cf7481d0:populateFiles {"files":{"/manifest.json":"bf2af59a09307b00e4805ca849a64622b37b4eab2c5e3b25fa9f00a999f8e68b","/flutter.js":"f18220d166d49cbef02491208c46f2c5e54db9739184e304fc55b199b5724407","/favicon.png":"23c9e3fb926720283adc841c9699ae61bc5ee89c43e2ce35a2a26eea0d11f3aa","/callback.html":"dfee04521e669f928698a2e743c32fb5dea90d1dc70d52afd17f3dc16652c82c","/icons/Icon-maskable-512.png":"47351c0898a13764db94feb1c256144130e94383c8ddd918bfed6b15e0cb71b0","/icons/Icon-maskable-192.png":"3538848a3b162477b59593d9459b0eed1f7964ae6896be57765c294a7a2cfb21","/icons/Icon-512.png":"47351c0898a13764db94feb1c256144130e94383c8ddd918bfed6b15e0cb71b0","/icons/Icon-192.png":"3538848a3b162477b59593d9459b0eed1f7964ae6896be57765c294a7a2cfb21","/canvaskit/wimp.wasm":"53384687b54db78b8d55027c62eb418ef3b69d351ae0c2b1d9d917ac9cba4853","/canvaskit/wimp.js.symbols":"cb643fbb407efb3d6735f5909c4ffd84bed8c3d8ce4840f72eb06471b18d8454","/canvaskit/wimp.js":"23db45b93eec24dd6db46ac5a6fafbf0063eb50c0dcd7d253f774e050ab1baa3","/canvaskit/skwasm_heavy.wasm":"acebd34ce89ba97c086405163d12ce74336e41bb7cca4e2fcd5011ecfabd945c","/canvaskit/skwasm_heavy.js.symbols":"d43798c11b7dbd26872e27d20df1c6c43637ebb95b4cc41fd19ff092ab2565bd","/canvaskit/skwasm_heavy.js":"dd3642e247a1ea4a8c519b76278011bb194471c590373ae2659f1d3cb793287c","/canvaskit/skwasm.wasm":"ad393be86fb17a251e0af39e56bcae5c26a4b9f20adbce626e0b7df796d89368","/canvaskit/skwasm.js.symbols":"91b787a0cd397c3cd089dc81519200c5bc35bfafa2996bb5ed4b1159553973f5","/canvaskit/skwasm.js":"91ea675d523ad0a19696479888658953e290f9798a43dae6b87d9ab60cc40c1a","/canvaskit/canvaskit.wasm":"67768ebd7649dfe70c348374dc34b732152d42467c2c335701958ba1be0949c8","/canvaskit/canvaskit.js.symbols":"a03cf8cdedf01be4a751225fa1bceadf8a783cb512ff87336bf76bb329fb29db","/canvaskit/canvaskit.js":"e0e67f4b85a07ff9b9861c9f49bf88860368ec96fb4115c0d4684f54596f9700","/canvaskit/chromium/canvaskit.wasm":"b3c17e127e4e8e4912409c050050f6f63a718b6f9618a7ec388948f2493174a6","/canvaskit/chromium/canvaskit.js.symbols":"17bdb78398d7be0b2662ad813c7f9387f79014aee6f1e3b7bf39dfe81e6b8b90","/canvaskit/chromium/canvaskit.js":"ed67753aa5382460fefd96876bf5dc40c5d242d56b37664abc8468a6772478df","/assets/assets/logoJurnalMengajarLogin.png":"7ce4e468b6c1397ba8b5f73e895e479f13079d3452058aef004084e536bd828f","/assets/assets/LogoJr.png":"59417b1d39fbd850f43c85dc10be444d79c70c4a33f1db2310b743c0c4e82017","/assets/assets/logoApp.png":"ce6581b762f7f2608eb6d2098b4b1fb9329f8f073b472eca09bfa1a9bc9f0888","/assets/assets/logoAboutApp.png":"f8aecf509c72a4bd311c9e89b7c0577f64679efc0d57ec5ce4efd8138e7d361b","/assets/assets/google_logo.png":"55e718d9e3c8a26051c571c87de5c03008c7e894670da24a0aa31e3d47be28c0","/version.json":"cbc7df95f2c4d190fd6a81352cc0dca6e6773fa17dc9e04447a1e2bc26ad54b1","/index.html":"57fb246b115a9853da3614e1112de537ec6b19b08707612b3b336a0f9e4ae03d","/flutter_service_worker.js":"c73b271847ffc78c576de35e95f6b46187eefb1d97dcb08eb9d84c45954ff310","/assets/FontManifest.json":"e38b95988f5d060cf9b7ce97cb5ac9236d6f4cc04a11d69567df97b2b4cbc5e5","/assets/AssetManifest.bin":"f380b3ebcee9b7012f134353690794571e48c834048fef14eb14b518c42d8ae3","/assets/shaders/stretch_effect.frag":"df37894a7ac7854986bfa5d515e9af03d9138bb77be4d027db848785ebe9e357","/assets/shaders/ink_sparkle.frag":"9d529f4d93e5dabf338537416221237a0042f9cee61c98a357340d0273c67293","/flutter_bootstrap.js":"f944f633210e1b4a95206e9d75438e5b02c4b6664dcbdef6fb7689cf1de8600a","/assets/AssetManifest.bin.json":"4410b5ed27b9e9f566941a09399ad264bb5ad6fb9e93bc257adc512be7072200","/assets/packages/cupertino_icons/assets/CupertinoIcons.ttf":"d41473de1f7708a0702d7f19327693486512db442f6ab0cf7774e6d6576f9fcb","/assets/fonts/MaterialIcons-Regular.otf":"f1c56a6ade830e3888cee07124fed83310e4131bfc4ee8be41b540c300f0868d","/assets/NOTICES":"0866d89e36c30a849dee781180bd88f1fd87ade739fe8f05033a875596ca8814","/main.dart.js":"6d054029b46c5a29223ec47bf618d7d2fa86167c584c93ba6010d67851cd0751"}}
+[info] i  hosting: adding files to version [0/41] (0%) 
+[debug] [2026-08-18T06:17:37.231Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/384851481624/sites/jurnalmengajarku/versions/c7c80982cf7481d0:populateFiles 200
+[debug] [2026-08-18T06:17:37.231Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/384851481624/sites/jurnalmengajarku/versions/c7c80982cf7481d0:populateFiles {"uploadRequiredHashes":["f944f633210e1b4a95206e9d75438e5b02c4b6664dcbdef6fb7689cf1de8600a","6d054029b46c5a29223ec47bf618d7d2fa86167c584c93ba6010d67851cd0751"],"uploadUrl":"https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/c7c80982cf7481d0/files"}
+[debug] [2026-08-18T06:17:37.231Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:17:37.231Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:17:37.232Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:17:37.232Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:17:37.232Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/c7c80982cf7481d0/files/f944f633210e1b4a95206e9d75438e5b02c4b6664dcbdef6fb7689cf1de8600a [none]
+[debug] [2026-08-18T06:17:37.232Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/c7c80982cf7481d0/files/f944f633210e1b4a95206e9d75438e5b02c4b6664dcbdef6fb7689cf1de8600a [stream]
+[debug] [2026-08-18T06:17:37.232Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/c7c80982cf7481d0/files/6d054029b46c5a29223ec47bf618d7d2fa86167c584c93ba6010d67851cd0751 [none]
+[debug] [2026-08-18T06:17:37.232Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/c7c80982cf7481d0/files/6d054029b46c5a29223ec47bf618d7d2fa86167c584c93ba6010d67851cd0751 [stream]
+[debug] [2026-08-18T06:17:37.234Z] [hosting][populate queue][FINAL] {"max":1904,"min":1904,"avg":1904,"active":0,"complete":1,"success":1,"errored":0,"retried":0,"total":1,"elapsed":1906}
+[debug] [2026-08-18T06:17:37.234Z] [hosting] uploads queued: 2
+[info] i  hosting: uploading new files [0/2] (0%) 
+[info] i  hosting: uploading new files [0/2] (0%) 
+[info] i  hosting: uploading new files [0/2] (0%) 
+[debug] [2026-08-18T06:17:43.477Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/c7c80982cf7481d0/files/f944f633210e1b4a95206e9d75438e5b02c4b6664dcbdef6fb7689cf1de8600a 200
+[debug] [2026-08-18T06:17:43.477Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/c7c80982cf7481d0/files/f944f633210e1b4a95206e9d75438e5b02c4b6664dcbdef6fb7689cf1de8600a [stream]
+[info] i  hosting: uploading new files [1/2] (50%) 
+[info] i  hosting: uploading new files [1/2] (50%) 
+[info] i  hosting: uploading new files [1/2] (50%) 
+[info] i  hosting: uploading new files [1/2] (50%) 
+[info] i  hosting: uploading new files [1/2] (50%) 
+[info] i  hosting: uploading new files [1/2] (50%) 
+[info] i  hosting: uploading new files [1/2] (50%) 
+[info] i  hosting: uploading new files [1/2] (50%) 
+[info] i  hosting: uploading new files [1/2] (50%) 
+[info] i  hosting: uploading new files [1/2] (50%) 
+[info] i  hosting: uploading new files [1/2] (50%) 
+[debug] [2026-08-18T06:18:06.317Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/c7c80982cf7481d0/files/6d054029b46c5a29223ec47bf618d7d2fa86167c584c93ba6010d67851cd0751 200
+[debug] [2026-08-18T06:18:06.317Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/c7c80982cf7481d0/files/6d054029b46c5a29223ec47bf618d7d2fa86167c584c93ba6010d67851cd0751 [stream]
+[debug] [2026-08-18T06:18:06.317Z] [hosting][upload queue][FINAL] {"max":29086,"min":6246,"avg":17666,"active":0,"complete":2,"success":2,"errored":0,"retried":0,"total":2,"elapsed":29086}
+[info] i  hosting: upload complete 
+[info] +  hosting[jurnalmengajarku]: file upload complete 
+[debug] [2026-08-18T06:18:06.317Z] [hosting] deploy completed after 31301ms
+[debug] [2026-08-18T06:18:06.317Z] [
+  {
+    "config": {
+      "site": "jurnalmengajarku",
+      "public": "jurnalmengajar/build/web",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    },
+    "version": "projects/384851481624/sites/jurnalmengajarku/versions/c7c80982cf7481d0"
+  }
+]
+[info] i  hosting[jurnalmengajarku]: finalizing version... 
+[debug] [2026-08-18T06:18:06.319Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:18:06.319Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:18:06.319Z] >>> [apiv2][query] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions/c7c80982cf7481d0 updateMask=status%2Cconfig
+[debug] [2026-08-18T06:18:06.319Z] >>> [apiv2][body] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions/c7c80982cf7481d0 {"status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]}}
+[debug] [2026-08-18T06:18:17.018Z] *** [apiv2] error from fetch(https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions/c7c80982cf7481d0?updateMask=status%2Cconfig, {"headers":{},"method":"PATCH","body":"{\"status\":\"FINALIZED\",\"config\":{\"rewrites\":[{\"glob\":\"**\",\"path\":\"/index.html\"}]}}"}): ConnectTimeoutError: Connect Timeout Error (attempted addresses: 172.217.119.4:443, 2001:4860:4845:400:::443, 172.217.113.4:443, 2001:4860:4847:400:::443, 172.217.117.4:443, 2001:4860:4840:400:::443, 172.217.115.4:443, 2001:4860:4842:400:::443, 172.217.116.4:443, 2001:4860:4843:400:::443, 172.217.114.4:443, 2001:4860:4846:400:::443, 172.217.112.4:443, 2001:4860:4844:400:::443, 172.217.118.4:443, 2001:4860:4841:400:::443, timeout: 10000ms)
+[debug] [2026-08-18T06:18:22.030Z] Error: Timed out.
+    at Timeout._onTimeout (C:\Users\ASUS\AppData\Roaming\npm\node_modules\firebase-tools\lib\utils.js:296:49)
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-08-18T06:18:59.324Z] ----------------------------------------------------------------------
+[debug] [2026-08-18T06:18:59.329Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\ASUS\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --project jurnal-mengajar-84ebe --only hosting --debug
+[debug] [2026-08-18T06:18:59.330Z] CLI Version:   15.24.0
+[debug] [2026-08-18T06:18:59.330Z] Platform:      win32
+[debug] [2026-08-18T06:18:59.330Z] Node Version:  v24.18.0
+[debug] [2026-08-18T06:18:59.330Z] Detected Agent: antigravity
+[debug] [2026-08-18T06:18:59.330Z] Time:          Tue Aug 18 2026 13:18:59 GMT+0700 (Indochina Time)
+[debug] [2026-08-18T06:18:59.330Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-08-18T06:19:01.032Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-08-18T06:19:01.032Z] > authorizing via signed-in user (dfawwas23@gmail.com)
+[debug] [2026-08-18T06:19:01.032Z] [iam] checking project jurnal-mengajar-84ebe for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-08-18T06:19:01.044Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:19:01.044Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:19:01.045Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions [none]
+[debug] [2026-08-18T06:19:01.045Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions  x-goog-user-project=jurnal-mengajar-84ebe
+[debug] [2026-08-18T06:19:01.046Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-08-18T06:19:04.020Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions 200
+[debug] [2026-08-18T06:19:04.020Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-08-18T06:19:04.021Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:19:04.021Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:19:04.021Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe [none]
+[debug] [2026-08-18T06:19:14.735Z] *** [apiv2] error from fetch(https://firebase.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe, {"headers":{},"method":"GET","signal":{}}): ConnectTimeoutError: Connect Timeout Error (attempted addresses: 172.217.118.4:443, 2001:4860:4844:400:::443, 172.217.117.4:443, 2001:4860:4845:400:::443, 172.217.119.4:443, 2001:4860:4841:400:::443, 172.217.113.4:443, 2001:4860:4842:400:::443, 172.217.114.4:443, 2001:4860:4846:400:::443, 172.217.112.4:443, 2001:4860:4840:400:::443, 172.217.116.4:443, 2001:4860:4847:400:::443, 172.217.115.4:443, 2001:4860:4843:400:::443, timeout: 10000ms)
+[debug] [2026-08-18T06:19:14.736Z] Failed to make request to https://firebase.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe (original: Connect Timeout Error (attempted addresses: 172.217.118.4:443, 2001:4860:4844:400:::443, 172.217.117.4:443, 2001:4860:4845:400:::443, 172.217.119.4:443, 2001:4860:4841:400:::443, 172.217.113.4:443, 2001:4860:4842:400:::443, 172.217.114.4:443, 2001:4860:4846:400:::443, 172.217.112.4:443, 2001:4860:4840:400:::443, 172.217.116.4:443, 2001:4860:4847:400:::443, 172.217.115.4:443, 2001:4860:4843:400:::443, timeout: 10000ms))
+[info] 
+[info] === Deploying to 'jurnal-mengajar-84ebe'...
+[info] 
+[info] i  deploying hosting 
+[debug] [2026-08-18T06:19:14.739Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:19:14.739Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:19:14.739Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe/sites/jurnalmengajarku [none]
+[debug] [2026-08-18T06:19:17.398Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe/sites/jurnalmengajarku 200
+[debug] [2026-08-18T06:19:17.398Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe/sites/jurnalmengajarku {"name":"projects/jurnal-mengajar-84ebe/sites/jurnalmengajarku","defaultUrl":"https://jurnalmengajarku.web.app","type":"USER_SITE"}
+[debug] [2026-08-18T06:19:17.406Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:19:17.406Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:19:17.408Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions [none]
+[debug] [2026-08-18T06:19:17.408Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2026-08-18T06:19:18.663Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions 200
+[debug] [2026-08-18T06:19:18.663Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions {"name":"projects/384851481624/sites/jurnalmengajarku/versions/bed5031f0df51fa0","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+[info] i  hosting[jurnalmengajarku]: beginning deploy... 
+[info] i  hosting[jurnalmengajarku]: found 41 files in jurnalmengajar/build/web 
+[debug] [2026-08-18T06:19:18.689Z] [hosting] uploading with 200 concurrency
+[debug] [2026-08-18T06:19:18.710Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:19:18.710Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:19:18.712Z] [hosting] hash cache [anVybmFsbWVuZ2FqYXJcYnVpbGRcd2Vi] stored for 41 files
+[debug] [2026-08-18T06:19:18.712Z] [hosting][hash queue][FINAL] {"max":6,"min":0,"avg":0,"active":0,"complete":41,"success":41,"errored":0,"retried":0,"total":41,"elapsed":9}
+[debug] [2026-08-18T06:19:18.713Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/384851481624/sites/jurnalmengajarku/versions/bed5031f0df51fa0:populateFiles [none]
+[debug] [2026-08-18T06:19:18.713Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/384851481624/sites/jurnalmengajarku/versions/bed5031f0df51fa0:populateFiles {"files":{"/version.json":"cbc7df95f2c4d190fd6a81352cc0dca6e6773fa17dc9e04447a1e2bc26ad54b1","/manifest.json":"bf2af59a09307b00e4805ca849a64622b37b4eab2c5e3b25fa9f00a999f8e68b","/main.dart.js":"6d054029b46c5a29223ec47bf618d7d2fa86167c584c93ba6010d67851cd0751","/index.html":"57fb246b115a9853da3614e1112de537ec6b19b08707612b3b336a0f9e4ae03d","/flutter_service_worker.js":"c73b271847ffc78c576de35e95f6b46187eefb1d97dcb08eb9d84c45954ff310","/flutter_bootstrap.js":"f944f633210e1b4a95206e9d75438e5b02c4b6664dcbdef6fb7689cf1de8600a","/flutter.js":"f18220d166d49cbef02491208c46f2c5e54db9739184e304fc55b199b5724407","/favicon.png":"23c9e3fb926720283adc841c9699ae61bc5ee89c43e2ce35a2a26eea0d11f3aa","/callback.html":"dfee04521e669f928698a2e743c32fb5dea90d1dc70d52afd17f3dc16652c82c","/icons/Icon-maskable-512.png":"47351c0898a13764db94feb1c256144130e94383c8ddd918bfed6b15e0cb71b0","/icons/Icon-maskable-192.png":"3538848a3b162477b59593d9459b0eed1f7964ae6896be57765c294a7a2cfb21","/icons/Icon-512.png":"47351c0898a13764db94feb1c256144130e94383c8ddd918bfed6b15e0cb71b0","/icons/Icon-192.png":"3538848a3b162477b59593d9459b0eed1f7964ae6896be57765c294a7a2cfb21","/canvaskit/wimp.wasm":"53384687b54db78b8d55027c62eb418ef3b69d351ae0c2b1d9d917ac9cba4853","/canvaskit/wimp.js.symbols":"cb643fbb407efb3d6735f5909c4ffd84bed8c3d8ce4840f72eb06471b18d8454","/canvaskit/wimp.js":"23db45b93eec24dd6db46ac5a6fafbf0063eb50c0dcd7d253f774e050ab1baa3","/canvaskit/skwasm_heavy.wasm":"acebd34ce89ba97c086405163d12ce74336e41bb7cca4e2fcd5011ecfabd945c","/canvaskit/skwasm_heavy.js.symbols":"d43798c11b7dbd26872e27d20df1c6c43637ebb95b4cc41fd19ff092ab2565bd","/canvaskit/skwasm_heavy.js":"dd3642e247a1ea4a8c519b76278011bb194471c590373ae2659f1d3cb793287c","/canvaskit/skwasm.wasm":"ad393be86fb17a251e0af39e56bcae5c26a4b9f20adbce626e0b7df796d89368","/canvaskit/skwasm.js.symbols":"91b787a0cd397c3cd089dc81519200c5bc35bfafa2996bb5ed4b1159553973f5","/canvaskit/skwasm.js":"91ea675d523ad0a19696479888658953e290f9798a43dae6b87d9ab60cc40c1a","/canvaskit/canvaskit.wasm":"67768ebd7649dfe70c348374dc34b732152d42467c2c335701958ba1be0949c8","/canvaskit/canvaskit.js.symbols":"a03cf8cdedf01be4a751225fa1bceadf8a783cb512ff87336bf76bb329fb29db","/canvaskit/canvaskit.js":"e0e67f4b85a07ff9b9861c9f49bf88860368ec96fb4115c0d4684f54596f9700","/canvaskit/chromium/canvaskit.wasm":"b3c17e127e4e8e4912409c050050f6f63a718b6f9618a7ec388948f2493174a6","/canvaskit/chromium/canvaskit.js.symbols":"17bdb78398d7be0b2662ad813c7f9387f79014aee6f1e3b7bf39dfe81e6b8b90","/canvaskit/chromium/canvaskit.js":"ed67753aa5382460fefd96876bf5dc40c5d242d56b37664abc8468a6772478df","/assets/NOTICES":"0866d89e36c30a849dee781180bd88f1fd87ade739fe8f05033a875596ca8814","/assets/FontManifest.json":"e38b95988f5d060cf9b7ce97cb5ac9236d6f4cc04a11d69567df97b2b4cbc5e5","/assets/AssetManifest.bin.json":"4410b5ed27b9e9f566941a09399ad264bb5ad6fb9e93bc257adc512be7072200","/assets/AssetManifest.bin":"f380b3ebcee9b7012f134353690794571e48c834048fef14eb14b518c42d8ae3","/assets/shaders/stretch_effect.frag":"df37894a7ac7854986bfa5d515e9af03d9138bb77be4d027db848785ebe9e357","/assets/shaders/ink_sparkle.frag":"9d529f4d93e5dabf338537416221237a0042f9cee61c98a357340d0273c67293","/assets/packages/cupertino_icons/assets/CupertinoIcons.ttf":"d41473de1f7708a0702d7f19327693486512db442f6ab0cf7774e6d6576f9fcb","/assets/fonts/MaterialIcons-Regular.otf":"f1c56a6ade830e3888cee07124fed83310e4131bfc4ee8be41b540c300f0868d","/assets/assets/logoJurnalMengajarLogin.png":"7ce4e468b6c1397ba8b5f73e895e479f13079d3452058aef004084e536bd828f","/assets/assets/LogoJr.png":"59417b1d39fbd850f43c85dc10be444d79c70c4a33f1db2310b743c0c4e82017","/assets/assets/logoApp.png":"ce6581b762f7f2608eb6d2098b4b1fb9329f8f073b472eca09bfa1a9bc9f0888","/assets/assets/logoAboutApp.png":"f8aecf509c72a4bd311c9e89b7c0577f64679efc0d57ec5ce4efd8138e7d361b","/assets/assets/google_logo.png":"55e718d9e3c8a26051c571c87de5c03008c7e894670da24a0aa31e3d47be28c0"}}
+[debug] [2026-08-18T06:19:19.807Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/384851481624/sites/jurnalmengajarku/versions/bed5031f0df51fa0:populateFiles 200
+[debug] [2026-08-18T06:19:19.808Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/384851481624/sites/jurnalmengajarku/versions/bed5031f0df51fa0:populateFiles {"uploadUrl":"https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/bed5031f0df51fa0/files"}
+[debug] [2026-08-18T06:19:19.808Z] [hosting][populate queue][FINAL] {"max":1098,"min":1098,"avg":1098,"active":0,"complete":1,"success":1,"errored":0,"retried":0,"total":1,"elapsed":1098}
+[debug] [2026-08-18T06:19:19.808Z] [hosting] uploads queued: 0
+[debug] [2026-08-18T06:19:19.808Z] [hosting][upload queue][FINAL] {"max":0,"min":9999999999,"avg":0,"active":0,"complete":0,"success":0,"errored":0,"retried":0,"total":0,"elapsed":1787033959808}
+[info] i  hosting: upload complete 
+[info] +  hosting[jurnalmengajarku]: file upload complete 
+[debug] [2026-08-18T06:19:19.809Z] [hosting] deploy completed after 1143ms
+[debug] [2026-08-18T06:19:19.809Z] [
+  {
+    "config": {
+      "site": "jurnalmengajarku",
+      "public": "jurnalmengajar/build/web",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    },
+    "version": "projects/384851481624/sites/jurnalmengajarku/versions/bed5031f0df51fa0"
+  }
+]
+[info] i  hosting[jurnalmengajarku]: finalizing version... 
+[debug] [2026-08-18T06:19:19.811Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:19:19.811Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:19:19.811Z] >>> [apiv2][query] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions/bed5031f0df51fa0 updateMask=status%2Cconfig
+[debug] [2026-08-18T06:19:19.811Z] >>> [apiv2][body] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions/bed5031f0df51fa0 {"status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]}}
+[debug] [2026-08-18T06:19:21.401Z] <<< [apiv2][status] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions/bed5031f0df51fa0 200
+[debug] [2026-08-18T06:19:21.401Z] <<< [apiv2][body] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions/bed5031f0df51fa0 {"name":"projects/384851481624/sites/jurnalmengajarku/versions/bed5031f0df51fa0","status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]},"labels":{"deployment-tool":"cli-firebase"},"createTime":"2026-08-18T06:19:17.329277Z","createUser":{"email":"dfawwas23@gmail.com"},"finalizeTime":"2026-08-18T06:19:20.200132Z","finalizeUser":{"email":"dfawwas23@gmail.com"}}
+[debug] [2026-08-18T06:19:21.401Z] [hosting] finalized version for jurnalmengajarku:[object Object]
+[info] +  hosting[jurnalmengajarku]: version finalized 
+[info] i  hosting[jurnalmengajarku]: releasing new version... 
+[debug] [2026-08-18T06:19:21.401Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:19:21.402Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:19:21.402Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/channels/live/releases versionName=projects%2F384851481624%2Fsites%2Fjurnalmengajarku%2Fversions%2Fbed5031f0df51fa0
+[debug] [2026-08-18T06:19:21.402Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/channels/live/releases {}
+[debug] [2026-08-18T06:19:22.945Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/channels/live/releases 200
+[debug] [2026-08-18T06:19:22.945Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/channels/live/releases {"name":"projects/384851481624/sites/jurnalmengajarku/channels/live/releases/1787033961475000","version":{"name":"projects/384851481624/sites/jurnalmengajarku/versions/bed5031f0df51fa0","status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]},"labels":{"deployment-tool":"cli-firebase"},"createTime":"2026-08-18T06:19:17.329277Z","createUser":{"email":"dfawwas23@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocIPuezU_OQA_qXgWLRUOE8W8ab17JoQFisA93fYiUpcaCPtC7MU"},"finalizeTime":"2026-08-18T06:19:20.200132Z","finalizeUser":{"email":"dfawwas23@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocIPuezU_OQA_qXgWLRUOE8W8ab17JoQFisA93fYiUpcaCPtC7MU"}},"type":"DEPLOY","releaseTime":"2026-08-18T06:19:21.475Z","releaseUser":{"email":"dfawwas23@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocIPuezU_OQA_qXgWLRUOE8W8ab17JoQFisA93fYiUpcaCPtC7MU"}}
+[debug] [2026-08-18T06:19:22.945Z] [hosting] release: {"name":"projects/384851481624/sites/jurnalmengajarku/channels/live/releases/1787033961475000","version":{"name":"projects/384851481624/sites/jurnalmengajarku/versions/bed5031f0df51fa0","status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]},"labels":{"deployment-tool":"cli-firebase"},"createTime":"2026-08-18T06:19:17.329277Z","createUser":{"email":"dfawwas23@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocIPuezU_OQA_qXgWLRUOE8W8ab17JoQFisA93fYiUpcaCPtC7MU"},"finalizeTime":"2026-08-18T06:19:20.200132Z","finalizeUser":{"email":"dfawwas23@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocIPuezU_OQA_qXgWLRUOE8W8ab17JoQFisA93fYiUpcaCPtC7MU"}},"type":"DEPLOY","releaseTime":"2026-08-18T06:19:21.475Z","releaseUser":{"email":"dfawwas23@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocIPuezU_OQA_qXgWLRUOE8W8ab17JoQFisA93fYiUpcaCPtC7MU"}}
+[info] +  hosting[jurnalmengajarku]: release complete 
+[info] 
+[info] +  Deploy complete! 
+[info] 
+[info] Project Console: https://console.firebase.google.com/project/jurnal-mengajar-84ebe/overview
+[info] Hosting URL: https://jurnalmengajarku.web.app
+[debug] [2026-08-18T06:32:04.140Z] ----------------------------------------------------------------------
+[debug] [2026-08-18T06:32:04.149Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\ASUS\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --project jurnal-mengajar-84ebe --only hosting --debug
+[debug] [2026-08-18T06:32:04.150Z] CLI Version:   15.24.0
+[debug] [2026-08-18T06:32:04.150Z] Platform:      win32
+[debug] [2026-08-18T06:32:04.150Z] Node Version:  v24.18.0
+[debug] [2026-08-18T06:32:04.150Z] Detected Agent: antigravity
+[debug] [2026-08-18T06:32:04.150Z] Time:          Tue Aug 18 2026 13:32:04 GMT+0700 (Indochina Time)
+[debug] [2026-08-18T06:32:04.150Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-08-18T06:32:07.122Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-08-18T06:32:07.122Z] > authorizing via signed-in user (dfawwas23@gmail.com)
+[debug] [2026-08-18T06:32:07.122Z] [iam] checking project jurnal-mengajar-84ebe for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-08-18T06:32:07.154Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:32:07.154Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:32:07.155Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions [none]
+[debug] [2026-08-18T06:32:07.155Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions  x-goog-user-project=jurnal-mengajar-84ebe
+[debug] [2026-08-18T06:32:07.155Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-08-18T06:32:09.448Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions 200
+[debug] [2026-08-18T06:32:09.449Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/jurnal-mengajar-84ebe:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-08-18T06:32:09.449Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:32:09.449Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:32:09.450Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe [none]
+[debug] [2026-08-18T06:32:13.209Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe 200
+[debug] [2026-08-18T06:32:13.209Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe {"projectId":"jurnal-mengajar-84ebe","projectNumber":"384851481624","displayName":"Jurnal Mengajar","name":"projects/jurnal-mengajar-84ebe","resources":{"hostingSite":"jurnal-mengajar-84ebe"},"state":"ACTIVE","labels":{"firebase":"enabled"},"etag":"1_0c2fdc22-b8ca-4e73-9376-4b3088bc3b17"}
+[info] 
+[info] === Deploying to 'jurnal-mengajar-84ebe'...
+[info] 
+[info] i  deploying hosting 
+[debug] [2026-08-18T06:32:13.212Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:32:13.212Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:32:13.212Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe/sites/jurnalmengajarku [none]
+[debug] [2026-08-18T06:32:15.948Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe/sites/jurnalmengajarku 200
+[debug] [2026-08-18T06:32:15.948Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/jurnal-mengajar-84ebe/sites/jurnalmengajarku {"name":"projects/jurnal-mengajar-84ebe/sites/jurnalmengajarku","defaultUrl":"https://jurnalmengajarku.web.app","type":"USER_SITE"}
+[debug] [2026-08-18T06:32:15.954Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:32:15.954Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:32:15.956Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions [none]
+[debug] [2026-08-18T06:32:15.956Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2026-08-18T06:32:18.322Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions 200
+[debug] [2026-08-18T06:32:18.323Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions {"name":"projects/384851481624/sites/jurnalmengajarku/versions/9948a908c8ce2115","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+[info] i  hosting[jurnalmengajarku]: beginning deploy... 
+[info] i  hosting[jurnalmengajarku]: found 41 files in jurnalmengajar/build/web 
+[debug] [2026-08-18T06:32:26.672Z] [hosting] uploading with 200 concurrency
+[debug] [2026-08-18T06:32:26.960Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:32:26.960Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:32:26.962Z] [hosting] hash cache [anVybmFsbWVuZ2FqYXJcYnVpbGRcd2Vi] stored for 41 files
+[debug] [2026-08-18T06:32:26.962Z] [hosting][hash queue][FINAL] {"max":282,"min":0,"avg":10.487804878048781,"active":0,"complete":41,"success":41,"errored":0,"retried":0,"total":41,"elapsed":286}
+[debug] [2026-08-18T06:32:26.962Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/384851481624/sites/jurnalmengajarku/versions/9948a908c8ce2115:populateFiles [none]
+[debug] [2026-08-18T06:32:26.962Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/384851481624/sites/jurnalmengajarku/versions/9948a908c8ce2115:populateFiles {"files":{"/manifest.json":"bf2af59a09307b00e4805ca849a64622b37b4eab2c5e3b25fa9f00a999f8e68b","/flutter.js":"f18220d166d49cbef02491208c46f2c5e54db9739184e304fc55b199b5724407","/favicon.png":"23c9e3fb926720283adc841c9699ae61bc5ee89c43e2ce35a2a26eea0d11f3aa","/callback.html":"dfee04521e669f928698a2e743c32fb5dea90d1dc70d52afd17f3dc16652c82c","/icons/Icon-maskable-512.png":"47351c0898a13764db94feb1c256144130e94383c8ddd918bfed6b15e0cb71b0","/icons/Icon-maskable-192.png":"3538848a3b162477b59593d9459b0eed1f7964ae6896be57765c294a7a2cfb21","/icons/Icon-512.png":"47351c0898a13764db94feb1c256144130e94383c8ddd918bfed6b15e0cb71b0","/icons/Icon-192.png":"3538848a3b162477b59593d9459b0eed1f7964ae6896be57765c294a7a2cfb21","/canvaskit/wimp.wasm":"53384687b54db78b8d55027c62eb418ef3b69d351ae0c2b1d9d917ac9cba4853","/canvaskit/wimp.js.symbols":"cb643fbb407efb3d6735f5909c4ffd84bed8c3d8ce4840f72eb06471b18d8454","/canvaskit/wimp.js":"23db45b93eec24dd6db46ac5a6fafbf0063eb50c0dcd7d253f774e050ab1baa3","/canvaskit/skwasm_heavy.wasm":"acebd34ce89ba97c086405163d12ce74336e41bb7cca4e2fcd5011ecfabd945c","/canvaskit/skwasm_heavy.js.symbols":"d43798c11b7dbd26872e27d20df1c6c43637ebb95b4cc41fd19ff092ab2565bd","/canvaskit/skwasm_heavy.js":"dd3642e247a1ea4a8c519b76278011bb194471c590373ae2659f1d3cb793287c","/canvaskit/skwasm.wasm":"ad393be86fb17a251e0af39e56bcae5c26a4b9f20adbce626e0b7df796d89368","/canvaskit/skwasm.js.symbols":"91b787a0cd397c3cd089dc81519200c5bc35bfafa2996bb5ed4b1159553973f5","/canvaskit/skwasm.js":"91ea675d523ad0a19696479888658953e290f9798a43dae6b87d9ab60cc40c1a","/canvaskit/canvaskit.wasm":"67768ebd7649dfe70c348374dc34b732152d42467c2c335701958ba1be0949c8","/canvaskit/canvaskit.js.symbols":"a03cf8cdedf01be4a751225fa1bceadf8a783cb512ff87336bf76bb329fb29db","/canvaskit/canvaskit.js":"e0e67f4b85a07ff9b9861c9f49bf88860368ec96fb4115c0d4684f54596f9700","/canvaskit/chromium/canvaskit.wasm":"b3c17e127e4e8e4912409c050050f6f63a718b6f9618a7ec388948f2493174a6","/canvaskit/chromium/canvaskit.js.symbols":"17bdb78398d7be0b2662ad813c7f9387f79014aee6f1e3b7bf39dfe81e6b8b90","/canvaskit/chromium/canvaskit.js":"ed67753aa5382460fefd96876bf5dc40c5d242d56b37664abc8468a6772478df","/assets/assets/logoJurnalMengajarLogin.png":"7ce4e468b6c1397ba8b5f73e895e479f13079d3452058aef004084e536bd828f","/assets/assets/LogoJr.png":"59417b1d39fbd850f43c85dc10be444d79c70c4a33f1db2310b743c0c4e82017","/assets/assets/logoApp.png":"ce6581b762f7f2608eb6d2098b4b1fb9329f8f073b472eca09bfa1a9bc9f0888","/assets/assets/logoAboutApp.png":"f8aecf509c72a4bd311c9e89b7c0577f64679efc0d57ec5ce4efd8138e7d361b","/assets/assets/google_logo.png":"55e718d9e3c8a26051c571c87de5c03008c7e894670da24a0aa31e3d47be28c0","/version.json":"cbc7df95f2c4d190fd6a81352cc0dca6e6773fa17dc9e04447a1e2bc26ad54b1","/index.html":"57fb246b115a9853da3614e1112de537ec6b19b08707612b3b336a0f9e4ae03d","/flutter_service_worker.js":"c73b271847ffc78c576de35e95f6b46187eefb1d97dcb08eb9d84c45954ff310","/assets/FontManifest.json":"e38b95988f5d060cf9b7ce97cb5ac9236d6f4cc04a11d69567df97b2b4cbc5e5","/flutter_bootstrap.js":"05282227f1b0e7ba27f4bd53d5ef3934d293bdd7ae953380298b458b840545e8","/assets/AssetManifest.bin.json":"4410b5ed27b9e9f566941a09399ad264bb5ad6fb9e93bc257adc512be7072200","/assets/AssetManifest.bin":"f380b3ebcee9b7012f134353690794571e48c834048fef14eb14b518c42d8ae3","/assets/shaders/stretch_effect.frag":"df37894a7ac7854986bfa5d515e9af03d9138bb77be4d027db848785ebe9e357","/assets/shaders/ink_sparkle.frag":"9d529f4d93e5dabf338537416221237a0042f9cee61c98a357340d0273c67293","/assets/packages/cupertino_icons/assets/CupertinoIcons.ttf":"d41473de1f7708a0702d7f19327693486512db442f6ab0cf7774e6d6576f9fcb","/assets/fonts/MaterialIcons-Regular.otf":"f1c56a6ade830e3888cee07124fed83310e4131bfc4ee8be41b540c300f0868d","/assets/NOTICES":"0866d89e36c30a849dee781180bd88f1fd87ade739fe8f05033a875596ca8814","/main.dart.js":"a0c604e43bd070f52229d104226e6c3e6bca2c2ea2bd666c9917785283108ea5"}}
+[info] i  hosting: adding files to version [0/41] (0%) 
+[info] i  hosting: adding files to version [0/41] (0%) 
+[info] i  hosting: adding files to version [0/41] (0%) 
+[info] i  hosting: adding files to version [0/41] (0%) 
+[info] i  hosting: adding files to version [0/41] (0%) 
+[debug] [2026-08-18T06:32:37.667Z] *** [apiv2] error from fetch(https://firebasehosting.googleapis.com/v1beta1/projects/384851481624/sites/jurnalmengajarku/versions/9948a908c8ce2115:populateFiles, {"headers":{},"method":"POST","body":"{\"files\":{\"/manifest.json\":\"bf2af59a09307b00e4805ca849a64622b37b4eab2c5e3b25fa9f00a999f8e68b\",\"/flutter.js\":\"f18220d166d49cbef02491208c46f2c5e54db9739184e304fc55b199b5724407\",\"/favicon.png\":\"23c9e3fb926720283adc841c9699ae61bc5ee89c43e2ce35a2a26eea0d11f3aa\",\"/callback.html\":\"dfee04521e669f928698a2e743c32fb5dea90d1dc70d52afd17f3dc16652c82c\",\"/icons/Icon-maskable-512.png\":\"47351c0898a13764db94feb1c256144130e94383c8ddd918bfed6b15e0cb71b0\",\"/icons/Icon-maskable-192.png\":\"3538848a3b162477b59593d9459b0eed1f7964ae6896be57765c294a7a2cfb21\",\"/icons/Icon-512.png\":\"47351c0898a13764db94feb1c256144130e94383c8ddd918bfed6b15e0cb71b0\",\"/icons/Icon-192.png\":\"3538848a3b162477b59593d9459b0eed1f7964ae6896be57765c294a7a2cfb21\",\"/canvaskit/wimp.wasm\":\"53384687b54db78b8d55027c62eb418ef3b69d351ae0c2b1d9d917ac9cba4853\",\"/canvaskit/wimp.js.symbols\":\"cb643fbb407efb3d6735f5909c4ffd84bed8c3d8ce4840f72eb06471b18d8454\",\"/canvaskit/wimp.js\":\"23db45b93eec24dd6db46ac5a6fafbf0063eb50c0dcd7d253f774e050ab1baa3\",\"/canvaskit/skwasm_heavy.wasm\":\"acebd34ce89ba97c086405163d12ce74336e41bb7cca4e2fcd5011ecfabd945c\",\"/canvaskit/skwasm_heavy.js.symbols\":\"d43798c11b7dbd26872e27d20df1c6c43637ebb95b4cc41fd19ff092ab2565bd\",\"/canvaskit/skwasm_heavy.js\":\"dd3642e247a1ea4a8c519b76278011bb194471c590373ae2659f1d3cb793287c\",\"/canvaskit/skwasm.wasm\":\"ad393be86fb17a251e0af39e56bcae5c26a4b9f20adbce626e0b7df796d89368\",\"/canvaskit/skwasm.js.symbols\":\"91b787a0cd397c3cd089dc81519200c5bc35bfafa2996bb5ed4b1159553973f5\",\"/canvaskit/skwasm.js\":\"91ea675d523ad0a19696479888658953e290f9798a43dae6b87d9ab60cc40c1a\",\"/canvaskit/canvaskit.wasm\":\"67768ebd7649dfe70c348374dc34b732152d42467c2c335701958ba1be0949c8\",\"/canvaskit/canvaskit.js.symbols\":\"a03cf8cdedf01be4a751225fa1bceadf8a783cb512ff87336bf76bb329fb29db\",\"/canvaskit/canvaskit.js\":\"e0e67f4b85a07ff9b9861c9f49bf88860368ec96fb4115c0d4684f54596f9700\",\"/canvaskit/chromium/canvaskit.wasm\":\"b3c17e127e4e8e4912409c050050f6f63a718b6f9618a7ec388948f2493174a6\",\"/canvaskit/chromium/canvaskit.js.symbols\":\"17bdb78398d7be0b2662ad813c7f9387f79014aee6f1e3b7bf39dfe81e6b8b90\",\"/canvaskit/chromium/canvaskit.js\":\"ed67753aa5382460fefd96876bf5dc40c5d242d56b37664abc8468a6772478df\",\"/assets/assets/logoJurnalMengajarLogin.png\":\"7ce4e468b6c1397ba8b5f73e895e479f13079d3452058aef004084e536bd828f\",\"/assets/assets/LogoJr.png\":\"59417b1d39fbd850f43c85dc10be444d79c70c4a33f1db2310b743c0c4e82017\",\"/assets/assets/logoApp.png\":\"ce6581b762f7f2608eb6d2098b4b1fb9329f8f073b472eca09bfa1a9bc9f0888\",\"/assets/assets/logoAboutApp.png\":\"f8aecf509c72a4bd311c9e89b7c0577f64679efc0d57ec5ce4efd8138e7d361b\",\"/assets/assets/google_logo.png\":\"55e718d9e3c8a26051c571c87de5c03008c7e894670da24a0aa31e3d47be28c0\",\"/version.json\":\"cbc7df95f2c4d190fd6a81352cc0dca6e6773fa17dc9e04447a1e2bc26ad54b1\",\"/index.html\":\"57fb246b115a9853da3614e1112de537ec6b19b08707612b3b336a0f9e4ae03d\",\"/flutter_service_worker.js\":\"c73b271847ffc78c576de35e95f6b46187eefb1d97dcb08eb9d84c45954ff310\",\"/assets/FontManifest.json\":\"e38b95988f5d060cf9b7ce97cb5ac9236d6f4cc04a11d69567df97b2b4cbc5e5\",\"/flutter_bootstrap.js\":\"05282227f1b0e7ba27f4bd53d5ef3934d293bdd7ae953380298b458b840545e8\",\"/assets/AssetManifest.bin.json\":\"4410b5ed27b9e9f566941a09399ad264bb5ad6fb9e93bc257adc512be7072200\",\"/assets/AssetManifest.bin\":\"f380b3ebcee9b7012f134353690794571e48c834048fef14eb14b518c42d8ae3\",\"/assets/shaders/stretch_effect.frag\":\"df37894a7ac7854986bfa5d515e9af03d9138bb77be4d027db848785ebe9e357\",\"/assets/shaders/ink_sparkle.frag\":\"9d529f4d93e5dabf338537416221237a0042f9cee61c98a357340d0273c67293\",\"/assets/packages/cupertino_icons/assets/CupertinoIcons.ttf\":\"d41473de1f7708a0702d7f19327693486512db442f6ab0cf7774e6d6576f9fcb\",\"/assets/fonts/MaterialIcons-Regular.otf\":\"f1c56a6ade830e3888cee07124fed83310e4131bfc4ee8be41b540c300f0868d\",\"/assets/NOTICES\":\"0866d89e36c30a849dee781180bd88f1fd87ade739fe8f05033a875596ca8814\",\"/main.dart.js\":\"a0c604e43bd070f52229d104226e6c3e6bca2c2ea2bd666c9917785283108ea5\"}}"}): ConnectTimeoutError: Connect Timeout Error (attempted addresses: 172.217.114.4:443, 2001:4860:4840:400:::443, 172.217.119.4:443, 2001:4860:4842:400:::443, 172.217.113.4:443, 2001:4860:4841:400:::443, 172.217.116.4:443, 2001:4860:4847:400:::443, 172.217.118.4:443, 2001:4860:4846:400:::443, 172.217.117.4:443, 2001:4860:4843:400:::443, 172.217.112.4:443, 2001:4860:4845:400:::443, 172.217.115.4:443, 2001:4860:4844:400:::443, timeout: 10000ms)
+[debug] [2026-08-18T06:32:38.073Z] [populateQueue] Retrying task index 0
+[debug] [2026-08-18T06:32:38.074Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:32:38.074Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:32:38.074Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/384851481624/sites/jurnalmengajarku/versions/9948a908c8ce2115:populateFiles [none]
+[debug] [2026-08-18T06:32:38.074Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/384851481624/sites/jurnalmengajarku/versions/9948a908c8ce2115:populateFiles {"files":{"/manifest.json":"bf2af59a09307b00e4805ca849a64622b37b4eab2c5e3b25fa9f00a999f8e68b","/flutter.js":"f18220d166d49cbef02491208c46f2c5e54db9739184e304fc55b199b5724407","/favicon.png":"23c9e3fb926720283adc841c9699ae61bc5ee89c43e2ce35a2a26eea0d11f3aa","/callback.html":"dfee04521e669f928698a2e743c32fb5dea90d1dc70d52afd17f3dc16652c82c","/icons/Icon-maskable-512.png":"47351c0898a13764db94feb1c256144130e94383c8ddd918bfed6b15e0cb71b0","/icons/Icon-maskable-192.png":"3538848a3b162477b59593d9459b0eed1f7964ae6896be57765c294a7a2cfb21","/icons/Icon-512.png":"47351c0898a13764db94feb1c256144130e94383c8ddd918bfed6b15e0cb71b0","/icons/Icon-192.png":"3538848a3b162477b59593d9459b0eed1f7964ae6896be57765c294a7a2cfb21","/canvaskit/wimp.wasm":"53384687b54db78b8d55027c62eb418ef3b69d351ae0c2b1d9d917ac9cba4853","/canvaskit/wimp.js.symbols":"cb643fbb407efb3d6735f5909c4ffd84bed8c3d8ce4840f72eb06471b18d8454","/canvaskit/wimp.js":"23db45b93eec24dd6db46ac5a6fafbf0063eb50c0dcd7d253f774e050ab1baa3","/canvaskit/skwasm_heavy.wasm":"acebd34ce89ba97c086405163d12ce74336e41bb7cca4e2fcd5011ecfabd945c","/canvaskit/skwasm_heavy.js.symbols":"d43798c11b7dbd26872e27d20df1c6c43637ebb95b4cc41fd19ff092ab2565bd","/canvaskit/skwasm_heavy.js":"dd3642e247a1ea4a8c519b76278011bb194471c590373ae2659f1d3cb793287c","/canvaskit/skwasm.wasm":"ad393be86fb17a251e0af39e56bcae5c26a4b9f20adbce626e0b7df796d89368","/canvaskit/skwasm.js.symbols":"91b787a0cd397c3cd089dc81519200c5bc35bfafa2996bb5ed4b1159553973f5","/canvaskit/skwasm.js":"91ea675d523ad0a19696479888658953e290f9798a43dae6b87d9ab60cc40c1a","/canvaskit/canvaskit.wasm":"67768ebd7649dfe70c348374dc34b732152d42467c2c335701958ba1be0949c8","/canvaskit/canvaskit.js.symbols":"a03cf8cdedf01be4a751225fa1bceadf8a783cb512ff87336bf76bb329fb29db","/canvaskit/canvaskit.js":"e0e67f4b85a07ff9b9861c9f49bf88860368ec96fb4115c0d4684f54596f9700","/canvaskit/chromium/canvaskit.wasm":"b3c17e127e4e8e4912409c050050f6f63a718b6f9618a7ec388948f2493174a6","/canvaskit/chromium/canvaskit.js.symbols":"17bdb78398d7be0b2662ad813c7f9387f79014aee6f1e3b7bf39dfe81e6b8b90","/canvaskit/chromium/canvaskit.js":"ed67753aa5382460fefd96876bf5dc40c5d242d56b37664abc8468a6772478df","/assets/assets/logoJurnalMengajarLogin.png":"7ce4e468b6c1397ba8b5f73e895e479f13079d3452058aef004084e536bd828f","/assets/assets/LogoJr.png":"59417b1d39fbd850f43c85dc10be444d79c70c4a33f1db2310b743c0c4e82017","/assets/assets/logoApp.png":"ce6581b762f7f2608eb6d2098b4b1fb9329f8f073b472eca09bfa1a9bc9f0888","/assets/assets/logoAboutApp.png":"f8aecf509c72a4bd311c9e89b7c0577f64679efc0d57ec5ce4efd8138e7d361b","/assets/assets/google_logo.png":"55e718d9e3c8a26051c571c87de5c03008c7e894670da24a0aa31e3d47be28c0","/version.json":"cbc7df95f2c4d190fd6a81352cc0dca6e6773fa17dc9e04447a1e2bc26ad54b1","/index.html":"57fb246b115a9853da3614e1112de537ec6b19b08707612b3b336a0f9e4ae03d","/flutter_service_worker.js":"c73b271847ffc78c576de35e95f6b46187eefb1d97dcb08eb9d84c45954ff310","/assets/FontManifest.json":"e38b95988f5d060cf9b7ce97cb5ac9236d6f4cc04a11d69567df97b2b4cbc5e5","/flutter_bootstrap.js":"05282227f1b0e7ba27f4bd53d5ef3934d293bdd7ae953380298b458b840545e8","/assets/AssetManifest.bin.json":"4410b5ed27b9e9f566941a09399ad264bb5ad6fb9e93bc257adc512be7072200","/assets/AssetManifest.bin":"f380b3ebcee9b7012f134353690794571e48c834048fef14eb14b518c42d8ae3","/assets/shaders/stretch_effect.frag":"df37894a7ac7854986bfa5d515e9af03d9138bb77be4d027db848785ebe9e357","/assets/shaders/ink_sparkle.frag":"9d529f4d93e5dabf338537416221237a0042f9cee61c98a357340d0273c67293","/assets/packages/cupertino_icons/assets/CupertinoIcons.ttf":"d41473de1f7708a0702d7f19327693486512db442f6ab0cf7774e6d6576f9fcb","/assets/fonts/MaterialIcons-Regular.otf":"f1c56a6ade830e3888cee07124fed83310e4131bfc4ee8be41b540c300f0868d","/assets/NOTICES":"0866d89e36c30a849dee781180bd88f1fd87ade739fe8f05033a875596ca8814","/main.dart.js":"a0c604e43bd070f52229d104226e6c3e6bca2c2ea2bd666c9917785283108ea5"}}
+[info] i  hosting: adding files to version [0/41] (0%) 
+[info] i  hosting: adding files to version [0/41] (0%) 
+[debug] [2026-08-18T06:32:40.923Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/384851481624/sites/jurnalmengajarku/versions/9948a908c8ce2115:populateFiles 200
+[debug] [2026-08-18T06:32:40.923Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/384851481624/sites/jurnalmengajarku/versions/9948a908c8ce2115:populateFiles {"uploadRequiredHashes":["a0c604e43bd070f52229d104226e6c3e6bca2c2ea2bd666c9917785283108ea5","05282227f1b0e7ba27f4bd53d5ef3934d293bdd7ae953380298b458b840545e8"],"uploadUrl":"https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/9948a908c8ce2115/files"}
+[debug] [2026-08-18T06:32:40.924Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:32:40.924Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:32:40.924Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:32:40.924Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:32:40.924Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/9948a908c8ce2115/files/a0c604e43bd070f52229d104226e6c3e6bca2c2ea2bd666c9917785283108ea5 [none]
+[debug] [2026-08-18T06:32:40.924Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/9948a908c8ce2115/files/a0c604e43bd070f52229d104226e6c3e6bca2c2ea2bd666c9917785283108ea5 [stream]
+[debug] [2026-08-18T06:32:40.925Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/9948a908c8ce2115/files/05282227f1b0e7ba27f4bd53d5ef3934d293bdd7ae953380298b458b840545e8 [none]
+[debug] [2026-08-18T06:32:40.925Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/9948a908c8ce2115/files/05282227f1b0e7ba27f4bd53d5ef3934d293bdd7ae953380298b458b840545e8 [stream]
+[debug] [2026-08-18T06:32:40.928Z] [hosting][populate queue][FINAL] {"max":2850,"min":2850,"avg":2850,"active":0,"complete":1,"success":1,"errored":0,"retried":1,"total":1,"elapsed":13968}
+[debug] [2026-08-18T06:32:40.928Z] [hosting] uploads queued: 2
+[info] i  hosting: uploading new files [0/2] (0%) 
+[info] i  hosting: uploading new files [0/2] (0%) 
+[info] i  hosting: uploading new files [0/2] (0%) 
+[info] i  hosting: uploading new files [0/2] (0%) 
+[info] i  hosting: uploading new files [0/2] (0%) 
+[debug] [2026-08-18T06:32:52.701Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/9948a908c8ce2115/files/05282227f1b0e7ba27f4bd53d5ef3934d293bdd7ae953380298b458b840545e8 200
+[debug] [2026-08-18T06:32:52.701Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/9948a908c8ce2115/files/05282227f1b0e7ba27f4bd53d5ef3934d293bdd7ae953380298b458b840545e8 [stream]
+[info] i  hosting: uploading new files [1/2] (50%) 
+[info] i  hosting: uploading new files [1/2] (50%) 
+[info] i  hosting: uploading new files [1/2] (50%) 
+[info] i  hosting: uploading new files [1/2] (50%) 
+[info] i  hosting: uploading new files [1/2] (50%) 
+[debug] [2026-08-18T06:33:02.411Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/9948a908c8ce2115/files/a0c604e43bd070f52229d104226e6c3e6bca2c2ea2bd666c9917785283108ea5 200
+[debug] [2026-08-18T06:33:02.412Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/jurnalmengajarku/versions/9948a908c8ce2115/files/a0c604e43bd070f52229d104226e6c3e6bca2c2ea2bd666c9917785283108ea5 [stream]
+[debug] [2026-08-18T06:33:02.412Z] [hosting][upload queue][FINAL] {"max":21489,"min":11777,"avg":16633,"active":0,"complete":2,"success":2,"errored":0,"retried":0,"total":2,"elapsed":21489}
+[info] i  hosting: upload complete 
+[info] +  hosting[jurnalmengajarku]: file upload complete 
+[debug] [2026-08-18T06:33:02.412Z] [hosting] deploy completed after 35761ms
+[debug] [2026-08-18T06:33:02.412Z] [
+  {
+    "config": {
+      "site": "jurnalmengajarku",
+      "public": "jurnalmengajar/build/web",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    },
+    "version": "projects/384851481624/sites/jurnalmengajarku/versions/9948a908c8ce2115"
+  }
+]
+[info] i  hosting[jurnalmengajarku]: finalizing version... 
+[debug] [2026-08-18T06:33:02.414Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:33:02.414Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:33:02.414Z] >>> [apiv2][query] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions/9948a908c8ce2115 updateMask=status%2Cconfig
+[debug] [2026-08-18T06:33:02.414Z] >>> [apiv2][body] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions/9948a908c8ce2115 {"status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]}}
+[debug] [2026-08-18T06:33:04.562Z] <<< [apiv2][status] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions/9948a908c8ce2115 200
+[debug] [2026-08-18T06:33:04.563Z] <<< [apiv2][body] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/versions/9948a908c8ce2115 {"name":"projects/384851481624/sites/jurnalmengajarku/versions/9948a908c8ce2115","status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]},"labels":{"deployment-tool":"cli-firebase"},"createTime":"2026-08-18T06:32:15.998725Z","createUser":{"email":"dfawwas23@gmail.com"},"finalizeTime":"2026-08-18T06:33:03.918117Z","finalizeUser":{"email":"dfawwas23@gmail.com"}}
+[debug] [2026-08-18T06:33:04.563Z] [hosting] finalized version for jurnalmengajarku:[object Object]
+[info] +  hosting[jurnalmengajarku]: version finalized 
+[info] i  hosting[jurnalmengajarku]: releasing new version... 
+[debug] [2026-08-18T06:33:04.563Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:33:04.563Z] Checked if tokens are valid: true, expires at: 1787036175160
+[debug] [2026-08-18T06:33:04.563Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/channels/live/releases versionName=projects%2F384851481624%2Fsites%2Fjurnalmengajarku%2Fversions%2F9948a908c8ce2115
+[debug] [2026-08-18T06:33:04.563Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/channels/live/releases {}
+[debug] [2026-08-18T06:33:06.201Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/channels/live/releases 200
+[debug] [2026-08-18T06:33:06.202Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/jurnalmengajarku/channels/live/releases {"name":"projects/384851481624/sites/jurnalmengajarku/channels/live/releases/1787034784640000","version":{"name":"projects/384851481624/sites/jurnalmengajarku/versions/9948a908c8ce2115","status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]},"labels":{"deployment-tool":"cli-firebase"},"createTime":"2026-08-18T06:32:15.998725Z","createUser":{"email":"dfawwas23@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocIPuezU_OQA_qXgWLRUOE8W8ab17JoQFisA93fYiUpcaCPtC7MU"},"finalizeTime":"2026-08-18T06:33:03.918117Z","finalizeUser":{"email":"dfawwas23@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocIPuezU_OQA_qXgWLRUOE8W8ab17JoQFisA93fYiUpcaCPtC7MU"}},"type":"DEPLOY","releaseTime":"2026-08-18T06:33:04.640Z","releaseUser":{"email":"dfawwas23@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocIPuezU_OQA_qXgWLRUOE8W8ab17JoQFisA93fYiUpcaCPtC7MU"}}
+[debug] [2026-08-18T06:33:06.202Z] [hosting] release: {"name":"projects/384851481624/sites/jurnalmengajarku/channels/live/releases/1787034784640000","version":{"name":"projects/384851481624/sites/jurnalmengajarku/versions/9948a908c8ce2115","status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]},"labels":{"deployment-tool":"cli-firebase"},"createTime":"2026-08-18T06:32:15.998725Z","createUser":{"email":"dfawwas23@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocIPuezU_OQA_qXgWLRUOE8W8ab17JoQFisA93fYiUpcaCPtC7MU"},"finalizeTime":"2026-08-18T06:33:03.918117Z","finalizeUser":{"email":"dfawwas23@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocIPuezU_OQA_qXgWLRUOE8W8ab17JoQFisA93fYiUpcaCPtC7MU"}},"type":"DEPLOY","releaseTime":"2026-08-18T06:33:04.640Z","releaseUser":{"email":"dfawwas23@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocIPuezU_OQA_qXgWLRUOE8W8ab17JoQFisA93fYiUpcaCPtC7MU"}}
+[info] +  hosting[jurnalmengajarku]: release complete 
+[info] 
+[info] +  Deploy complete! 
+[info] 
+[info] Project Console: https://console.firebase.google.com/project/jurnal-mengajar-84ebe/overview
+[info] Hosting URL: https://jurnalmengajarku.web.app

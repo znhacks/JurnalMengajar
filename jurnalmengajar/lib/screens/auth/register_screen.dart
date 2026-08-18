@@ -29,6 +29,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   final _schoolCodeController = TextEditingController();
 
+  final _schoolCodeFocusNode = FocusNode();
+  final _fullNameFocusNode = FocusNode();
+  final _phoneNumberFocusNode = FocusNode();
+  final _addressFocusNode = FocusNode();
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
+  final _confirmPasswordFocusNode = FocusNode();
+
   File? _profileImage;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -53,6 +61,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _schoolCodeController.dispose();
+
+    _schoolCodeFocusNode.dispose();
+    _fullNameFocusNode.dispose();
+    _phoneNumberFocusNode.dispose();
+    _addressFocusNode.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    _confirmPasswordFocusNode.dispose();
     super.dispose();
   }
 
@@ -474,6 +490,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               _buildFieldLabel(_registerType == 'guru' ? 'SEKOLAH TEMPAT MENGAJAR (MASUKKAN KODE/NPSN)' : 'SEKOLAH YANG DIKELOLA (MASUKKAN KODE/NPSN)'),
                               TextFormField(
                                 controller: _schoolCodeController,
+                                focusNode: _schoolCodeFocusNode,
                                 textCapitalization: TextCapitalization.characters,
                                 decoration: InputDecoration(
                                   hintText: 'Masukkan Kode Sekolah / NPSN...',
@@ -526,6 +543,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 },
                                 onFieldSubmitted: (val) {
                                   _resolveSchoolCode(val.trim(), masterProvider, showSnackBar: true);
+                                  FocusScope.of(context).requestFocus(_fullNameFocusNode);
                                 },
                                 validator: (value) {
                                   if (_selectedSchools.isEmpty) {
@@ -567,6 +585,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                _buildFieldLabel('NAMA LENGKAP'),
                                _buildTextField(
                                  controller: _fullNameController,
+                                 focusNode: _fullNameFocusNode,
+                                 nextFocusNode: _phoneNumberFocusNode,
                                  hintText: 'Nama lengkap beserta gelar',
                                  icon: Icons.person_outline,
                                  validator: (value) {
@@ -620,6 +640,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               _buildFieldLabel('NOMOR TELEPON'),
                               _buildTextField(
                                 controller: _phoneNumberController,
+                                focusNode: _phoneNumberFocusNode,
+                                nextFocusNode: _addressFocusNode,
                                 hintText: 'Contoh: 08123456789',
                                 icon: Icons.phone_outlined,
                                 keyboardType: TextInputType.phone,
@@ -636,6 +658,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               _buildFieldLabel('ALAMAT'),
                               _buildTextField(
                                 controller: _addressController,
+                                focusNode: _addressFocusNode,
+                                nextFocusNode: _emailFocusNode,
                                 hintText: 'Alamat tempat tinggal',
                                 icon: Icons.home_outlined,
                                 validator: (value) {
@@ -651,6 +675,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               _buildFieldLabel('EMAIL'),
                               _buildTextField(
                                 controller: _emailController,
+                                focusNode: _emailFocusNode,
+                                nextFocusNode: _passwordFocusNode,
                                 hintText: 'guru@sekolah.id',
                                 icon: Icons.email_outlined,
                                 keyboardType: TextInputType.emailAddress,
@@ -672,7 +698,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               _buildFieldLabel('KATA SANDI'),
                               TextFormField(
                                 controller: _passwordController,
+                                focusNode: _passwordFocusNode,
                                 obscureText: _obscurePassword,
+                                textInputAction: TextInputAction.next,
+                                onFieldSubmitted: (_) {
+                                  FocusScope.of(context).requestFocus(_confirmPasswordFocusNode);
+                                },
                                 style: TextStyle(
                                   fontSize: 14.sp,
                                   color: const Color(0xFF1E293B),
@@ -710,7 +741,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               _buildFieldLabel('KONFIRMASI KATA SANDI'),
                               TextFormField(
                                 controller: _confirmPasswordController,
+                                focusNode: _confirmPasswordFocusNode,
                                 obscureText: _obscureConfirmPassword,
+                                textInputAction: TextInputAction.done,
+                                onFieldSubmitted: (_) => _handleRegister(),
                                 style: TextStyle(
                                   fontSize: 14.sp,
                                   color: const Color(0xFF1E293B),
@@ -838,10 +872,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     TextInputType keyboardType = TextInputType.text,
     required FormFieldValidator<String> validator,
     Widget? suffixIcon,
+    TextInputAction textInputAction = TextInputAction.next,
+    FocusNode? focusNode,
+    FocusNode? nextFocusNode,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      focusNode: focusNode,
+      onFieldSubmitted: (value) {
+        if (nextFocusNode != null) {
+          FocusScope.of(context).requestFocus(nextFocusNode);
+        }
+      },
       style: TextStyle(fontSize: 14.sp, color: const Color(0xFF1E293B)),
       validator: validator,
       decoration: _getInputDecoration(

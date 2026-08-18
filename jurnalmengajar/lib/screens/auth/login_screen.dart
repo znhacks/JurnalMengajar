@@ -18,6 +18,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
   bool _obscurePassword = true;
 
   @override
@@ -54,6 +56,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -243,7 +247,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               SizedBox(height: 4.h),
                               TextFormField(
                                 controller: _emailController,
+                                focusNode: _emailFocusNode,
                                 keyboardType: TextInputType.emailAddress,
+                                textInputAction: TextInputAction.next,
+                                onFieldSubmitted: (_) {
+                                  FocusScope.of(context).requestFocus(_passwordFocusNode);
+                                },
                                 style: TextStyle(
                                   fontSize: 14.sp,
                                   color: const Color(0xFF1E293B),
@@ -302,7 +311,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               SizedBox(height: 4.h),
                               TextFormField(
                                 controller: _passwordController,
+                                focusNode: _passwordFocusNode,
                                 obscureText: _obscurePassword,
+                                textInputAction: TextInputAction.done,
+                                onFieldSubmitted: (_) => _handleLogin(),
                                 style: TextStyle(
                                   fontSize: 14.sp,
                                   color: const Color(0xFF1E293B),
