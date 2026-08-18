@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -115,16 +116,18 @@ class JurnalMengajarApp extends StatefulWidget {
 }
 
 class _JurnalMengajarAppState extends State<JurnalMengajarApp> {
+  late final GoRouter _router;
+
   @override
   void initState() {
     super.initState();
+    _router = AppRouter.router(context);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final router = AppRouter.router(context);
       FcmService().initialize(
         authProvider: authProvider,
         onNavigate: (route) {
-          router.push(route);
+          _router.push(route);
         },
       );
     });
@@ -150,7 +153,7 @@ class _JurnalMengajarAppState extends State<JurnalMengajarApp> {
               debugShowCheckedModeBanner: false,
               theme: AppTheme.lightTheme,
               // Injecting GoRouter table
-              routerConfig: AppRouter.router(context),
+              routerConfig: _router,
             );
           },
         );
