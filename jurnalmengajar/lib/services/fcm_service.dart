@@ -8,6 +8,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../providers/auth_provider.dart';
+import 'package:flutter/material.dart';
 
 // Top-level background message handler for FCM
 @pragma('vm:entry-point')
@@ -23,7 +24,7 @@ class FcmService {
   factory FcmService() => _instance;
   FcmService._internal();
 
-  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+  FirebaseMessaging get _fcm => FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
@@ -37,7 +38,32 @@ class FcmService {
   );
 
   /// Initialize FCM, Local Notifications, and Event Listeners
-  Future<void> initialize({AuthProvider? authProvider, Function(String route)? onNavigate}) async {
+  Future<void> initialize({
+    AuthProvider? authProvider,
+    Function(String route)? onNavigate,
+    BuildContext? context,
+  }) async {
+    if (kIsWeb) {
+      if (_isInitialized) return;
+      _isInitialized = true;
+      if (context != null && context.mounted) {
+        Future.delayed(const Duration(seconds: 3), () {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Silakan periksa di handphone / perangkat genggam Anda untuk menerima notifikasi.',
+                ),
+                backgroundColor: Color(0xFF4F46E5),
+                duration: Duration(seconds: 5),
+              ),
+            );
+          }
+        });
+      }
+      return;
+    }
+
     if (_isInitialized) return;
     _isInitialized = true;
 
@@ -145,6 +171,7 @@ class FcmService {
 
   /// Synchronize FCM Device Token with Supabase user profile
   Future<void> syncToken(AuthProvider? authProvider) async {
+    if (kIsWeb) return;
     try {
       final token = await _fcm.getToken();
       if (token != null) {

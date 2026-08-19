@@ -129,6 +129,7 @@ class _JurnalMengajarAppState extends State<JurnalMengajarApp> {
         onNavigate: (route) {
           _router.push(route);
         },
+        context: context,
       );
     });
   }
