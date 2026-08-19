@@ -372,7 +372,7 @@ class JournalPdfService {
     );
   }
 
-  /// Teacher Meta Info & Active Filters Block
+  /// Teacher Meta Info Block (Compact)
   static pw.Widget _buildTeacherInfoBox({
     required TeacherModel teacher,
     required String printDateStr,
@@ -383,12 +383,8 @@ class JournalPdfService {
     required pw.Font ttfRegular,
     required pw.Font ttfMedium,
   }) {
-    String statusLabel = 'Semua Status';
-    if (statusFilter == 'verified') statusLabel = 'Hanya Terverifikasi';
-    if (statusFilter == 'pending') statusLabel = 'Hanya Menunggu Approval';
-
     return pw.Container(
-      padding: const pw.EdgeInsets.all(10),
+      padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 12),
       decoration: pw.BoxDecoration(
         color: PdfColors.indigo50,
         borderRadius: pw.BorderRadius.circular(6),
@@ -397,58 +393,22 @@ class JournalPdfService {
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
+          pw.Row(
             children: [
-              pw.Row(
-                children: [
-                  pw.Text('Nama Guru  : ', style: pw.TextStyle(font: ttfBold, fontSize: 9.5)),
-                  pw.Text(teacher.name.isNotEmpty ? teacher.name : 'Guru Pengajar', style: pw.TextStyle(font: ttfRegular, fontSize: 9.5)),
-                ],
-              ),
-              pw.SizedBox(height: 3),
-              pw.Row(
-                children: [
-                  pw.Text('Jabatan / Posisi : ', style: pw.TextStyle(font: ttfBold, fontSize: 9.5)),
-                  pw.Text(teacher.position.isNotEmpty ? teacher.position : 'Guru Mata Pelajaran', style: pw.TextStyle(font: ttfRegular, fontSize: 9.5)),
-                ],
-              ),
+              pw.Text('Nama Guru : ', style: pw.TextStyle(font: ttfBold, fontSize: 9)),
+              pw.Text(teacher.name.isNotEmpty ? teacher.name : 'Guru Pengajar', style: pw.TextStyle(font: ttfRegular, fontSize: 9)),
             ],
           ),
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
+          pw.Row(
             children: [
-              pw.Row(
-                children: [
-                  pw.Text('Email / Kontak : ', style: pw.TextStyle(font: ttfBold, fontSize: 9.5)),
-                  pw.Text(teacher.email.isNotEmpty ? teacher.email : '-', style: pw.TextStyle(font: ttfRegular, fontSize: 9.5)),
-                ],
-              ),
-              pw.SizedBox(height: 3),
-              pw.Row(
-                children: [
-                  pw.Text('Filter Status : ', style: pw.TextStyle(font: ttfBold, fontSize: 9.5)),
-                  pw.Text(statusLabel, style: pw.TextStyle(font: ttfRegular, fontSize: 9.5, color: PdfColors.indigo800)),
-                ],
-              ),
+              pw.Text('Jabatan / Posisi : ', style: pw.TextStyle(font: ttfBold, fontSize: 9)),
+              pw.Text(teacher.position.isNotEmpty ? teacher.position : 'Guru Mata Pelajaran', style: pw.TextStyle(font: ttfRegular, fontSize: 9)),
             ],
           ),
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
+          pw.Row(
             children: [
-              pw.Row(
-                children: [
-                  pw.Text('Filter Kelas : ', style: pw.TextStyle(font: ttfBold, fontSize: 9.5)),
-                  pw.Text(selectedClassName ?? 'Semua Kelas', style: pw.TextStyle(font: ttfRegular, fontSize: 9.5)),
-                ],
-              ),
-              pw.SizedBox(height: 3),
-              pw.Row(
-                children: [
-                  pw.Text('Filter Mapel : ', style: pw.TextStyle(font: ttfBold, fontSize: 9.5)),
-                  pw.Text(selectedSubjectName ?? 'Semua Mapel', style: pw.TextStyle(font: ttfRegular, fontSize: 9.5)),
-                ],
-              ),
+              pw.Text('Email / Kontak : ', style: pw.TextStyle(font: ttfBold, fontSize: 9)),
+              pw.Text(teacher.email.isNotEmpty ? teacher.email : '-', style: pw.TextStyle(font: ttfRegular, fontSize: 9)),
             ],
           ),
         ],
