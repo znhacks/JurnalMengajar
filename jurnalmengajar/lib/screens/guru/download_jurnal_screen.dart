@@ -413,6 +413,10 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     final journalProvider = context.watch<JournalProvider>();
     final masterProvider = context.watch<MasterDataProvider>();
 
+    // Sync school selection automatically from AuthProvider
+    _selectedSchoolId = authProvider.activeSchoolId;
+    _schoolNameController.text = authProvider.activeSchool?.name ?? authProvider.activeSchoolName;
+
     final teacher = _getCurrentTeacher(authProvider, masterProvider);
     final filteredJournals = _getFilteredJournals(
       journalProvider.teacherJournals,
@@ -792,11 +796,10 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    DropdownButtonFormField<String?>(
-                      initialValue: _selectedSchoolId,
+                    TextFormField(
+                      controller: _schoolNameController,
+                      readOnly: true,
                       decoration: InputDecoration(
-                        labelText: 'Pilih Sekolah',
-                        hintText: 'Pilih sekolah tempat cetak jurnal',
                         prefixIcon: const Icon(
                           Icons.account_balance_rounded,
                           size: 20,
@@ -808,38 +811,18 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10.r),
                         ),
+                        fillColor: Colors.grey.shade50,
+                        filled: true,
                       ),
-                      items: [
-                        const DropdownMenuItem<String?>(
-                          value: null,
-                          child: Text('Sekolah Lainnya (Manual)'),
-                        ),
-                        if (masterProvider.schools.isNotEmpty)
-                          ...masterProvider.schools.map(
-                            (s) => DropdownMenuItem<String?>(
-                              value: s.id,
-                              child: Text(
-                                s.name,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          )
-                      ],
-                      onChanged: (val) {
-                        setState(() {
-                          _selectedSchoolId = val;
-                          if (val != null && masterProvider.schools.isNotEmpty) {
-                            final sch = masterProvider.schools.firstWhere(
-                              (s) => s.id == val,
-                            );
-                            _schoolNameController.text = sch.name;
-                          }
-                        });
-                      },
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 14.sp,
+                        color: const Color(0xFF1E293B),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     SizedBox(height: 10.h),
                     Text(
-                      'Kop dokumen PDF akan menggunakan format resmi instansi sesuai sekolah yang dipilih guru.',
+                      'Kop dokumen PDF akan menggunakan format resmi instansi sesuai sekolah aktif guru.',
                       style: GoogleFonts.hankenGrotesk(
                         fontSize: 11.sp,
                         color: const Color(0xFF64748B),
@@ -858,22 +841,6 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                 icon: Icons.draw_rounded,
                 child: Column(
                   children: [
-                    TextField(
-                      controller: _schoolNameController,
-                      decoration: InputDecoration(
-                        labelText: 'Nama Sekolah (Custom/Manual)',
-                        hintText: 'Misal: ${authProvider.activeSchoolName}',
-                        prefixIcon: const Icon(Icons.school_rounded, size: 20),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 10.h,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.r),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 12.h),
                     TextField(
                       controller: _supervisorNameController,
                       decoration: InputDecoration(
