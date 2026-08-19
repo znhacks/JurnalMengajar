@@ -38,6 +38,8 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       TextEditingController();
   final TextEditingController _supervisorNipController =
       TextEditingController();
+  final TextEditingController _teacherNipController =
+      TextEditingController();
   final TextEditingController _schoolNameController = TextEditingController(
     text: 'SMP NEGERI 1 SATU ATAP MEMPURA',
   );
@@ -54,6 +56,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
   void dispose() {
     _supervisorNameController.dispose();
     _supervisorNipController.dispose();
+    _teacherNipController.dispose();
     _schoolNameController.dispose();
     super.dispose();
   }
@@ -321,6 +324,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
               school: selectedSchool,
               supervisorName: _supervisorNameController.text.trim(),
               supervisorNip: _supervisorNipController.text.trim(),
+              teacherNip: _teacherNipController.text.trim(),
               statusFilter: _selectedStatus,
               selectedClassName: selectedClassName,
               selectedSubjectName: selectedSubjectName,
@@ -401,6 +405,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       school: selectedSchool,
       supervisorName: _supervisorNameController.text.trim(),
       supervisorNip: _supervisorNipController.text.trim(),
+      teacherNip: _teacherNipController.text.trim(),
       statusFilter: _selectedStatus,
       selectedClassName: selectedClassName,
       selectedSubjectName: selectedSubjectName,
@@ -845,16 +850,16 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
               SizedBox(height: 16.h),
 
-              // Section 4: Informasi Penandatangan (Supervisor / Kepala Sekolah)
+              // Section 4: Informasi Penandatangan (Supervisor / Kepala Sekolah & Guru)
               _buildSectionCard(
-                title: '4. Data Supervisor / Penandatangan',
+                title: '4. Data Penandatangan Laporan',
                 icon: Icons.draw_rounded,
                 child: Column(
                   children: [
                     TextField(
                       controller: _supervisorNameController,
                       decoration: InputDecoration(
-                        labelText: 'Nama (Opsional)',
+                        labelText: 'Nama Supervisor (Opsional)',
                         hintText: 'Misal: Dr. H. Ahmad Dahlan, M.Pd.',
                         prefixIcon: const Icon(
                           Icons.person_outline_rounded,
@@ -873,8 +878,26 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                     TextField(
                       controller: _supervisorNipController,
                       decoration: InputDecoration(
-                        labelText: 'NIP / ID (Opsional)',
+                        labelText: 'NIP / ID Supervisor (Opsional)',
                         hintText: 'Misal: 19780512 200312 1 002',
+                        prefixIcon: const Icon(Icons.badge_outlined, size: 20),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 10.h,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16.h),
+                    const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                    SizedBox(height: 16.h),
+                    TextField(
+                      controller: _teacherNipController,
+                      decoration: InputDecoration(
+                        labelText: 'NIP Guru Pengajar (Opsional)',
+                        hintText: 'Misal: 19850315 200904 2 003',
                         prefixIcon: const Icon(Icons.badge_outlined, size: 20),
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 12.w,

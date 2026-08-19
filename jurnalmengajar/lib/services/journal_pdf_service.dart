@@ -21,6 +21,7 @@ class JournalPdfService {
     SchoolModel? school,
     String? supervisorName,
     String? supervisorNip,
+    String? teacherNip,
     String statusFilter = 'all',
     String? selectedClassName,
     String? selectedSubjectName,
@@ -177,6 +178,7 @@ class JournalPdfService {
             // Signature Block Section
             _buildSignatureBlock(
               teacher: teacher,
+              teacherNip: teacherNip,
               supervisorName: supervisorName,
               supervisorNip: supervisorNip,
               printDateStr: printDateStr,
@@ -562,6 +564,7 @@ class JournalPdfService {
   /// Official Signature Block Footer
   static pw.Widget _buildSignatureBlock({
     required TeacherModel teacher,
+    String? teacherNip,
     String? supervisorName,
     String? supervisorNip,
     required String printDateStr,
@@ -626,7 +629,9 @@ class JournalPdfService {
               ),
               pw.SizedBox(height: 2),
               pw.Text(
-                'NIP / ID Guru: ${teacher.id.isNotEmpty ? teacher.id : "-"}',
+                (teacherNip != null && teacherNip.isNotEmpty)
+                    ? 'NIP. $teacherNip'
+                    : 'NIP. ........................................',
                 style: pw.TextStyle(font: ttfRegular, fontSize: 8.5),
               ),
             ],
