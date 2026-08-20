@@ -15,6 +15,7 @@ import '../../models/school_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/journal_provider.dart';
 import '../../providers/master_data_provider.dart';
+import '../../providers/schedule_provider.dart';
 import '../../services/journal_pdf_service.dart';
 import '../../widgets/guru_drawer.dart';
 
@@ -51,11 +52,25 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
   List<String> _supervisorNipHistory = [];
   List<String> _teacherNipHistory = [];
 
+  final LayerLink _supervisorNameLink = LayerLink();
+  final LayerLink _supervisorNipLink = LayerLink();
+  final LayerLink _teacherNipLink = LayerLink();
+
+  final FocusNode _supervisorNameFocusNode = FocusNode();
+  final FocusNode _supervisorNipFocusNode = FocusNode();
+  final FocusNode _teacherNipFocusNode = FocusNode();
+
+  OverlayEntry? _activeOverlayEntry;
+
   @override
   void initState() {
     super.initState();
     _loadInitialData();
     _loadHistory();
+
+    _supervisorNameFocusNode.addListener(_onSupervisorNameFocusChange);
+    _supervisorNipFocusNode.addListener(_onSupervisorNipFocusChange);
+    _teacherNipFocusNode.addListener(_onTeacherNipFocusChange);
   }
 
   @override
@@ -64,6 +79,16 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     _supervisorNipController.dispose();
     _teacherNipController.dispose();
     _schoolNameController.dispose();
+
+    _supervisorNameFocusNode.removeListener(_onSupervisorNameFocusChange);
+    _supervisorNameFocusNode.dispose();
+    _supervisorNipFocusNode.removeListener(_onSupervisorNipFocusChange);
+    _supervisorNipFocusNode.dispose();
+    _teacherNipFocusNode.removeListener(_onTeacherNipFocusChange);
+    _teacherNipFocusNode.dispose();
+
+    _hideActiveOverlay();
+
     super.dispose();
   }
 
@@ -92,7 +117,11 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         ),
       );
       if (teacher.id.isNotEmpty) {
-        await journalProvider.loadTeacherJournals(teacher.id);
+        final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+        await Future.wait([
+          journalProvider.loadTeacherJournals(teacher.id),
+          scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
+        ]);
       }
 
       // Auto match teacher's school from active school provider
@@ -148,6 +177,273 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       await prefs.setStringList('history_teacher_nip', _teacherNipHistory);
     }
     
+    setState(() {});
+  }
+
+  void _onSupervisorNameFocusChange() {
+    if (_supervisorNameFocusNode.hasFocus) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted && _supervisorNameFocusNode.hasFocus) {
+          _showSavedInfoOverlay(
+            context: context,
+            layerLink: _supervisorNameLink,
+            controller: _supervisorNameController,
+            history: _supervisorNameHistory,
+            focusNode: _supervisorNameFocusNode,
+          );
+        }
+      });
+    } else {
+      _hideActiveOverlay();
+    }
+  }
+
+  void _onSupervisorNipFocusChange() {
+    if (_supervisorNipFocusNode.hasFocus) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted && _supervisorNipFocusNode.hasFocus) {
+          _showSavedInfoOverlay(
+            context: context,
+            layerLink: _supervisorNipLink,
+            controller: _supervisorNipController,
+            history: _supervisorNipHistory,
+            focusNode: _supervisorNipFocusNode,
+          );
+        }
+      });
+    } else {
+      _hideActiveOverlay();
+    }
+  }
+
+  void _onTeacherNipFocusChange() {
+    if (_teacherNipFocusNode.hasFocus) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted && _teacherNipFocusNode.hasFocus) {
+          _showSavedInfoOverlay(
+            context: context,
+            layerLink: _teacherNipLink,
+            controller: _teacherNipController,
+            history: _teacherNipHistory,
+            focusNode: _teacherNipFocusNode,
+          );
+        }
+      });
+    } else {
+      _hideActiveOverlay();
+    }
+  }
+
+  void _showSavedInfoOverlay({
+    required BuildContext context,
+    required LayerLink layerLink,
+    required TextEditingController controller,
+    required List<String> history,
+    required FocusNode focusNode,
+  }) {
+    _hideActiveOverlay();
+
+    if (history.isEmpty) return;
+
+    _activeOverlayEntry = OverlayEntry(
+      builder: (context) {
+        return Stack(
+          children: [
+            // Tap outside to close
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _hideActiveOverlay,
+              ),
+            ),
+            Positioned(
+              width: 320.w,
+              child: CompositedTransformFollower(
+                link: layerLink,
+                showWhenUnlinked: false,
+                targetAnchor: Alignment.bottomLeft,
+                followerAnchor: Alignment.topLeft,
+                offset: Offset(0, 4.h),
+                child: Material(
+                  color: Colors.transparent,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Arrow pointing up
+                      Positioned(
+                        top: -6.h,
+                        left: 24.w,
+                        child: RotationTransition(
+                          turns: const AlwaysStoppedAnimation(45 / 360),
+                          child: Container(
+                            width: 12.w,
+                            height: 12.w,
+                            color: const Color(0xFF1E293B),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B), // Dark background matching browser Saved Info
+                          borderRadius: BorderRadius.circular(8.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Header "Saved info"
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(14.w, 10.h, 10.w, 6.h),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Saved info',
+                                    style: GoogleFonts.hankenGrotesk(
+                                      color: const Color(0xFF94A3B8),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12.sp,
+                                    ),
+                                  ),
+                                  Material(
+                                    color: Colors.transparent,
+                                    child: IconButton(
+                                      icon: Icon(
+                                        Icons.close_rounded,
+                                        color: const Color(0xFF94A3B8),
+                                        size: 16.sp,
+                                      ),
+                                      onPressed: _hideActiveOverlay,
+                                      constraints: const BoxConstraints(),
+                                      padding: EdgeInsets.all(4.w),
+                                      splashRadius: 16.r,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Divider(height: 1, color: Color(0xFF334155)),
+                            
+                            // History items list
+                            Flexible(
+                              child: ListView.builder(
+                                padding: EdgeInsets.zero,
+                                shrinkWrap: true,
+                                itemCount: history.length,
+                                itemBuilder: (context, index) {
+                                  final item = history[index];
+                                  return Container(
+                                    width: double.infinity,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 14.w,
+                                      vertical: 6.h,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: InkWell(
+                                            onTap: () {
+                                              controller.text = item;
+                                              _hideActiveOverlay();
+                                              focusNode.unfocus();
+                                            },
+                                            hoverColor: const Color(0xFF334155),
+                                            borderRadius: BorderRadius.circular(4.r),
+                                            child: Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                vertical: 6.h,
+                                                horizontal: 4.w,
+                                              ),
+                                              child: Text(
+                                                item,
+                                                style: GoogleFonts.hankenGrotesk(
+                                                  color: Colors.white,
+                                                  fontSize: 13.sp,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 8.w),
+                                        Material(
+                                          color: Colors.transparent,
+                                          child: IconButton(
+                                            icon: Icon(
+                                              Icons.close_rounded,
+                                              color: const Color(0xFF64748B),
+                                              size: 16.sp,
+                                            ),
+                                            onPressed: () async {
+                                              await _deleteHistoryItem(item, history, controller);
+                                            },
+                                            constraints: const BoxConstraints(),
+                                            padding: EdgeInsets.all(4.w),
+                                            splashRadius: 16.r,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    Overlay.of(context).insert(_activeOverlayEntry!);
+  }
+
+  void _hideActiveOverlay() {
+    _activeOverlayEntry?.remove();
+    _activeOverlayEntry = null;
+  }
+
+  Future<void> _deleteHistoryItem(
+    String item,
+    List<String> history,
+    TextEditingController controller,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    history.remove(item);
+    
+    String prefKey = '';
+    if (controller == _supervisorNameController) {
+      prefKey = 'history_supervisor_name';
+    } else if (controller == _supervisorNipController) {
+      prefKey = 'history_supervisor_nip';
+    } else if (controller == _teacherNipController) {
+      prefKey = 'history_teacher_nip';
+    }
+    
+    if (prefKey.isNotEmpty) {
+      await prefs.setStringList(prefKey, history);
+    }
+    
+    if (history.isEmpty) {
+      _hideActiveOverlay();
+    } else {
+      if (_activeOverlayEntry != null) {
+        _activeOverlayEntry!.markNeedsBuild();
+      }
+    }
     setState(() {});
   }
 
@@ -482,6 +778,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     final authProvider = context.watch<AuthProvider>();
     final journalProvider = context.watch<JournalProvider>();
     final masterProvider = context.watch<MasterDataProvider>();
+    final scheduleProvider = context.watch<ScheduleProvider>();
 
     // Sync school selection automatically from AuthProvider
     _selectedSchoolId = authProvider.activeSchoolId;
@@ -493,6 +790,25 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       masterProvider,
     );
     final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
+
+    // Filter classes and subjects only to what the teacher actually teaches
+    final teacherClassIds = {
+      ...journalProvider.teacherJournals.map((j) => j.classId),
+      ...scheduleProvider.cachedTeacherSchedules.map((s) => s.classId),
+    };
+
+    final teacherSubjectIds = {
+      ...journalProvider.teacherJournals.map((j) => j.subjectId),
+      ...scheduleProvider.cachedTeacherSchedules.map((s) => s.subjectId),
+    };
+
+    final filteredClasses = masterProvider.classes
+        .where((c) => teacherClassIds.contains(c.id))
+        .toList();
+
+    final filteredSubjects = masterProvider.subjects
+        .where((s) => teacherSubjectIds.contains(s.id))
+        .toList();
 
     final verifiedCount = filteredJournals
         .where((j) => j.status == 'verified' || j.status == 'approved')
@@ -795,7 +1111,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
                     // Class Filter Dropdown
                     DropdownButtonFormField<String?>(
-                      initialValue: _selectedClassId,
+                      value: filteredClasses.any((c) => c.id == _selectedClassId)
+                          ? _selectedClassId
+                          : null,
                       decoration: InputDecoration(
                         labelText: 'Filter Kelas',
                         prefixIcon: const Icon(Icons.class_rounded, size: 20),
@@ -812,7 +1130,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                           value: null,
                           child: Text('Semua Kelas'),
                         ),
-                        ...masterProvider.classes.map(
+                        ...filteredClasses.map(
                           (c) => DropdownMenuItem<String?>(
                             value: c.id,
                             child: Text(c.name),
@@ -827,7 +1145,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
                     // Subject Filter Dropdown
                     DropdownButtonFormField<String?>(
-                      initialValue: _selectedSubjectId,
+                      value: filteredSubjects.any((s) => s.id == _selectedSubjectId)
+                          ? _selectedSubjectId
+                          : null,
                       decoration: InputDecoration(
                         labelText: 'Filter Mata Pelajaran',
                         prefixIcon: const Icon(Icons.book_rounded, size: 20),
@@ -844,7 +1164,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                           value: null,
                           child: Text('Semua Mata Pelajaran'),
                         ),
-                        ...masterProvider.subjects.map(
+                        ...filteredSubjects.map(
                           (s) => DropdownMenuItem<String?>(
                             value: s.id,
                             child: Text(s.name),
@@ -912,106 +1232,67 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                 icon: Icons.draw_rounded,
                 child: Column(
                   children: [
-                    TextField(
-                      controller: _supervisorNameController,
-                      decoration: InputDecoration(
-                        labelText: 'Nama Supervisor',
-                        hintText: 'Misal: Dr. H. Ahmad Dahlan, M.Pd.',
-                        prefixIcon: const Icon(
-                          Icons.person_outline_rounded,
-                          size: 20,
-                        ),
-                        suffixIcon: _supervisorNameHistory.isNotEmpty
-                            ? PopupMenuButton<String>(
-                                icon: const Icon(Icons.arrow_drop_down_rounded, size: 28),
-                                tooltip: 'Riwayat Nama',
-                                onSelected: (value) {
-                                  setState(() {
-                                    _supervisorNameController.text = value;
-                                  });
-                                },
-                                itemBuilder: (context) => _supervisorNameHistory
-                                    .map((val) => PopupMenuItem<String>(
-                                          value: val,
-                                          child: Text(val),
-                                        ))
-                                    .toList(),
-                              )
-                            : null,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 10.h,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.r),
+                    CompositedTransformTarget(
+                      link: _supervisorNameLink,
+                      child: TextField(
+                        controller: _supervisorNameController,
+                        focusNode: _supervisorNameFocusNode,
+                        decoration: InputDecoration(
+                          labelText: 'Nama Supervisor',
+                          hintText: 'Misal: Dr. H. Ahmad Dahlan, M.Pd.',
+                          prefixIcon: const Icon(
+                            Icons.person_outline_rounded,
+                            size: 20,
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 10.h,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
                         ),
                       ),
                     ),
                     SizedBox(height: 12.h),
-                    TextField(
-                      controller: _supervisorNipController,
-                      decoration: InputDecoration(
-                        labelText: 'NIP / ID Supervisor',
-                        hintText: 'Misal: 19780512 200312 1 002',
-                        prefixIcon: const Icon(Icons.badge_outlined, size: 20),
-                        suffixIcon: _supervisorNipHistory.isNotEmpty
-                            ? PopupMenuButton<String>(
-                                icon: const Icon(Icons.arrow_drop_down_rounded, size: 28),
-                                tooltip: 'Riwayat NIP Supervisor',
-                                onSelected: (value) {
-                                  setState(() {
-                                    _supervisorNipController.text = value;
-                                  });
-                                },
-                                itemBuilder: (context) => _supervisorNipHistory
-                                    .map((val) => PopupMenuItem<String>(
-                                          value: val,
-                                          child: Text(val),
-                                        ))
-                                    .toList(),
-                              )
-                            : null,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 10.h,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.r),
+                    CompositedTransformTarget(
+                      link: _supervisorNipLink,
+                      child: TextField(
+                        controller: _supervisorNipController,
+                        focusNode: _supervisorNipFocusNode,
+                        decoration: InputDecoration(
+                          labelText: 'NIP / ID Supervisor',
+                          hintText: 'Misal: 19780512 200312 1 002',
+                          prefixIcon: const Icon(Icons.badge_outlined, size: 20),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 10.h,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
                         ),
                       ),
                     ),
                     SizedBox(height: 16.h),
                     const Divider(height: 1, color: Color(0xFFE2E8F0)),
                     SizedBox(height: 16.h),
-                    TextField(
-                      controller: _teacherNipController,
-                      decoration: InputDecoration(
-                        labelText: 'NIP Guru Pengajar',
-                        hintText: 'Misal: 19850315 200904 2 003',
-                        prefixIcon: const Icon(Icons.badge_outlined, size: 20),
-                        suffixIcon: _teacherNipHistory.isNotEmpty
-                            ? PopupMenuButton<String>(
-                                icon: const Icon(Icons.arrow_drop_down_rounded, size: 28),
-                                tooltip: 'Riwayat NIP Guru',
-                                onSelected: (value) {
-                                  setState(() {
-                                    _teacherNipController.text = value;
-                                  });
-                                },
-                                itemBuilder: (context) => _teacherNipHistory
-                                    .map((val) => PopupMenuItem<String>(
-                                          value: val,
-                                          child: Text(val),
-                                        ))
-                                    .toList(),
-                              )
-                            : null,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 10.h,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.r),
+                    CompositedTransformTarget(
+                      link: _teacherNipLink,
+                      child: TextField(
+                        controller: _teacherNipController,
+                        focusNode: _teacherNipFocusNode,
+                        decoration: InputDecoration(
+                          labelText: 'NIP Guru Pengajar',
+                          hintText: 'Misal: 19850315 200904 2 003',
+                          prefixIcon: const Icon(Icons.badge_outlined, size: 20),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 10.h,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
                         ),
                       ),
                     ),
