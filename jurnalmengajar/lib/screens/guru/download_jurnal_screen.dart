@@ -1076,7 +1076,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
                     // Class Filter Dropdown
                     DropdownButtonFormField<String?>(
-                      value: filteredClasses.any((c) => c.id == _selectedClassId)
+                      initialValue: filteredClasses.any((c) => c.id == _selectedClassId)
                           ? _selectedClassId
                           : null,
                       decoration: InputDecoration(
@@ -1110,7 +1110,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
                     // Subject Filter Dropdown
                     DropdownButtonFormField<String?>(
-                      value: filteredSubjects.any((s) => s.id == _selectedSubjectId)
+                      initialValue: filteredSubjects.any((s) => s.id == _selectedSubjectId)
                           ? _selectedSubjectId
                           : null,
                       decoration: InputDecoration(

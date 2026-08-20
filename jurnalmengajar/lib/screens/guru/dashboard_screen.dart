@@ -61,7 +61,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     final currentSchoolId = authProvider.activeSchoolId;
     final currentUserId = authProvider.currentUser?.id;
 
-    if ((_lastLoadedSchoolId != null && _lastLoadedSchoolId != currentSchoolId) ||
+    if ((_lastLoadedSchoolId != null &&
+            _lastLoadedSchoolId != currentSchoolId) ||
         (_lastLoadedUserId != null && _lastLoadedUserId != currentUserId)) {
       _lastLoadedSchoolId = currentSchoolId;
       _lastLoadedUserId = currentUserId;
@@ -207,7 +208,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
     final validSubjectIds = masterProvider.subjects.map((sb) => sb.id).toSet();
 
-    final activeSchedulesToday = scheduleProvider.cachedTeacherSchedules.where((s) {
+    final activeSchedulesToday = scheduleProvider.cachedTeacherSchedules.where((
+      s,
+    ) {
       return s.isActive &&
           s.date.year == today.year &&
           s.date.month == today.month &&
@@ -294,81 +297,78 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   constraints: BoxConstraints(maxHeight: 180.h),
                   child: SingleChildScrollView(
                     child: Column(
-                      children: List.generate(
-                        groupedKeys.length,
-                        (index) {
-                          final key = groupedKeys[index];
-                          final schedule = groupedRepresentative[key]!;
-                          final hours = groupedHours[key]!;
-                          final cls = masterProvider.classes.firstWhere(
-                            (c) => c.id == schedule.classId,
-                            orElse: () => ClassModel(
-                              id: '',
-                              name: 'Kelas--',
-                              periodId: '',
-                              studentCount: 0,
-                            ),
-                          );
-                          final subject = masterProvider.subjects.firstWhere(
-                            (s) => s.id == schedule.subjectId,
-                            orElse: () => SubjectModel(
-                              id: '',
-                              name: 'Mapel--',
-                              isActive: false,
-                            ),
-                          );
-                          final hoursLabel = hours.length == 1
-                              ? 'Jam ${hours.first}'
-                              : 'Jam ${hours.join(', ')}';
-                          return Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 8.w,
-                                  vertical: 4.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF4F7CFF).withValues(
-                                    alpha: 0.1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(6.r),
-                                ),
-                                child: Text(
-                                  hoursLabel,
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 10.sp,
-                                    color: const Color(0xFF4F7CFF),
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                      children: List.generate(groupedKeys.length, (index) {
+                        final key = groupedKeys[index];
+                        final schedule = groupedRepresentative[key]!;
+                        final hours = groupedHours[key]!;
+                        final cls = masterProvider.classes.firstWhere(
+                          (c) => c.id == schedule.classId,
+                          orElse: () => ClassModel(
+                            id: '',
+                            name: 'Kelas--',
+                            periodId: '',
+                            studentCount: 0,
+                          ),
+                        );
+                        final subject = masterProvider.subjects.firstWhere(
+                          (s) => s.id == schedule.subjectId,
+                          orElse: () => SubjectModel(
+                            id: '',
+                            name: 'Mapel--',
+                            isActive: false,
+                          ),
+                        );
+                        final hoursLabel = hours.length == 1
+                            ? 'Jam ${hours.first}'
+                            : 'Jam ${hours.join(', ')}';
+                        return Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8.w,
+                                vertical: 4.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFF4F7CFF,
+                                ).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6.r),
+                              ),
+                              child: Text(
+                                hoursLabel,
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 10.sp,
+                                  color: const Color(0xFF4F7CFF),
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              SizedBox(width: 10.w),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      cls.name,
-                                      style: GoogleFonts.hankenGrotesk(
-                                        fontSize: 13.sp,
-                                        fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF1E293B),
-                                      ),
+                            ),
+                            SizedBox(width: 10.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    cls.name,
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF1E293B),
                                     ),
-                                    Text(
-                                      subject.name,
-                                      style: GoogleFonts.hankenGrotesk(
-                                        fontSize: 11.sp,
-                                        color: const Color(0xFF64748B),
-                                      ),
+                                  ),
+                                  Text(
+                                    subject.name,
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontSize: 11.sp,
+                                      color: const Color(0xFF64748B),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          );
-                        },
-                      ),
+                            ),
+                          ],
+                        );
+                      }),
                     ),
                   ),
                 ),
@@ -441,13 +441,17 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
     final validSubjectIds = masterProvider.subjects.map((sb) => sb.id).toSet();
 
-    final activeSchedulesThisMonth = scheduleProvider.cachedTeacherSchedules.where((s) {
-      if (!s.isActive) return false;
-      if (s.date.year != today.year || s.date.month != today.month) return false;
-      if (!validClassIds.contains(s.classId)) return false;
-      if (!validSubjectIds.contains(s.subjectId)) return false;
-      return true;
-    }).toList();
+    final activeSchedulesThisMonth = scheduleProvider.cachedTeacherSchedules
+        .where((s) {
+          if (!s.isActive) return false;
+          if (s.date.year != today.year || s.date.month != today.month) {
+            return false;
+          }
+          if (!validClassIds.contains(s.classId)) return false;
+          if (!validSubjectIds.contains(s.subjectId)) return false;
+          return true;
+        })
+        .toList();
 
     final groupedMonthSchedules = groupDailySchedules(activeSchedulesThisMonth);
 
@@ -510,10 +514,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       // ── Holiday Banner (If Holiday on selected date) ───────
                       Builder(
                         builder: (context) {
-                          final holidayProvider =
-                              context.watch<HolidayProvider>();
-                          final holiday =
-                              holidayProvider.getHolidayForDate(_selectedDay);
+                          final holidayProvider = context
+                              .watch<HolidayProvider>();
+                          final holiday = holidayProvider.getHolidayForDate(
+                            _selectedDay,
+                          );
                           if (holiday == null) return const SizedBox.shrink();
 
                           return Container(
@@ -644,7 +649,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF4F7CFF).withValues(alpha: 0.08),
+                            color: const Color(
+                              0xFF4F7CFF,
+                            ).withValues(alpha: 0.08),
                             blurRadius: 12,
                             offset: const Offset(0, 3),
                           ),
@@ -721,17 +728,18 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(50.r),
-                    child: teacher.photoUrl != null &&
+                    child:
+                        teacher.photoUrl != null &&
                             teacher.photoUrl!.startsWith('http')
                         ? Image.network(
                             teacher.photoUrl!,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) =>
                                 const Icon(
-                              Icons.face_rounded,
-                              color: Color(0xFF4F7CFF),
-                              size: 26,
-                            ),
+                                  Icons.face_rounded,
+                                  color: Color(0xFF4F7CFF),
+                                  size: 26,
+                                ),
                           )
                         : const Center(
                             child: Icon(
@@ -760,11 +768,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
           SizedBox(height: 4.h),
 
-          // Big Headline: "Anda memiliki X jadwal bulan ini 👍" (Clickable to open Jadwal tab)
+          // Big Headline: "Anda memiliki X jadwal bulan ini " (Clickable to open Jadwal tab)
           InkWell(
             onTap: () {
-              final shellState =
-                  context.findAncestorStateOfType<GuruMainShellState>();
+              final shellState = context
+                  .findAncestorStateOfType<GuruMainShellState>();
               if (shellState != null) {
                 shellState.switchToTab(1);
               } else {
@@ -793,7 +801,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         decorationStyle: TextDecorationStyle.dotted,
                       ),
                     ),
-                    const TextSpan(text: 'bulan ini 👍'),
+                    const TextSpan(text: 'bulan ini'),
                   ],
                 ),
               ),
@@ -812,14 +820,19 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       onTap: () => SchoolSwitcherModal.show(ctx),
                       borderRadius: BorderRadius.circular(14.r),
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 14.w,
+                          vertical: 8.h,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(14.r),
                           border: Border.all(color: const Color(0xFFE2E8F0)),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF4F7CFF).withValues(alpha: 0.06),
+                              color: const Color(
+                                0xFF4F7CFF,
+                              ).withValues(alpha: 0.06),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -827,7 +840,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.business_rounded, color: Color(0xFF4F7CFF), size: 18),
+                            const Icon(
+                              Icons.business_rounded,
+                              color: Color(0xFF4F7CFF),
+                              size: 18,
+                            ),
                             SizedBox(width: 8.w),
                             Expanded(
                               child: Text(
@@ -841,7 +858,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const Icon(Icons.unfold_more_rounded, color: Color(0xFF64748B), size: 20),
+                            const Icon(
+                              Icons.unfold_more_rounded,
+                              color: Color(0xFF64748B),
+                              size: 20,
+                            ),
                           ],
                         ),
                       ),
@@ -857,8 +878,6 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       ),
     );
   }
-
-
 
   // ─── 3. TAB FILTER ─────────────────────────────────────────────────────────
   Widget _buildFilterChips() {
@@ -898,7 +917,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: const Color(0xFF4F7CFF).withValues(alpha: 0.3),
+                            color: const Color(
+                              0xFF4F7CFF,
+                            ).withValues(alpha: 0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -932,7 +953,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     final monthYearStr = DateFormat('MMMM yyyy', 'id_ID').format(_selectedDay);
 
     // Calculate current week days starting from Monday of the selected day's week
-    final monday = _selectedDay.subtract(Duration(days: _selectedDay.weekday - 1));
+    final monday = _selectedDay.subtract(
+      Duration(days: _selectedDay.weekday - 1),
+    );
     final weekDays = List.generate(7, (i) => monday.add(Duration(days: i)));
 
     final dayNames = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
@@ -960,7 +983,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
             children: [
               InkWell(
                 onTap: () {
-                  final newDate = _selectedDay.subtract(const Duration(days: 7));
+                  final newDate = _selectedDay.subtract(
+                    const Duration(days: 7),
+                  );
                   _onDateSelected(newDate);
                 },
                 borderRadius: BorderRadius.circular(50.r),
@@ -1062,7 +1087,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         boxShadow: isSelected
                             ? [
                                 BoxShadow(
-                                  color: const Color(0xFF4F7CFF).withValues(alpha: 0.35),
+                                  color: const Color(
+                                    0xFF4F7CFF,
+                                  ).withValues(alpha: 0.35),
                                   blurRadius: 8,
                                   offset: const Offset(0, 3),
                                 ),
@@ -1169,10 +1196,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24.r),
-          border: Border.all(
-            color: const Color(0xFFBFDBFE),
-            width: 1.5,
-          ),
+          border: Border.all(color: const Color(0xFFBFDBFE), width: 1.5),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF4F7CFF).withValues(alpha: 0.05),
@@ -1422,8 +1446,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             vertical: 2.5.h,
                           ),
                           decoration: BoxDecoration(
-                            color: AppHelper.getStatusColor(matchingJournal.status)
-                                .withValues(alpha: 0.1),
+                            color: AppHelper.getStatusColor(
+                              matchingJournal.status,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8.r),
                           ),
                           child: Text(
@@ -1507,7 +1532,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     final validSubjectIds = masterProvider.subjects.map((s) => s.id).toSet();
 
     var journals = journalProvider.teacherJournals.where((j) {
-      return validClassIds.contains(j.classId) && validSubjectIds.contains(j.subjectId);
+      return validClassIds.contains(j.classId) &&
+          validSubjectIds.contains(j.subjectId);
     }).toList();
 
     if (_searchQuery.isNotEmpty) {
@@ -1562,8 +1588,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
             ),
             InkWell(
               onTap: () {
-                final shellState =
-                    context.findAncestorStateOfType<GuruMainShellState>();
+                final shellState = context
+                    .findAncestorStateOfType<GuruMainShellState>();
                 if (shellState != null) {
                   shellState.switchToTab(2);
                 } else {
@@ -1630,26 +1656,19 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         else ...[
           Builder(
             builder: (context) {
-              final list =
-                  journals.length > 5 ? journals.sublist(0, 5) : journals;
+              final list = journals.length > 5
+                  ? journals.sublist(0, 5)
+                  : journals;
               return Column(
                 children: List.generate(list.length, (index) {
                   final journal = list[index];
                   final isLast = index == list.length - 1;
 
                   return Padding(
-                    padding: EdgeInsets.only(
-                      bottom: isLast ? 0 : 12.h,
-                    ),
+                    padding: EdgeInsets.only(bottom: isLast ? 0 : 12.h),
                     child: index == 0
-                        ? _buildLatestTimelineCard(
-                            journal,
-                            masterProvider,
-                          )
-                        : _buildHistoryTimelineCard(
-                            journal,
-                            masterProvider,
-                          ),
+                        ? _buildLatestTimelineCard(journal, masterProvider)
+                        : _buildHistoryTimelineCard(journal, masterProvider),
                   );
                 }),
               );
@@ -1723,10 +1742,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Vertical Left Accent Bar
-                  Container(
-                    width: 4.w,
-                    color: statusColor,
-                  ),
+                  Container(width: 4.w, color: statusColor),
                   Expanded(
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(14.w, 14.h, 14.w, 14.h),

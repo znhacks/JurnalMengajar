@@ -197,19 +197,7 @@ class SchoolSwitcherModal extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (item.schoolCode != null && item.schoolCode!.isNotEmpty) ...[
-                            SizedBox(width: 8.w),
-                            Padding(
-                              padding: EdgeInsets.only(top: 4.h),
-                              child: Text(
-                                'Code: ${item.schoolCode}',
-                                style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 11.sp,
-                                  color: const Color(0xFF64748B),
-                                ),
-                              ),
-                            ),
-                          ]
+                          // School code display removed as requested by the user
                         ],
                       ),
                       trailing: isSelected
