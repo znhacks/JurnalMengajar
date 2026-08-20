@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/class_model.dart';
 import '../../models/journal_model.dart';
@@ -46,10 +47,15 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
   String _presetRange = 'Bulan Ini';
 
+  List<String> _supervisorNameHistory = [];
+  List<String> _supervisorNipHistory = [];
+  List<String> _teacherNipHistory = [];
+
   @override
   void initState() {
     super.initState();
     _loadInitialData();
+    _loadHistory();
   }
 
   @override
@@ -97,6 +103,52 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         _schoolNameController.text = activeSchool?.name ?? authProvider.activeSchoolName;
       });
     }
+  }
+
+  Future<void> _loadHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _supervisorNameHistory = prefs.getStringList('history_supervisor_name') ?? [];
+      _supervisorNipHistory = prefs.getStringList('history_supervisor_nip') ?? [];
+      _teacherNipHistory = prefs.getStringList('history_teacher_nip') ?? [];
+    });
+  }
+
+  Future<void> _saveToHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    final name = _supervisorNameController.text.trim();
+    final supervisorNip = _supervisorNipController.text.trim();
+    final teacherNip = _teacherNipController.text.trim();
+    
+    if (name.isNotEmpty) {
+      _supervisorNameHistory.remove(name);
+      _supervisorNameHistory.insert(0, name);
+      if (_supervisorNameHistory.length > 5) {
+        _supervisorNameHistory = _supervisorNameHistory.sublist(0, 5);
+      }
+      await prefs.setStringList('history_supervisor_name', _supervisorNameHistory);
+    }
+    
+    if (supervisorNip.isNotEmpty) {
+      _supervisorNipHistory.remove(supervisorNip);
+      _supervisorNipHistory.insert(0, supervisorNip);
+      if (_supervisorNipHistory.length > 5) {
+        _supervisorNipHistory = _supervisorNipHistory.sublist(0, 5);
+      }
+      await prefs.setStringList('history_supervisor_nip', _supervisorNipHistory);
+    }
+    
+    if (teacherNip.isNotEmpty) {
+      _teacherNipHistory.remove(teacherNip);
+      _teacherNipHistory.insert(0, teacherNip);
+      if (_teacherNipHistory.length > 5) {
+        _teacherNipHistory = _teacherNipHistory.sublist(0, 5);
+      }
+      await prefs.setStringList('history_teacher_nip', _teacherNipHistory);
+    }
+    
+    setState(() {});
   }
 
   void _applyPresetRange(String preset) {
@@ -270,6 +322,8 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       return;
     }
 
+    _saveToHistory();
+
     final selectedClassName = _selectedClassId != null
         ? classes
               .firstWhere(
@@ -363,6 +417,8 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       );
       return;
     }
+
+    _saveToHistory();
 
     final selectedClassName = _selectedClassId != null
         ? classes
@@ -859,12 +915,29 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                     TextField(
                       controller: _supervisorNameController,
                       decoration: InputDecoration(
-                        labelText: 'Nama Supervisor (Opsional)',
+                        labelText: 'Nama Supervisor',
                         hintText: 'Misal: Dr. H. Ahmad Dahlan, M.Pd.',
                         prefixIcon: const Icon(
                           Icons.person_outline_rounded,
                           size: 20,
                         ),
+                        suffixIcon: _supervisorNameHistory.isNotEmpty
+                            ? PopupMenuButton<String>(
+                                icon: const Icon(Icons.arrow_drop_down_rounded, size: 28),
+                                tooltip: 'Riwayat Nama',
+                                onSelected: (value) {
+                                  setState(() {
+                                    _supervisorNameController.text = value;
+                                  });
+                                },
+                                itemBuilder: (context) => _supervisorNameHistory
+                                    .map((val) => PopupMenuItem<String>(
+                                          value: val,
+                                          child: Text(val),
+                                        ))
+                                    .toList(),
+                              )
+                            : null,
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 12.w,
                           vertical: 10.h,
@@ -878,9 +951,26 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                     TextField(
                       controller: _supervisorNipController,
                       decoration: InputDecoration(
-                        labelText: 'NIP / ID Supervisor (Opsional)',
+                        labelText: 'NIP / ID Supervisor',
                         hintText: 'Misal: 19780512 200312 1 002',
                         prefixIcon: const Icon(Icons.badge_outlined, size: 20),
+                        suffixIcon: _supervisorNipHistory.isNotEmpty
+                            ? PopupMenuButton<String>(
+                                icon: const Icon(Icons.arrow_drop_down_rounded, size: 28),
+                                tooltip: 'Riwayat NIP Supervisor',
+                                onSelected: (value) {
+                                  setState(() {
+                                    _supervisorNipController.text = value;
+                                  });
+                                },
+                                itemBuilder: (context) => _supervisorNipHistory
+                                    .map((val) => PopupMenuItem<String>(
+                                          value: val,
+                                          child: Text(val),
+                                        ))
+                                    .toList(),
+                              )
+                            : null,
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 12.w,
                           vertical: 10.h,
@@ -896,9 +986,26 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                     TextField(
                       controller: _teacherNipController,
                       decoration: InputDecoration(
-                        labelText: 'NIP Guru Pengajar (Opsional)',
+                        labelText: 'NIP Guru Pengajar',
                         hintText: 'Misal: 19850315 200904 2 003',
                         prefixIcon: const Icon(Icons.badge_outlined, size: 20),
+                        suffixIcon: _teacherNipHistory.isNotEmpty
+                            ? PopupMenuButton<String>(
+                                icon: const Icon(Icons.arrow_drop_down_rounded, size: 28),
+                                tooltip: 'Riwayat NIP Guru',
+                                onSelected: (value) {
+                                  setState(() {
+                                    _teacherNipController.text = value;
+                                  });
+                                },
+                                itemBuilder: (context) => _teacherNipHistory
+                                    .map((val) => PopupMenuItem<String>(
+                                          value: val,
+                                          child: Text(val),
+                                        ))
+                                    .toList(),
+                              )
+                            : null,
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 12.w,
                           vertical: 10.h,
