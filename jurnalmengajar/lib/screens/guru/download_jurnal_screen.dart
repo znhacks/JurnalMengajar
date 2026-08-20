@@ -339,58 +339,23 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                                 itemCount: history.length,
                                 itemBuilder: (context, index) {
                                   final item = history[index];
-                                  return Container(
-                                    width: double.infinity,
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 14.w,
-                                      vertical: 6.h,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: InkWell(
-                                            onTap: () {
-                                              controller.text = item;
-                                              _hideActiveOverlay();
-                                              focusNode.unfocus();
-                                            },
-                                            hoverColor: const Color(0xFF334155),
-                                            borderRadius: BorderRadius.circular(4.r),
-                                            child: Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                vertical: 6.h,
-                                                horizontal: 4.w,
-                                              ),
-                                              child: Text(
-                                                item,
-                                                style: GoogleFonts.hankenGrotesk(
-                                                  color: Colors.white,
-                                                  fontSize: 13.sp,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(width: 8.w),
-                                        Material(
-                                          color: Colors.transparent,
-                                          child: IconButton(
-                                            icon: Icon(
-                                              Icons.close_rounded,
-                                              color: const Color(0xFF64748B),
-                                              size: 16.sp,
-                                            ),
-                                            onPressed: () async {
-                                              await _deleteHistoryItem(item, history, controller);
-                                            },
-                                            constraints: const BoxConstraints(),
-                                            padding: EdgeInsets.all(4.w),
-                                            splashRadius: 16.r,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                  return _HistoryItemRow(
+                                    item: item,
+                                    controller: controller,
+                                    focusNode: focusNode,
+                                    onDelete: () async {
+                                      await _deleteHistoryItem(item, history, controller);
+                                    },
+                                    onSelected: () {
+                                      setState(() {
+                                        controller.text = item;
+                                        controller.selection = TextSelection.fromPosition(
+                                          TextPosition(offset: item.length),
+                                        );
+                                      });
+                                      _hideActiveOverlay();
+                                      focusNode.unfocus();
+                                    },
                                   );
                                 },
                               ),
@@ -1511,6 +1476,79 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _HistoryItemRow extends StatefulWidget {
+  final String item;
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final VoidCallback onDelete;
+  final VoidCallback onSelected;
+
+  const _HistoryItemRow({
+    required this.item,
+    required this.controller,
+    required this.focusNode,
+    required this.onDelete,
+    required this.onSelected,
+  });
+
+  @override
+  State<_HistoryItemRow> createState() => _HistoryItemRowState();
+}
+
+class _HistoryItemRowState extends State<_HistoryItemRow> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onSelected,
+        child: Container(
+          width: double.infinity,
+          color: _isHovered ? const Color(0xFF334155) : Colors.transparent,
+          padding: EdgeInsets.symmetric(
+            horizontal: 14.w,
+            vertical: 10.h,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4.w),
+                  child: Text(
+                    widget.item,
+                    style: GoogleFonts.hankenGrotesk(
+                      color: Colors.white,
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 8.w),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: widget.onDelete,
+                child: Padding(
+                  padding: EdgeInsets.all(4.w),
+                  child: Icon(
+                    Icons.close_rounded,
+                    color: const Color(0xFF64748B),
+                    size: 16.sp,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
