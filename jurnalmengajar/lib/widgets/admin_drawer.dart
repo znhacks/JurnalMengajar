@@ -46,36 +46,48 @@ class AdminDrawer extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: 12.h),
-                InkWell(
-                  onTap: () => SchoolSwitcherModal.show(context),
-                  borderRadius: BorderRadius.circular(12.r),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: const Color(0xFFCBD5E1)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.business_rounded, color: Color(0xFF4F46E5), size: 16),
-                        SizedBox(width: 8.w),
-                        Expanded(
-                          child: Text(
-                            authProvider.activeSchoolName,
-                            style: GoogleFonts.hankenGrotesk(
-                              color: const Color(0xFF0F172A),
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w700,
+                Builder(
+                  builder: (context) {
+                    final isAdminOnly = authProvider.activeRole.toLowerCase() == 'admin';
+                    final switcherWidget = Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(color: const Color(0xFFCBD5E1)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.business_rounded, color: Color(0xFF4F46E5), size: 16),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: Text(
+                              authProvider.activeSchoolName,
+                              style: GoogleFonts.hankenGrotesk(
+                                color: const Color(0xFF0F172A),
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        const Icon(Icons.swap_vert_rounded, color: Color(0xFF64748B), size: 18),
-                      ],
-                    ),
-                  ),
+                          if (!isAdminOnly)
+                            const Icon(Icons.swap_vert_rounded, color: Color(0xFF64748B), size: 18),
+                        ],
+                      ),
+                    );
+
+                    if (isAdminOnly) {
+                      return switcherWidget;
+                    }
+
+                    return InkWell(
+                      onTap: () => SchoolSwitcherModal.show(context),
+                      borderRadius: BorderRadius.circular(12.r),
+                      child: switcherWidget,
+                    );
+                  },
                 ),
               ],
             ),

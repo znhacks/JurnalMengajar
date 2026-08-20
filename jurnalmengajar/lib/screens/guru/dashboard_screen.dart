@@ -813,59 +813,74 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           Builder(
             builder: (ctx) {
               final auth = ctx.watch<AuthProvider>();
+              final isAdminOnly = auth.activeRole.toLowerCase() == 'admin';
+
+              final switcherWidget = Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 14.w,
+                  vertical: 8.h,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14.r),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(
+                        0xFF4F7CFF,
+                      ).withValues(alpha: 0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.business_rounded,
+                      color: Color(0xFF4F7CFF),
+                      size: 18,
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        auth.activeSchoolName,
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1E293B),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (!isAdminOnly)
+                      const Icon(
+                        Icons.unfold_more_rounded,
+                        color: Color(0xFF64748B),
+                        size: 20,
+                      ),
+                  ],
+                ),
+              );
+
+              if (isAdminOnly) {
+                return Row(
+                  children: [
+                    Expanded(child: switcherWidget),
+                    SizedBox(width: 8.w),
+                    RoleBadge(role: auth.activeRole),
+                  ],
+                );
+              }
+
               return Row(
                 children: [
                   Expanded(
                     child: InkWell(
                       onTap: () => SchoolSwitcherModal.show(ctx),
                       borderRadius: BorderRadius.circular(14.r),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 14.w,
-                          vertical: 8.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14.r),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(
-                                0xFF4F7CFF,
-                              ).withValues(alpha: 0.06),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.business_rounded,
-                              color: Color(0xFF4F7CFF),
-                              size: 18,
-                            ),
-                            SizedBox(width: 8.w),
-                            Expanded(
-                              child: Text(
-                                auth.activeSchoolName,
-                                style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 13.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF1E293B),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const Icon(
-                              Icons.unfold_more_rounded,
-                              color: Color(0xFF64748B),
-                              size: 20,
-                            ),
-                          ],
-                        ),
-                      ),
+                      child: switcherWidget,
                     ),
                   ),
                   SizedBox(width: 8.w),
