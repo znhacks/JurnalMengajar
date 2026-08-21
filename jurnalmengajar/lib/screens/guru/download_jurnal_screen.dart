@@ -89,6 +89,11 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
     _hideActiveOverlay();
 
+    // Restore active school's master data when leaving the download page
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final master = Provider.of<MasterDataProvider>(context, listen: false);
+    master.loadAllData(auth.activeSchoolId);
+
     super.dispose();
   }
 
@@ -745,9 +750,10 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
 
-    // Sync school selection automatically from AuthProvider
-    _selectedSchoolId = authProvider.activeSchoolId;
-    _schoolNameController.text = authProvider.activeSchool?.name ?? authProvider.activeSchoolName;
+    if (_selectedSchoolId == null) {
+      _selectedSchoolId = authProvider.activeSchoolId;
+      _schoolNameController.text = authProvider.activeSchool?.name ?? authProvider.activeSchoolName;
+    }
 
     final teacher = _getCurrentTeacher(authProvider, masterProvider);
     final filteredJournals = _getFilteredJournals(
@@ -1152,9 +1158,8 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextFormField(
-                      controller: _schoolNameController,
-                      readOnly: true,
+                    DropdownButtonFormField<String>(
+                      initialValue: _selectedSchoolId,
                       decoration: InputDecoration(
                         prefixIcon: const Icon(
                           Icons.account_balance_rounded,
@@ -1167,14 +1172,62 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10.r),
                         ),
-                        fillColor: Colors.grey.shade50,
-                        filled: true,
                       ),
                       style: GoogleFonts.hankenGrotesk(
                         fontSize: 14.sp,
                         color: const Color(0xFF1E293B),
                         fontWeight: FontWeight.w600,
                       ),
+                      items: () {
+                        final items = authProvider.userMemberships.map((m) {
+                          return DropdownMenuItem<String>(
+                            value: m.schoolId,
+                            child: Text(
+                              m.schoolName,
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 14.sp,
+                                color: const Color(0xFF1E293B),
+                              ),
+                            ),
+                          );
+                        }).toList();
+                        
+                        final hasSelected = items.any((item) => item.value == _selectedSchoolId);
+                        if (!hasSelected && _selectedSchoolId != null) {
+                          items.add(DropdownMenuItem<String>(
+                            value: _selectedSchoolId,
+                            child: Text(
+                              _schoolNameController.text,
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 14.sp,
+                                color: const Color(0xFF1E293B),
+                              ),
+                            ),
+                          ));
+                        }
+                        return items;
+                      }(),
+                      onChanged: (val) async {
+                        if (val != null) {
+                          String selectedName = _schoolNameController.text;
+                          for (final m in authProvider.userMemberships) {
+                            if (m.schoolId == val) {
+                              selectedName = m.schoolName;
+                              break;
+                            }
+                          }
+                          setState(() {
+                            _selectedSchoolId = val;
+                            _schoolNameController.text = selectedName;
+                            // Reset class and subject filters when school changes
+                            _selectedClassId = null;
+                            _selectedSubjectId = null;
+                          });
+
+                          // Load data for the selected school
+                          await masterProvider.loadAllData(val);
+                        }
+                      },
                     ),
                     SizedBox(height: 10.h),
                     Text(
