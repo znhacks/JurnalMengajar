@@ -36,11 +36,14 @@ class SchoolSwitcherModal extends StatelessWidget {
           schoolName: m.schoolName,
           role: 'admin',
         ));
-        options.add(SchoolRoleOption(
-          schoolId: m.schoolId,
-          schoolName: m.schoolName,
-          role: 'guru',
-        ));
+        final isSmkn8 = m.schoolName.toLowerCase().contains('smkn 8');
+        if (!isSmkn8) {
+          options.add(SchoolRoleOption(
+            schoolId: m.schoolId,
+            schoolName: m.schoolName,
+            role: 'guru',
+          ));
+        }
       } else {
         options.add(SchoolRoleOption(
           schoolId: m.schoolId,

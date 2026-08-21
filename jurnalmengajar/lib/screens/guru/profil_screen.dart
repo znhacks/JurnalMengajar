@@ -1299,17 +1299,19 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         children: [
                           ...authProvider.userMemberships.expand((m) {
                             if (m.role.toLowerCase() == 'admin' && !authProvider.isExclusiveAdmin) {
+                              final isSmkn8 = m.schoolName.toLowerCase().contains('smkn 8');
                               return [
                                 SchoolRoleOption(
                                   schoolId: m.schoolId,
                                   schoolName: m.schoolName,
                                   role: 'admin',
                                 ),
-                                SchoolRoleOption(
-                                  schoolId: m.schoolId,
-                                  schoolName: m.schoolName,
-                                  role: 'guru',
-                                ),
+                                if (!isSmkn8)
+                                  SchoolRoleOption(
+                                    schoolId: m.schoolId,
+                                    schoolName: m.schoolName,
+                                    role: 'guru',
+                                  ),
                               ];
                             } else {
                               return [
