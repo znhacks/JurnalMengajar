@@ -158,7 +158,12 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
           validSubjectIds.contains(s.subjectId);
     }).toList();
     final groupedDailySchedules = groupDailySchedules(activeSchedules);
+    
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    
     final unfilledGroups = groupedDailySchedules.where((group) {
+      if (!group.date.isBefore(today)) return false;
       final hasJournal = allJournals.any(
         (j) => group.scheduleIds.contains(j.scheduleId),
       );
