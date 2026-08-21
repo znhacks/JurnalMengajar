@@ -657,6 +657,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                 'Laporan_Jurnal_${teacher.name.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd').format(_startDate)}_${DateFormat('yyyyMMdd').format(_endDate)}.pdf',
             canChangeOrientation: false,
             canChangePageFormat: false,
+            canDebug: false,
             initialPageFormat: PdfPageFormat.a4.landscape,
           ),
         ),
