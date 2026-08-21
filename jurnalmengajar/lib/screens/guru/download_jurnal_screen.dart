@@ -576,6 +576,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     MasterDataProvider masterProvider,
     AuthProvider authProvider,
   ) {
+    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
     if (journals.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -652,6 +653,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                   (_schoolNameController.text.trim().isNotEmpty
                       ? _schoolNameController.text.trim()
                       : authProvider.activeSchoolName),
+              schedules: scheduleProvider.cachedTeacherSchedules,
             ),
             pdfFileName:
                 'Laporan_Jurnal_${teacher.name.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd').format(_startDate)}_${DateFormat('yyyyMMdd').format(_endDate)}.pdf',
@@ -673,6 +675,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     MasterDataProvider masterProvider,
     AuthProvider authProvider,
   ) async {
+    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
     if (journals.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -736,6 +739,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
           (_schoolNameController.text.trim().isNotEmpty
               ? _schoolNameController.text.trim()
               : authProvider.activeSchoolName),
+      schedules: scheduleProvider.cachedTeacherSchedules,
     );
 
     final fileName =

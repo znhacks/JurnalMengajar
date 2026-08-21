@@ -8,6 +8,7 @@ import '../models/teacher_model.dart';
 import '../models/class_model.dart';
 import '../models/subject_model.dart';
 import '../models/school_model.dart';
+import '../models/schedule_model.dart';
 
 class JournalPdfService {
   /// Generates a PDF byte array for teaching journals report tailored for supervisors.
@@ -26,6 +27,7 @@ class JournalPdfService {
     String? selectedClassName,
     String? selectedSubjectName,
     String schoolName = 'Jurnal Mengajar Guru',
+    List<ScheduleModel>? schedules,
   }) async {
     final pdf = pw.Document();
 
@@ -166,6 +168,7 @@ class JournalPdfService {
             else
               _buildJournalTable(
                 journals: journals,
+                schedules: schedules ?? [],
                 classMap: classMap,
                 subjectMap: subjectMap,
                 dateFormat: dateFormat,
@@ -482,6 +485,7 @@ class JournalPdfService {
   /// Main Table Construction
   static pw.Widget _buildJournalTable({
     required List<JournalModel> journals,
+    required List<ScheduleModel> schedules,
     required Map<String, String> classMap,
     required Map<String, String> subjectMap,
     required DateFormat dateFormat,
@@ -515,10 +519,30 @@ class JournalPdfService {
         statusText = 'Ditolak';
       }
 
+      // Find matching schedules on the same day, class, subject, and teacher to build hour range
+      final matching = schedules.where((s) =>
+          s.date.year == j.date.year &&
+          s.date.month == j.date.month &&
+          s.date.day == j.date.day &&
+          s.classId == j.classId &&
+          s.subjectId == j.subjectId &&
+          s.teacherId == j.teacherId
+      ).toList();
+
+      final hours = matching.map((s) => s.teachingHour).toSet().toList()..sort();
+      final String hourText;
+      if (hours.isEmpty) {
+        hourText = 'Ke-${j.teachingHour}';
+      } else if (hours.length == 1) {
+        hourText = 'Ke-${hours.first}';
+      } else {
+        hourText = 'Ke-${hours.first}-${hours.last}';
+      }
+
       return [
         '$idx',
         dateStr,
-        'Ke-${j.teachingHour}',
+        hourText,
         className,
         subjectName,
         j.material,
@@ -550,7 +574,7 @@ class JournalPdfService {
       columnWidths: {
         0: const pw.FixedColumnWidth(22),  // No
         1: const pw.FixedColumnWidth(55),  // Tanggal
-        2: const pw.FixedColumnWidth(35),  // Jam
+        2: const pw.FixedColumnWidth(48),  // Jam
         3: const pw.FixedColumnWidth(60),  // Kelas
         4: const pw.FixedColumnWidth(85),  // Mapel
         5: const pw.FlexColumnWidth(3),    // Materi
