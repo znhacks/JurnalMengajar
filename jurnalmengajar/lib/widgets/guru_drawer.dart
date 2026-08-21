@@ -151,7 +151,7 @@ class GuruDrawer extends StatelessWidget {
                 // Interactive School Switcher Banner
                 Builder(
                   builder: (context) {
-                    final isAdminOnly = authProvider.activeRole.toLowerCase() == 'admin';
+                    final isAdminOnly = authProvider.isExclusiveAdmin;
                     final switcherWidget = Container(
                       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                       decoration: BoxDecoration(

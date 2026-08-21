@@ -60,6 +60,16 @@ class AuthProvider with ChangeNotifier {
   String get activeRole => _activeRole;
   SchoolModel? get activeSchool => _activeSchool;
 
+  bool get isExclusiveAdmin {
+    if (_currentUser == null) return true;
+    final emailLower = _currentUser!.email.toLowerCase().trim();
+    final nameLower = _currentUser!.fullName.toLowerCase().trim();
+    return emailLower == 'admin@jurnal.com' ||
+           emailLower == 'smkn11malang@jurnal.com' ||
+           emailLower.startsWith('admin@') ||
+           nameLower.contains('admin');
+  }
+
   Future<void> fetchActiveSchoolDetails() async {
     if (_activeSchoolId == null) {
       _activeSchool = null;

@@ -1297,11 +1297,35 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     else
                       Column(
                         children: [
-                          ...authProvider.userMemberships.map((m) {
-                            final sName = m.schoolName;
-                            final sRole = m.role;
-                            final sId = m.schoolId;
-                            final isActive = sId == authProvider.activeSchoolId;
+                          ...authProvider.userMemberships.expand((m) {
+                            if (m.role.toLowerCase() == 'admin' && !authProvider.isExclusiveAdmin) {
+                              return [
+                                SchoolRoleOption(
+                                  schoolId: m.schoolId,
+                                  schoolName: m.schoolName,
+                                  role: 'admin',
+                                ),
+                                SchoolRoleOption(
+                                  schoolId: m.schoolId,
+                                  schoolName: m.schoolName,
+                                  role: 'guru',
+                                ),
+                              ];
+                            } else {
+                              return [
+                                SchoolRoleOption(
+                                  schoolId: m.schoolId,
+                                  schoolName: m.schoolName,
+                                  role: m.role,
+                                ),
+                              ];
+                            }
+                          }).map((item) {
+                            final sName = item.schoolName;
+                            final sRole = item.role;
+                            final sId = item.schoolId;
+                            final isActive = sId == authProvider.activeSchoolId &&
+                                sRole.toLowerCase() == authProvider.activeRole.toLowerCase();
 
                             return InkWell(
                               onTap: () async {
@@ -1316,7 +1340,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                 await masterProvider.loadAllData(sId);
                                 messenger.showSnackBar(
                                   SnackBar(
-                                    content: Text('Berhasil beralih ke $sName'),
+                                    content: Text('Berhasil beralih ke $sName (${sRole.toUpperCase()})'),
                                     behavior: SnackBarBehavior.floating,
                                   ),
                                 );
@@ -1923,4 +1947,17 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
     );
   }
 }
+
+class SchoolRoleOption {
+  final String schoolId;
+  final String schoolName;
+  final String role;
+
+  SchoolRoleOption({
+    required this.schoolId,
+    required this.schoolName,
+    required this.role,
+  });
+}
+
 

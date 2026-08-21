@@ -48,7 +48,7 @@ class AdminDrawer extends StatelessWidget {
                 SizedBox(height: 12.h),
                 Builder(
                   builder: (context) {
-                    final isAdminOnly = authProvider.activeRole.toLowerCase() == 'admin';
+                    final isAdminOnly = authProvider.isExclusiveAdmin;
                     final switcherWidget = Container(
                       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
                       decoration: BoxDecoration(

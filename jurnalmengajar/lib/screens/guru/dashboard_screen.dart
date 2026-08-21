@@ -813,7 +813,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           Builder(
             builder: (ctx) {
               final auth = ctx.watch<AuthProvider>();
-              final isAdminOnly = auth.activeRole.toLowerCase() == 'admin';
+              final isAdminOnly = auth.isExclusiveAdmin;
 
               final switcherWidget = Container(
                 padding: EdgeInsets.symmetric(

@@ -24,6 +24,31 @@ class SchoolSwitcherModal extends StatelessWidget {
     final authProvider = context.watch<AuthProvider>();
     final userMemberships = authProvider.userMemberships;
     final activeSchoolId = authProvider.activeSchoolId;
+    final activeRole = authProvider.activeRole;
+
+    final List<SchoolRoleOption> options = [];
+    final isExclusiveAdmin = authProvider.isExclusiveAdmin;
+
+    for (final m in userMemberships) {
+      if (m.role.toLowerCase() == 'admin' && !isExclusiveAdmin) {
+        options.add(SchoolRoleOption(
+          schoolId: m.schoolId,
+          schoolName: m.schoolName,
+          role: 'admin',
+        ));
+        options.add(SchoolRoleOption(
+          schoolId: m.schoolId,
+          schoolName: m.schoolName,
+          role: 'guru',
+        ));
+      } else {
+        options.add(SchoolRoleOption(
+          schoolId: m.schoolId,
+          schoolName: m.schoolName,
+          role: m.role,
+        ));
+      }
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -99,7 +124,7 @@ class SchoolSwitcherModal extends StatelessWidget {
           SizedBox(height: 14.h),
 
           // School List
-          if (userMemberships.isEmpty)
+          if (options.isEmpty)
             Padding(
               padding: EdgeInsets.symmetric(vertical: 24.h),
               child: Center(
@@ -117,11 +142,12 @@ class SchoolSwitcherModal extends StatelessWidget {
               child: ListView.separated(
                 shrinkWrap: true,
                 physics: const BouncingScrollPhysics(),
-                itemCount: userMemberships.length,
+                itemCount: options.length,
                 separatorBuilder: (context, index) => SizedBox(height: 10.h),
                 itemBuilder: (context, index) {
-                  final item = userMemberships[index];
-                  final isSelected = item.schoolId == activeSchoolId;
+                  final item = options[index];
+                  final isSelected = item.schoolId == activeSchoolId &&
+                      item.role.toLowerCase() == activeRole.toLowerCase();
                   final isAdmin = item.role.toLowerCase() == 'admin';
 
                   return AnimatedContainer(
@@ -223,4 +249,16 @@ class SchoolSwitcherModal extends StatelessWidget {
       ),
     );
   }
+}
+
+class SchoolRoleOption {
+  final String schoolId;
+  final String schoolName;
+  final String role;
+
+  SchoolRoleOption({
+    required this.schoolId,
+    required this.schoolName,
+    required this.role,
+  });
 }

@@ -255,7 +255,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
         title: Builder(
           builder: (context) {
-            final isAdminOnly = authProvider.activeRole.toLowerCase() == 'admin';
+            final isAdminOnly = authProvider.isExclusiveAdmin;
             final titleWidget = Padding(
               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
               child: Column(
