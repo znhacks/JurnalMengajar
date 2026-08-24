@@ -242,6 +242,7 @@ class _SchoolExpiredScreenState extends State<SchoolExpiredScreen> {
                             controller: _schoolCodeController,
                             focusNode: _schoolCodeFocusNode,
                             textCapitalization: TextCapitalization.characters,
+                            onFieldSubmitted: _isLoading ? null : (_) => _handleLinkSchool(authProvider),
                             decoration: InputDecoration(
                               hintText: 'Masukkan Kode Sekolah baru...',
                               prefixIcon: const Icon(Icons.key_rounded, color: Color(0xFF64748B)),
