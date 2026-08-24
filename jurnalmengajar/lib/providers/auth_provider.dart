@@ -86,8 +86,14 @@ class AuthProvider with ChangeNotifier {
         _activeSchoolName = _activeSchool!.name;
       } else {
         _activeSchool = null;
+        if (!isExclusiveAdmin) {
+          throw Exception('Tidak terdapat sekolah dengan kode ini, mungkin berlangganan pada jmpanel.vercel.app telah expired/school dihapus');
+        }
       }
     } catch (e) {
+      if (e.toString().contains('jmpanel.vercel.app')) {
+        rethrow;
+      }
       debugPrint('Error fetching active school details: $e');
       _activeSchool = null;
     }
@@ -148,7 +154,7 @@ class AuthProvider with ChangeNotifier {
       }
 
       if (matchedSchool == null) {
-        throw Exception('Kode / NPSN Sekolah tidak ditemukan.');
+        throw Exception('Tidak terdapat sekolah dengan kode ini, mungkin berlangganan pada jmpanel.vercel.app telah expired/school dihapus');
       }
 
       final schoolId = matchedSchool['id'] as String;
@@ -190,7 +196,9 @@ class AuthProvider with ChangeNotifier {
           .select('*, schools(name, code)')
           .eq('user_id', _currentUser!.id);
 
-      final loadedMemberships = (res as List).map((item) {
+      final loadedMemberships = (res as List)
+          .where((item) => item['schools'] != null)
+          .map((item) {
         final m = Map<String, dynamic>.from(item);
         m['role'] = item['role'] ?? _currentUser!.role;
         return UserSchoolModel.fromJson(m);
@@ -224,9 +232,16 @@ class AuthProvider with ChangeNotifier {
           );
         }
         await fetchActiveSchoolDetails();
+      } else {
+        if (!isExclusiveAdmin) {
+          throw Exception('Tidak terdapat sekolah dengan kode ini, mungkin berlangganan pada jmpanel.vercel.app telah expired/school dihapus');
+        }
       }
       notifyListeners();
     } catch (e) {
+      if (e.toString().contains('jmpanel.vercel.app')) {
+        rethrow;
+      }
       debugPrint('Error loading user memberships: $e');
       _userMemberships = [];
     }
@@ -262,6 +277,10 @@ class AuthProvider with ChangeNotifier {
       }
     } catch (e) {
       _errorMessage = _cleanErrorMessage(e);
+      if (_errorMessage != null && _errorMessage!.contains('jmpanel.vercel.app')) {
+        _currentUser = null;
+        await authRepository.logout();
+      }
     } finally {
       _isLoadingUser = false;
       _isLoading = false;
@@ -292,6 +311,10 @@ class AuthProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _errorMessage = _cleanErrorMessage(e);
+      if (_errorMessage != null && _errorMessage!.contains('jmpanel.vercel.app')) {
+        _currentUser = null;
+        await authRepository.logout();
+      }
       _isLoading = false;
       notifyListeners();
       return false;

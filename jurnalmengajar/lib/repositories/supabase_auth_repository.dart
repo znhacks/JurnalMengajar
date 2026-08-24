@@ -1,12 +1,9 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart';
 import '../models/user_model.dart';
 import 'auth_repository.dart';
 import '../core/utils/image_compressor.dart';
-
-const _uuid = Uuid();
 
 class SupabaseAuthRepository implements AuthRepository {
   final SupabaseClient _supabase;
@@ -158,6 +155,35 @@ class SupabaseAuthRepository implements AuthRepository {
         }
       }
 
+      // Check if school exists in schools table first
+      String schoolId = '';
+      String canonicalSchoolName = '';
+      if (user.schoolName != null && user.schoolName!.isNotEmpty) {
+        final schoolsRes = await _supabase.from('schools').select('id, name, code, npsn');
+        Map<String, dynamic>? matchedSchool;
+        final target = user.schoolName!.toUpperCase().trim();
+
+        for (final s in (schoolsRes as List)) {
+          final sName = ((s['name'] as String?) ?? '').toUpperCase().trim();
+          final sCode = ((s['code'] as String?) ?? '').toUpperCase().trim();
+          final sNpsn = ((s['npsn'] as String?) ?? '').toUpperCase().trim();
+
+          if ((sCode.isNotEmpty && target == sCode) ||
+              (sNpsn.isNotEmpty && target == sNpsn) ||
+              (sName.isNotEmpty && target == sName)) {
+            matchedSchool = Map<String, dynamic>.from(s);
+            break;
+          }
+        }
+
+        if (matchedSchool == null) {
+          throw Exception('Tidak terdapat sekolah dengan kode ini, mungkin berlangganan pada jmpanel.vercel.app telah expired/school dihapus');
+        } else {
+          schoolId = matchedSchool['id'] as String;
+          canonicalSchoolName = (matchedSchool['name'] as String?) ?? user.schoolName!;
+        }
+      }
+
       // 1. Create auth account with user metadata payload
       final authResponse = await _supabase.auth.signUp(
         email: user.email,
@@ -169,9 +195,9 @@ class SupabaseAuthRepository implements AuthRepository {
           'phone_number': user.phoneNumber,
           'position': user.position,
           'address': user.address,
-          'school_name': user.schoolName,
-          'schoolName': user.schoolName,
-          'school': user.schoolName,
+          'school_name': canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
+          'schoolName': canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
+          'school': canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
         },
       );
 
@@ -211,47 +237,8 @@ class SupabaseAuthRepository implements AuthRepository {
       }
 
       // 4. Connect user to school in user_schools table
-      if (user.schoolName != null && user.schoolName!.isNotEmpty) {
+      if (schoolId.isNotEmpty) {
         try {
-          // Find matching school by code, npsn, or name
-          final schoolsRes = await _supabase.from('schools').select('id, name, code, npsn');
-          Map<String, dynamic>? matchedSchool;
-          final target = user.schoolName!.toUpperCase().trim();
-
-          for (final s in (schoolsRes as List)) {
-            final sName = ((s['name'] as String?) ?? '').toUpperCase().trim();
-            final sCode = ((s['code'] as String?) ?? '').toUpperCase().trim();
-            final sNpsn = ((s['npsn'] as String?) ?? '').toUpperCase().trim();
-
-            if ((sCode.isNotEmpty && target == sCode) ||
-                (sNpsn.isNotEmpty && target == sNpsn) ||
-                (sName.isNotEmpty && target == sName)) {
-              matchedSchool = Map<String, dynamic>.from(s);
-              break;
-            }
-          }
-
-          String schoolId;
-          String canonicalSchoolName = user.schoolName!;
-          if (matchedSchool != null) {
-            schoolId = matchedSchool['id'] as String;
-            canonicalSchoolName = (matchedSchool['name'] as String?) ?? user.schoolName!;
-          } else {
-            // Auto create new school entry if school code/name does not exist yet
-            final newSchoolId = _uuid.v4();
-            final schoolInsert = {
-              'id': newSchoolId,
-              'name': user.schoolName,
-              'code': target,
-            };
-            final insertedSchool = await _supabase
-                .from('schools')
-                .insert(schoolInsert)
-                .select('id')
-                .single();
-            schoolId = insertedSchool['id'] as String;
-          }
-
           // Update users table with resolved school_id and canonical school_name
           await _supabase.from('users').update({
             'school_id': schoolId,
@@ -269,7 +256,9 @@ class SupabaseAuthRepository implements AuthRepository {
         }
       }
     } catch (e) {
-      if (e.toString().contains('Pendaftaran Anda sedang menunggu') || e.toString().contains('Email ini sudah terdaftar')) {
+      if (e.toString().contains('Pendaftaran Anda sedang menunggu') || 
+          e.toString().contains('Email ini sudah terdaftar') ||
+          e.toString().contains('jmpanel.vercel.app')) {
         rethrow;
       }
       throw Exception('Registrasi gagal: $e');

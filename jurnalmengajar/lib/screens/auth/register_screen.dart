@@ -1045,7 +1045,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _selectedSchools.clear();
       });
       if (showSnackBar) {
-        AppHelper.showSnackBar(context, 'Kode / NPSN Sekolah tidak ditemukan.', isError: true);
+        AppHelper.showSnackBar(context, 'Tidak terdapat sekolah dengan kode ini, mungkin berlangganan pada jmpanel.vercel.app telah expired/school dihapus', isError: true);
       }
     }
   }
