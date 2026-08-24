@@ -30,6 +30,7 @@ import '../../screens/admin/admin_jurnal_list_screen.dart';
 import '../../screens/admin/holidays_screen.dart';
 import '../../screens/admin/master/student_screen.dart';
 import '../../screens/admin/master/teacher_detail_screen.dart';
+import '../../screens/auth/school_expired_screen.dart';
 
 class AppRouter {
   static CustomTransitionPage<void> _buildCustomTransition(
@@ -101,6 +102,22 @@ class AppRouter {
           return null;
         }
 
+        // Check if school is expired/deleted
+        if (authProvider.isSchoolExpired) {
+          if (state.matchedLocation != '/school-expired') {
+            return '/school-expired';
+          }
+          return null;
+        } else {
+          if (state.matchedLocation == '/school-expired') {
+            final user = authProvider.currentUser;
+            if (user != null) {
+              return user.role == 'admin' ? '/admin/dashboard' : '/guru/dashboard';
+            }
+            return '/login';
+          }
+        }
+
         final user = authProvider.currentUser;
         if (user == null) return '/login';
 
@@ -170,6 +187,11 @@ class AppRouter {
               queryParameters: state.uri.queryParameters,
             ),
           ),
+        ),
+        GoRoute(
+          path: '/school-expired',
+          pageBuilder: (context, state) =>
+              _buildCustomTransition(context, state, const SchoolExpiredScreen()),
         ),
 
         // Guru Module

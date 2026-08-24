@@ -18,6 +18,7 @@ class AuthProvider with ChangeNotifier {
   bool _isLoadingUser = false; // guard against concurrent _loadCurrentUser() calls
   String? _errorMessage;
   bool _isRecoveryMode = false;
+  bool _isSchoolExpired = false;
 
   AuthProvider({required AuthRepository authRepository})
       : _authRepository = authRepository {
@@ -52,6 +53,7 @@ class AuthProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _currentUser != null;
   bool get isRecoveryMode => _isRecoveryMode;
+  bool get isSchoolExpired => _isSchoolExpired;
   AuthRepository get authRepository => _authRepository;
 
   List<UserSchoolModel> get userMemberships => _userMemberships;
@@ -119,7 +121,16 @@ class AuthProvider with ChangeNotifier {
       debugPrint('Error saving active school to SharedPreferences: $e');
     }
 
-    await fetchActiveSchoolDetails();
+    try {
+      await fetchActiveSchoolDetails();
+    } catch (e) {
+      if (e.toString().contains('jmpanel.vercel.app')) {
+        _isSchoolExpired = true;
+        notifyListeners();
+        return;
+      }
+      rethrow;
+    }
     notifyListeners();
   }
 
@@ -176,6 +187,7 @@ class AuthProvider with ChangeNotifier {
       // 3. Update active school locally & persist
       await switchActiveSchool(schoolId, schoolName, effectiveRole);
       await loadUserMemberships();
+      _isSchoolExpired = false;
       _isLoading = false;
       notifyListeners();
       return true;
@@ -278,8 +290,7 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       _errorMessage = _cleanErrorMessage(e);
       if (_errorMessage != null && _errorMessage!.contains('jmpanel.vercel.app')) {
-        _currentUser = null;
-        await authRepository.logout();
+        _isSchoolExpired = true;
       }
     } finally {
       _isLoadingUser = false;
@@ -312,8 +323,10 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       _errorMessage = _cleanErrorMessage(e);
       if (_errorMessage != null && _errorMessage!.contains('jmpanel.vercel.app')) {
-        _currentUser = null;
-        await authRepository.logout();
+        _isSchoolExpired = true;
+        _isLoading = false;
+        notifyListeners();
+        return true;
       }
       _isLoading = false;
       notifyListeners();
@@ -436,6 +449,7 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     _isLoading = true;
     _isRecoveryMode = false;
+    _isSchoolExpired = false;
     notifyListeners();
     await authRepository.logout();
     _currentUser = null;
@@ -518,11 +532,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     try {
       await authRepository.deleteAccount(userId);
-      if (_currentUser != null && _currentUser!.id == userId) {
-        _currentUser = null;
-      }
-      _isLoading = false;
-      notifyListeners();
+      await logout();
       return true;
     } catch (e) {
       _errorMessage = _cleanErrorMessage(e);
