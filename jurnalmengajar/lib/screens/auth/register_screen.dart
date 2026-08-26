@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../models/school_model.dart';
 import '../../core/utils/helper.dart';
 import '../../core/utils/image_crop_helper.dart';
@@ -258,10 +259,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       body: Container(
-        color: Colors.white,
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: Stack(
+          children: [
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(
                 horizontal: kIsWeb ? 16 : 24.w,
                 vertical: kIsWeb ? 16 : 32.h,
@@ -274,7 +277,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24.r),
                   ),
-                  color: Colors.white,
+                  color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                   clipBehavior: Clip.antiAlias,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -721,7 +724,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 },
                                 style: TextStyle(
                                   fontSize: 14.sp,
-                                  color: const Color(0xFF1E293B),
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -762,7 +765,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 onFieldSubmitted: (_) => _handleRegister(),
                                 style: TextStyle(
                                   fontSize: 14.sp,
-                                  color: const Color(0xFF1E293B),
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -862,6 +865,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ),
         ),
+            Positioned(
+              top: 16.h,
+              right: 16.w,
+              child: Consumer<ThemeProvider>(
+                builder: (context, themeProvider, child) {
+                  return IconButton(
+                    icon: Icon(
+                      themeProvider.isDarkMode
+                          ? Icons.light_mode_rounded
+                          : Icons.dark_mode_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    onPressed: () {
+                      themeProvider.toggleTheme(!themeProvider.isDarkMode);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -902,7 +926,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           FocusScope.of(context).requestFocus(nextFocusNode);
         }
       },
-      style: TextStyle(fontSize: 14.sp, color: const Color(0xFF1E293B)),
+      style: TextStyle(fontSize: 14.sp, color: Theme.of(context).colorScheme.onSurface),
       validator: validator,
       decoration: _getInputDecoration(
         hintText: hintText,
@@ -1052,7 +1076,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       prefixIcon: Icon(prefixIcon, color: const Color.fromARGB(255, 37, 99, 235)),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: const Color(0xFFEFF6FF).withValues(alpha: 0.5),
+      fillColor: Theme.of(context).brightness == Brightness.dark
+          ? Theme.of(context).colorScheme.surfaceContainerHighest
+          : const Color(0xFFEFF6FF).withValues(alpha: 0.5),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16.r),
         borderSide: BorderSide.none,

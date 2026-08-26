@@ -28,6 +28,7 @@ import 'providers/journal_provider.dart';
 import 'providers/holiday_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/warning_letter_provider.dart';
+import 'providers/theme_provider.dart';
 
 // Router & Theme
 import 'core/router/app_router.dart';
@@ -102,6 +103,9 @@ void main() async {
         ChangeNotifierProvider(
           create: (_) => WarningLetterProvider(warningLetterRepository: warningRepo),
         ),
+        ChangeNotifierProvider(
+          create: (_) => ThemeProvider(),
+        ),
       ],
       child: const JurnalMengajarApp(),
     ),
@@ -149,10 +153,13 @@ class _JurnalMengajarAppState extends State<JurnalMengajarApp> {
           minTextAdapt: true,
           splitScreenMode: true,
           builder: (context, child) {
+            final themeProvider = Provider.of<ThemeProvider>(context);
             return MaterialApp.router(
               title: 'Jurnal Mengajar',
               debugShowCheckedModeBanner: false,
               theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: themeProvider.themeMode,
               // Injecting GoRouter table
               routerConfig: _router,
             );

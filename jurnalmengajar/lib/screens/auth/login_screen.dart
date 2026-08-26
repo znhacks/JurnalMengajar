@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../core/utils/helper.dart';
 import '../../widgets/wave_clipper.dart';
 
@@ -132,10 +133,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       body: Container(
-        color: Colors.white,
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: Stack(
+          children: [
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(
                 horizontal: kIsWeb ? 16 : 24.w,
                 vertical: kIsWeb ? 16 : 32.h,
@@ -148,7 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24.r),
                   ),
-                  color: Colors.white,
+                  color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                   clipBehavior: Clip.antiAlias,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -226,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 style: TextStyle(
                                   fontSize: kIsWeb ? 18 : 22.sp,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF1E293B),
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                               SizedBox(height: 4.h),
@@ -234,7 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 'Silakan masuk ke akun Anda',
                                 style: TextStyle(
                                   fontSize: kIsWeb ? 12 : 13.sp,
-                                  color: const Color(0xFF64748B),
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                               SizedBox(height: kIsWeb ? 14 : 24.h),
@@ -260,7 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 },
                                 style: TextStyle(
                                   fontSize: 14.sp,
-                                  color: const Color(0xFF1E293B),
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -281,9 +284,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                     color: Color.fromARGB(255, 37, 99, 235),
                                   ),
                                   filled: true,
-                                  fillColor: const Color(
-                                    0xFFEFF6FF,
-                                  ).withValues(alpha: 0.5),
+                                  fillColor: Theme.of(context).brightness == Brightness.dark
+                                      ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                      : const Color(0xFFEFF6FF).withValues(alpha: 0.5),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16.r),
                                     borderSide: BorderSide.none,
@@ -322,7 +325,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 onFieldSubmitted: (_) => _handleLogin(),
                                 style: TextStyle(
                                   fontSize: 14.sp,
-                                  color: const Color(0xFF1E293B),
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -354,9 +357,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                     },
                                   ),
                                   filled: true,
-                                  fillColor: const Color(
-                                    0xFFEFF6FF,
-                                  ).withValues(alpha: 0.5),
+                                  fillColor: Theme.of(context).brightness == Brightness.dark
+                                      ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                      : const Color(0xFFEFF6FF).withValues(alpha: 0.5),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16.r),
                                     borderSide: BorderSide.none,
@@ -483,8 +486,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ? null
                                     : _handleGoogleLogin,
                                 style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(
-                                    color: Color(0xFFE2E8F0),
+                                  side: BorderSide(
+                                    color: Theme.of(context).colorScheme.outlineVariant,
                                     width: 1.5,
                                   ),
                                   padding: EdgeInsets.symmetric(
@@ -493,7 +496,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16.r),
                                   ),
-                                  backgroundColor: Colors.white,
+                                  backgroundColor: Theme.of(context).colorScheme.surface,
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -510,7 +513,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       style: TextStyle(
                                         fontSize: 14.sp,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF475569),
+                                        color: Theme.of(context).colorScheme.onSurface,
                                       ),
                                     ),
                                   ],
@@ -526,7 +529,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     'Belum punya akun? ',
                                     style: TextStyle(
                                       fontSize: kIsWeb ? 12.5 : 13.sp,
-                                      color: const Color(0xFF64748B),
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                   GestureDetector(
@@ -558,6 +561,27 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
+        ),
+            Positioned(
+              top: 16.h,
+              right: 16.w,
+              child: Consumer<ThemeProvider>(
+                builder: (context, themeProvider, child) {
+                  return IconButton(
+                    icon: Icon(
+                      themeProvider.isDarkMode
+                          ? Icons.light_mode_rounded
+                          : Icons.dark_mode_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    onPressed: () {
+                      themeProvider.toggleTheme(!themeProvider.isDarkMode);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

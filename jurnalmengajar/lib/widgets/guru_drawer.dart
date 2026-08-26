@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../providers/warning_letter_provider.dart';
+import '../providers/theme_provider.dart';
 import '../screens/guru/main_shell.dart';
 import 'role_badge.dart';
 import 'school_switcher_modal.dart';
@@ -17,6 +18,81 @@ class GuruDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ignore: no_leading_underscores_for_local_identifiers
+    Widget _buildDrawerItem({
+      required IconData icon,
+      required String label,
+      required bool isSelected,
+      required VoidCallback onTap,
+      int badgeCount = 0,
+      bool isDestructive = false,
+    }) {
+      final Color activeColor = isDestructive
+          ? const Color(0xFFEF4444)
+          : Theme.of(context).colorScheme.primary;
+      final Color textColor = isDestructive
+          ? const Color(0xFFEF4444)
+          : (isSelected
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.onSurface);
+
+      return Container(
+        margin: EdgeInsets.only(bottom: 4.h),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: ListTile(
+          onTap: onTap,
+          dense: true,
+          contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.h),
+          leading: Icon(
+            icon,
+            color: isSelected
+                ? activeColor
+                : (isDestructive ? activeColor : Theme.of(context).colorScheme.onSurfaceVariant),
+            size: 22,
+          ),
+          title: Text(
+            label,
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 13.sp,
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              color: textColor,
+            ),
+          ),
+          trailing: badgeCount > 0
+              ? Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Text(
+                    '$badgeCount',
+                    style: GoogleFonts.hankenGrotesk(
+                      color: Colors.white,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                )
+              : (isSelected
+                    ? Container(
+                        width: 4.w,
+                        height: 18.h,
+                        decoration: BoxDecoration(
+                          color: activeColor,
+                          borderRadius: BorderRadius.circular(4.r),
+                        ),
+                      )
+                    : null),
+        ),
+      );
+    }
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final currentUser = authProvider.currentUser;
 
@@ -50,7 +126,7 @@ class GuruDrawer extends StatelessWidget {
     }
 
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shadowColor: Colors.transparent,
       child: Column(
         children: [
@@ -301,7 +377,50 @@ class GuruDrawer extends StatelessWidget {
 
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 8.h),
-                  child: const Divider(color: Color(0xFFE2E8F0), height: 1),
+                  child: Divider(
+                    color: Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0),
+                    height: 1,
+                  ),
+                ),
+
+                Consumer<ThemeProvider>(
+                  builder: (context, themeProvider, child) {
+                    return Container(
+                      margin: EdgeInsets.only(bottom: 4.h),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      child: ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 0),
+                        leading: Icon(
+                          themeProvider.isDarkMode
+                              ? Icons.dark_mode_rounded
+                              : Icons.light_mode_rounded,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          size: 22,
+                        ),
+                        title: Text(
+                          themeProvider.isDarkMode ? 'Mode Gelap' : 'Mode Terang',
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        trailing: Transform.scale(
+                          scale: 0.8,
+                          child: Switch(
+                            value: themeProvider.isDarkMode,
+                            onChanged: (val) {
+                              themeProvider.toggleTheme(val);
+                            },
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
 
                 _buildDrawerItem(
@@ -404,73 +523,4 @@ class GuruDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-    int badgeCount = 0,
-    bool isDestructive = false,
-  }) {
-    final Color activeColor = isDestructive
-        ? const Color(0xFFEF4444)
-        : const Color(0xFF4F46E5);
-    final Color textColor = isDestructive
-        ? const Color(0xFFEF4444)
-        : (isSelected ? const Color(0xFF4F46E5) : const Color(0xFF334155));
-
-    return Container(
-      margin: EdgeInsets.only(bottom: 4.h),
-      decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFFEEF2FF) : Colors.transparent,
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: ListTile(
-        onTap: onTap,
-        dense: true,
-        contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.h),
-        leading: Icon(
-          icon,
-          color: isSelected
-              ? activeColor
-              : (isDestructive ? activeColor : const Color(0xFF64748B)),
-          size: 22,
-        ),
-        title: Text(
-          label,
-          style: GoogleFonts.hankenGrotesk(
-            fontSize: 13.sp,
-            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-            color: textColor,
-          ),
-        ),
-        trailing: badgeCount > 0
-            ? Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEF4444),
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Text(
-                  '$badgeCount',
-                  style: GoogleFonts.hankenGrotesk(
-                    color: Colors.white,
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              )
-            : (isSelected
-                  ? Container(
-                      width: 4.w,
-                      height: 18.h,
-                      decoration: BoxDecoration(
-                        color: activeColor,
-                        borderRadius: BorderRadius.circular(4.r),
-                      ),
-                    )
-                  : null),
-      ),
-    );
-  }
 }

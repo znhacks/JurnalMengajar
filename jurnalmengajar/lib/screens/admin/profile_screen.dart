@@ -2,9 +2,11 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/journal_provider.dart';
 import '../../models/user_model.dart';
@@ -894,6 +896,59 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14.r),
                   ),
+                ),
+              ),
+              SizedBox(height: 12.h),
+
+              // Theme Switcher Card
+              Card(
+                margin: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.r),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                    width: 1,
+                  ),
+                ),
+                color: Theme.of(context).colorScheme.surface,
+                child: Consumer<ThemeProvider>(
+                  builder: (context, themeProvider, child) {
+                    return ListTile(
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 2.h),
+                      leading: Icon(
+                        themeProvider.isDarkMode
+                            ? Icons.dark_mode_rounded
+                            : Icons.light_mode_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      title: Text(
+                        'Tema Aplikasi',
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      subtitle: Text(
+                        themeProvider.isDarkMode
+                            ? 'Mode Gelap Aktif'
+                            : 'Mode Terang Aktif',
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 12.sp,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      trailing: Transform.scale(
+                        scale: 0.8,
+                        child: Switch(
+                          value: themeProvider.isDarkMode,
+                          onChanged: (val) {
+                            themeProvider.toggleTheme(val);
+                          },
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
               SizedBox(height: 20.h),

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../core/theme/app_theme.dart';
+import '../providers/theme_provider.dart';
 import 'role_badge.dart';
 import 'school_switcher_modal.dart';
 
@@ -17,14 +18,14 @@ class AdminDrawer extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shadowColor: Colors.transparent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ── Header (Logo & Active School) ──────────────────────────────────
           Container(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             padding: EdgeInsets.only(
               top: MediaQuery.of(context).padding.top + 16.h,
               bottom: 12.h,
@@ -52,9 +53,9 @@ class AdminDrawer extends StatelessWidget {
                     final switcherWidget = Container(
                       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(color: const Color(0xFFCBD5E1)),
+                        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
                       ),
                       child: Row(
                         children: [
@@ -64,7 +65,7 @@ class AdminDrawer extends StatelessWidget {
                             child: Text(
                               authProvider.activeSchoolName,
                               style: GoogleFonts.hankenGrotesk(
-                                color: const Color(0xFF0F172A),
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -211,6 +212,45 @@ class AdminDrawer extends StatelessWidget {
             ),
           ),
 
+          // ── Theme Switcher ────────────────────────────────────────────────
+          const Divider(height: 1, color: Color(0xFFE2E8F0), thickness: 1),
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                child: ListTile(
+                  dense: true,
+                  visualDensity: const VisualDensity(horizontal: -3, vertical: -3),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 0),
+                  leading: Icon(
+                    themeProvider.isDarkMode
+                        ? Icons.dark_mode_rounded
+                        : Icons.light_mode_rounded,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    size: 20,
+                  ),
+                  title: Text(
+                    themeProvider.isDarkMode ? 'Mode Gelap' : 'Mode Terang',
+                    style: GoogleFonts.hankenGrotesk(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13.sp,
+                    ),
+                  ),
+                  trailing: Transform.scale(
+                    scale: 0.8,
+                    child: Switch(
+                      value: themeProvider.isDarkMode,
+                      onChanged: (val) {
+                        themeProvider.toggleTheme(val);
+                      },
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+
           // ── Footer / Logout ───────────────────────────────────────────────
           const Divider(height: 1, color: Color(0xFFE2E8F0), thickness: 1),
           Padding(
@@ -222,15 +262,15 @@ class AdminDrawer extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10.r),
               ),
-              leading: const Icon(
+              leading: Icon(
                 Icons.logout_rounded,
-                color: Color(0xFF0F172A),
+                color: Theme.of(context).colorScheme.onSurface,
                 size: 20,
               ),
               title: Text(
                 'Keluar',
                 style: GoogleFonts.hankenGrotesk(
-                  color: const Color(0xFF0F172A),
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w700,
                   fontSize: 13.sp,
                 ),
@@ -311,13 +351,13 @@ class AdminDrawer extends StatelessWidget {
         ),
         leading: Icon(
           icon,
-          color: isSelected ? AppTheme.primaryColor : const Color(0xFF64748B),
+          color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
           size: 20,
         ),
         title: Text(
           title,
           style: GoogleFonts.hankenGrotesk(
-            color: isSelected ? AppTheme.primaryColor : const Color(0xFF0F172A),
+            color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             fontSize: 13.sp,
           ),

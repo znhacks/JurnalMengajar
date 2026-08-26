@@ -219,4 +219,198 @@ class AppTheme {
       ),
     );
   }
+
+  static ThemeData get darkTheme {
+    const Color darkBackground = Color(0xFF0F172A);
+    const Color darkSurface = Color(0xFF1E293B);
+    const Color darkOnBackground = Color(0xFFF8FAFC);
+    const Color darkOnSurface = Color(0xFFF8FAFC);
+    const Color darkOnSurfaceVariant = Color(0xFF94A3B8);
+    const Color darkOutline = Color(0xFF475569);
+    const Color darkOutlineVariant = Color(0xFF334155);
+
+    final textTheme = GoogleFonts.hankenGroteskTextTheme().copyWith(
+      displayLarge: GoogleFonts.hankenGrotesk(
+          fontSize: 28, fontWeight: FontWeight.w800, color: darkOnBackground),
+      headlineMedium: GoogleFonts.hankenGrotesk(
+          fontSize: 18, fontWeight: FontWeight.w800, color: darkOnBackground),
+      headlineSmall: GoogleFonts.hankenGrotesk(
+          fontSize: 16, fontWeight: FontWeight.w700, color: darkOnBackground),
+      titleMedium: GoogleFonts.hankenGrotesk(
+          fontSize: 14, fontWeight: FontWeight.w700, color: darkOnBackground),
+      bodyLarge: GoogleFonts.hankenGrotesk(
+          fontSize: 14, fontWeight: FontWeight.w500, color: darkOnSurface),
+      bodyMedium: GoogleFonts.hankenGrotesk(
+          fontSize: 13, fontWeight: FontWeight.w500, color: darkOnSurfaceVariant),
+      labelSmall: GoogleFonts.hankenGrotesk(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.05,
+          color: darkOnSurfaceVariant),
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme(
+        brightness: Brightness.dark,
+        primary: primaryColor,
+        onPrimary: Colors.white,
+        primaryContainer: const Color(0xFF1E3A8A),
+        onPrimaryContainer: const Color(0xFFDBEAFE),
+        secondary: secondaryColor,
+        onSecondary: Colors.white,
+        secondaryContainer: const Color(0xFF334155),
+        onSecondaryContainer: const Color(0xFFE2E8F0),
+        tertiary: tertiaryColor,
+        onTertiary: Colors.white,
+        tertiaryContainer: const Color(0xFF78350F),
+        onTertiaryContainer: const Color(0xFFFEF3C7),
+        error: errorColor,
+        onError: Colors.white,
+        errorContainer: const Color(0xFF881337),
+        onErrorContainer: const Color(0xFFFFE4E6),
+        surface: darkSurface,
+        onSurface: darkOnSurface,
+        surfaceContainerHighest: const Color(0xFF334155),
+        onSurfaceVariant: darkOnSurfaceVariant,
+        outline: darkOutline,
+        outlineVariant: darkOutlineVariant,
+        inverseSurface: const Color(0xFFF8FAFC),
+        onInverseSurface: const Color(0xFF0F172A),
+        inversePrimary: const Color(0xFF2563EB),
+        shadow: Colors.black,
+        scrim: Colors.black,
+        surfaceTint: const Color(0xFF3B82F6),
+      ),
+      scaffoldBackgroundColor: darkBackground,
+      textTheme: textTheme,
+
+      appBarTheme: AppBarTheme(
+        backgroundColor: darkSurface,
+        foregroundColor: darkOnBackground,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        shadowColor: Colors.transparent,
+        centerTitle: true,
+        titleTextStyle: GoogleFonts.hankenGrotesk(
+          color: darkOnBackground,
+          fontSize: 16,
+          fontWeight: FontWeight.w800,
+        ),
+        iconTheme: const IconThemeData(color: darkOnBackground),
+      ),
+
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: darkOutlineVariant, width: 1),
+        ),
+        color: darkSurface,
+        margin: EdgeInsets.zero,
+      ),
+
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          minimumSize: const Size.fromHeight(52),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          textStyle: GoogleFonts.hankenGrotesk(
+              fontSize: 15, fontWeight: FontWeight.w600),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: darkOnBackground,
+          side: const BorderSide(color: darkOutlineVariant, width: 1.5),
+          minimumSize: const Size.fromHeight(44),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          textStyle: GoogleFonts.hankenGrotesk(
+              fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+      ),
+
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: darkBackground,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: darkOutlineVariant, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: primaryColor, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: errorColor, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: errorColor, width: 2),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        labelStyle: GoogleFonts.hankenGrotesk(
+            color: darkOnSurfaceVariant, fontWeight: FontWeight.w500),
+        hintStyle: GoogleFonts.hankenGrotesk(color: darkOutline, fontSize: 13),
+      ),
+
+      chipTheme: ChipThemeData(
+        shape: const StadiumBorder(),
+        labelStyle: GoogleFonts.hankenGrotesk(
+            fontSize: 11, fontWeight: FontWeight.w700),
+      ),
+
+      dividerTheme: const DividerThemeData(
+        color: darkOutlineVariant,
+        thickness: 1,
+        space: 1,
+      ),
+
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: darkSurface,
+        indicatorColor: primaryColor.withValues(alpha: 0.24),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return GoogleFonts.hankenGrotesk(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Colors.white);
+          }
+          return GoogleFonts.hankenGrotesk(
+              fontSize: 11, fontWeight: FontWeight.w500, color: darkOnSurfaceVariant);
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: Colors.white, size: 24);
+          }
+          return const IconThemeData(color: Color(0xFF6D7A77), size: 24);
+        }),
+        elevation: 0,
+        shadowColor: Colors.transparent,
+      ),
+
+      tabBarTheme: TabBarThemeData(
+        labelColor: Colors.white,
+        unselectedLabelColor: darkOnSurfaceVariant,
+        indicatorColor: Colors.white,
+        indicatorSize: TabBarIndicatorSize.label,
+        labelStyle: GoogleFonts.hankenGrotesk(
+            fontSize: 13, fontWeight: FontWeight.w700),
+        unselectedLabelStyle:
+            GoogleFonts.hankenGrotesk(fontSize: 13, fontWeight: FontWeight.w500),
+      ),
+    );
+  }
 }
