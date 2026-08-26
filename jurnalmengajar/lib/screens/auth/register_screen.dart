@@ -740,7 +740,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       _obscurePassword
                                           ? Icons.visibility_off_outlined
                                           : Icons.visibility_outlined,
-                                      color: const Color.fromARGB(255, 37, 99, 235),
+                                      color: Colors.grey,
                                     ),
                                     onPressed: () {
                                       setState(() {
@@ -778,7 +778,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       _obscureConfirmPassword
                                           ? Icons.visibility_off_outlined
                                           : Icons.visibility_outlined,
-                                      color: const Color.fromARGB(255, 37, 99, 235),
+                                      color: Colors.grey,
                                     ),
                                     onPressed: () {
                                       setState(() {
