@@ -20,6 +20,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
   List<UserModel> _filteredUsers = [];
   bool _isLoading = false;
   String? _errorMessage;
+  List<Map<String, dynamic>> _exitRequests = [];
   final TextEditingController _searchController = TextEditingController();
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
@@ -120,9 +121,14 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final users = await authProvider.getAllUsers(authProvider.activeSchoolId);
+      List<Map<String, dynamic>> exitReqs = [];
+      if (authProvider.activeSchoolId != null) {
+        exitReqs = await authProvider.getPendingExitRequests(authProvider.activeSchoolId!);
+      }
       setState(() {
         _allUsers = users;
         _filteredUsers = users;
+        _exitRequests = exitReqs;
         _isLoading = false;
       });
     } catch (e) {
@@ -630,7 +636,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
     }).toList();
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: _isSelectionMode
             ? AppBar(
@@ -683,34 +689,62 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                     ),
                     Tab(
                       child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.person_add_outlined),
-                    const SizedBox(width: 8),
-                    const Text('Guru Mendaftar'),
-                    if (pendingUsers.isNotEmpty) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '${pendingUsers.length}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.person_add_outlined),
+                          const SizedBox(width: 8),
+                          const Text('Guru Mendaftar'),
+                          if (pendingUsers.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${pendingUsers.length}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    ],
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.exit_to_app_rounded),
+                          const SizedBox(width: 8),
+                          const Text('Menunggu Keluar'),
+                          if (_exitRequests.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.orange,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${_exitRequests.length}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ],
-          ),
         ),
         drawer: const AdminDrawer(currentRoute: '/admin/master-data/users'),
         body: RefreshIndicator(
@@ -764,6 +798,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                                       subtitle: 'Tidak ada guru baru yang sedang mendaftar.',
                                     )
                                   : _buildUserList(pendingUsers, authProvider, isPendingTab: true),
+                              _buildExitRequestsList(authProvider),
                             ],
                           ),
               ),
@@ -771,6 +806,193 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildExitRequestsList(AuthProvider authProvider) {
+    if (_exitRequests.isEmpty) {
+      return const AppEmptyWidget(
+        title: 'Tidak Ada Pengajuan Keluar',
+        subtitle: 'Tidak ada guru yang mengajukan keluar dari sekolah.',
+      );
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      itemCount: _exitRequests.length,
+      itemBuilder: (context, index) {
+        final req = _exitRequests[index];
+        final membershipId = req['id'] as String;
+        final userMap = req['users'] as Map<String, dynamic>? ?? {};
+        final name = userMap['full_name'] as String? ?? 'Guru';
+        final email = userMap['email'] as String? ?? '';
+        final photoUrl = userMap['photo_url'] as String?;
+
+        return Card(
+          margin: EdgeInsets.only(bottom: 12.h),
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(12.w),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 24.r,
+                  backgroundColor: const Color(0xFFEFF6FF),
+                  backgroundImage: photoUrl != null && photoUrl.isNotEmpty
+                      ? NetworkImage(photoUrl)
+                      : null,
+                  child: photoUrl == null || photoUrl.isEmpty
+                      ? Text(
+                          name.isNotEmpty ? name[0].toUpperCase() : 'G',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF2563EB),
+                          ),
+                        )
+                      : null,
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF1E293B),
+                        ),
+                      ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        email,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Setujui Pengajuan Keluar'),
+                            content: Text('Apakah Anda yakin ingin menyetujui pengajuan keluar untuk $name? Akun ini tidak akan lagi terhubung dengan sekolah ini.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Batal'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Setujui', style: TextStyle(color: Colors.green)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmed == true) {
+                          setState(() {
+                            _isLoading = true;
+                          });
+                          final success = await authProvider.approveExitRequest(membershipId);
+                          if (!context.mounted) return;
+                          if (success) {
+                            AppHelper.showSnackBar(context, 'Berhasil menyetujui pengajuan keluar untuk $name');
+                            _fetchUsers();
+                          } else {
+                            AppHelper.showSnackBar(
+                              context,
+                              authProvider.errorMessage ?? 'Gagal memproses pengajuan',
+                              isError: true,
+                            );
+                            setState(() {
+                              _isLoading = false;
+                            });
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                      ),
+                      child: Text('Setujui', style: TextStyle(fontSize: 12.sp)),
+                    ),
+                    SizedBox(height: 6.h),
+                    OutlinedButton(
+                      onPressed: () async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Tolak Pengajuan Keluar'),
+                            content: Text('Apakah Anda yakin ingin menolak pengajuan keluar untuk $name? Status keanggotaan akan dikembalikan ke Aktif.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Batal'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Tolak', style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmed == true) {
+                          setState(() {
+                            _isLoading = true;
+                          });
+                          final success = await authProvider.rejectExitRequest(membershipId);
+                          if (!context.mounted) return;
+                          if (success) {
+                            AppHelper.showSnackBar(context, 'Berhasil menolak pengajuan keluar untuk $name');
+                            _fetchUsers();
+                          } else {
+                            AppHelper.showSnackBar(
+                              context,
+                              authProvider.errorMessage ?? 'Gagal memproses pengajuan',
+                              isError: true,
+                            );
+                            setState(() {
+                              _isLoading = false;
+                            });
+                          }
+                        }
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        side: const BorderSide(color: Colors.red),
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                      ),
+                      child: Text('Tolak', style: TextStyle(fontSize: 12.sp)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

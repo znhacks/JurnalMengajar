@@ -505,4 +505,68 @@ class SupabaseAuthRepository implements AuthRepository {
       debugPrint('Gagal memperbarui FCM Token: $e');
     }
   }
+
+  @override
+  Future<void> requestExitFromSchool(String membershipId) async {
+    try {
+      await _supabase
+          .from('user_schools')
+          .update({'status': 'requested_exit'})
+          .eq('id', membershipId);
+    } catch (e) {
+      throw Exception('Gagal mengajukan keluar: $e');
+    }
+  }
+
+  @override
+  Future<void> cancelExitRequest(String membershipId) async {
+    try {
+      await _supabase
+          .from('user_schools')
+          .update({'status': 'active'})
+          .eq('id', membershipId);
+    } catch (e) {
+      throw Exception('Gagal membatalkan pengajuan: $e');
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getPendingExitRequests(String schoolId) async {
+    try {
+      final res = await _supabase
+          .from('user_schools')
+          .select('*, users(full_name, email, photo_url)')
+          .eq('school_id', schoolId)
+          .eq('status', 'requested_exit');
+      
+      return (res as List).map((row) => Map<String, dynamic>.from(row)).toList();
+    } catch (e) {
+      debugPrint('Error getting pending exit requests: $e');
+      return [];
+    }
+  }
+
+  @override
+  Future<void> approveExitRequest(String membershipId) async {
+    try {
+      await _supabase
+          .from('user_schools')
+          .delete()
+          .eq('id', membershipId);
+    } catch (e) {
+      throw Exception('Gagal menyetujui pengajuan keluar: $e');
+    }
+  }
+
+  @override
+  Future<void> rejectExitRequest(String membershipId) async {
+    try {
+      await _supabase
+          .from('user_schools')
+          .update({'status': 'active'})
+          .eq('id', membershipId);
+    } catch (e) {
+      throw Exception('Gagal menolak pengajuan keluar: $e');
+    }
+  }
 }

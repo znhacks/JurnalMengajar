@@ -5,6 +5,7 @@ class UserSchoolModel {
   final String role; // 'guru' | 'admin' | 'tenant'
   final String schoolName;
   final String? schoolCode;
+  final String? status; // 'active' | 'requested_exit'
 
   UserSchoolModel({
     required this.id,
@@ -13,6 +14,7 @@ class UserSchoolModel {
     required this.role,
     required this.schoolName,
     this.schoolCode,
+    this.status,
   });
 
   factory UserSchoolModel.fromJson(Map<String, dynamic> json) {
@@ -34,6 +36,7 @@ class UserSchoolModel {
       role: json['role'] as String? ?? 'guru',
       schoolName: name,
       schoolCode: code,
+      status: json['status'] as String? ?? 'active',
     );
   }
 
@@ -45,6 +48,7 @@ class UserSchoolModel {
       'role': role,
       'school_name': schoolName,
       'school_code': schoolCode,
+      'status': status,
     };
   }
 }

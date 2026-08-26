@@ -547,6 +547,95 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<bool> requestExitFromSchool(String membershipId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _authRepository.requestExitFromSchool(membershipId);
+      await loadUserMemberships();
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = _cleanErrorMessage(e);
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> cancelExitRequest(String membershipId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _authRepository.cancelExitRequest(membershipId);
+      await loadUserMemberships();
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = _cleanErrorMessage(e);
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getPendingExitRequests(String schoolId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final requests = await _authRepository.getPendingExitRequests(schoolId);
+      _isLoading = false;
+      notifyListeners();
+      return requests;
+    } catch (e) {
+      _errorMessage = _cleanErrorMessage(e);
+      _isLoading = false;
+      notifyListeners();
+      return [];
+    }
+  }
+
+  Future<bool> approveExitRequest(String membershipId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _authRepository.approveExitRequest(membershipId);
+      await loadUserMemberships();
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = _cleanErrorMessage(e);
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> rejectExitRequest(String membershipId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _authRepository.rejectExitRequest(membershipId);
+      await loadUserMemberships();
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = _cleanErrorMessage(e);
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   String _cleanErrorMessage(dynamic e) {
     final errorString = e.toString().toLowerCase();
     

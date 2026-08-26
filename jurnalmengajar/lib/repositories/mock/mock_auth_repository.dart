@@ -202,4 +202,30 @@ class MockAuthRepository implements AuthRepository {
       return false;
     }).toList();
   }
+
+  @override
+  Future<void> requestExitFromSchool(String membershipId) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+  }
+
+  @override
+  Future<void> cancelExitRequest(String membershipId) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getPendingExitRequests(String schoolId) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    return [];
+  }
+
+  @override
+  Future<void> approveExitRequest(String membershipId) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+  }
+
+  @override
+  Future<void> rejectExitRequest(String membershipId) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+  }
 }

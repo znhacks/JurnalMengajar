@@ -1306,12 +1306,16 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                   schoolId: m.schoolId,
                                   schoolName: m.schoolName,
                                   role: 'admin',
+                                  membershipId: m.id,
+                                  status: m.status,
                                 ),
                                 if (!isSmkn8)
                                   SchoolRoleOption(
                                     schoolId: m.schoolId,
                                     schoolName: m.schoolName,
                                     role: 'guru',
+                                    membershipId: m.id,
+                                    status: m.status,
                                   ),
                               ];
                             } else {
@@ -1320,6 +1324,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                   schoolId: m.schoolId,
                                   schoolName: m.schoolName,
                                   role: m.role,
+                                  membershipId: m.id,
+                                  status: m.status,
                                 ),
                               ];
                             }
@@ -1327,6 +1333,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                             final sName = item.schoolName;
                             final sRole = item.role;
                             final sId = item.schoolId;
+                            final membershipId = item.membershipId;
+                            final status = item.status;
                             final isActive = sId == authProvider.activeSchoolId &&
                                 sRole.toLowerCase() == authProvider.activeRole.toLowerCase();
 
@@ -1406,24 +1414,122 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                         ],
                                       ),
                                     ),
-                                    if (isActive)
-                                      Chip(
-                                        label: const Text('Aktif'),
-                                        backgroundColor: const Color(0xFFDCFCE7),
-                                        labelStyle: TextStyle(
-                                          fontSize: 10.sp,
-                                          color: const Color(0xFF166534),
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                    if (status == 'requested_exit')
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          Chip(
+                                            label: const Text('Menunggu Keluar'),
+                                            backgroundColor: const Color(0xFFFEF3C7),
+                                            labelStyle: TextStyle(
+                                              fontSize: 10.sp,
+                                              color: const Color(0xFFD97706),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          SizedBox(height: 4.h),
+                                          TextButton(
+                                            onPressed: () async {
+                                              final confirmed = await showDialog<bool>(
+                                                context: context,
+                                                builder: (context) => AlertDialog(
+                                                  title: const Text('Batalkan Pengajuan Keluar'),
+                                                  content: Text('Apakah Anda yakin ingin membatalkan pengajuan keluar dari $sName?'),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () => Navigator.pop(context, false),
+                                                      child: const Text('Batal'),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () => Navigator.pop(context, true),
+                                                      child: const Text('Ya, Batalkan', style: TextStyle(color: Colors.red)),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                              if (confirmed == true) {
+                                                final success = await authProvider.cancelExitRequest(membershipId);
+                                                if (!context.mounted) return;
+                                                if (success) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(content: Text('Berhasil membatalkan pengajuan keluar dari $sName')),
+                                                  );
+                                                }
+                                              }
+                                            },
+                                            style: TextButton.styleFrom(
+                                              padding: EdgeInsets.zero,
+                                              minimumSize: Size.zero,
+                                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                            ),
+                                            child: Text(
+                                              'Batalkan',
+                                              style: TextStyle(
+                                                fontSize: 11.sp,
+                                                color: Colors.red,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       )
-                                    else
-                                      const Text(
-                                        'Pilih',
-                                        style: TextStyle(
-                                          color: Color(0xFF2563EB),
-                                          fontWeight: FontWeight.bold,
+                                    else ...[
+                                      if (isActive)
+                                        Chip(
+                                          label: const Text('Aktif'),
+                                          backgroundColor: const Color(0xFFDCFCE7),
+                                          labelStyle: TextStyle(
+                                            fontSize: 10.sp,
+                                            color: const Color(0xFF166534),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        )
+                                      else
+                                        const Text(
+                                          'Pilih',
+                                          style: TextStyle(
+                                            color: Color(0xFF2563EB),
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
+                                      SizedBox(width: 8.w),
+                                      IconButton(
+                                        icon: const Icon(Icons.exit_to_app_rounded, color: Colors.redAccent),
+                                        tooltip: 'Keluar dari Sekolah',
+                                        onPressed: () async {
+                                          final confirmed = await showDialog<bool>(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              title: const Text('Keluar dari Sekolah'),
+                                              content: Text(
+                                                'Apakah Anda yakin ingin keluar dari sekolah $sName?\n\n'
+                                                'Pengajuan ini memerlukan persetujuan dari Administrator sekolah sebelum Anda benar-benar dikeluarkan. '
+                                                'Anda tetap dapat mengakses data sekolah sampai pengajuan disetujui.',
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(context, false),
+                                                  child: const Text('Batal'),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(context, true),
+                                                  child: const Text('Ya, Ajukan Keluar', style: TextStyle(color: Colors.red)),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                          if (confirmed == true) {
+                                            final success = await authProvider.requestExitFromSchool(membershipId);
+                                            if (!context.mounted) return;
+                                            if (success) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text('Pengajuan keluar dari $sName berhasil dikirim ke Admin')),
+                                              );
+                                            }
+                                          }
+                                        },
                                       ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -2007,11 +2113,15 @@ class SchoolRoleOption {
   final String schoolId;
   final String schoolName;
   final String role;
+  final String membershipId;
+  final String? status;
 
   SchoolRoleOption({
     required this.schoolId,
     required this.schoolName,
     required this.role,
+    required this.membershipId,
+    this.status,
   });
 }
 
