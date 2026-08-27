@@ -1251,7 +1251,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
               // Section 4: Informasi Penandatangan (Supervisor / Kepala Sekolah & Guru)
               _buildSectionCard(
-                title: '4. Data Penandatangan Laporan',
+                title: '4. Penandatangan laporan',
                 icon: Icons.draw_rounded,
                 child: Column(
                   children: [
@@ -1405,7 +1405,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       ),
                       icon: const Icon(Icons.remove_red_eye_rounded),
                       label: Text(
-                        'Pratinjau PDF',
+                        'Preview',
                         style: GoogleFonts.hankenGrotesk(
                           fontWeight: FontWeight.w700,
                         ),

@@ -102,7 +102,9 @@ class GuruDrawer extends StatelessWidget {
         .length;
 
     final name = currentUser?.fullName ?? 'Guru Pengajar';
-    final email = currentUser?.email ?? '';
+    final position = (currentUser?.position != null && currentUser!.position!.trim().isNotEmpty)
+        ? currentUser.position!.trim()
+        : 'Guru Pengajar';
     final photoUrl = currentUser?.photoUrl;
 
     final shellState = context.findAncestorStateOfType<GuruMainShellState>();
@@ -215,7 +217,7 @@ class GuruDrawer extends StatelessWidget {
                 ),
                 SizedBox(height: 2.h),
                 Text(
-                  email,
+                  position,
                   style: GoogleFonts.hankenGrotesk(
                     color: Colors.white70,
                     fontSize: 12.sp,
