@@ -91,7 +91,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
       appBar: AppBar( 
         leading: Builder(
           builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu_rounded, color: AppTheme.onBackground),
+            icon: const Icon(Icons.menu_rounded),
             onPressed: () {
               Scaffold.of(ctx).openDrawer();
             },
@@ -101,12 +101,79 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
           'Surat Peringatan Saya',
           style: GoogleFonts.hankenGrotesk(
             fontWeight: FontWeight.bold,
-            color: AppTheme.onBackground,
           ),
         ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppTheme.onBackground),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (value) async {
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+              final currentUser = authProvider.currentUser;
+              if (currentUser != null) {
+                final teacher = masterProvider.teachers.firstWhere(
+                  (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
+                );
+                if (value == 'confirm_all') {
+                  await warningProvider.confirmAllWarnings(teacher.id);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Semua surat peringatan berhasil dikonfirmasi.')),
+                    );
+                  }
+                } else if (value == 'delete_all') {
+                  final confirmDelete = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Hapus Riwayat SP'),
+                      content: const Text('Apakah Anda yakin ingin menghapus semua surat peringatan yang sudah dikonfirmasi? Surat yang belum dikonfirmasi tidak akan dihapus.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Batal'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirmDelete == true && context.mounted) {
+                    await warningProvider.deleteConfirmedWarnings(teacher.id);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Surat peringatan yang dikonfirmasi berhasil dihapus.')),
+                      );
+                    }
+                  }
+                }
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'confirm_all',
+                child: Row(
+                  children: [
+                    Icon(Icons.done_all_rounded, size: 20),
+                    SizedBox(width: 8),
+                    Text('Konfirmasi Semua'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'delete_all',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_sweep_rounded, size: 20, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Hapus Riwayat SP', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -154,7 +221,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                   style: GoogleFonts.hankenGrotesk(
                                     fontSize: 18.sp,
                                     fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF0F172A),
+                                    color: Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                                 SizedBox(height: 8.h),
@@ -164,7 +231,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                     'Anda tidak memiliki surat peringatan. Terus pertahankan kedisiplinan dalam mengisi jurnal mengajar!',
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 13.sp,
-                                      color: AppTheme.outline,
+                                      color: Theme.of(context).colorScheme.outline,
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
@@ -186,16 +253,17 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                           final hasUnread = groupWarnings.any((w) => w.status == 'unread');
                           final unreadList = groupWarnings.where((w) => w.status == 'unread').toList();
 
+                          final theme = Theme.of(context);
                           return Card(
                             margin: EdgeInsets.zero,
-                            color: Colors.white,
+                            color: theme.colorScheme.surface,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16.r),
                               side: BorderSide(
                                 color: hasUnread
                                     ? const Color(0xFFFECACA)
-                                    : AppTheme.outlineVariant,
+                                    : theme.colorScheme.outlineVariant,
                                 width: hasUnread ? 1.5 : 1.0,
                               ),
                             ),
@@ -232,14 +300,14 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                               style: GoogleFonts.hankenGrotesk(
                                                 fontWeight: FontWeight.w800,
                                                 fontSize: 14.sp,
-                                                color: AppTheme.onBackground,
+                                                color: theme.colorScheme.onSurface,
                                               ),
                                             ),
                                             Text(
                                               'Peringatan Keterlambatan (${groupWarnings.length} Surat)',
                                               style: GoogleFonts.hankenGrotesk(
                                                 fontSize: 11.sp,
-                                                color: AppTheme.outline,
+                                                color: theme.colorScheme.outline,
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
@@ -288,7 +356,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                                 w.reason,
                                                 style: GoogleFonts.hankenGrotesk(
                                                   fontSize: 13.sp,
-                                                  color: AppTheme.onBackground,
+                                                  color: Theme.of(context).colorScheme.onSurface,
                                                   height: 1.4,
                                                 ),
                                               ),

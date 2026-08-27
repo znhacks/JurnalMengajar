@@ -200,4 +200,43 @@ class WarningLetterProvider with ChangeNotifier {
       }
     }
   }
+
+  Future<void> confirmAllWarnings(String teacherId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final unreadWarnings = _warningLetters.where((w) => w.status == 'unread' && w.teacherId == teacherId).toList();
+      for (final w in unreadWarnings) {
+        await warningLetterRepository.markAsRead(w.id);
+        final index = _warningLetters.indexWhere((item) => item.id == w.id);
+        if (index != -1) {
+          _warningLetters[index] = _warningLetters[index].copyWith(status: 'read');
+        }
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteConfirmedWarnings(String teacherId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final confirmedWarnings = _warningLetters.where((w) => w.status == 'read' && w.teacherId == teacherId).toList();
+      for (final w in confirmedWarnings) {
+        await warningLetterRepository.delete(w.id);
+      }
+      _warningLetters.removeWhere((w) => w.status == 'read' && w.teacherId == teacherId);
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }
