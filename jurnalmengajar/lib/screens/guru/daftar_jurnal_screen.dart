@@ -112,7 +112,7 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
     final isLoading = journalProvider.isLoading || scheduleProvider.isLoading;
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: Builder(
           builder: (ctx) => IconButton(
@@ -138,7 +138,7 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(48.h),
           child: Container(
-            color: Colors.white,
+            color: Theme.of(context).appBarTheme.backgroundColor,
             child: TabBar(
               controller: _tabController,
               indicatorColor: AppTheme.primaryColor,
@@ -249,14 +249,21 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
         ? AppHelper.formatTeachingHours(hoursList)
         : '${journal.teachingHour}';
 
+    final theme = Theme.of(context);
+    final cardColor = theme.colorScheme.surface;
+    final borderColor = theme.colorScheme.outlineVariant;
+    final textColor = theme.colorScheme.onSurface;
+    final secondaryTextColor = theme.colorScheme.onSurfaceVariant;
+    final outlineColor = theme.colorScheme.outline;
+
     return InkWell(
       onTap: () => context.push('/guru/journal/${journal.id}'),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.outlineVariant),
+          border: Border.all(color: borderColor),
         ),
         child: IntrinsicHeight(
           child: Row(
@@ -286,7 +293,7 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.bold,
-                                color: AppTheme.onBackground,
+                                color: textColor,
                               ),
                             ),
                           ),
@@ -312,7 +319,7 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
                         '${subject.name} — ${journal.material}',
                         style: GoogleFonts.hankenGrotesk(
                           fontSize: 12.sp,
-                          color: AppTheme.onSurfaceVariant,
+                          color: secondaryTextColor,
                           fontWeight: FontWeight.w500,
                         ),
                         maxLines: 1,
@@ -321,20 +328,20 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
                       SizedBox(height: 6.h),
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today_outlined, size: 11, color: AppTheme.outline),
+                          Icon(Icons.calendar_today_outlined, size: 11, color: outlineColor),
                           SizedBox(width: 4.w),
                           Text(
                             AppHelper.formatDateShort(journal.date),
-                            style: GoogleFonts.hankenGrotesk(fontSize: 10.sp, color: AppTheme.outline),
+                            style: GoogleFonts.hankenGrotesk(fontSize: 10.sp, color: outlineColor),
                           ),
                           const Spacer(),
-                          const Icon(Icons.people_outline, size: 11, color: AppTheme.outline),
+                          Icon(Icons.people_outline, size: 11, color: outlineColor),
                           SizedBox(width: 4.w),
                           Text(
                             'S:${journal.sickCount} I:${journal.permissionCount} A:${journal.alphaCount}',
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 10.sp,
-                              color: AppTheme.onSurfaceVariant,
+                              color: secondaryTextColor,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

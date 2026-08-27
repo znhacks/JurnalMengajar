@@ -221,15 +221,17 @@ class AppTheme {
   }
 
   static ThemeData get darkTheme {
-    const Color darkBackground = Color(0xFF0F172A);
-    const Color darkSurface = Color(0xFF1E293B);
-    const Color darkOnBackground = Color(0xFFF8FAFC);
-    const Color darkOnSurface = Color(0xFFF8FAFC);
-    const Color darkOnSurfaceVariant = Color(0xFF94A3B8);
-    const Color darkOutline = Color(0xFF475569);
-    const Color darkOutlineVariant = Color(0xFF334155);
+    const Color darkBackground = Color(0xFF000000);
+    const Color darkSurface = Color(0xFF1E1E1E);
+    const Color darkOnBackground = Colors.white;
+    const Color darkOnSurface = Colors.white;
+    const Color darkOnSurfaceVariant = Color(0xFFB0B0B0);
+    const Color darkOutline = Color(0xFF444444);
+    const Color darkOutlineVariant = Color(0xFF2D2D2D);
 
-    final textTheme = GoogleFonts.hankenGroteskTextTheme().copyWith(
+    final textTheme = GoogleFonts.hankenGroteskTextTheme(
+      ThemeData(brightness: Brightness.dark).textTheme,
+    ).copyWith(
       displayLarge: GoogleFonts.hankenGrotesk(
           fontSize: 28, fontWeight: FontWeight.w800, color: darkOnBackground),
       headlineMedium: GoogleFonts.hankenGrotesk(
@@ -259,7 +261,7 @@ class AppTheme {
         onPrimaryContainer: const Color(0xFFDBEAFE),
         secondary: secondaryColor,
         onSecondary: Colors.white,
-        secondaryContainer: const Color(0xFF334155),
+        secondaryContainer: const Color(0xFF2D2D2D),
         onSecondaryContainer: const Color(0xFFE2E8F0),
         tertiary: tertiaryColor,
         onTertiary: Colors.white,
@@ -271,7 +273,7 @@ class AppTheme {
         onErrorContainer: const Color(0xFFFFE4E6),
         surface: darkSurface,
         onSurface: darkOnSurface,
-        surfaceContainerHighest: const Color(0xFF334155),
+        surfaceContainerHighest: const Color(0xFF2D2D2D),
         onSurfaceVariant: darkOnSurfaceVariant,
         outline: darkOutline,
         outlineVariant: darkOutlineVariant,

@@ -86,7 +86,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
       });
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: const GuruDrawer(currentRoute: '/guru/warning-letters'),
       appBar: AppBar( 
         leading: Builder(

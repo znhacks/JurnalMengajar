@@ -171,7 +171,7 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Detail Guru'),
       ),

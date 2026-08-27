@@ -174,7 +174,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     final isLoading = journalProvider.isLoading || masterProvider.isLoading || scheduleProvider.isLoading;
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _isSelectionMode
           ? AppBar(
               backgroundColor: const Color(0xFF0F172A),
@@ -215,7 +215,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
               bottom: PreferredSize(
                 preferredSize: Size.fromHeight(48.h),
                 child: Container(
-                  color: Colors.white,
+                  color: Theme.of(context).appBarTheme.backgroundColor,
                   child: TabBar(
                     controller: _tabController,
                     isScrollable: true,

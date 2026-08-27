@@ -131,7 +131,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
     }).toList()..sort((a, b) => a.name.compareTo(b.name));
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: const GuruDrawer(currentRoute: '/guru/statistics'),
       appBar: AppBar(
         leading: Builder(

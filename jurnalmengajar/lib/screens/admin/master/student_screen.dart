@@ -395,7 +395,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _isSelectionMode
           ? AppBar(
               backgroundColor: const Color(0xFF0F172A),

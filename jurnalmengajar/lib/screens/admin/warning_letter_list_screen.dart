@@ -77,18 +77,15 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
     });
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           'Surat Peringatan (SP)',
           style: GoogleFonts.hankenGrotesk(
             fontWeight: FontWeight.bold,
-            color: AppTheme.onBackground,
           ),
         ),
-        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppTheme.onBackground),
       ),
       drawer: const AdminDrawer(currentRoute: '/admin/warning-letters'),
       body: isLoading

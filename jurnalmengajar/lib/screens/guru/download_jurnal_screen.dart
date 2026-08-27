@@ -794,7 +794,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         .length;
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: Builder(
           builder: (ctx) => IconButton(

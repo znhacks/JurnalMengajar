@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class AppLoadingWidget extends StatelessWidget {
@@ -56,13 +56,13 @@ class AppEmptyWidget extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
                 size: 64.w,
-                color: Colors.grey[400],
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               ),
             ),
             SizedBox(height: 20.h),
@@ -71,7 +71,7 @@ class AppEmptyWidget extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF0F172A),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
@@ -80,7 +80,7 @@ class AppEmptyWidget extends StatelessWidget {
               subtitle,
               style: TextStyle(
                 fontSize: 14.sp,
-                color: Colors.grey[500],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
@@ -123,13 +123,13 @@ class AppErrorWidget extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF2F2),
+                color: Theme.of(context).colorScheme.errorContainer,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.error_outline,
                 size: 64.w,
-                color: Colors.red[400],
+                color: Theme.of(context).colorScheme.error,
               ),
             ),
             SizedBox(height: 20.h),
@@ -138,7 +138,7 @@ class AppErrorWidget extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.bold,
-                color: Colors.red[700],
+                color: Theme.of(context).colorScheme.error,
               ),
             ),
             SizedBox(height: 8.h),
@@ -146,7 +146,7 @@ class AppErrorWidget extends StatelessWidget {
               message,
               style: TextStyle(
                 fontSize: 14.sp,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
@@ -156,8 +156,8 @@ class AppErrorWidget extends StatelessWidget {
               icon: const Icon(Icons.replay),
               label: const Text('Coba Lagi'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[600],
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
                 minimumSize: Size(150.w, 40.h),
               ),
             ),
