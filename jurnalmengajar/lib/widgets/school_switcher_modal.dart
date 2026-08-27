@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../providers/journal_provider.dart';
 import '../providers/master_data_provider.dart';
+import 'school_avatar.dart';
 
 class SchoolSwitcherModal extends StatelessWidget {
   const SchoolSwitcherModal({super.key});
@@ -35,6 +36,7 @@ class SchoolSwitcherModal extends StatelessWidget {
           schoolId: m.schoolId,
           schoolName: m.schoolName,
           role: 'admin',
+          logoUrl: m.logoUrl,
         ));
         final isSmkn8 = m.schoolName.toLowerCase().contains('smkn 8');
         if (!isSmkn8) {
@@ -42,6 +44,7 @@ class SchoolSwitcherModal extends StatelessWidget {
             schoolId: m.schoolId,
             schoolName: m.schoolName,
             role: 'guru',
+            logoUrl: m.logoUrl,
           ));
         }
       } else {
@@ -49,6 +52,7 @@ class SchoolSwitcherModal extends StatelessWidget {
           schoolId: m.schoolId,
           schoolName: m.schoolName,
           role: m.role,
+          logoUrl: m.logoUrl,
         ));
       }
     }
@@ -185,17 +189,11 @@ class SchoolSwitcherModal extends StatelessWidget {
                           Navigator.pop(context);
                         }
                       },
-                      leading: CircleAvatar(
-                        backgroundColor: isSelected ? const Color(0xFF4F46E5) : const Color(0xFFCBD5E1),
-                        radius: 20.r,
-                        child: Text(
-                          item.schoolName.isNotEmpty ? item.schoolName[0].toUpperCase() : 'S',
-                          style: GoogleFonts.hankenGrotesk(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14.sp,
-                          ),
-                        ),
+                      leading: SchoolAvatar(
+                        logoUrl: item.logoUrl,
+                        schoolName: item.schoolName,
+                        radius: 20,
+                        isSelected: isSelected,
                       ),
                       title: Text(
                         item.schoolName,
@@ -258,10 +256,12 @@ class SchoolRoleOption {
   final String schoolId;
   final String schoolName;
   final String role;
+  final String? logoUrl;
 
   SchoolRoleOption({
     required this.schoolId,
     required this.schoolName,
     required this.role,
+    this.logoUrl,
   });
 }

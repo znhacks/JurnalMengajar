@@ -6,6 +6,7 @@ class UserSchoolModel {
   final String schoolName;
   final String? schoolCode;
   final String? status; // 'active' | 'requested_exit'
+  final String? logoUrl;
 
   UserSchoolModel({
     required this.id,
@@ -15,16 +16,19 @@ class UserSchoolModel {
     required this.schoolName,
     this.schoolCode,
     this.status,
+    this.logoUrl,
   });
 
   factory UserSchoolModel.fromJson(Map<String, dynamic> json) {
     String name = 'Sekolah';
     String? code;
+    String? logo;
 
     if (json['schools'] != null && json['schools'] is Map) {
       final sMap = json['schools'] as Map<String, dynamic>;
       name = sMap['name'] as String? ?? 'Sekolah';
       code = sMap['code'] as String?;
+      logo = sMap['logo_url'] as String? ?? sMap['logoUrl'] as String?;
     } else if (json['school_name'] != null) {
       name = json['school_name'] as String;
     }
@@ -37,6 +41,7 @@ class UserSchoolModel {
       schoolName: name,
       schoolCode: code,
       status: json['status'] as String? ?? 'active',
+      logoUrl: logo ?? json['logo_url'] as String? ?? json['logoUrl'] as String?,
     );
   }
 
@@ -49,6 +54,7 @@ class UserSchoolModel {
       'school_name': schoolName,
       'school_code': schoolCode,
       'status': status,
+      'logo_url': logoUrl,
     };
   }
 }

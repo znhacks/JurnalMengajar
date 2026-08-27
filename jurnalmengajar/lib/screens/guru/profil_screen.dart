@@ -16,6 +16,7 @@ import '../../core/utils/helper.dart';
 import '../../core/utils/image_crop_helper.dart';
 import '../../repositories/supabase_auth_repository.dart';
 import '../../widgets/image_viewer.dart';
+import '../../widgets/school_avatar.dart';
 import '../../providers/warning_letter_provider.dart';
 
 class GuruProfilScreen extends StatefulWidget {
@@ -1550,16 +1551,12 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                 children: [
                                   Row(
                                     children: [
-                                      if (authProvider.activeSchool!.logoUrl != null && authProvider.activeSchool!.logoUrl!.isNotEmpty)
-                                        Image.network(
-                                          authProvider.activeSchool!.logoUrl!,
-                                          height: 36.h,
-                                          width: 36.h,
-                                          fit: BoxFit.contain,
-                                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.school, color: Color(0xFF4F46E5)),
-                                        )
-                                      else
-                                        const Icon(Icons.school, color: Color(0xFF4F46E5)),
+                                      SchoolAvatar(
+                                        logoUrl: authProvider.activeSchool?.logoUrl,
+                                        schoolName: authProvider.activeSchool?.name ?? 'Sekolah',
+                                        radius: 18,
+                                        isSelected: true,
+                                      ),
                                       SizedBox(width: 8.w),
                                       Expanded(
                                         child: Column(
