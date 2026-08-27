@@ -472,7 +472,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     final monthScheduleCount = unfinishedMonthSchedules.length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFF),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         onRefresh: _refreshData,
         color: const Color(0xFF4F7CFF),
@@ -979,9 +979,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 16.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: const Color(0xFFEAF2FF), width: 1.5),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant, width: 1.5),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF4F7CFF).withValues(alpha: 0.08),
@@ -1209,9 +1209,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         width: double.infinity,
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24.r),
-          border: Border.all(color: const Color(0xFFBFDBFE), width: 1.5),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant, width: 1.5),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF4F7CFF).withValues(alpha: 0.05),
@@ -1301,9 +1301,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         width: double.infinity,
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(20.r),
-          border: Border.all(color: const Color(0xFFEAF2FF)),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: Center(
           child: Text(
@@ -1392,10 +1392,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       child: Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
-            color: const Color(0xFF4F7CFF).withValues(alpha: 0.12),
+            color: Theme.of(context).colorScheme.outlineVariant,
             width: 1.2,
           ),
           boxShadow: [
@@ -1730,10 +1730,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20.r),
         border: Border.all(
-          color: const Color(0xFF4F7CFF).withValues(alpha: 0.12),
+          color: Theme.of(context).colorScheme.outlineVariant,
           width: 1.2,
         ),
         boxShadow: [
@@ -1890,9 +1890,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: const Color(0xFFEAF2FF)),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Material(
         color: Colors.transparent,

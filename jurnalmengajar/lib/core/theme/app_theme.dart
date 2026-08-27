@@ -222,28 +222,41 @@ class AppTheme {
 
   static ThemeData get darkTheme {
     const Color darkBackground = Color(0xFF000000);
-    const Color darkSurface = Color(0xFF1E1E1E);
-    const Color darkOnBackground = Colors.white;
-    const Color darkOnSurface = Colors.white;
-    const Color darkOnSurfaceVariant = Color(0xFFB0B0B0);
-    const Color darkOutline = Color(0xFF444444);
-    const Color darkOutlineVariant = Color(0xFF2D2D2D);
+    const Color darkSurface = Color(0xFF121212);
+    const Color darkOnBackground = Color(0xFFF8FAFC);
+    const Color darkOnSurface = Color(0xFFF8FAFC);
+    const Color darkOnSurfaceVariant = Color(0xFF94A3B8);
+    const Color darkOutline = Color(0xFF334155);
+    const Color darkOutlineVariant = Color(0xFF22252A);
 
     final textTheme = GoogleFonts.hankenGroteskTextTheme(
       ThemeData(brightness: Brightness.dark).textTheme,
     ).copyWith(
       displayLarge: GoogleFonts.hankenGrotesk(
           fontSize: 28, fontWeight: FontWeight.w800, color: darkOnBackground),
+      displayMedium: GoogleFonts.hankenGrotesk(color: darkOnBackground),
+      displaySmall: GoogleFonts.hankenGrotesk(color: darkOnBackground),
+      headlineLarge: GoogleFonts.hankenGrotesk(color: darkOnBackground),
       headlineMedium: GoogleFonts.hankenGrotesk(
           fontSize: 18, fontWeight: FontWeight.w800, color: darkOnBackground),
       headlineSmall: GoogleFonts.hankenGrotesk(
           fontSize: 16, fontWeight: FontWeight.w700, color: darkOnBackground),
+      titleLarge: GoogleFonts.hankenGrotesk(
+          fontSize: 16, fontWeight: FontWeight.w800, color: darkOnBackground),
       titleMedium: GoogleFonts.hankenGrotesk(
           fontSize: 14, fontWeight: FontWeight.w700, color: darkOnBackground),
+      titleSmall: GoogleFonts.hankenGrotesk(
+          fontSize: 12, fontWeight: FontWeight.w600, color: darkOnBackground),
       bodyLarge: GoogleFonts.hankenGrotesk(
           fontSize: 14, fontWeight: FontWeight.w500, color: darkOnSurface),
       bodyMedium: GoogleFonts.hankenGrotesk(
           fontSize: 13, fontWeight: FontWeight.w500, color: darkOnSurfaceVariant),
+      bodySmall: GoogleFonts.hankenGrotesk(
+          fontSize: 12, color: darkOnSurfaceVariant),
+      labelLarge: GoogleFonts.hankenGrotesk(
+          fontSize: 12, color: darkOnSurfaceVariant),
+      labelMedium: GoogleFonts.hankenGrotesk(
+          fontSize: 11, color: darkOnSurfaceVariant),
       labelSmall: GoogleFonts.hankenGrotesk(
           fontSize: 11,
           fontWeight: FontWeight.w700,
@@ -261,7 +274,7 @@ class AppTheme {
         onPrimaryContainer: const Color(0xFFDBEAFE),
         secondary: secondaryColor,
         onSecondary: Colors.white,
-        secondaryContainer: const Color(0xFF2D2D2D),
+        secondaryContainer: const Color(0xFF22252A),
         onSecondaryContainer: const Color(0xFFE2E8F0),
         tertiary: tertiaryColor,
         onTertiary: Colors.white,
@@ -273,7 +286,7 @@ class AppTheme {
         onErrorContainer: const Color(0xFFFFE4E6),
         surface: darkSurface,
         onSurface: darkOnSurface,
-        surfaceContainerHighest: const Color(0xFF2D2D2D),
+        surfaceContainerHighest: const Color(0xFF22252A),
         onSurfaceVariant: darkOnSurfaceVariant,
         outline: darkOutline,
         outlineVariant: darkOutlineVariant,
@@ -340,7 +353,7 @@ class AppTheme {
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: darkBackground,
+        fillColor: const Color(0xFF1A1D21),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,

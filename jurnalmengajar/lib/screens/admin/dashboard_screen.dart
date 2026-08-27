@@ -246,13 +246,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         journalProvider.isLoading;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
         scrolledUnderElevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
         title: Builder(
           builder: (context) {
             final isAdminOnly = authProvider.isExclusiveAdmin;
