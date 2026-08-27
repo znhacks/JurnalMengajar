@@ -810,7 +810,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
             },
           ),
         ),
-        title: const Text('Download & Setor Jurnal'),
+        title: const Text('Download Jurnal'),
       ),
       drawer: const GuruDrawer(currentRoute: '/guru/download-jurnal'),
       body: SafeArea(

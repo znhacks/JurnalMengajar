@@ -341,7 +341,7 @@ class GuruDrawer extends StatelessWidget {
                 _buildDrawerSectionHeader('FITUR LAINNYA'),
                 _buildDrawerItem(
                   icon: Icons.picture_as_pdf_rounded,
-                  label: 'Download & Setor Jurnal',
+                  label: 'Download Jurnal',
                   isSelected: currentRoute == '/guru/download-jurnal',
                   onTap: () {
                     Navigator.pop(context);
