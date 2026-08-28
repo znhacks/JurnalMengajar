@@ -330,28 +330,35 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                       ),
                     ),
                     SizedBox(height: 10.h),
-                    // Disetujui
-                    _buildVerificationRow(
-                      icon: Icons.check_circle_outline,
-                      color: const Color(0xFF10B981),
-                      label: 'Disetujui',
-                      value: '$disetujuiCount Jurnal',
-                    ),
-                    const Divider(color: Color(0xFFF1F5F9), height: 10),
-                    // Pending
-                    _buildVerificationRow(
-                      icon: Icons.hourglass_empty,
-                      color: const Color(0xFF2563EB),
-                      label: 'Pending / Proses',
-                      value: '$pendingCount Jurnal',
-                    ),
-                    const Divider(color: Color(0xFFF1F5F9), height: 10),
-                    // Ditolak
-                    _buildVerificationRow(
-                      icon: Icons.cancel_outlined,
-                      color: Colors.red,
-                      label: 'Ditolak',
-                      value: '$ditolakCount Jurnal',
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildVerificationCard(
+                            icon: Icons.check_circle_outline,
+                            color: const Color(0xFF10B981),
+                            bgColor: const Color(0xFFE8F5E9),
+                            value: '$disetujuiCount',
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: _buildVerificationCard(
+                            icon: Icons.hourglass_empty,
+                            color: const Color(0xFF2563EB),
+                            bgColor: const Color(0xFFEBF5FF),
+                            value: '$pendingCount',
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: _buildVerificationCard(
+                            icon: Icons.cancel_outlined,
+                            color: Colors.red,
+                            bgColor: const Color(0xFFFFEBEE),
+                            value: '$ditolakCount',
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -520,34 +527,42 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
     );
   }
 
-  Widget _buildVerificationRow({
+  Widget _buildVerificationCard({
     required IconData icon,
     required Color color,
-    required String label,
+    required Color bgColor,
     required String value,
   }) {
-    return Row(
-      children: [
-        Icon(icon, color: color, size: 14.w),
-        SizedBox(width: 6.w),
-        Text(
-          label,
-          style: GoogleFonts.hankenGrotesk(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF475569),
+    return Container(
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 4.w),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 14.w),
+          SizedBox(height: 6.h),
+          Text(
+            value,
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
           ),
-        ),
-        const Spacer(),
-        Text(
-          value,
-          style: GoogleFonts.hankenGrotesk(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w700,
-            color: color,
+          SizedBox(height: 2.h),
+          Text(
+            'Jurnal',
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 9.sp,
+              color: color.withValues(alpha: 0.7),
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
