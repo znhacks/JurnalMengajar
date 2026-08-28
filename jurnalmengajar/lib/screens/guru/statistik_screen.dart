@@ -552,15 +552,6 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
               color: color,
             ),
           ),
-          SizedBox(height: 2.h),
-          Text(
-            'Jurnal',
-            style: GoogleFonts.hankenGrotesk(
-              fontSize: 9.sp,
-              color: color.withValues(alpha: 0.7),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
         ],
       ),
     );
