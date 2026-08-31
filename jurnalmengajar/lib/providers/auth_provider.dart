@@ -173,15 +173,20 @@ class AuthProvider with ChangeNotifier {
 
       final effectiveRole = role;
 
-      // 2. Insert or update user_schools relationship
-      try {
-        await supabase.from('user_schools').upsert({
+      // 2. Check if already exists, otherwise insert user_schools relationship
+      final existingRole = await supabase.from('user_schools')
+          .select('id')
+          .eq('user_id', _currentUser!.id)
+          .eq('school_id', schoolId)
+          .eq('role', effectiveRole)
+          .maybeSingle();
+
+      if (existingRole == null) {
+        await supabase.from('user_schools').insert({
           'user_id': _currentUser!.id,
           'school_id': schoolId,
           'role': effectiveRole,
         });
-      } catch (dbErr) {
-        debugPrint('Note inserting user_schools: $dbErr');
       }
 
       // 3. Update active school locally & persist
@@ -222,13 +227,20 @@ class AuthProvider with ChangeNotifier {
         // Load saved preference if available
         final prefs = await SharedPreferences.getInstance();
         final savedSchoolId = prefs.getString(_kActiveSchoolIdKey);
+        final savedRole = prefs.getString(_kActiveRoleKey);
 
         UserSchoolModel? activeMember;
         if (savedSchoolId != null && savedSchoolId.isNotEmpty) {
-          activeMember = _userMemberships.firstWhere(
-            (m) => m.schoolId == savedSchoolId,
-            orElse: () => _userMemberships.first,
-          );
+          try {
+            activeMember = _userMemberships.firstWhere(
+              (m) => m.schoolId == savedSchoolId && (savedRole == null || m.role == savedRole),
+            );
+          } catch (_) {
+            activeMember = _userMemberships.firstWhere(
+              (m) => m.schoolId == savedSchoolId,
+              orElse: () => _userMemberships.first,
+            );
+          }
         } else {
           activeMember = _userMemberships.first;
         }

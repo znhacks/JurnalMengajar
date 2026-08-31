@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 import '../../../providers/master_data_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../models/teacher_model.dart';
+import '../../../models/school_model.dart';
 import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
@@ -123,15 +124,24 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
 
   void _showFormDialog({TeacherModel? teacher}) {
     if (teacher == null) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-      final school = masterProvider.schools.isNotEmpty ? masterProvider.schools.first : null;
+      
+      SchoolModel? school = authProvider.activeSchool;
+      if (school == null && authProvider.activeSchoolId != null) {
+        try {
+          school = masterProvider.schools.firstWhere((s) => s.id == authProvider.activeSchoolId);
+        } catch (_) {}
+      }
+      school ??= masterProvider.schools.isNotEmpty ? masterProvider.schools.first : null;
+
       if (school != null) {
-        final plan = school.plan;
-        final maxLimit = plan == 'pro' ? 50 : 30;
+        final plan = school.plan.toUpperCase();
+        final maxLimit = school.maxTeachers > 0 ? school.maxTeachers : (school.isPro ? 50 : 30);
         if (masterProvider.teachers.length >= maxLimit) {
           AppHelper.showSnackBar(
             context,
-            'Gagal menambah guru. Batas maksimal $maxLimit guru untuk paket $plan telah tercapai. Buka Pengaturan untuk ubah paket.',
+            'Batas kuota $maxLimit guru untuk paket $plan telah tercapai. Tingkatkan paket di Pengaturan untuk menambah lebih banyak guru.',
             isError: true,
           );
           return;

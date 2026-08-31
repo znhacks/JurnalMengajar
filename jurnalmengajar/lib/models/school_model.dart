@@ -13,8 +13,9 @@ class SchoolModel {
   final String? npsn;
   final String? postalCode;
   final String? logoUrl;
-  final String plan; // 'free' or 'pro'
+  final String plan; // 'free', 'pro', or 'enterprise'
   final String? activationCode;
+  final int maxTeachers;
 
   SchoolModel({
     required this.id,
@@ -33,12 +34,21 @@ class SchoolModel {
     this.logoUrl,
     this.plan = 'free',
     this.activationCode,
+    this.maxTeachers = 30,
   });
 
+  bool get isPro => plan.toLowerCase() == 'pro';
+  bool get isEnterprise => plan.toLowerCase() == 'enterprise';
+  bool get isFree => plan.toLowerCase() == 'free';
+
   factory SchoolModel.fromJson(Map<String, dynamic> json) {
+    final rawPlan = json['subscription_plan'] as String? ?? json['plan'] as String? ?? 'free';
+    final parsedPlan = rawPlan.toLowerCase().trim();
+    final defaultMax = parsedPlan == 'pro' ? 50 : (parsedPlan == 'enterprise' ? 999 : 30);
+
     return SchoolModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? 'Sekolah',
       code: json['code'] as String?,
       address: json['address'] as String?,
       phone: json['phone'] as String?,
@@ -51,8 +61,9 @@ class SchoolModel {
       npsn: json['npsn'] as String?,
       postalCode: json['postal_code'] as String? ?? json['postalCode'] as String?,
       logoUrl: json['logo_url'] as String? ?? json['logoUrl'] as String?,
-      plan: json['plan'] as String? ?? 'free',
-      activationCode: json['activation_code'] as String? ?? json['activationCode'] as String?,
+      plan: parsedPlan,
+      activationCode: json['code'] as String? ?? json['activation_code'] as String? ?? json['activationCode'] as String?,
+      maxTeachers: json['max_teachers'] as int? ?? defaultMax,
     );
   }
 
@@ -60,7 +71,7 @@ class SchoolModel {
     return {
       'id': id,
       'name': name,
-      'code': code,
+      'code': code ?? activationCode,
       'address': address,
       'phone': phone,
       'status': status,
@@ -72,8 +83,8 @@ class SchoolModel {
       'npsn': npsn,
       'postal_code': postalCode,
       'logo_url': logoUrl,
-      'plan': plan,
-      'activation_code': activationCode,
+      'subscription_plan': plan,
+      'max_teachers': maxTeachers,
     };
   }
 }

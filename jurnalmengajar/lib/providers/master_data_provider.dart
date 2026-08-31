@@ -293,7 +293,7 @@ class MasterDataProvider with ChangeNotifier {
   }
 
   // --- SCHOOL CRUD (Plan) ---
-  Future<String?> validateActivationCode(String code) async {
+  Future<SchoolModel?> validateActivationCode(String code) async {
     if (schoolRepository != null) {
       return await schoolRepository!.validateActivationCode(code);
     }

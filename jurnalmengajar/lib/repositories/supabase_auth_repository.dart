@@ -246,7 +246,7 @@ class SupabaseAuthRepository implements AuthRepository {
           }).eq('id', userId);
 
           // Connect user to school in user_schools table
-          await _supabase.from('user_schools').upsert({
+          await _supabase.from('user_schools').insert({
             'user_id': userId,
             'school_id': schoolId,
             'role': user.role,

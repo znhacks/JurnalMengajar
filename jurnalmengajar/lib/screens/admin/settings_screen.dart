@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../models/school_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../widgets/admin_drawer.dart';
@@ -86,26 +91,68 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) {
+        builder: (context, setModalState) {
           return AlertDialog(
-            title: const Text('Ganti Kode Aktivasi'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            title: Row(
               children: [
-                const Text('Masukkan kode aktivasi langganan dari JM-Panel:'),
-                SizedBox(height: 12.h),
-                TextField(
-                  controller: codeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Kode Aktivasi',
-                    border: OutlineInputBorder(),
+                Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: const Icon(
+                    Icons.vpn_key_rounded,
+                    color: Color(0xFF2563EB),
+                    size: 22,
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Text(
+                    'Ganti Kode Aktivasi',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 17.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Masukkan kode sekolah / lisensi yang diperoleh dari JM-Panel (misal: PRO-XXXXXX atau KODE-SEKOLAH):',
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                TextField(
+                  controller: codeController,
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: InputDecoration(
+                    labelText: 'Kode Aktivasi / Sekolah',
+                    hintText: 'Contoh: PRO-684D386E',
+                    prefixIcon: const Icon(Icons.key_rounded),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actionsPadding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
                 child: const Text('Batal'),
               ),
               ElevatedButton(
@@ -113,35 +160,52 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     ? null
                     : () async {
                         final code = codeController.text.trim();
-                        if (code.isEmpty) return;
+                        if (code.isEmpty) {
+                          AppHelper.showSnackBar(
+                            this.context,
+                            'Silakan masukkan kode terlebih dahulu.',
+                            isError: true,
+                          );
+                          return;
+                        }
 
-                        setState(() => isChecking = true);
+                        setModalState(() => isChecking = true);
                         final masterProvider = Provider.of<MasterDataProvider>(
                           this.context,
                           listen: false,
                         );
-                        final validPlan = await masterProvider
-                            .validateActivationCode(code);
-                        setState(() => isChecking = false);
+                        
+                        final matchedSchool = await masterProvider.validateActivationCode(code);
+                        setModalState(() => isChecking = false);
 
-                        if (validPlan != null) {
+                        if (matchedSchool != null) {
                           if (!mounted) return;
-                          Navigator.pop(context);
-                          _showConfirmationDialog(validPlan, code);
+                          Navigator.pop(dialogContext);
+                          _showConfirmationDialog(matchedSchool, code);
                         } else {
                           if (!mounted) return;
                           AppHelper.showSnackBar(
                             this.context,
-                            'Kode aktivasi tidak valid atau tidak ditemukan.',
+                            'Kode tidak valid atau tidak ditemukan di database JM-Panel.',
                             isError: true,
                           );
                         }
                       },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                ),
                 child: isChecking
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                    ? SizedBox(
+                        width: 18.w,
+                        height: 18.w,
+                        child: const CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Text('Cek Kode'),
               ),
@@ -152,53 +216,196 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     );
   }
 
-  void _showConfirmationDialog(String plan, String code) {
+  void _showConfirmationDialog(SchoolModel matchedSchool, String code) {
+    final isPro = matchedSchool.isPro;
+    final planName = matchedSchool.plan.toUpperCase();
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Konfirmasi Aktivasi'),
-        content: Text(
-          'Anda akan mengaktifkan paket $plan.\n\nLanjut / Edit?',
+      builder: (confirmCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22.r),
         ),
+        title: Row(
+          children: [
+            Icon(
+              isPro ? Icons.stars_rounded : Icons.verified_rounded,
+              color: isPro ? const Color(0xFFD97706) : const Color(0xFF2563EB),
+              size: 28,
+            ),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: Text(
+                'Konfirmasi Paket $planName',
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 17.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Anda akan mengaktifkan dan menerapkan paket berikut untuk sekolah Anda:',
+              style: TextStyle(fontSize: 13.sp, color: Colors.grey[700]),
+            ),
+            SizedBox(height: 14.h),
+            Container(
+              padding: EdgeInsets.all(14.w),
+              decoration: BoxDecoration(
+                color: isPro
+                    ? const Color(0xFFFFFBEB)
+                    : const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(14.r),
+                border: Border.all(
+                  color: isPro
+                      ? const Color(0xFFFDE68A)
+                      : const Color(0xFFBFDBFE),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          matchedSchool.name,
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF0F172A),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                        decoration: BoxDecoration(
+                          color: isPro ? const Color(0xFFD97706) : const Color(0xFF2563EB),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Text(
+                          '$planName PLAN',
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 6.h),
+                  Text(
+                    'Kode: ${matchedSchool.code ?? code}',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: isPro ? const Color(0xFF92400E) : const Color(0xFF1E40AF),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Divider(height: 16),
+                  Row(
+                    children: [
+                      Icon(Icons.people_outline_rounded, size: 16.sp, color: Colors.grey[700]),
+                      SizedBox(width: 6.w),
+                      Text(
+                        'Kapasitas Maksimal: ${matchedSchool.maxTeachers} Guru',
+                        style: TextStyle(fontSize: 12.5.sp, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 4.h),
+                  Row(
+                    children: [
+                      Icon(Icons.check_circle_outline_rounded, size: 16.sp, color: Colors.green[700]),
+                      SizedBox(width: 6.w),
+                      Text(
+                        isPro ? 'Perks: Prioritas & Multi-Sekolah' : 'Perks: Fitur Standar Sekolah',
+                        style: TextStyle(fontSize: 12.sp, color: Colors.grey[800]),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actionsPadding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(confirmCtx);
               _showActivationCodeDialog();
             },
             child: const Text('Edit'),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context);
-              final masterProvider = Provider.of<MasterDataProvider>(
-                this.context,
-                listen: false,
-              );
-              final school = masterProvider.schools.isNotEmpty
-                  ? masterProvider.schools.first
-                  : null;
-              if (school != null) {
-                final success = await masterProvider.updateSchoolPlan(
-                  school.id,
-                  plan,
-                  code,
+              Navigator.pop(confirmCtx);
+              final authProvider = Provider.of<AuthProvider>(this.context, listen: false);
+              final masterProvider = Provider.of<MasterDataProvider>(this.context, listen: false);
+              final userId = authProvider.currentUser?.id;
+
+              try {
+                // 1. Connect user to school with role 'admin' in user_schools if not yet connected
+                if (userId != null) {
+                  final supabase = Supabase.instance.client;
+                  final existing = await supabase
+                      .from('user_schools')
+                      .select('id')
+                      .eq('user_id', userId)
+                      .eq('school_id', matchedSchool.id)
+                      .maybeSingle();
+
+                  if (existing == null) {
+                    await supabase.from('user_schools').insert({
+                      'user_id': userId,
+                      'school_id': matchedSchool.id,
+                      'role': 'admin',
+                    });
+                  }
+                }
+
+                // 2. Update active school & refresh
+                await authProvider.switchActiveSchool(
+                  matchedSchool.id,
+                  matchedSchool.name,
+                  'admin',
                 );
-                if (success && mounted) {
+                await authProvider.loadUserMemberships();
+                await masterProvider.loadAllData(matchedSchool.id);
+
+                if (mounted) {
+                  setState(() {});
                   AppHelper.showSnackBar(
                     this.context,
-                    'Berhasil mengaktifkan paket $plan.',
+                    'Selamat! Paket $planName untuk ${matchedSchool.name} berhasil diaktifkan.',
                   );
-                } else if (mounted) {
+                }
+              } catch (e) {
+                if (mounted) {
                   AppHelper.showSnackBar(
                     this.context,
-                    'Gagal mengaktifkan paket.',
+                    'Gagal mengaktifkan paket: $e',
                     isError: true,
                   );
                 }
               }
             },
-            child: const Text('Lanjut'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isPro ? const Color(0xFFD97706) : const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+            ),
+            child: const Text('Lanjut & Terapkan'),
           ),
         ],
       ),
@@ -207,107 +414,389 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
   Future<void> _launchJMPanel() async {
     final url = Uri.parse('https://jmpanel.vercel.app');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          AppHelper.showSnackBar(context, 'Tidak dapat membuka tautan jmpanel.vercel.app', isError: true);
+        }
+      }
+    } catch (e) {
       if (mounted) {
-        AppHelper.showSnackBar(context, 'Tidak dapat membuka tautan.', isError: true);
+        AppHelper.showSnackBar(context, 'Gagal membuka browser: $e', isError: true);
       }
     }
   }
 
+  Widget _buildPerkItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    bool isHighlighted = false,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 6.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.all(6.w),
+            decoration: BoxDecoration(
+              color: isHighlighted
+                  ? const Color(0xFFD97706).withValues(alpha: 0.12)
+                  : const Color(0xFF2563EB).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              size: 16.sp,
+              color: isHighlighted ? const Color(0xFFD97706) : const Color(0xFF2563EB),
+            ),
+          ),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11.5.sp,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
     final settingsProvider = context.watch<SettingsProvider>();
     final masterProvider = context.watch<MasterDataProvider>();
     final isLoading = settingsProvider.isLoading || masterProvider.isLoading;
-    final school = masterProvider.schools.isNotEmpty ? masterProvider.schools.first : null;
-    final plan = school?.plan ?? 'free';
+
+    SchoolModel? school = authProvider.activeSchool;
+    if (school == null && authProvider.activeSchoolId != null) {
+      try {
+        school = masterProvider.schools.firstWhere((s) => s.id == authProvider.activeSchoolId);
+      } catch (_) {}
+    }
+    school ??= masterProvider.schools.isNotEmpty ? masterProvider.schools.first : null;
+
+    final plan = (school?.plan ?? 'free').toLowerCase().trim();
     final isPro = plan == 'pro';
+    final isEnterprise = plan == 'enterprise';
+    final maxTeachers = school?.maxTeachers ?? (isPro ? 50 : 30);
+    final currentTeacherCount = masterProvider.teachers.length;
+    final usagePercent = maxTeachers > 0 ? (currentTeacherCount / maxTeachers).clamp(0.0, 1.0) : 0.0;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Pengaturan Sistem')),
+      appBar: AppBar(
+        title: Text(
+          'Pengaturan Sekolah',
+          style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+        ),
+      ),
       drawer: const AdminDrawer(currentRoute: '/admin/settings'),
       body: SafeArea(
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
-                padding: EdgeInsets.all(20.w),
+                padding: EdgeInsets.all(18.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Paket Berlangganan Section
+                    // ─── 1. KARTU PAKET BERLANGGANAN & PERKS ────────────────────────
                     Card(
                       margin: EdgeInsets.zero,
+                      elevation: 2,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
+                        borderRadius: BorderRadius.circular(18.r),
                         side: BorderSide(
-                          color: isPro ? Colors.blue.withValues(alpha: 0.5) : Colors.grey.withValues(alpha: 0.3),
+                          color: isPro
+                              ? const Color(0xFFF59E0B).withValues(alpha: 0.5)
+                              : Colors.grey.withValues(alpha: 0.25),
                           width: 1.5,
                         ),
                       ),
                       child: Padding(
-                        padding: EdgeInsets.all(16.w),
+                        padding: EdgeInsets.all(18.w),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Header: Plan Badge & School Info
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  'Paket Berlangganan',
-                                  style: TextStyle(
-                                    fontSize: 16.sp,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF0F172A),
-                                  ),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(10.w),
+                                      decoration: BoxDecoration(
+                                        gradient: isPro
+                                            ? const LinearGradient(
+                                                colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                              )
+                                            : const LinearGradient(
+                                                colors: [Color(0xFF64748B), Color(0xFF475569)],
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                              ),
+                                        borderRadius: BorderRadius.circular(14.r),
+                                      ),
+                                      child: Icon(
+                                        isPro ? Icons.workspace_premium_rounded : Icons.school_rounded,
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                                    ),
+                                    SizedBox(width: 12.w),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Paket Aplikasi',
+                                          style: TextStyle(
+                                            fontSize: 12.sp,
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Text(
+                                          isPro
+                                              ? 'PRO PLAN'
+                                              : (isEnterprise ? 'ENTERPRISE' : 'FREE PLAN'),
+                                          style: GoogleFonts.hankenGrotesk(
+                                            fontSize: 18.sp,
+                                            fontWeight: FontWeight.w900,
+                                            color: isPro
+                                                ? const Color(0xFFD97706)
+                                                : Theme.of(context).colorScheme.onSurface,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                                 Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
                                   decoration: BoxDecoration(
-                                    color: isPro ? Colors.blue : Colors.grey[600],
+                                    color: isPro
+                                        ? const Color(0xFFD97706)
+                                        : const Color(0xFF64748B),
                                     borderRadius: BorderRadius.circular(20.r),
                                   ),
-                                  child: Text(
-                                    isPro ? 'PRO PLAN' : 'FREE PLAN',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12.sp,
-                                    ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        isPro ? Icons.star_rounded : Icons.check_rounded,
+                                        size: 14.sp,
+                                        color: Colors.white,
+                                      ),
+                                      SizedBox(width: 4.w),
+                                      Text(
+                                        isPro ? 'AKTIF' : 'GRATIS',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 11.5.sp,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
-                            SizedBox(height: 12.h),
-                            Text(
-                              isPro
-                                  ? 'Anda sedang menggunakan Paket PRO. (Maksimal 50 Guru)'
-                                  : 'Anda sedang menggunakan Paket FREE. (Maksimal 30 Guru)',
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                color: Colors.grey[700],
+                            SizedBox(height: 16.h),
+
+                            // School name and Code Row
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surfaceVariant.withValues(alpha: 0.4),
+                                borderRadius: BorderRadius.circular(12.r),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          school?.name ?? 'Sekolah',
+                                          style: GoogleFonts.hankenGrotesk(
+                                            fontSize: 14.sp,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        SizedBox(height: 2.h),
+                                        Text(
+                                          'Kode Sekolah: ${school?.code ?? '-'}',
+                                          style: TextStyle(
+                                            fontSize: 12.sp,
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (school?.code != null)
+                                    IconButton(
+                                      icon: const Icon(Icons.copy_rounded, size: 18),
+                                      tooltip: 'Salin Kode',
+                                      onPressed: () {
+                                        Clipboard.setData(ClipboardData(text: school!.code!));
+                                        AppHelper.showSnackBar(context, 'Kode sekolah disalin!');
+                                      },
+                                    ),
+                                ],
                               ),
                             ),
                             SizedBox(height: 16.h),
+
+                            // Teacher Quota Progress Indicator
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Kapasitas Guru Terdaftar',
+                                  style: TextStyle(
+                                    fontSize: 12.5.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                                Text(
+                                  '$currentTeacherCount / $maxTeachers Guru',
+                                  style: GoogleFonts.hankenGrotesk(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: currentTeacherCount >= maxTeachers
+                                        ? Colors.red
+                                        : const Color(0xFF2563EB),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 6.h),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(6.r),
+                              child: LinearProgressIndicator(
+                                value: usagePercent,
+                                minHeight: 8.h,
+                                backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  currentTeacherCount >= maxTeachers
+                                      ? Colors.red
+                                      : (isPro ? const Color(0xFFD97706) : const Color(0xFF2563EB)),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 18.h),
+
+                            // Perks Breakdown
+                            Text(
+                              'Keuntungan & Fitur Paket:',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 13.5.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            SizedBox(height: 8.h),
+
+                            _buildPerkItem(
+                              icon: Icons.groups_rounded,
+                              title: isPro ? 'Maksimal 50 Guru' : 'Maksimal 30 Guru',
+                              subtitle: isPro
+                                  ? 'Kapasitas Pro hingga 50 guru di aplikasi Jurnal Mengajar'
+                                  : 'Kapasitas Free plan maksimal 30 guru (Upgrade ke Pro untuk 50 guru)',
+                              isHighlighted: isPro,
+                            ),
+                            _buildPerkItem(
+                              icon: Icons.domain_rounded,
+                              title: isPro ? 'Kontrol 2 Sekolah di JM-Panel' : 'Kontrol 1 Sekolah',
+                              subtitle: isPro
+                                  ? 'Dapat mengelola hingga 2 instansi/sekolah sekaligus'
+                                  : 'Hanya dapat mengelola 1 instansi sekolah',
+                              isHighlighted: isPro,
+                            ),
+                            _buildPerkItem(
+                              icon: Icons.support_agent_rounded,
+                              title: isPro ? 'Dukungan Prioritas (Priority Support)' : 'Dukungan Komunitas',
+                              subtitle: isPro
+                                  ? 'Respon cepat dan penanganan langsung untuk admin Pro'
+                                  : 'Dukungan standar aplikasi',
+                              isHighlighted: isPro,
+                            ),
+                            _buildPerkItem(
+                              icon: Icons.manage_accounts_rounded,
+                              title: isPro ? '2 Pengguna di Organisasi' : '1 Pengguna di Organisasi',
+                              subtitle: isPro
+                                  ? 'Akses multi-admin untuk pengelolaan sekolah'
+                                  : '1 akun pengelola organisasi',
+                              isHighlighted: isPro,
+                            ),
+
+                            SizedBox(height: 18.h),
+
+                            // Action Buttons: Ganti Kode & Kelola Langganan
                             Row(
                               children: [
                                 Expanded(
                                   child: OutlinedButton.icon(
                                     onPressed: _showActivationCodeDialog,
-                                    icon: const Icon(Icons.key),
-                                    label: const Text('Ganti Kode Aktivasi'),
+                                    icon: const Icon(Icons.vpn_key_rounded, size: 18),
+                                    label: Text(
+                                      'Ganti Kode',
+                                      style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12.r),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                SizedBox(width: 12.w),
+                                SizedBox(width: 10.w),
                                 Expanded(
                                   child: ElevatedButton.icon(
                                     onPressed: _launchJMPanel,
-                                    icon: const Icon(Icons.open_in_new),
-                                    label: const Text('Kelola Langganan'),
+                                    icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                                    label: Text(
+                                      'Kelola Langganan',
+                                      style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+                                    ),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF4F7CFF),
+                                      backgroundColor: const Color(0xFF2563EB),
                                       foregroundColor: Colors.white,
+                                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12.r),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -317,41 +806,66 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 24.h),
+                    SizedBox(height: 20.h),
 
-                    // Pengaturan Input Jurnal Section
+                    // ─── 2. PENGATURAN INPUT JURNAL SECTION ─────────────────────────
                     Form(
                       key: _formKey,
                       child: Card(
                         margin: EdgeInsets.zero,
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18.r),
+                          side: BorderSide(
+                            color: Colors.grey.withValues(alpha: 0.25),
+                            width: 1,
+                          ),
+                        ),
                         child: Padding(
-                          padding: EdgeInsets.all(16.w),
+                          padding: EdgeInsets.all(18.w),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Batasan Penginputan Jurnal',
-                                style: TextStyle(
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF0F172A),
-                                ),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(8.w),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(10.r),
+                                    ),
+                                    child: const Icon(
+                                      Icons.timer_outlined,
+                                      color: Color(0xFF2563EB),
+                                      size: 20,
+                                    ),
+                                  ),
+                                  SizedBox(width: 10.w),
+                                  Text(
+                                    'Batasan Penginputan Jurnal',
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontSize: 15.5.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              SizedBox(height: 8.h),
+                              SizedBox(height: 10.h),
                               Text(
                                 'Tentukan batas waktu (dalam hari) bagi guru untuk mengisi jurnal setelah jadwal mengajar selesai.',
                                 style: TextStyle(
-                                  fontSize: 13.sp,
-                                  color: Colors.grey[600],
+                                  fontSize: 12.5.sp,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   height: 1.4,
                                 ),
                               ),
-                              const Divider(height: 28),
+                              const Divider(height: 24),
 
                               Text(
                                 'Batas Waktu Input (Hari) *',
                                 style: TextStyle(
-                                  fontSize: 14.sp,
+                                  fontSize: 13.5.sp,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -365,19 +879,32 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                   }
                                   return null;
                                 },
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   hintText: 'Contoh: 3',
                                   suffixText: 'Hari',
-                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12.r),
+                                  ),
                                 ),
                               ),
-                              SizedBox(height: 24.h),
+                              SizedBox(height: 18.h),
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton.icon(
                                   onPressed: isLoading ? null : _handleSave,
-                                  icon: const Icon(Icons.save),
-                                  label: const Text('Simpan Pengaturan Jurnal'),
+                                  icon: const Icon(Icons.save_rounded),
+                                  label: Text(
+                                    'Simpan Pengaturan Jurnal',
+                                    style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF2563EB),
+                                    foregroundColor: Colors.white,
+                                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12.r),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
