@@ -181,7 +181,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
@@ -293,7 +293,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF0F172A),
+                      color: Theme.of(context).colorScheme.onBackground,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -347,7 +347,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               child: Icon(
                                 Icons.camera_alt,
                                 size: 16.r,
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.surface,
                               ),
                             ),
                           ),
@@ -586,8 +586,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         ? SizedBox(
                             width: 24.w,
                             height: 24.h,
-                            child: const CircularProgressIndicator(
-                              color: Colors.white,
+                            child: CircularProgressIndicator(
+                              color: Theme.of(context).colorScheme.surface,
                               strokeWidth: 2.5,
                             ),
                           )
@@ -652,7 +652,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                 children: [
                   Text(
                     'Masukkan Kode Sekolah atau NPSN untuk bergabung:',
-                    style: TextStyle(fontSize: 13.sp, color: const Color(0xFF64748B)),
+                    style: TextStyle(fontSize: 13.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                   SizedBox(height: 14.h),
                   TextField(
@@ -685,7 +685,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     style: TextStyle(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF1E293B),
+                      color: Theme.of(context).colorScheme.onBackground,
                     ),
                   ),
                   SizedBox(height: 8.h),
@@ -722,7 +722,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                   size: 16.sp,
                                   color: requestedRole == 'guru'
                                       ? const Color(0xFF2563EB)
-                                      : const Color(0xFF64748B),
+                                      : Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                                 SizedBox(width: 6.w),
                                 Flexible(
@@ -775,7 +775,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                   size: 16.sp,
                                   color: requestedRole == 'admin'
                                       ? const Color(0xFFEA580C)
-                                      : const Color(0xFF64748B),
+                                      : Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                                 SizedBox(width: 6.w),
                                 Flexible(
@@ -842,7 +842,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         'Batal',
                         style: TextStyle(
                           fontSize: 14.sp,
-                          color: const Color(0xFF64748B),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -891,7 +891,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                       style: ElevatedButton.styleFrom(
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                         backgroundColor: const Color(0xFF2563EB),
-                        foregroundColor: Colors.white,
+                        foregroundColor: Theme.of(context).colorScheme.surface,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14.r),
@@ -901,8 +901,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                           ? SizedBox(
                               width: 18.w,
                               height: 18.h,
-                              child: const CircularProgressIndicator(
-                                color: Colors.white,
+                              child: CircularProgressIndicator(
+                                color: Theme.of(context).colorScheme.surface,
                                 strokeWidth: 2,
                               ),
                             )
@@ -996,7 +996,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   label: const Text('Coba Lagi'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2563EB),
-                    foregroundColor: Colors.white,
+                    foregroundColor: Theme.of(context).colorScheme.surface,
                     elevation: 0,
                     minimumSize: Size(150.w, 40.h),
                     shape: RoundedRectangleBorder(
@@ -1088,7 +1088,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.surface,
                                 width: 2.5.r,
                               ),
                             ),
@@ -1096,7 +1096,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               tag: 'guru_profile_avatar',
                               child: CircleAvatar(
                                 radius: 36.r,
-                                backgroundColor: Colors.white.withValues(
+                                backgroundColor: Theme.of(context).colorScheme.surface.withValues(
                                   alpha: 0.2,
                                 ),
                                 backgroundImage: (teacher.photoUrl != null && teacher.photoUrl!.startsWith('http'))
@@ -1110,7 +1110,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                     ? Icon(
                                         Icons.person,
                                         size: 36.r,
-                                        color: Colors.white,
+                                        color: Theme.of(context).colorScheme.surface,
                                       )
                                     : null,
                               ),
@@ -1125,8 +1125,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                 _showEditProfileDialog(currentUser, teacher),
                             child: Container(
                               padding: EdgeInsets.all(5.w),
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface,
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -1159,7 +1159,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               style: TextStyle(
                                 fontSize: 18.sp,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.surface,
                               ),
                             ),
                           ),
@@ -1168,7 +1168,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                             teacher.position.isNotEmpty ? teacher.position : (currentUser.position ?? 'Guru'),
                             style: TextStyle(
                               fontSize: 13.sp,
-                              color: Colors.white.withValues(alpha: 0.8),
+                              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -1179,7 +1179,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               vertical: 4.h,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.12),
+                              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: Text(
@@ -1187,7 +1187,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               style: TextStyle(
                                 fontSize: 9.sp,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.surface,
                               ),
                             ),
                           ),
@@ -1204,7 +1204,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
               Container(
                 padding: EdgeInsets.all(16.w),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16.r),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
@@ -1227,7 +1227,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF0F172A),
+                                color: Theme.of(context).colorScheme.onBackground,
                               ),
                             ),
                           ],
@@ -1271,14 +1271,14 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                     style: TextStyle(
                                       fontSize: 13.sp,
                                       fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF1E293B),
+                                      color: Theme.of(context).colorScheme.onBackground,
                                     ),
                                   ),
                                   Text(
                                     'Peran: ${authProvider.activeRole.toUpperCase()}',
                                     style: TextStyle(
                                       fontSize: 11.sp,
-                                      color: const Color(0xFF64748B),
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ],
@@ -1378,7 +1378,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                     CircleAvatar(
                                       backgroundColor: isActive
                                           ? const Color(0xFF3B82F6)
-                                          : const Color(0xFF64748B),
+                                          : Theme.of(context).colorScheme.onSurfaceVariant,
                                       radius: 18.r,
                                       child: Text(
                                         sName.isNotEmpty
@@ -1387,7 +1387,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                         style: TextStyle(
                                           fontSize: 12.sp,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.white,
+                                          color: Theme.of(context).colorScheme.surface,
                                         ),
                                       ),
                                     ),
@@ -1402,14 +1402,14 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                             style: TextStyle(
                                               fontSize: 13.sp,
                                               fontWeight: FontWeight.bold,
-                                              color: const Color(0xFF1E293B),
+                                              color: Theme.of(context).colorScheme.onBackground,
                                             ),
                                           ),
                                           Text(
                                             'Peran: ${sRole.toUpperCase()}',
                                             style: TextStyle(
                                               fontSize: 11.sp,
-                                              color: const Color(0xFF64748B),
+                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                                             ),
                                           ),
                                         ],
@@ -1565,7 +1565,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                             if (authProvider.activeSchool!.governmentHeader != null && authProvider.activeSchool!.governmentHeader!.isNotEmpty)
                                               Text(
                                                 authProvider.activeSchool!.governmentHeader!.toUpperCase(),
-                                                style: GoogleFonts.hankenGrotesk(fontSize: 9.sp, fontWeight: FontWeight.w700, color: const Color(0xFF64748B)),
+                                                style: GoogleFonts.hankenGrotesk(fontSize: 9.sp, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                               ),
                                             if (authProvider.activeSchool!.departmentHeader != null && authProvider.activeSchool!.departmentHeader!.isNotEmpty)
                                               Text(
@@ -1574,7 +1574,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                               ),
                                             Text(
                                               authProvider.activeSchool!.name,
-                                              style: GoogleFonts.hankenGrotesk(fontSize: 13.sp, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                                              style: GoogleFonts.hankenGrotesk(fontSize: 13.sp, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onBackground),
                                             ),
                                           ],
                                         ),
@@ -1699,7 +1699,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                       _buildHorizontalAction(
                         icon: Icons.info_outline_rounded,
                         label: 'Tentang',
-                        color: const Color(0xFF64748B),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         bgColor: const Color(0xFFF1F5F9),
                         onTap: () => context.push('/about'),
                       ),
@@ -1803,7 +1803,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   trailing: TextButton(
                     onPressed: () => _handleDeleteAccount(currentUser),
                     style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
+                      foregroundColor: Theme.of(context).colorScheme.surface,
                       backgroundColor: Colors.red,
                       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                       shape: RoundedRectangleBorder(
@@ -1864,7 +1864,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   value,
                   style: TextStyle(
                     fontSize: 13.sp,
-                    color: const Color(0xFF0F172A),
+                    color: Theme.of(context).colorScheme.onBackground,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1953,7 +1953,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                             child: Text(
                               '$badgeCount',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.surface,
                                 fontSize: 8.sp,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -1972,7 +1972,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 9.sp,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
+                    color: Theme.of(context).colorScheme.onBackground,
                   ),
                 ),
               ],
@@ -2088,11 +2088,11 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 12.sp, color: const Color(0xFF64748B)),
+          Icon(icon, size: 12.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
           SizedBox(width: 6.w),
           Text(
             '$label: ',
-            style: GoogleFonts.hankenGrotesk(fontSize: 11.sp, fontWeight: FontWeight.bold, color: const Color(0xFF64748B)),
+            style: GoogleFonts.hankenGrotesk(fontSize: 11.sp, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           Expanded(
             child: Text(

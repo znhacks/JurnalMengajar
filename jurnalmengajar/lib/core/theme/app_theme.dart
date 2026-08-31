@@ -221,13 +221,14 @@ class AppTheme {
   }
 
   static ThemeData get darkTheme {
-    const Color darkBackground = Color(0xFF000000);
-    const Color darkSurface = Color(0xFF121212);
-    const Color darkOnBackground = Color(0xFFF8FAFC);
-    const Color darkOnSurface = Color(0xFFF8FAFC);
-    const Color darkOnSurfaceVariant = Color(0xFF94A3B8);
-    const Color darkOutline = Color(0xFF334155);
-    const Color darkOutlineVariant = Color(0xFF22252A);
+    // ─── Modern Slate Dark Design System ──────────────────────────────────
+    const Color darkBackground = Color(0xFF0F172A); // Slate 900
+    const Color darkSurface = Color(0xFF1E293B); // Slate 800
+    const Color darkOnBackground = Color(0xFFF8FAFC); // Slate 50
+    const Color darkOnSurface = Color(0xFFF1F5F9); // Slate 100
+    const Color darkOnSurfaceVariant = Color(0xFF94A3B8); // Slate 400
+    const Color darkOutline = Color(0xFF475569); // Slate 600
+    const Color darkOutlineVariant = Color(0xFF334155); // Slate 700
 
     final textTheme = GoogleFonts.hankenGroteskTextTheme(
       ThemeData(brightness: Brightness.dark).textTheme,
@@ -270,12 +271,12 @@ class AppTheme {
         brightness: Brightness.dark,
         primary: primaryColor,
         onPrimary: Colors.white,
-        primaryContainer: const Color(0xFF1E3A8A),
-        onPrimaryContainer: const Color(0xFFDBEAFE),
+        primaryContainer: const Color(0xFF1E3A8A), // Blue 900
+        onPrimaryContainer: const Color(0xFFDBEAFE), // Blue 100
         secondary: secondaryColor,
         onSecondary: Colors.white,
-        secondaryContainer: const Color(0xFF22252A),
-        onSecondaryContainer: const Color(0xFFE2E8F0),
+        secondaryContainer: const Color(0xFF334155), // Slate 700
+        onSecondaryContainer: const Color(0xFFE2E8F0), // Slate 200
         tertiary: tertiaryColor,
         onTertiary: Colors.white,
         tertiaryContainer: const Color(0xFF78350F),
@@ -286,7 +287,7 @@ class AppTheme {
         onErrorContainer: const Color(0xFFFFE4E6),
         surface: darkSurface,
         onSurface: darkOnSurface,
-        surfaceContainerHighest: const Color(0xFF22252A),
+        surfaceContainerHighest: const Color(0xFF334155), // Slate 700
         onSurfaceVariant: darkOnSurfaceVariant,
         outline: darkOutline,
         outlineVariant: darkOutlineVariant,
@@ -353,7 +354,7 @@ class AppTheme {
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF1A1D21),
+        fillColor: const Color(0xFF0F172A), // Slate 900
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -410,7 +411,7 @@ class AppTheme {
           if (states.contains(WidgetState.selected)) {
             return const IconThemeData(color: Colors.white, size: 24);
           }
-          return const IconThemeData(color: Color(0xFF6D7A77), size: 24);
+          return const IconThemeData(color: darkOnSurfaceVariant, size: 24);
         }),
         elevation: 0,
         shadowColor: Colors.transparent,

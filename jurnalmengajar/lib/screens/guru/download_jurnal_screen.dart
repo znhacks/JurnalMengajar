@@ -283,17 +283,17 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                           child: Container(
                             width: 12.w,
                             height: 12.w,
-                            color: const Color(0xFF1E293B),
+                            color: Theme.of(context).colorScheme.onBackground,
                           ),
                         ),
                       ),
                       Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B), // Dark background matching browser Saved Info
+                          color: Theme.of(context).colorScheme.onBackground, // Dark background matching browser Saved Info
                           borderRadius: BorderRadius.circular(8.r),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.3),
+                              color: Theme.of(context).colorScheme.onBackground.withValues(alpha: 0.3),
                               blurRadius: 12,
                               offset: const Offset(0, 6),
                             ),
@@ -627,12 +627,12 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       MaterialPageRoute(
         builder: (context) => Scaffold(
           appBar: AppBar(
-            title: const Text(
+            title: Text(
               'Pratinjau Laporan PDF',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: Theme.of(context).colorScheme.surface),
             ),
             backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Colors.white,
+            foregroundColor: Theme.of(context).colorScheme.surface,
           ),
           body: PdfPreview(
             build: (format) => JournalPdfService.generateJournalReportPdf(
@@ -843,12 +843,12 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                     Container(
                       padding: EdgeInsets.all(12.w),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
+                        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.picture_as_pdf_rounded,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         size: 28.sp,
                       ),
                     ),
@@ -862,7 +862,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.w800,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.surface,
                             ),
                           ),
                           SizedBox(height: 4.h),
@@ -870,7 +870,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                             'Unduh laporan jurnal mengajar resmi dalam format PDF lengkap dengan tabel & kolom tanda tangan.',
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 11.5.sp,
-                              color: Colors.white.withValues(alpha: 0.85),
+                              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
                             ),
                           ),
                         ],
@@ -948,7 +948,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                                     'Tanggal Mulai',
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 10.sp,
-                                      color: const Color(0xFF64748B),
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -966,7 +966,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 12.5.sp,
                                           fontWeight: FontWeight.w700,
-                                          color: const Color(0xFF1E293B),
+                                          color: Theme.of(context).colorScheme.onBackground,
                                         ),
                                       ),
                                     ],
@@ -1005,7 +1005,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                                     'Tanggal Selesai',
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 10.sp,
-                                      color: const Color(0xFF64748B),
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -1023,7 +1023,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 12.5.sp,
                                           fontWeight: FontWeight.w700,
-                                          color: const Color(0xFF1E293B),
+                                          color: Theme.of(context).colorScheme.onBackground,
                                         ),
                                       ),
                                     ],
@@ -1180,7 +1180,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       ),
                       style: GoogleFonts.hankenGrotesk(
                         fontSize: 14.sp,
-                        color: const Color(0xFF1E293B),
+                        color: Theme.of(context).colorScheme.onBackground,
                         fontWeight: FontWeight.w600,
                       ),
                       items: () {
@@ -1191,7 +1191,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                               m.schoolName,
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 14.sp,
-                                color: const Color(0xFF1E293B),
+                                color: Theme.of(context).colorScheme.onBackground,
                               ),
                             ),
                           );
@@ -1205,7 +1205,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                               _schoolNameController.text,
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 14.sp,
-                                color: const Color(0xFF1E293B),
+                                color: Theme.of(context).colorScheme.onBackground,
                               ),
                             ),
                           ));
@@ -1239,7 +1239,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       'Kop dokumen PDF akan menggunakan format resmi instansi sesuai sekolah aktif guru.',
                       style: GoogleFonts.hankenGrotesk(
                         fontSize: 11.sp,
-                        color: const Color(0xFF64748B),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -1330,7 +1330,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                 width: double.infinity,
                 padding: EdgeInsets.all(14.w),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12.r),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
@@ -1433,15 +1433,15 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         masterProvider,
                         authProvider,
                       ),
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.download_rounded,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                       ),
                       label: Text(
                         'Unduh / Cetak',
                         style: GoogleFonts.hankenGrotesk(
                           fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.surface,
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -1474,11 +1474,11 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       width: double.infinity,
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(14.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Theme.of(context).colorScheme.onBackground.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1497,7 +1497,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                 style: GoogleFonts.hankenGrotesk(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1E293B),
+                  color: Theme.of(context).colorScheme.onBackground,
                 ),
               ),
             ],
@@ -1522,7 +1522,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
           '$label: ',
           style: GoogleFonts.hankenGrotesk(
             fontSize: 11.5.sp,
-            color: const Color(0xFF64748B),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         Text(
@@ -1583,7 +1583,7 @@ class _HistoryItemRowState extends State<_HistoryItemRow> {
                   child: Text(
                     widget.item,
                     style: GoogleFonts.hankenGrotesk(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.surface,
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w500,
                     ),
@@ -1598,7 +1598,7 @@ class _HistoryItemRowState extends State<_HistoryItemRow> {
                   padding: EdgeInsets.all(4.w),
                   child: Icon(
                     Icons.close_rounded,
-                    color: const Color(0xFF64748B),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     size: 16.sp,
                   ),
                 ),

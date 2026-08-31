@@ -143,7 +143,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
 
     if (isSelected) {
       bgColor = isHoliday ? const Color(0xFFDC2626) : const Color(0xFF2563EB);
-      textColor = Colors.white;
+      textColor = Theme.of(context).colorScheme.surface;
       fontWeight = FontWeight.w800;
     } else if (isHoliday) {
       bgColor = const Color(0xFFFEE2E2);
@@ -184,12 +184,12 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20.r),
         border: Border.all(color: const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Theme.of(context).colorScheme.onBackground.withValues(alpha: 0.03),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -232,7 +232,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                         style: GoogleFonts.hankenGrotesk(
                           fontSize: 15.sp,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF0F172A),
+                          color: Theme.of(context).colorScheme.onBackground,
                         ),
                       ),
                       const Icon(
@@ -323,7 +323,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                 shape: BoxShape.circle,
               ),
               selectedTextStyle: GoogleFonts.hankenGrotesk(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 fontWeight: FontWeight.w800,
               ),
               todayDecoration: const BoxDecoration(
@@ -335,7 +335,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                 fontWeight: FontWeight.w800,
               ),
               weekendTextStyle: GoogleFonts.hankenGrotesk(
-                color: const Color(0xFF64748B),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               defaultTextStyle: GoogleFonts.hankenGrotesk(
                 color: const Color(0xFF334155),
@@ -368,7 +368,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                   'Ada jadwal mengajar',
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 11.sp,
-                    color: const Color(0xFF64748B),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -410,7 +410,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF0F172A),
+                            color: Theme.of(context).colorScheme.onBackground,
                           ),
                         ),
                         IconButton(
@@ -499,7 +499,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                           shape: BoxShape.circle,
                         ),
                         selectedTextStyle: GoogleFonts.hankenGrotesk(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.surface,
                           fontWeight: FontWeight.w700,
                         ),
                         todayDecoration: BoxDecoration(
@@ -574,13 +574,13 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
               onPressed: () {
                 context.push('/guru/journal-form?date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
               },
-              icon: const Icon(Icons.add, size: 16, color: Colors.white),
+              icon: Icon(Icons.add, size: 16, color: Theme.of(context).colorScheme.surface),
               label: Text(
                 'Tambah Task',
                 style: GoogleFonts.hankenGrotesk(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                 ),
               ),
               style: ElevatedButton.styleFrom(
@@ -625,9 +625,9 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                           color: Color(0xFFDC2626),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.event_busy_rounded,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.surface,
                           size: 20,
                         ),
                       ),
@@ -819,25 +819,25 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     final List<Map<String, dynamic>> softThemes = [
       {
         'bg': const Color(0xFFEEF2FF), // Soft Blue/Indigo
-        'text': const Color(0xFF1E293B),
-        'subtext': const Color(0xFF64748B),
+        'text': Theme.of(context).colorScheme.onBackground,
+        'subtext': Theme.of(context).colorScheme.onSurfaceVariant,
         'node': const Color(0xFF6366F1),
       },
       {
         'bg': const Color(0xFFFEFCE8), // Soft Yellow
-        'text': const Color(0xFF1E293B),
+        'text': Theme.of(context).colorScheme.onBackground,
         'subtext': const Color(0xFF78350F),
         'node': const Color(0xFFF59E0B),
       },
       {
         'bg': const Color(0xFFECFDF5), // Soft Mint
-        'text': const Color(0xFF1E293B),
+        'text': Theme.of(context).colorScheme.onBackground,
         'subtext': const Color(0xFF047857),
         'node': const Color(0xFF10B981),
       },
       {
         'bg': const Color(0xFFFFF1F2), // Soft Coral
-        'text': const Color(0xFF1E293B),
+        'text': Theme.of(context).colorScheme.onBackground,
         'subtext': const Color(0xFFBE123C),
         'node': const Color(0xFFF43F5E),
       },
@@ -851,11 +851,11 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         : (isFilled ? const Color(0xFFF8FAFC) : (theme['bg'] as Color));
 
     final Color textColor = isHighlighted
-        ? Colors.white
+        ? Theme.of(context).colorScheme.surface
         : (theme['text'] as Color);
 
     final Color subtextColor = isHighlighted
-        ? Colors.white.withValues(alpha: 0.9)
+        ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.9)
         : (theme['subtext'] as Color);
 
     Color nodeColor;
@@ -872,7 +872,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       nodeColor = const Color(0xFFEF4444); // Red for Rejected
       nodeIcon = Icons.priority_high_rounded;
     } else {
-      nodeColor = Colors.white; // Default unfilled
+      nodeColor = Theme.of(context).colorScheme.surface; // Default unfilled
     }
 
     return IntrinsicHeight(
@@ -894,7 +894,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                     color: nodeColor,
                     border: Border.all(
                       color: isHighlighted
-                          ? Colors.white
+                          ? Theme.of(context).colorScheme.surface
                           : (journalStatus != null ? nodeColor : (theme['node'] as Color)),
                       width: isHighlighted ? 3.5 : 2.5,
                     ),
@@ -913,14 +913,14 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                           child: Container(
                             width: 6.w,
                             height: 6.w,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.surface,
                             ),
                           ),
                         )
                       : (nodeIcon != null
-                          ? Icon(nodeIcon, size: 10.r, color: Colors.white)
+                          ? Icon(nodeIcon, size: 10.r, color: Theme.of(context).colorScheme.surface)
                           : null),
                 ),
                 // Connecting line
@@ -963,7 +963,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                       BoxShadow(
                         color: isHighlighted
                             ? const Color(0xFFF43F5E).withValues(alpha: 0.3)
-                            : Colors.black.withValues(alpha: 0.03),
+                            : Theme.of(context).colorScheme.onBackground.withValues(alpha: 0.03),
                         blurRadius: isHighlighted ? 12 : 8,
                         offset: const Offset(0, 4),
                       ),
