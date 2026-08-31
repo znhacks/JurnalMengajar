@@ -31,13 +31,14 @@ import '../../screens/admin/holidays_screen.dart';
 import '../../screens/admin/master/student_screen.dart';
 import '../../screens/admin/master/teacher_detail_screen.dart';
 import '../../screens/auth/school_expired_screen.dart';
+import '../../widgets/swipe_back_wrapper.dart';
 
 class AppRouter {
   static CustomTransitionPage<void> _buildCustomTransition(
       BuildContext context, GoRouterState state, Widget child) {
     return CustomTransitionPage<void>(
       key: state.pageKey,
-      child: child,
+      child: SwipeBackWrapper(child: child),
       transitionDuration: const Duration(milliseconds: 240),
       reverseTransitionDuration: const Duration(milliseconds: 200),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {

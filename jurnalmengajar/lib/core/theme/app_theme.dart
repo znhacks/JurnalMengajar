@@ -217,6 +217,16 @@ class AppTheme {
         unselectedLabelStyle:
             GoogleFonts.hankenGrotesk(fontSize: 13, fontWeight: FontWeight.w500),
       ),
+
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+        },
+      ),
     );
   }
 
@@ -426,6 +436,16 @@ class AppTheme {
             fontSize: 13, fontWeight: FontWeight.w700),
         unselectedLabelStyle:
             GoogleFonts.hankenGrotesk(fontSize: 13, fontWeight: FontWeight.w500),
+      ),
+
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+        },
       ),
     );
   }

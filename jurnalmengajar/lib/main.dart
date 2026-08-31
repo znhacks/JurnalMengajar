@@ -33,6 +33,7 @@ import 'providers/theme_provider.dart';
 // Router & Theme
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'widgets/web_navigation_shortcut_wrapper.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'services/fcm_service.dart';
 
@@ -162,6 +163,12 @@ class _JurnalMengajarAppState extends State<JurnalMengajarApp> {
               themeMode: themeProvider.themeMode,
               // Injecting GoRouter table
               routerConfig: _router,
+              builder: (context, child) {
+                return WebNavigationShortcutWrapper(
+                  router: _router,
+                  child: child ?? const SizedBox.shrink(),
+                );
+              },
             );
           },
         );
