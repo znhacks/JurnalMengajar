@@ -63,8 +63,8 @@ class _SwipeBackWrapperState extends State<SwipeBackWrapper>
     // Only allow starting drag from the left zone
     if (details.globalPosition.dx > maxThreshold) return;
 
-    // Check if the router or navigator can pop
-    if (!context.canPop() && !Navigator.of(context).canPop()) return;
+    // Check if the router can pop
+    if (!context.canPop()) return;
 
     _animController.stop();
     setState(() {
@@ -90,7 +90,7 @@ class _SwipeBackWrapperState extends State<SwipeBackWrapper>
     final threshold = kIsWeb || screenWidth > 600 ? 120.0 : screenWidth * 0.22;
     final shouldPop = _dragOffset > threshold || velocity > 320;
 
-    if (shouldPop) {
+    if (shouldPop && context.canPop()) {
       // Animate out to the right and trigger pop
       _animation = Tween<double>(begin: _dragOffset, end: screenWidth).animate(
         CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
@@ -104,12 +104,8 @@ class _SwipeBackWrapperState extends State<SwipeBackWrapper>
 
       _animController.duration = const Duration(milliseconds: 160);
       _animController.forward(from: 0.0).then((_) {
-        if (mounted) {
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            Navigator.of(context).maybePop();
-          }
+        if (mounted && context.canPop()) {
+          context.pop();
         }
       });
     } else {

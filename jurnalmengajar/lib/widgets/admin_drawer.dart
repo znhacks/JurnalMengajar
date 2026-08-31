@@ -367,7 +367,11 @@ class AdminDrawer extends StatelessWidget {
         onTap: () {
           Navigator.pop(context); // Close drawer
           if (!isSelected) {
-            context.go(route);
+            if (route == '/admin/dashboard') {
+              context.go(route);
+            } else {
+              context.push(route);
+            }
           }
         },
       ),

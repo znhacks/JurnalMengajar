@@ -56,12 +56,6 @@ class _WebNavigationShortcutWrapperState
 
     if (widget.router.canPop()) {
       widget.router.pop();
-    } else {
-      // Check Navigator directly
-      final nav = Navigator.maybeOf(context);
-      if (nav != null && nav.canPop()) {
-        nav.maybePop();
-      }
     }
   }
 

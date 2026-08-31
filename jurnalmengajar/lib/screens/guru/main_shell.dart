@@ -189,12 +189,14 @@ class GuruMainShellState extends State<GuruMainShell> {
     final screenHeight = mediaQuery.size.height;
 
     return PopScope(
-      canPop: _currentIndex == 0,
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        setState(() {
-          _currentIndex = 0;
-        });
+        if (_currentIndex != 0) {
+          setState(() {
+            _currentIndex = 0;
+          });
+        }
       },
       child: Scaffold(
         drawer: GuruDrawer(selectedIndex: _currentIndex),
