@@ -13,6 +13,8 @@ class SchoolModel {
   final String? npsn;
   final String? postalCode;
   final String? logoUrl;
+  final String plan; // 'free' or 'pro'
+  final String? activationCode;
 
   SchoolModel({
     required this.id,
@@ -29,6 +31,8 @@ class SchoolModel {
     this.npsn,
     this.postalCode,
     this.logoUrl,
+    this.plan = 'free',
+    this.activationCode,
   });
 
   factory SchoolModel.fromJson(Map<String, dynamic> json) {
@@ -47,6 +51,8 @@ class SchoolModel {
       npsn: json['npsn'] as String?,
       postalCode: json['postal_code'] as String? ?? json['postalCode'] as String?,
       logoUrl: json['logo_url'] as String? ?? json['logoUrl'] as String?,
+      plan: json['plan'] as String? ?? 'free',
+      activationCode: json['activation_code'] as String? ?? json['activationCode'] as String?,
     );
   }
 
@@ -66,6 +72,8 @@ class SchoolModel {
       'npsn': npsn,
       'postal_code': postalCode,
       'logo_url': logoUrl,
+      'plan': plan,
+      'activation_code': activationCode,
     };
   }
 }

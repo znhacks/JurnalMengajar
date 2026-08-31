@@ -122,6 +122,23 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
   }
 
   void _showFormDialog({TeacherModel? teacher}) {
+    if (teacher == null) {
+      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+      final school = masterProvider.schools.isNotEmpty ? masterProvider.schools.first : null;
+      if (school != null) {
+        final plan = school.plan;
+        final maxLimit = plan == 'pro' ? 50 : 30;
+        if (masterProvider.teachers.length >= maxLimit) {
+          AppHelper.showSnackBar(
+            context,
+            'Gagal menambah guru. Batas maksimal $maxLimit guru untuk paket $plan telah tercapai. Buka Pengaturan untuk ubah paket.',
+            isError: true,
+          );
+          return;
+        }
+      }
+    }
+    
     final nameController = TextEditingController(text: teacher?.name ?? '');
     final posController = TextEditingController(text: teacher?.position ?? '');
     final phoneController = TextEditingController(text: teacher?.phoneNumber ?? '');

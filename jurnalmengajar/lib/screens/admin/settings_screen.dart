@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/master_data_provider.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../core/utils/helper.dart';
 
@@ -77,10 +79,151 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     }
   }
 
+  void _showActivationCodeDialog() {
+    final codeController = TextEditingController();
+    bool isChecking = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Ganti Kode Aktivasi'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Masukkan kode aktivasi langganan dari JM-Panel:'),
+                SizedBox(height: 12.h),
+                TextField(
+                  controller: codeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Kode Aktivasi',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: isChecking
+                    ? null
+                    : () async {
+                        final code = codeController.text.trim();
+                        if (code.isEmpty) return;
+
+                        setState(() => isChecking = true);
+                        final masterProvider = Provider.of<MasterDataProvider>(
+                          this.context,
+                          listen: false,
+                        );
+                        final validPlan = await masterProvider
+                            .validateActivationCode(code);
+                        setState(() => isChecking = false);
+
+                        if (validPlan != null) {
+                          if (!mounted) return;
+                          Navigator.pop(context);
+                          _showConfirmationDialog(validPlan, code);
+                        } else {
+                          if (!mounted) return;
+                          AppHelper.showSnackBar(
+                            this.context,
+                            'Kode aktivasi tidak valid atau tidak ditemukan.',
+                            isError: true,
+                          );
+                        }
+                      },
+                child: isChecking
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Cek Kode'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showConfirmationDialog(String plan, String code) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Konfirmasi Aktivasi'),
+        content: Text(
+          'Anda akan mengaktifkan paket $plan.\n\nLanjut / Edit?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showActivationCodeDialog();
+            },
+            child: const Text('Edit'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final masterProvider = Provider.of<MasterDataProvider>(
+                this.context,
+                listen: false,
+              );
+              final school = masterProvider.schools.isNotEmpty
+                  ? masterProvider.schools.first
+                  : null;
+              if (school != null) {
+                final success = await masterProvider.updateSchoolPlan(
+                  school.id,
+                  plan,
+                  code,
+                );
+                if (success && mounted) {
+                  AppHelper.showSnackBar(
+                    this.context,
+                    'Berhasil mengaktifkan paket $plan.',
+                  );
+                } else if (mounted) {
+                  AppHelper.showSnackBar(
+                    this.context,
+                    'Gagal mengaktifkan paket.',
+                    isError: true,
+                  );
+                }
+              }
+            },
+            child: const Text('Lanjut'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _launchJMPanel() async {
+    final url = Uri.parse('https://jmpanel.vercel.app');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        AppHelper.showSnackBar(context, 'Tidak dapat membuka tautan.', isError: true);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
-    final isLoading = settingsProvider.isLoading;
+    final masterProvider = context.watch<MasterDataProvider>();
+    final isLoading = settingsProvider.isLoading || masterProvider.isLoading;
+    final school = masterProvider.schools.isNotEmpty ? masterProvider.schools.first : null;
+    final plan = school?.plan ?? 'free';
+    final isPro = plan == 'pro';
 
     return Scaffold(
       appBar: AppBar(title: const Text('Pengaturan Sistem')),
@@ -88,14 +231,98 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       body: SafeArea(
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Padding(
+            : SingleChildScrollView(
                 padding: EdgeInsets.all(20.w),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Card(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Paket Berlangganan Section
+                    Card(
+                      margin: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        side: BorderSide(
+                          color: isPro ? Colors.blue.withValues(alpha: 0.5) : Colors.grey.withValues(alpha: 0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(16.w),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Paket Berlangganan',
+                                  style: TextStyle(
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF0F172A),
+                                  ),
+                                ),
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                                  decoration: BoxDecoration(
+                                    color: isPro ? Colors.blue : Colors.grey[600],
+                                    borderRadius: BorderRadius.circular(20.r),
+                                  ),
+                                  child: Text(
+                                    isPro ? 'PRO PLAN' : 'FREE PLAN',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12.sp,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 12.h),
+                            Text(
+                              isPro
+                                  ? 'Anda sedang menggunakan Paket PRO. (Maksimal 50 Guru)'
+                                  : 'Anda sedang menggunakan Paket FREE. (Maksimal 30 Guru)',
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            SizedBox(height: 16.h),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: _showActivationCodeDialog,
+                                    icon: const Icon(Icons.key),
+                                    label: const Text('Ganti Kode Aktivasi'),
+                                  ),
+                                ),
+                                SizedBox(width: 12.w),
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: _launchJMPanel,
+                                    icon: const Icon(Icons.open_in_new),
+                                    label: const Text('Kelola Langganan'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF4F7CFF),
+                                      foregroundColor: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 24.h),
+
+                    // Pengaturan Input Jurnal Section
+                    Form(
+                      key: _formKey,
+                      child: Card(
                         margin: EdgeInsets.zero,
                         child: Padding(
                           padding: EdgeInsets.all(16.w),
@@ -144,19 +371,21 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                   fillColor: Colors.white,
                                 ),
                               ),
+                              SizedBox(height: 24.h),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: isLoading ? null : _handleSave,
+                                  icon: const Icon(Icons.save),
+                                  label: const Text('Simpan Pengaturan Jurnal'),
+                                ),
+                              ),
                             ],
                           ),
                         ),
                       ),
-                      const Spacer(),
-
-                      ElevatedButton.icon(
-                        onPressed: isLoading ? null : _handleSave,
-                        icon: const Icon(Icons.save),
-                        label: const Text('Simpan Pengaturan'),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
       ),

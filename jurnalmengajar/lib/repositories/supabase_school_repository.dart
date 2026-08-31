@@ -22,4 +22,35 @@ class SupabaseSchoolRepository implements SchoolRepository {
       throw Exception('Gagal memuat daftar sekolah: $e');
     }
   }
+
+  @override
+  Future<String?> validateActivationCode(String code) async {
+    try {
+      final response = await _supabase
+          .from('activation_codes')
+          .select('plan')
+          .eq('code', code)
+          .maybeSingle();
+
+      if (response != null && response['plan'] != null) {
+        return response['plan'] as String;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<bool> updateSchoolPlan(String schoolId, String plan, String activationCode) async {
+    try {
+      await _supabase.from('schools').update({
+        'plan': plan,
+        'activation_code': activationCode,
+      }).eq('id', schoolId);
+      return true;
+    } catch (e) {
+      throw Exception('Gagal memperbarui paket langganan: $e');
+    }
+  }
 }

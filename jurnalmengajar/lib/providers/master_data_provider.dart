@@ -292,6 +292,32 @@ class MasterDataProvider with ChangeNotifier {
     }
   }
 
+  // --- SCHOOL CRUD (Plan) ---
+  Future<String?> validateActivationCode(String code) async {
+    if (schoolRepository != null) {
+      return await schoolRepository!.validateActivationCode(code);
+    }
+    return null;
+  }
+
+  Future<bool> updateSchoolPlan(String schoolId, String plan, String activationCode) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      if (schoolRepository != null) {
+        await schoolRepository!.updateSchoolPlan(schoolId, plan, activationCode);
+        _schools = await schoolRepository!.getAll();
+      }
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   // --- TEACHER CRUD ---
   Future<bool> createTeacher(TeacherModel model) async {
     _isLoading = true;
