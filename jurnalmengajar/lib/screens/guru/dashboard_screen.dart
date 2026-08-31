@@ -657,10 +657,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                           ),
                         ],
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Icon(
                           Icons.menu_rounded,
-                          color: Color(0xFF1E293B),
+                          color: Theme.of(context).colorScheme.onSurface,
                           size: 22,
                         ),
                       ),
