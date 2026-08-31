@@ -138,7 +138,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     final isHoliday = holiday != null;
 
     Color bgColor = Colors.transparent;
-    Color textColor = isOutside ? const Color(0xFFCBD5E1) : const Color(0xFF334155);
+    Color textColor = isOutside ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.onSurface;
     FontWeight fontWeight = FontWeight.w600;
 
     if (isSelected) {
@@ -338,10 +338,10 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               defaultTextStyle: GoogleFonts.hankenGrotesk(
-                color: const Color(0xFF334155),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               outsideTextStyle: GoogleFonts.hankenGrotesk(
-                color: const Color(0xFFCBD5E1),
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               ),
             ),
           ),
@@ -749,7 +749,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
               Icon(
                 Icons.calendar_today_outlined,
                 size: 60.w,
-                color: Colors.grey[350],
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               ),
               SizedBox(height: 16.h),
               Text(
@@ -757,13 +757,13 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               SizedBox(height: 4.h),
               Text(
                 'Hari ini tidak ada kegiatan mengajar yang terjadwal.',
-                style: TextStyle(fontSize: 13.sp, color: Colors.grey[500]),
+                style: TextStyle(fontSize: 13.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
             ],

@@ -1006,8 +1006,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 borderRadius: BorderRadius.circular(50.r),
                 child: Container(
                   padding: EdgeInsets.all(8.w),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFEAF2FF),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4F7CFF).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -1035,8 +1035,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 borderRadius: BorderRadius.circular(50.r),
                 child: Container(
                   padding: EdgeInsets.all(8.w),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFEAF2FF),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4F7CFF).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -1121,7 +1121,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                 : FontWeight.w600,
                             color: isSelected
                                 ? Theme.of(context).colorScheme.surface
-                                : const Color(0xFF334155),
+                                : Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -1224,8 +1224,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           children: [
             Container(
               padding: EdgeInsets.all(14.w),
-              decoration: const BoxDecoration(
-                color: Color(0xFFEAF2FF),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4F7CFF).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -1413,7 +1413,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
               width: 48.w,
               height: 48.w,
               decoration: BoxDecoration(
-                color: const Color(0xFFEAF2FF),
+                color: const Color(0xFF4F7CFF).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16.r),
               ),
               child: Center(
@@ -1441,7 +1441,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                           vertical: 2.5.h,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEAF2FF),
+                          color: const Color(0xFF4F7CFF).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: Text(
@@ -1580,8 +1580,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
               children: [
                 Container(
                   padding: EdgeInsets.all(6.w),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFEAF2FF),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4F7CFF).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -1636,7 +1636,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(20.r),
-              border: Border.all(color: const Color(0xFFEAF2FF)),
+              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             child: Center(
               child: Column(
@@ -1652,7 +1652,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF334155),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                   SizedBox(height: 4.h),
