@@ -218,6 +218,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   void _showConfirmationDialog(SchoolModel matchedSchool, String code) {
     final isPro = matchedSchool.isPro;
     final planName = matchedSchool.plan.toUpperCase();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showDialog(
       context: context,
@@ -239,6 +240,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 style: GoogleFonts.hankenGrotesk(
                   fontSize: 17.sp,
                   fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),
@@ -250,20 +252,23 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           children: [
             Text(
               'Anda akan mengaktifkan dan menerapkan paket berikut untuk sekolah Anda:',
-              style: TextStyle(fontSize: 13.sp, color: Colors.grey[700]),
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             SizedBox(height: 14.h),
             Container(
               padding: EdgeInsets.all(14.w),
               decoration: BoxDecoration(
                 color: isPro
-                    ? const Color(0xFFFFFBEB)
-                    : const Color(0xFFEFF6FF),
+                    ? (isDark ? const Color(0xFF78350F).withValues(alpha: 0.35) : const Color(0xFFFFFBEB))
+                    : (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEFF6FF)),
                 borderRadius: BorderRadius.circular(14.r),
                 border: Border.all(
                   color: isPro
-                      ? const Color(0xFFFDE68A)
-                      : const Color(0xFFBFDBFE),
+                      ? (isDark ? const Color(0xFF92400E) : const Color(0xFFFDE68A))
+                      : (isDark ? const Color(0xFF1E40AF) : const Color(0xFFBFDBFE)),
                 ),
               ),
               child: Column(
@@ -278,7 +283,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 15.sp,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF0F172A),
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -304,29 +309,41 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     'Kode: ${matchedSchool.code ?? code}',
                     style: TextStyle(
                       fontSize: 12.sp,
-                      color: isPro ? const Color(0xFF92400E) : const Color(0xFF1E40AF),
+                      color: isPro
+                          ? (isDark ? const Color(0xFFFED7AA) : const Color(0xFF92400E))
+                          : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E40AF)),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const Divider(height: 16),
+                  Divider(
+                    height: 16,
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  ),
                   Row(
                     children: [
-                      Icon(Icons.people_outline_rounded, size: 16.sp, color: Colors.grey[700]),
+                      Icon(Icons.people_outline_rounded, size: 16.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       SizedBox(width: 6.w),
                       Text(
                         'Kapasitas Maksimal: ${matchedSchool.maxTeachers} Guru',
-                        style: TextStyle(fontSize: 12.5.sp, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 12.5.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                     ],
                   ),
                   SizedBox(height: 4.h),
                   Row(
                     children: [
-                      Icon(Icons.check_circle_outline_rounded, size: 16.sp, color: Colors.green[700]),
+                      Icon(Icons.check_circle_outline_rounded, size: 16.sp, color: Colors.green[600]),
                       SizedBox(width: 6.w),
                       Text(
                         isPro ? 'Perks: Prioritas & Multi-Sekolah' : 'Perks: Fitur Standar Sekolah',
-                        style: TextStyle(fontSize: 12.sp, color: Colors.grey[800]),
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),

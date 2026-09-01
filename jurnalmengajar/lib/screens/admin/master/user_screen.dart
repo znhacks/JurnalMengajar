@@ -386,6 +386,8 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
         final isSelectable = !isSuperAdmin && !isCurrentUser;
         final isSelected = _selectedIds.contains(user.id);
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+
         return InkWell(
           onTap: (_isSelectionMode && isSelectable)
               ? () => _toggleSelectItem(user.id)
@@ -403,15 +405,19 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
+              color: isSelected
+                  ? (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEFF6FF))
+                  : (isDark ? Theme.of(context).colorScheme.surface : Colors.white),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                color: isSelected
+                    ? const Color(0xFF2563EB)
+                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                 width: isSelected ? 1.5 : 1.0,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -436,7 +442,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                   children: [
                     CircleAvatar(
                       radius: 24.r,
-                      backgroundColor: const Color(0xFFF1F5F9),
+                      backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
                       backgroundImage: user.photoUrl != null && user.photoUrl!.startsWith('http')
                           ? NetworkImage(user.photoUrl!)
                           : (user.photoUrl != null
@@ -452,17 +458,17 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                       padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                       decoration: BoxDecoration(
                         color: isPendingTab
-                            ? const Color(0xFFFFFBEB)
+                            ? (isDark ? const Color(0xFF78350F).withValues(alpha: 0.35) : const Color(0xFFFFFBEB))
                             : (isAdmin 
-                                ? const Color(0xFFEEF2FF) 
-                                : const Color(0xFFF0FDFA)),
+                                ? (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEEF2FF)) 
+                                : (isDark ? const Color(0xFF134E4A).withValues(alpha: 0.35) : const Color(0xFFF0FDFA))),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: isPendingTab
-                              ? const Color(0xFFFDE68A)
+                              ? (isDark ? const Color(0xFF92400E) : const Color(0xFFFDE68A))
                               : (isAdmin 
-                                  ? const Color(0xFFC7D2FE) 
-                                  : const Color(0xFFCCFBF1))
+                                  ? (isDark ? const Color(0xFF3730A3) : const Color(0xFFC7D2FE)) 
+                                  : (isDark ? const Color(0xFF115E59) : const Color(0xFFCCFBF1)))
                         ),
                       ),
                       child: Text(
@@ -471,10 +477,10 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                           fontSize: 8.sp,
                           fontWeight: FontWeight.bold,
                           color: isPendingTab
-                              ? const Color(0xFFD97706)
+                              ? (isDark ? const Color(0xFFFED7AA) : const Color(0xFFD97706))
                               : (isAdmin 
-                                  ? const Color(0xFF4F46E5) 
-                                  : const Color(0xFF0D9488)),
+                                  ? (isDark ? const Color(0xFFA5B4FC) : const Color(0xFF4F46E5)) 
+                                  : (isDark ? const Color(0xFF5EEAD4) : const Color(0xFF0D9488))),
                         ),
                       ),
                     ),
@@ -490,7 +496,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                         style: TextStyle(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF0F172A),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       SizedBox(height: 2.h),
@@ -498,7 +504,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                         user.email,
                         style: TextStyle(
                           fontSize: 11.sp,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -509,7 +515,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                           user.position!,
                           style: TextStyle(
                             fontSize: 11.sp,
-                            color: const Color(0xFF475569),
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -766,12 +772,18 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                             onPressed: () => _searchController.clear(),
                           )
                         : null,
-                    fillColor: Colors.white,
+                    fillColor: Theme.of(context).brightness == Brightness.dark
+                        ? Theme.of(context).colorScheme.surfaceContainerHighest
+                        : Colors.white,
                     filled: true,
                     contentPadding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[200]!),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF334155)
+                            : Colors.grey[200]!,
+                      ),
                     ),
                   ),
                 ),
@@ -817,6 +829,8 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
       );
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ListView.builder(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       itemCount: _exitRequests.length,
@@ -830,9 +844,13 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
 
         return Card(
           margin: EdgeInsets.only(bottom: 12.h),
-          elevation: 2,
+          elevation: 0,
+          color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.r),
+            side: BorderSide(
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+            ),
           ),
           child: Padding(
             padding: EdgeInsets.all(12.w),
@@ -840,7 +858,9 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
               children: [
                 CircleAvatar(
                   radius: 24.r,
-                  backgroundColor: const Color(0xFFEFF6FF),
+                  backgroundColor: isDark
+                      ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
+                      : const Color(0xFFEFF6FF),
                   backgroundImage: photoUrl != null && photoUrl.isNotEmpty
                       ? NetworkImage(photoUrl)
                       : null,
@@ -850,7 +870,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF2563EB),
+                            color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB),
                           ),
                         )
                       : null,
@@ -865,7 +885,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                         style: TextStyle(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1E293B),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       SizedBox(height: 2.h),
@@ -873,7 +893,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                         email,
                         style: TextStyle(
                           fontSize: 12.sp,
-                          color: const Color(0xFF64748B),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],

@@ -94,7 +94,13 @@ class AdminDrawer extends StatelessWidget {
             ),
           ),
 
-          const Divider(height: 1, color: Color(0xFFE2E8F0), thickness: 1),
+          Divider(
+            height: 1,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF334155)
+                : const Color(0xFFE2E8F0),
+            thickness: 1,
+          ),
 
           // ── Menu List ──────────────────────────────────────────────────────
           Expanded(
@@ -139,9 +145,11 @@ class AdminDrawer extends StatelessWidget {
                 ),
 
                 SizedBox(height: 8.h),
-                const Divider(
+                Divider(
                   height: 1,
-                  color: Color(0xFFE2E8F0),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFE2E8F0),
                   thickness: 1,
                 ),
                 SizedBox(height: 8.h),
@@ -154,7 +162,7 @@ class AdminDrawer extends StatelessWidget {
                   child: Text(
                     'Master Data',
                     style: GoogleFonts.hankenGrotesk(
-                      color: const Color(0xFF0F172A),
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w800,
                     ),
@@ -213,7 +221,13 @@ class AdminDrawer extends StatelessWidget {
           ),
 
           // ── Theme Switcher ────────────────────────────────────────────────
-          const Divider(height: 1, color: Color(0xFFE2E8F0), thickness: 1),
+          Divider(
+            height: 1,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF334155)
+                : const Color(0xFFE2E8F0),
+            thickness: 1,
+          ),
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               return Padding(
@@ -252,7 +266,13 @@ class AdminDrawer extends StatelessWidget {
           ),
 
           // ── Footer / Logout ───────────────────────────────────────────────
-          const Divider(height: 1, color: Color(0xFFE2E8F0), thickness: 1),
+          Divider(
+            height: 1,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF334155)
+                : const Color(0xFFE2E8F0),
+            thickness: 1,
+          ),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
             child: ListTile(

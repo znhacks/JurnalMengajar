@@ -277,7 +277,9 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                               )
                             : null,
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: Theme.of(context).brightness == Brightness.dark
+                            ? Theme.of(context).colorScheme.surfaceContainerHighest
+                            : Colors.white,
                         contentPadding: EdgeInsets.symmetric(
                             vertical: 8.h, horizontal: 16.w),
                         border: OutlineInputBorder(
@@ -565,7 +567,11 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
         },
         child: Container(
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
+            color: isSelected
+                ? (Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
+                    : const Color(0xFFEFF6FF))
+                : (Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected ? const Color(0xFF2563EB) : AppTheme.outlineVariant,
@@ -877,7 +883,9 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                             ),
                             children: [
                               Container(
-                                color: const Color(0xFFF8FAFC),
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
+                                    : const Color(0xFFF8FAFC),
                                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
                                 child: ListView.separated(
                                   shrinkWrap: true,
@@ -926,7 +934,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.outlineVariant),
       ),

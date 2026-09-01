@@ -339,6 +339,7 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                         PeriodModel(id: '', name: 'Periode--', isActive: false),
                   );
                   final isSelected = _selectedIds.contains(item.id);
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
 
                   return FadeSlideIn(
                     delay: Duration(milliseconds: (index * 40).clamp(0, 400)),
@@ -358,10 +359,14 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                       child: Container(
                         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
+                          color: isSelected
+                              ? (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEFF6FF))
+                              : (isDark ? Theme.of(context).colorScheme.surface : Colors.white),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                            color: isSelected
+                                ? const Color(0xFF2563EB)
+                                : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                             width: isSelected ? 1.5 : 1.0,
                           ),
                         ),
@@ -394,7 +399,7 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                                   style: TextStyle(
                                     fontSize: 13.sp,
                                     fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF0F172A),
+                                    color: Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                                 SizedBox(height: 2.h),

@@ -185,15 +185,21 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.outlineVariant),
+                  border: Border.all(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF334155)
+                        : AppTheme.outlineVariant,
+                  ),
                 ),
                 child: Column(
                   children: [
                     CircleAvatar(
                       radius: 36.r,
-                      backgroundColor: const Color(0xFFF1F5F9),
+                      backgroundColor: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFF1F5F9),
                       backgroundImage: teacher.photoUrl != null && teacher.photoUrl!.startsWith('http')
                           ? NetworkImage(teacher.photoUrl!)
                           : (teacher.photoUrl != null ? FileImage(File(teacher.photoUrl!)) : null) as ImageProvider?,
@@ -207,7 +213,7 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                       style: GoogleFonts.hankenGrotesk(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w800,
-                        color: AppTheme.onBackground,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -215,12 +221,17 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                       teacher.position,
                       style: GoogleFonts.hankenGrotesk(
                         fontSize: 12.sp,
-                        color: AppTheme.onSurfaceVariant,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w500,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const Divider(height: 16),
+                    Divider(
+                      height: 16,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0),
+                    ),
                     // Contact Info Details
                     _buildContactRow(
                       Icons.phone_android_rounded,
@@ -247,21 +258,35 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
               // 2. Weekly Calendar Card
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.outlineVariant),
+                  border: Border.all(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF334155)
+                        : AppTheme.outlineVariant,
+                  ),
                 ),
                 padding: EdgeInsets.symmetric(vertical: 8.h),
                 child: TableCalendar(
                   headerStyle: HeaderStyle(
                     titleCentered: true,
                     formatButtonVisible: false,
-                    leftChevronIcon: const Icon(Icons.chevron_left, color: AppTheme.primaryColor),
-                    rightChevronIcon: const Icon(Icons.chevron_right, color: AppTheme.primaryColor),
+                    leftChevronIcon: Icon(
+                      Icons.chevron_left,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF93C5FD)
+                          : AppTheme.primaryColor,
+                    ),
+                    rightChevronIcon: Icon(
+                      Icons.chevron_right,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF93C5FD)
+                          : AppTheme.primaryColor,
+                    ),
                     titleTextStyle: GoogleFonts.hankenGrotesk(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w800,
-                      color: AppTheme.onBackground,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   rowHeight: 42.h,

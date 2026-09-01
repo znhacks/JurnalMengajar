@@ -328,6 +328,7 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                     itemBuilder: (context, index) {
                       final period = periods[index];
                       final isSelected = _selectedIds.contains(period.id);
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
 
                       return InkWell(
                         onTap: _isSelectionMode ? () => _toggleSelectItem(period.id) : null,
@@ -342,10 +343,14 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                         child: Container(
                           padding: EdgeInsets.all(16.w),
                           decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
+                            color: isSelected
+                                ? (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEFF6FF))
+                                : (isDark ? Theme.of(context).colorScheme.surface : Colors.white),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                              color: isSelected
+                                  ? const Color(0xFF2563EB)
+                                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                               width: isSelected ? 1.5 : 1.0,
                             ),
                           ),
@@ -360,10 +365,14 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                                 SizedBox(width: 4.w),
                               ],
                               CircleAvatar(
-                                backgroundColor: period.isActive ? const Color(0xFF2563EB).withValues(alpha: 0.1) : Colors.grey[100],
+                                backgroundColor: period.isActive
+                                    ? const Color(0xFF2563EB).withValues(alpha: 0.1)
+                                    : (isDark ? const Color(0xFF334155) : Colors.grey[100]),
                                 child: Icon(
                                   period.isActive ? Icons.check : Icons.history,
-                                  color: period.isActive ? const Color(0xFF2563EB) : Colors.grey,
+                                  color: period.isActive
+                                      ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB))
+                                      : Colors.grey,
                                 ),
                               ),
                               SizedBox(width: 16.w),
@@ -373,14 +382,20 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                                   children: [
                                     Text(
                                       period.name,
-                                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                                      style: TextStyle(
+                                        fontSize: 16.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                      ),
                                     ),
                                     SizedBox(height: 4.h),
                                     Text(
                                       period.isActive ? 'Periode Aktif' : 'Tidak Aktif',
                                       style: TextStyle(
                                         fontSize: 12.sp,
-                                        color: period.isActive ? const Color(0xFF2563EB) : Colors.grey[600],
+                                        color: period.isActive
+                                            ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB))
+                                            : Theme.of(context).colorScheme.onSurfaceVariant,
                                         fontWeight: period.isActive ? FontWeight.bold : FontWeight.normal,
                                       ),
                                     ),

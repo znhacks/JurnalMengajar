@@ -308,6 +308,7 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                     itemBuilder: (context, index) {
                       final hour = hours[index];
                       final isSelected = _selectedIds.contains(hour.id);
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
 
                       return InkWell(
                         onTap: _isSelectionMode ? () => _toggleSelectItem(hour.id) : null,
@@ -322,10 +323,14 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                         child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
                           decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
+                            color: isSelected
+                                ? (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEFF6FF))
+                                : (isDark ? Theme.of(context).colorScheme.surface : Colors.white),
                             borderRadius: BorderRadius.circular(12.r),
                             border: Border.all(
-                              color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                              color: isSelected
+                                  ? const Color(0xFF2563EB)
+                                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                               width: isSelected ? 1.5 : 1.0,
                             ),
                           ),
@@ -345,16 +350,23 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                                   children: [
                                     Text(
                                       'Jam Pelajaran Ke-${hour.teachingHour}',
-                                      style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                      ),
                                     ),
                                     SizedBox(height: 2.h),
                                     Row(
                                       children: [
-                                        const Icon(Icons.schedule, size: 12, color: Colors.grey),
+                                        Icon(Icons.schedule, size: 12, color: Theme.of(context).colorScheme.outline),
                                         SizedBox(width: 4.w),
                                         Text(
                                           '${hour.startTime} s.d. ${hour.endTime}',
-                                          style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+                                          style: TextStyle(
+                                            fontSize: 12.sp,
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                          ),
                                         ),
                                       ],
                                     ),

@@ -429,9 +429,10 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                 'Daftar Siswa',
                 style: GoogleFonts.hankenGrotesk(
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.onBackground,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
+              scrolledUnderElevation: 0,
               backgroundColor: Colors.white,
               elevation: 0,
               iconTheme: const IconThemeData(color: AppTheme.onBackground),
@@ -453,20 +454,20 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                   // Class summary header card
                   Container(
                     width: double.infinity,
-                    margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                    margin: EdgeInsets.all(16.w),
+                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF2563EB).withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
+                          color: const Color(0xFF2563EB).withValues(alpha: 0.25),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
@@ -512,6 +513,10 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                       },
                       decoration: InputDecoration(
                         hintText: 'Cari nama atau NIS siswa...',
+                        hintStyle: GoogleFonts.hankenGrotesk(
+                          fontSize: 13.sp,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                         prefixIcon: const Icon(Icons.search),
                         suffixIcon: _searchQuery.isNotEmpty
                             ? IconButton(
@@ -525,17 +530,30 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                               )
                             : null,
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: Theme.of(context).brightness == Brightness.dark
+                            ? Theme.of(context).colorScheme.surfaceContainerHighest
+                            : Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
+                          borderSide: BorderSide(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF334155)
+                                : AppTheme.outlineVariant,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppTheme.outlineVariant),
+                          borderSide: BorderSide(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF334155)
+                                : AppTheme.outlineVariant,
+                          ),
                         ),
                       ),
-                      style: GoogleFonts.hankenGrotesk(fontSize: 13.sp),
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 13.sp,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                   ),
                   SizedBox(height: 16.h),
@@ -564,6 +582,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                               final isMale = student.gender == 'L';
                               final genderColor = isMale ? const Color(0xFF2563EB) : const Color(0xFFEC4899);
                               final isSelected = _selectedIds.contains(student.id);
+                              final isDark = Theme.of(context).brightness == Brightness.dark;
 
                               return FadeSlideIn(
                                 delay: Duration(milliseconds: (index * 35).clamp(0, 400)),
@@ -581,10 +600,14 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                   child: Container(
                                     padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                                     decoration: BoxDecoration(
-                                      color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
+                                      color: isSelected
+                                          ? (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEFF6FF))
+                                          : (isDark ? Theme.of(context).colorScheme.surface : Colors.white),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
-                                        color: isSelected ? const Color(0xFF2563EB) : AppTheme.outlineVariant,
+                                        color: isSelected
+                                            ? const Color(0xFF2563EB)
+                                            : (isDark ? const Color(0xFF334155) : AppTheme.outlineVariant),
                                         width: isSelected ? 1.5 : 1.0,
                                       ),
                                     ),

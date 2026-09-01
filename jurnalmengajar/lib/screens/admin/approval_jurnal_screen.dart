@@ -75,21 +75,19 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
           validSubjectIds.contains(j.subjectId);
     }).toList();
     final isLoading = journalProvider.isLoading || masterProvider.isLoading;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
         scrolledUnderElevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
         title: Text(
           'Persetujuan Jurnal',
           style: GoogleFonts.hankenGrotesk(
             fontSize: 16.sp,
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF0F172A),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -129,12 +127,15 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
 
                       return Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
                           borderRadius: BorderRadius.circular(18.r),
-                          border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                            width: 1.2,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.03),
+                              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -154,22 +155,30 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                                       style: GoogleFonts.hankenGrotesk(
                                         fontSize: 16.sp,
                                         fontWeight: FontWeight.w800,
-                                        color: const Color(0xFF0F172A),
+                                        color: Theme.of(context).colorScheme.onSurface,
                                       ),
                                     ),
                                   ),
                                   Container(
                                     padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFFEF3C7),
+                                      color: isDark
+                                          ? const Color(0xFF78350F).withValues(alpha: 0.4)
+                                          : const Color(0xFFFEF3C7),
                                       borderRadius: BorderRadius.circular(20.r),
-                                      border: Border.all(color: const Color(0xFFFDE68A)),
+                                      border: Border.all(
+                                        color: isDark
+                                            ? const Color(0xFF92400E)
+                                            : const Color(0xFFFDE68A),
+                                      ),
                                     ),
                                     child: Text(
                                       'MENUNGGU',
                                       style: GoogleFonts.hankenGrotesk(
                                         fontSize: 10.sp,
-                                        color: const Color(0xFFD97706),
+                                        color: isDark
+                                            ? const Color(0xFFFDE68A)
+                                            : const Color(0xFFD97706),
                                         fontWeight: FontWeight.w800,
                                         letterSpacing: 0.3,
                                       ),
@@ -182,7 +191,7 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                                 subject.name,
                                 style: GoogleFonts.hankenGrotesk(
                                   fontSize: 13.5.sp,
-                                  color: const Color(0xFF64748B),
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -191,14 +200,14 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                               // Meta Row
                               Row(
                                 children: [
-                                  const Icon(Icons.person_rounded, size: 15, color: Color(0xFF94A3B8)),
+                                  Icon(Icons.person_rounded, size: 15, color: Theme.of(context).colorScheme.outline),
                                   SizedBox(width: 4.w),
                                   Expanded(
                                     child: Text(
                                       'Oleh: ${teacher.name}',
                                       style: GoogleFonts.hankenGrotesk(
                                         fontSize: 12.sp,
-                                        color: const Color(0xFF64748B),
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                         fontWeight: FontWeight.w500,
                                       ),
                                       maxLines: 1,
@@ -206,26 +215,29 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                                     ),
                                   ),
                                   SizedBox(width: 12.w),
-                                  const Icon(Icons.calendar_month_rounded, size: 14, color: Color(0xFF94A3B8)),
+                                  Icon(Icons.calendar_month_rounded, size: 14, color: Theme.of(context).colorScheme.outline),
                                   SizedBox(width: 4.w),
                                   Text(
                                     AppHelper.formatDateShort(journal.date),
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 12.sp,
-                                      color: const Color(0xFF64748B),
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ],
                               ),
-                              const Divider(height: 20, color: Color(0xFFE2E8F0)),
+                              Divider(
+                                height: 20,
+                                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                              ),
 
                               Text(
                                 'Materi Diajarkan:',
                                 style: GoogleFonts.hankenGrotesk(
                                   fontSize: 12.sp,
                                   fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF0F172A),
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                               SizedBox(height: 6.h),
@@ -233,22 +245,31 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                                 width: double.infinity,
                                 padding: EdgeInsets.all(12.w),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF8FAFC),
+                                  color: isDark
+                                      ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                      : const Color(0xFFF8FAFC),
                                   borderRadius: BorderRadius.circular(12.r),
-                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                                  border: Border.all(
+                                    color: isDark
+                                        ? const Color(0xFF334155)
+                                        : const Color(0xFFE2E8F0),
+                                  ),
                                 ),
                                 child: Text(
                                   journal.material,
                                   style: GoogleFonts.hankenGrotesk(
                                     fontSize: 12.5.sp,
-                                    color: const Color(0xFF334155),
+                                    color: Theme.of(context).colorScheme.onSurface,
                                     height: 1.4,
                                   ),
                                   maxLines: 3,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              const Divider(height: 20, color: Color(0xFFE2E8F0)),
+                              Divider(
+                                height: 20,
+                                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                              ),
 
                               // Action Buttons
                               Row(
@@ -261,7 +282,9 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                                       style: OutlinedButton.styleFrom(
                                         minimumSize: Size(0, 38.h),
                                         padding: EdgeInsets.symmetric(vertical: 6.h),
-                                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                        side: BorderSide(
+                                          color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                                        ),
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(12.r),
                                         ),
@@ -271,7 +294,7 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 12.5.sp,
                                           fontWeight: FontWeight.w700,
-                                          color: const Color(0xFF0F172A),
+                                          color: Theme.of(context).colorScheme.onSurface,
                                         ),
                                       ),
                                     ),

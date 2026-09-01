@@ -113,7 +113,9 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                 )
                               : null,
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context).colorScheme.surfaceContainerHighest
+                              : Colors.white,
                           contentPadding: EdgeInsets.symmetric(vertical: 12.h),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
@@ -185,10 +187,11 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
 
                                 final unreadCount = warnings.where((w) => w.status == 'unread').length;
                                 final totalCount = warnings.length;
+                                final isDark = Theme.of(context).brightness == Brightness.dark;
 
                                 return Card(
                                   margin: EdgeInsets.zero,
-                                  color: Colors.white,
+                                  color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12.r),
@@ -205,12 +208,12 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                       dividerColor: Colors.transparent,
                                     ),
                                     child: ExpansionTile(
-                                      backgroundColor: Colors.white,
-                                      collapsedBackgroundColor: Colors.white,
+                                      backgroundColor: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+                                      collapsedBackgroundColor: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                                       leading: CircleAvatar(
                                         backgroundColor: unreadCount > 0
                                             ? const Color(0xFFFEE2E2)
-                                            : const Color(0xFFF1F5F9),
+                                            : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
                                         backgroundImage: teacher.photoUrl != null && teacher.photoUrl!.isNotEmpty
                                             ? NetworkImage(teacher.photoUrl!)
                                             : null,
@@ -254,7 +257,7 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                             decoration: BoxDecoration(
                                               color: unreadCount > 0
                                                   ? const Color(0xFFFEE2E2)
-                                                  : const Color(0xFFE2E8F0),
+                                                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                                               borderRadius: BorderRadius.circular(999),
                                             ),
                                             child: Text(
@@ -264,7 +267,7 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                                 fontWeight: FontWeight.w700,
                                                 color: unreadCount > 0
                                                     ? const Color(0xFFB91C1C)
-                                                    : const Color(0xFF475569),
+                                                    : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569)),
                                               ),
                                             ),
                                           ),
@@ -278,10 +281,14 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                           margin: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 8.h),
                                           padding: EdgeInsets.all(12.w),
                                           decoration: BoxDecoration(
-                                            color: isUnread ? const Color(0xFFFFFBEB) : const Color(0xFFF8FAFC),
+                                            color: isUnread
+                                                ? (isDark ? const Color(0xFF78350F).withValues(alpha: 0.35) : const Color(0xFFFFFBEB))
+                                                : (isDark ? Theme.of(context).colorScheme.surfaceContainerHighest : const Color(0xFFF8FAFC)),
                                             borderRadius: BorderRadius.circular(8.r),
                                             border: Border.all(
-                                              color: isUnread ? const Color(0xFFFDE68A) : const Color(0xFFE2E8F0),
+                                              color: isUnread
+                                                  ? (isDark ? const Color(0xFF92400E) : const Color(0xFFFDE68A))
+                                                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                                               width: isUnread ? 1.2 : 1.0,
                                             ),
                                           ),

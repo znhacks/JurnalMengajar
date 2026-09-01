@@ -173,9 +173,15 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                   Container(
                     padding: EdgeInsets.all(10.w),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFFBEB),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF78350F).withValues(alpha: 0.35)
+                          : const Color(0xFFFFFBEB),
                       borderRadius: BorderRadius.circular(10.r),
-                      border: Border.all(color: const Color(0xFFFDE68A)),
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF92400E)
+                            : const Color(0xFFFDE68A),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -184,7 +190,12 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                         Expanded(
                           child: Text(
                             'Jurnal guru yang sudah terisi di tanggal libur ini akan di-soft-delete otomatis.',
-                            style: TextStyle(fontSize: 11.sp, color: const Color(0xFF92400E)),
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? const Color(0xFFFED7AA)
+                                  : const Color(0xFF92400E),
+                            ),
                           ),
                         ),
                       ],
@@ -280,6 +291,7 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
     final holidayProvider = context.watch<HolidayProvider>();
     final authProvider = context.watch<AuthProvider>();
     final holidays = holidayProvider.holidays;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -322,7 +334,7 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                             style: TextStyle(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1E293B),
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           SizedBox(height: 6.h),
@@ -331,7 +343,7 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 13.sp,
-                              color: const Color(0xFF64748B),
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -357,7 +369,9 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                           leading: Container(
                             padding: EdgeInsets.all(10.w),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFEE2E2),
+                              color: isDark
+                                  ? const Color(0xFF7F1D1D).withValues(alpha: 0.35)
+                                  : const Color(0xFFFEE2E2),
                               borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: const Icon(
@@ -370,7 +384,7 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                             style: TextStyle(
                               fontSize: 15.sp,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF0F172A),
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           subtitle: Column(
@@ -379,14 +393,14 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                               SizedBox(height: 4.h),
                               Row(
                                 children: [
-                                  const Icon(Icons.calendar_today, size: 12, color: Color(0xFF64748B)),
+                                  Icon(Icons.calendar_today, size: 12, color: Theme.of(context).colorScheme.outline),
                                   SizedBox(width: 4.w),
                                   Text(
                                     dateRangeLabel,
                                     style: TextStyle(
                                       fontSize: 12.sp,
                                       fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF2563EB),
+                                      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
                                     ),
                                   ),
                                 ],
@@ -397,7 +411,7 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                                   item.description!,
                                   style: TextStyle(
                                     fontSize: 12.sp,
-                                    color: const Color(0xFF64748B),
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                               ],

@@ -201,15 +201,20 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           children: [
                             Text(
                               'Kelas',
-                              style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A)),
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                             ),
                             SizedBox(height: 6.h),
                             DropdownButtonFormField<String>(
                               initialValue: selectedClassId,
                               hint: const Text('Pilih Kelas'),
+                              dropdownColor: Theme.of(context).colorScheme.surface,
                               decoration: InputDecoration(
                                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
-                                fillColor: const Color(0xFFF1F5F9),
+                                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                                 filled: true,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10.r),
@@ -237,7 +242,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                         style: TextStyle(
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0F172A),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       SizedBox(height: 8.h),
@@ -252,6 +257,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           runSpacing: 8.h,
                           children: masterProvider.hours.map((h) {
                             final isSelected = selectedHours.contains(h.teachingHour);
+                            final isDark = Theme.of(context).brightness == Brightness.dark;
                             return InkWell(
                               onTap: () {
                                 setDialogState(() {
@@ -272,10 +278,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                 height: 40.h,
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(
-                                  color: isSelected ? const Color(0xFF2563EB) : Colors.white,
+                                  color: isSelected
+                                      ? const Color(0xFF2563EB)
+                                      : (isDark ? Theme.of(context).colorScheme.surfaceContainerHighest : Colors.white),
                                   borderRadius: BorderRadius.circular(8.r),
                                   border: Border.all(
-                                    color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                                    color: isSelected
+                                        ? const Color(0xFF2563EB)
+                                        : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                                     width: 1.5,
                                   ),
                                 ),
@@ -284,7 +294,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                   style: TextStyle(
                                     fontSize: 14.sp,
                                     fontWeight: FontWeight.bold,
-                                    color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                                    color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                               ),
@@ -302,15 +312,20 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                     children: [
                       Text(
                         'Pelajaran',
-                        style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A)),
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                       SizedBox(height: 6.h),
                       DropdownButtonFormField<String>(
                         initialValue: selectedSubjectId,
                         hint: const Text('Pilih Pelajaran'),
+                        dropdownColor: Theme.of(context).colorScheme.surface,
                         decoration: InputDecoration(
                           contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
-                          fillColor: const Color(0xFFF1F5F9),
+                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                           filled: true,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10.r),
@@ -332,15 +347,20 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                     children: [
                       Text(
                         'Guru',
-                        style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A)),
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                       SizedBox(height: 6.h),
                       DropdownButtonFormField<String>(
                         initialValue: selectedTeacherId,
                         hint: const Text('Pilih Guru'),
+                        dropdownColor: Theme.of(context).colorScheme.surface,
                         decoration: InputDecoration(
                           contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
-                          fillColor: const Color(0xFFF1F5F9),
+                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                           filled: true,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10.r),
@@ -868,20 +888,19 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
       return tA.name.compareTo(tB.name);
     });
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
         scrolledUnderElevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
         title: Text(
           'Jadwal Mengajar',
           style: GoogleFonts.hankenGrotesk(
             fontSize: 16.sp,
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF0F172A),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -896,7 +915,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                   // ─── Search Bar ──────────────────────────────────────────
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                    color: Colors.white,
+                    color: Theme.of(context).scaffoldBackgroundColor,
                     child: TextField(
                       controller: _searchController,
                       onChanged: (val) {
@@ -906,14 +925,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                       },
                       style: GoogleFonts.hankenGrotesk(
                         fontSize: 13.sp,
-                        color: const Color(0xFF0F172A),
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
                       decoration: InputDecoration(
                         hintText: 'Cari guru, kelas, pelajaran, atau hari...',
                         hintStyle: GoogleFonts.hankenGrotesk(
                           fontSize: 12.sp,
-                          color: const Color(0xFF94A3B8),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         prefixIcon: const Icon(
                           Icons.search_rounded,
@@ -921,7 +940,10 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                         ),
                         suffixIcon: _searchQuery.isNotEmpty
                             ? IconButton(
-                                icon: const Icon(Icons.clear_rounded, color: Color(0xFF64748B)),
+                                icon: Icon(
+                                  Icons.clear_rounded,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
                                 onPressed: () {
                                   _searchController.clear();
                                   setState(() {
@@ -935,39 +957,39 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           vertical: 10.h,
                         ),
                         filled: true,
-                        fillColor: const Color(0xFFF1F5F9),
+                        fillColor: isDark
+                            ? Theme.of(context).colorScheme.surfaceContainerHighest
+                            : const Color(0xFFF1F5F9),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14.r),
-                          borderSide: BorderSide.none,
+                          borderSide: BorderSide(
+                            color: isDark ? const Color(0xFF334155) : Colors.transparent,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  Divider(
+                    height: 1,
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  ),
 
                   // ─── Content Section ──────────────────────────────────────
                   Expanded(
                     child: teacherIds.isEmpty
-                        ? AppEmptyWidget(
-                            title: _searchQuery.isNotEmpty
-                                ? 'Jadwal Tidak Ditemukan'
-                                : 'Jadwal Kosong',
-                            subtitle: _searchQuery.isNotEmpty
-                                ? 'Tidak ada jadwal yang sesuai dengan kata kunci "$_searchQuery".'
-                                : 'Tekan tombol + di bawah untuk menambah jadwal mengajar baru.',
+                        ? const AppEmptyWidget(
+                            title: 'Tidak Ada Jadwal Mengajar',
+                            subtitle: 'Belum ada data jadwal mengajar atau hasil pencarian tidak ditemukan.',
+                            icon: Icons.calendar_today_rounded,
                           )
                         : ListView.separated(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16.w,
-                              vertical: 14.h,
-                            ),
+                            padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 80.h),
                             itemCount: teacherIds.length,
-                            separatorBuilder: (context, index) =>
-                                SizedBox(height: 14.h),
-                            itemBuilder: (context, teacherIndex) {
-                              final teacherId = teacherIds[teacherIndex];
-                              final teacherSchedules =
-                                  teacherGroupedMap[teacherId]!;
+                            separatorBuilder: (context, _) => SizedBox(height: 12.h),
+                            itemBuilder: (context, index) {
+                              final teacherId = teacherIds[index];
+                              final teacherSchedules = teacherGroupedMap[teacherId]!;
+
                               final teacher = masterProvider.teachers.firstWhere(
                                 (t) => t.id == teacherId,
                                 orElse: () => TeacherModel(
@@ -982,12 +1004,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
 
                               return Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
                                   borderRadius: BorderRadius.circular(18.r),
-                                  border: Border.all(color: const Color(0xFFF1F5F9)),
+                                  border: Border.all(
+                                    color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                                  ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.03),
+                                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
                                       blurRadius: 10,
                                       offset: const Offset(0, 4),
                                     ),
@@ -1014,13 +1038,15 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                          color: const Color(0xFFE2E8F0),
+                                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                                           width: 1.5,
                                         ),
                                       ),
                                       child: CircleAvatar(
                                         radius: 20.r,
-                                        backgroundColor: const Color(0xFFEEF2FF),
+                                        backgroundColor: isDark
+                                            ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
+                                            : const Color(0xFFEEF2FF),
                                         backgroundImage: teacher.photoUrl != null &&
                                                 teacher.photoUrl!.startsWith('http')
                                             ? NetworkImage(teacher.photoUrl!)
@@ -1029,7 +1055,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                 !teacher.photoUrl!.startsWith('http')
                                             ? Icon(
                                                 Icons.person_rounded,
-                                                color: const Color(0xFF4F46E5),
+                                                color: isDark ? const Color(0xFF818CF8) : const Color(0xFF4F46E5),
                                                 size: 20.r,
                                               )
                                             : null,
@@ -1040,7 +1066,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                       style: GoogleFonts.hankenGrotesk(
                                         fontSize: 14.5.sp,
                                         fontWeight: FontWeight.w800,
-                                        color: const Color(0xFF0F172A),
+                                        color: Theme.of(context).colorScheme.onSurface,
                                       ),
                                     ),
                                     subtitle: Text(
@@ -1049,7 +1075,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                           : 'Guru Pengajar',
                                       style: GoogleFonts.hankenGrotesk(
                                         fontSize: 11.5.sp,
-                                        color: const Color(0xFF64748B),
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -1059,10 +1085,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                         vertical: 4.h,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFEFF6FF),
+                                        color: isDark
+                                            ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
+                                            : const Color(0xFFEFF6FF),
                                         borderRadius: BorderRadius.circular(20.r),
                                         border: Border.all(
-                                          color: const Color(0xFFDBEAFE),
+                                          color: isDark
+                                              ? const Color(0xFF1E40AF)
+                                              : const Color(0xFFDBEAFE),
                                         ),
                                       ),
                                       child: Text(
@@ -1070,7 +1100,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 10.5.sp,
                                           fontWeight: FontWeight.w700,
-                                          color: const Color(0xFF2563EB),
+                                          color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB),
                                         ),
                                       ),
                                     ),
@@ -1149,10 +1179,12 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                           child: Container(
                                             padding: EdgeInsets.all(12.w),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFF8FAFC),
+                                              color: isDark
+                                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                                  : const Color(0xFFF8FAFC),
                                               borderRadius: BorderRadius.circular(14.r),
                                               border: Border.all(
-                                                color: const Color(0xFFE2E8F0),
+                                                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                                               ),
                                             ),
                                             child: Column(
@@ -1169,7 +1201,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                         style: GoogleFonts.hankenGrotesk(
                                                           fontSize: 13.sp,
                                                           fontWeight: FontWeight.w800,
-                                                          color: const Color(0xFF0F172A),
+                                                          color: Theme.of(context).colorScheme.onSurface,
                                                         ),
                                                       ),
                                                     ),

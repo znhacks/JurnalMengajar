@@ -265,6 +265,7 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                     itemBuilder: (context, index) {
                       final subject = subjects[index];
                       final isSelected = _selectedIds.contains(subject.id);
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
 
                       return InkWell(
                         onTap: _isSelectionMode ? () => _toggleSelectItem(subject.id) : null,
@@ -279,10 +280,14 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                         child: Container(
                           padding: EdgeInsets.all(16.w),
                           decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
+                            color: isSelected
+                                ? (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEFF6FF))
+                                : (isDark ? Theme.of(context).colorScheme.surface : Colors.white),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                              color: isSelected
+                                  ? const Color(0xFF2563EB)
+                                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                               width: isSelected ? 1.5 : 1.0,
                             ),
                           ),
@@ -297,10 +302,14 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                                 SizedBox(width: 4.w),
                               ],
                               CircleAvatar(
-                                backgroundColor: subject.isActive ? const Color(0xFF2563EB).withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                                backgroundColor: subject.isActive
+                                    ? const Color(0xFF2563EB).withValues(alpha: 0.1)
+                                    : (isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.35) : Colors.red.withValues(alpha: 0.1)),
                                 child: Icon(
                                   subject.isActive ? Icons.menu_book : Icons.block,
-                                  color: subject.isActive ? const Color(0xFF2563EB) : Colors.red,
+                                  color: subject.isActive
+                                      ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB))
+                                      : (isDark ? const Color(0xFFF87171) : Colors.red),
                                 ),
                               ),
                               SizedBox(width: 16.w),
@@ -310,14 +319,20 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                                   children: [
                                     Text(
                                       subject.name,
-                                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                                      style: TextStyle(
+                                        fontSize: 16.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                      ),
                                     ),
                                     SizedBox(height: 4.h),
                                     Text(
                                       subject.isActive ? 'Aktif' : 'Tidak Aktif',
                                       style: TextStyle(
                                         fontSize: 12.sp,
-                                        color: subject.isActive ? const Color(0xFF2563EB) : Colors.red,
+                                        color: subject.isActive
+                                            ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB))
+                                            : (isDark ? const Color(0xFFF87171) : Colors.red),
                                       ),
                                     ),
                                   ],
