@@ -63,12 +63,21 @@ class MockTeacherRepository implements TeacherRepository {
 
   @override
   Future<void> delete(String id) async {
-    await Future.delayed(const Duration(milliseconds: 400));
+    await Future.delayed(const Duration(milliseconds: 100));
     final teacher = _db.teachers.firstWhere((t) => t.id == id, orElse: () => throw Exception('Guru tidak ditemukan!'));
     _db.teachers.removeWhere((t) => t.id == id);
-    
-    // Also remove from user list to prevent ghost logins
     _db.users.removeWhere((u) => u.email.toLowerCase() == teacher.email.toLowerCase());
+  }
+
+  @override
+  Future<void> deleteMultiple(List<String> ids) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    final emailsToRemove = _db.teachers
+        .where((t) => ids.contains(t.id))
+        .map((t) => t.email.toLowerCase())
+        .toSet();
+    _db.teachers.removeWhere((t) => ids.contains(t.id));
+    _db.users.removeWhere((u) => emailsToRemove.contains(u.email.toLowerCase()));
   }
 
   @override

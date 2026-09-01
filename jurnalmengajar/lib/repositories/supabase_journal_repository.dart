@@ -158,6 +158,46 @@ class SupabaseJournalRepository implements JournalRepository {
   }
 
   @override
+  Future<void> deleteMultiple(List<String> ids) async {
+    if (ids.isEmpty) return;
+    try {
+      // 1. Get attachments to delete if any (batch query)
+      try {
+        final List<dynamic> journals = await _supabase
+            .from(SupabaseConstants.tableJournals)
+            .select(SupabaseConstants.fieldAttachmentUrl)
+            .inFilter(SupabaseConstants.fieldId, ids);
+
+        final filePaths = <String>[];
+        for (final row in journals) {
+          final url = row[SupabaseConstants.fieldAttachmentUrl] as String?;
+          if (url != null && url.isNotEmpty) {
+            final path = _extractFilePathFromUrl(url);
+            if (path.isNotEmpty) {
+              filePaths.add(path);
+            }
+          }
+        }
+        if (filePaths.isNotEmpty) {
+          await _supabase.storage
+              .from(SupabaseConstants.bucketJournalAttachments)
+              .remove(filePaths);
+        }
+      } catch (e) {
+        debugPrint('Error batch deleting attachments: $e');
+      }
+
+      // 2. Single batch delete query
+      await _supabase
+          .from(SupabaseConstants.tableJournals)
+          .delete()
+          .inFilter(SupabaseConstants.fieldId, ids);
+    } catch (e) {
+      throw Exception('Gagal menghapus beberapa jurnal: $e');
+    }
+  }
+
+  @override
   Future<void> verifyJournal(String journalId, String status, {String? rejectionNote}) async {
     try {
       final Map<String, dynamic> payload = {

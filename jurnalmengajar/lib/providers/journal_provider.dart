@@ -183,10 +183,8 @@ class JournalProvider with ChangeNotifier {
     notifyListeners();
     try {
       await journalRepository.delete(id);
-      await loadAllJournals();
-      if (teacherId.isNotEmpty) {
-        await loadTeacherJournals(teacherId);
-      }
+      _journals.removeWhere((j) => j.id == id);
+      _teacherJournals.removeWhere((j) => j.id == id);
       return true;
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
@@ -218,14 +216,15 @@ class JournalProvider with ChangeNotifier {
   }
 
   Future<bool> deleteMultipleJournals(List<String> ids) async {
+    if (ids.isEmpty) return true;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      for (final id in ids) {
-        await journalRepository.delete(id);
-      }
-      await loadAllJournals();
+      await journalRepository.deleteMultiple(ids);
+      final idSet = ids.toSet();
+      _journals.removeWhere((j) => idSet.contains(j.id));
+      _teacherJournals.removeWhere((j) => idSet.contains(j.id));
       return true;
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');

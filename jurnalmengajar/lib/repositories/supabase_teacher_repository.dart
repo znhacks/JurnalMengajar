@@ -138,4 +138,17 @@ class SupabaseTeacherRepository implements TeacherRepository {
       throw Exception('Gagal menghapus guru: $e');
     }
   }
+
+  @override
+  Future<void> deleteMultiple(List<String> ids) async {
+    if (ids.isEmpty) return;
+    try {
+      await _supabase
+          .from('users')
+          .delete()
+          .inFilter('id', ids);
+    } catch (e) {
+      throw Exception('Gagal menghapus beberapa guru: $e');
+    }
+  }
 }

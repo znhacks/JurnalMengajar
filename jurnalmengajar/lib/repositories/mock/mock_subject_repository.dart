@@ -31,7 +31,13 @@ class MockSubjectRepository implements SubjectRepository {
 
   @override
   Future<void> delete(String id) async {
-    await Future.delayed(const Duration(milliseconds: 400));
+    await Future.delayed(const Duration(milliseconds: 100));
     _db.subjects.removeWhere((s) => s.id == id);
+  }
+
+  @override
+  Future<void> deleteMultiple(List<String> ids) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    _db.subjects.removeWhere((s) => ids.contains(s.id));
   }
 }

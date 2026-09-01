@@ -72,4 +72,14 @@ class SupabasePeriodRepository implements PeriodRepository {
       throw Exception('Gagal menghapus periode: $e');
     }
   }
+
+  @override
+  Future<void> deleteMultiple(List<String> ids) async {
+    if (ids.isEmpty) return;
+    try {
+      await _supabase.from('periods').delete().inFilter('id', ids);
+    } catch (e) {
+      throw Exception('Gagal menghapus beberapa periode: $e');
+    }
+  }
 }

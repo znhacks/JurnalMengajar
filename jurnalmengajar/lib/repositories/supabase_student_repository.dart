@@ -60,4 +60,14 @@ class SupabaseStudentRepository implements StudentRepository {
       throw Exception('Gagal menghapus siswa: $e');
     }
   }
+
+  @override
+  Future<void> deleteMultiple(List<String> ids) async {
+    if (ids.isEmpty) return;
+    try {
+      await _supabase.from('students').delete().inFilter('id', ids);
+    } catch (e) {
+      throw Exception('Gagal menghapus beberapa siswa: $e');
+    }
+  }
 }

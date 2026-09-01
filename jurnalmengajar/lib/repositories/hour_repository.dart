@@ -5,4 +5,5 @@ abstract class HourRepository {
   Future<void> create(HourModel model);
   Future<void> update(HourModel model);
   Future<void> delete(String id);
+  Future<void> deleteMultiple(List<String> ids);
 }

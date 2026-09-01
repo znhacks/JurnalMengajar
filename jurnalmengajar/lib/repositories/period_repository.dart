@@ -5,4 +5,5 @@ abstract class PeriodRepository {
   Future<void> create(PeriodModel model);
   Future<void> update(PeriodModel model);
   Future<void> delete(String id);
+  Future<void> deleteMultiple(List<String> ids);
 }

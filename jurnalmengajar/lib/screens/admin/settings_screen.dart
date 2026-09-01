@@ -162,7 +162,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                         final code = codeController.text.trim();
                         if (code.isEmpty) {
                           AppHelper.showSnackBar(
-                            this.context,
+                            context,
                             'Silakan masukkan kode terlebih dahulu.',
                             isError: true,
                           );
@@ -176,7 +176,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                         );
                         
                         final matchedSchool = await masterProvider.validateActivationCode(code);
-                        if (!mounted) return;
+                        if (!dialogContext.mounted || !mounted) return;
                         setModalState(() => isChecking = false);
 
                         if (matchedSchool != null) {

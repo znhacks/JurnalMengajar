@@ -5,4 +5,5 @@ abstract class ClassRepository {
   Future<void> create(ClassModel model);
   Future<void> update(ClassModel model);
   Future<void> delete(String id);
+  Future<void> deleteMultiple(List<String> ids);
 }
