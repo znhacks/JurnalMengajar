@@ -47,11 +47,53 @@ class _SwipeBackWrapperState extends State<SwipeBackWrapper>
 
   double _getEdgeThreshold(double screenWidth) {
     if (widget.edgeThreshold != null) return widget.edgeThreshold!;
-    // On web/desktop, allow starting the swipe from up to 25% of the screen width (or min 140px)
+    // On web/desktop, allow starting the swipe from up to 50% of the screen width (or min 300px)
     if (kIsWeb || screenWidth > 600) {
-      return math.max(140.0, screenWidth * 0.25);
+      return math.max(300.0, screenWidth * 0.5);
     }
     return 100.0;
+  }
+
+  bool _canPopRoute() {
+    if (context.canPop()) return true;
+    try {
+      final router = GoRouter.of(context);
+      if (router.canPop()) return true;
+      final loc = GoRouterState.of(context).matchedLocation;
+      final isRoot = loc == '/guru/dashboard' ||
+          loc == '/admin/dashboard' ||
+          loc == '/login' ||
+          loc == '/splash' ||
+          loc == '/school-expired' ||
+          loc == '/';
+      return !isRoot;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _popRoute() {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    try {
+      final router = GoRouter.of(context);
+      if (router.canPop()) {
+        router.pop();
+        return;
+      }
+      final loc = GoRouterState.of(context).matchedLocation;
+      if (loc.startsWith('/admin') && loc != '/admin/dashboard') {
+        context.go('/admin/dashboard');
+      } else if (loc.startsWith('/guru') && loc != '/guru/dashboard') {
+        context.go('/guru/dashboard');
+      } else if (loc == '/register' || loc == '/reset-password') {
+        context.go('/login');
+      } else if (loc == '/about') {
+        context.go('/guru/dashboard');
+      }
+    } catch (_) {}
   }
 
   void _onHorizontalDragStart(DragStartDetails details) {
@@ -63,8 +105,8 @@ class _SwipeBackWrapperState extends State<SwipeBackWrapper>
     // Only allow starting drag from the left zone
     if (details.globalPosition.dx > maxThreshold) return;
 
-    // Check if the router can pop
-    if (!context.canPop()) return;
+    // Check if the route can pop
+    if (!_canPopRoute()) return;
 
     _animController.stop();
     setState(() {
@@ -87,10 +129,10 @@ class _SwipeBackWrapperState extends State<SwipeBackWrapper>
     if (!_isDragging) return;
     final screenWidth = MediaQuery.of(context).size.width;
     final velocity = details.primaryVelocity ?? 0;
-    final threshold = kIsWeb || screenWidth > 600 ? 120.0 : screenWidth * 0.22;
-    final shouldPop = _dragOffset > threshold || velocity > 320;
+    final threshold = kIsWeb || screenWidth > 600 ? 90.0 : screenWidth * 0.20;
+    final shouldPop = _dragOffset > threshold || velocity > 250;
 
-    if (shouldPop && context.canPop()) {
+    if (shouldPop && _canPopRoute()) {
       // Animate out to the right and trigger pop
       _animation = Tween<double>(begin: _dragOffset, end: screenWidth).animate(
         CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
@@ -104,8 +146,8 @@ class _SwipeBackWrapperState extends State<SwipeBackWrapper>
 
       _animController.duration = const Duration(milliseconds: 160);
       _animController.forward(from: 0.0).then((_) {
-        if (mounted && context.canPop()) {
-          context.pop();
+        if (mounted) {
+          _popRoute();
         }
       });
     } else {
