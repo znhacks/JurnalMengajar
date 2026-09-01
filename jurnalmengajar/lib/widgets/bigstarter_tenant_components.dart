@@ -16,6 +16,8 @@ class BigstarterTenantFilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     // Construct items list with 'Semua Sekolah' first
     final items = [
       {'id': 'ALL', 'name': 'Semua Sekolah'},
@@ -40,10 +42,16 @@ class BigstarterTenantFilterChips extends StatelessWidget {
               duration: const Duration(milliseconds: 200),
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF4F46E5) : const Color(0xFFF1F5F9),
+                color: isSelected
+                    ? const Color(0xFF4F46E5)
+                    : (isDark
+                        ? Theme.of(context).colorScheme.surfaceContainerHighest
+                        : const Color(0xFFF1F5F9)),
                 borderRadius: BorderRadius.circular(20.r),
                 border: Border.all(
-                  color: isSelected ? const Color(0xFF4338CA) : const Color(0xFFCBD5E1),
+                  color: isSelected
+                      ? const Color(0xFF4338CA)
+                      : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
                   width: isSelected ? 1.5 : 1,
                 ),
                 boxShadow: isSelected
@@ -62,7 +70,9 @@ class BigstarterTenantFilterChips extends StatelessWidget {
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 13.sp,
                     fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                    color: isSelected ? Colors.white : const Color(0xFF334155),
+                    color: isSelected
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -119,9 +129,11 @@ class _BigstarterManageTenantSchoolsSheetState extends State<BigstarterManageTen
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
       ),
       padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
@@ -134,7 +146,7 @@ class _BigstarterManageTenantSchoolsSheetState extends State<BigstarterManageTen
               width: 40.w,
               height: 4.h,
               decoration: BoxDecoration(
-                color: const Color(0xFFCBD5E1),
+                color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
                 borderRadius: BorderRadius.circular(2.r),
               ),
             ),
@@ -145,7 +157,9 @@ class _BigstarterManageTenantSchoolsSheetState extends State<BigstarterManageTen
               Container(
                 padding: EdgeInsets.all(10.w),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEEF2FF),
+                  color: isDark
+                      ? const Color(0xFF312E81).withValues(alpha: 0.4)
+                      : const Color(0xFFEEF2FF),
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: const Icon(Icons.tune_rounded, color: Color(0xFF4F46E5), size: 24),
@@ -159,14 +173,14 @@ class _BigstarterManageTenantSchoolsSheetState extends State<BigstarterManageTen
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w800,
-                      color: const Color(0xFF0F172A),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   Text(
                     'Pilih sekolah yang ingin dipantau di HP',
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 12.sp,
-                      color: const Color(0xFF64748B),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -174,7 +188,10 @@ class _BigstarterManageTenantSchoolsSheetState extends State<BigstarterManageTen
             ],
           ),
           SizedBox(height: 16.h),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          Divider(
+            height: 1,
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          ),
           SizedBox(height: 10.h),
 
           Flexible(
@@ -195,7 +212,7 @@ class _BigstarterManageTenantSchoolsSheetState extends State<BigstarterManageTen
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 15.sp,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF1E293B),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   value: isChecked,

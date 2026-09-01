@@ -57,13 +57,15 @@ class SchoolSwitcherModal extends StatelessWidget {
       }
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
             blurRadius: 20,
             offset: const Offset(0, -4),
           ),
@@ -80,7 +82,7 @@ class SchoolSwitcherModal extends StatelessWidget {
               width: 40.w,
               height: 4.h,
               decoration: BoxDecoration(
-                color: const Color(0xFFCBD5E1),
+                color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
                 borderRadius: BorderRadius.circular(2.r),
               ),
             ),
@@ -93,7 +95,9 @@ class SchoolSwitcherModal extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(10.w),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEEF2FF),
+                  color: isDark
+                      ? const Color(0xFF312E81).withValues(alpha: 0.4)
+                      : const Color(0xFFEEF2FF),
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: const Icon(
@@ -111,7 +115,7 @@ class SchoolSwitcherModal extends StatelessWidget {
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w800,
-                      color: const Color(0xFF0F172A),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   Text(
@@ -119,7 +123,7 @@ class SchoolSwitcherModal extends StatelessWidget {
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF64748B),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -127,7 +131,10 @@ class SchoolSwitcherModal extends StatelessWidget {
             ],
           ),
           SizedBox(height: 18.h),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          Divider(
+            height: 1,
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          ),
           SizedBox(height: 14.h),
 
           // School List
@@ -139,7 +146,7 @@ class SchoolSwitcherModal extends StatelessWidget {
                   'Belum ada sekolah terdaftar',
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 14.sp,
-                    color: const Color(0xFF64748B),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -160,31 +167,45 @@ class SchoolSwitcherModal extends StatelessWidget {
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFFEEF2FF) : const Color(0xFFF8FAFC),
+                      color: isSelected
+                          ? (isDark
+                              ? const Color(0xFF312E81).withValues(alpha: 0.35)
+                              : const Color(0xFFEEF2FF))
+                          : (isDark
+                              ? Theme.of(context).colorScheme.surfaceContainerHighest
+                              : const Color(0xFFF8FAFC)),
                       borderRadius: BorderRadius.circular(16.r),
                       border: Border.all(
-                        color: isSelected ? const Color(0xFF6366F1) : const Color(0xFFE2E8F0),
+                        color: isSelected
+                            ? const Color(0xFF6366F1)
+                            : (isDark
+                                ? const Color(0xFF334155)
+                                : const Color(0xFFE2E8F0)),
                         width: isSelected ? 2 : 1,
                       ),
                     ),
                     child: ListTile(
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
                       onTap: () async {
-                        final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-                        final journalProvider = Provider.of<JournalProvider>(context, listen: false);
-                        final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-                        
+                        final scheduleProvider =
+                            Provider.of<ScheduleProvider>(context, listen: false);
+                        final journalProvider =
+                            Provider.of<JournalProvider>(context, listen: false);
+                        final masterProvider =
+                            Provider.of<MasterDataProvider>(context, listen: false);
+
                         scheduleProvider.clearTeacherSchedulesCache();
                         journalProvider.clearTeacherJournalsCache();
-                        
+
                         await authProvider.switchActiveSchool(
                           item.schoolId,
                           item.schoolName,
                           item.role,
                         );
-                        
+
                         await masterProvider.loadAllData(item.schoolId);
-                        
+
                         if (context.mounted) {
                           Navigator.pop(context);
                         }
@@ -199,20 +220,34 @@ class SchoolSwitcherModal extends StatelessWidget {
                         item.schoolName,
                         style: GoogleFonts.hankenGrotesk(
                           fontSize: 15.sp,
-                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                          color: isSelected ? const Color(0xFF312E81) : const Color(0xFF1E293B),
+                          fontWeight:
+                              isSelected ? FontWeight.w800 : FontWeight.w600,
+                          color: isSelected
+                              ? (isDark
+                                  ? const Color(0xFFA5B4FC)
+                                  : const Color(0xFF312E81))
+                              : Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       subtitle: Row(
                         children: [
                           Container(
                             margin: EdgeInsets.only(top: 4.h),
-                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 8.w, vertical: 2.h),
                             decoration: BoxDecoration(
-                              color: isAdmin ? const Color(0xFFFEF2F2) : const Color(0xFFF0FDF4),
+                              color: isAdmin
+                                  ? (isDark
+                                      ? const Color(0xFF7F1D1D).withValues(alpha: 0.4)
+                                      : const Color(0xFFFEF2F2))
+                                  : (isDark
+                                      ? const Color(0xFF14532D).withValues(alpha: 0.4)
+                                      : const Color(0xFFF0FDF4)),
                               borderRadius: BorderRadius.circular(6.r),
                               border: Border.all(
-                                color: isAdmin ? const Color(0xFFFCA5A5) : const Color(0xFF86EFAC),
+                                color: isAdmin
+                                    ? (isDark ? const Color(0xFF991B1B) : const Color(0xFFFCA5A5))
+                                    : (isDark ? const Color(0xFF166534) : const Color(0xFF86EFAC)),
                               ),
                             ),
                             child: Text(
@@ -220,11 +255,12 @@ class SchoolSwitcherModal extends StatelessWidget {
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 10.sp,
                                 fontWeight: FontWeight.w800,
-                                color: isAdmin ? const Color(0xFF991B1B) : const Color(0xFF166534),
+                                color: isAdmin
+                                    ? (isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B))
+                                    : (isDark ? const Color(0xFF86EFAC) : const Color(0xFF166534)),
                               ),
                             ),
                           ),
-                          // School code display removed as requested by the user
                         ],
                       ),
                       trailing: isSelected

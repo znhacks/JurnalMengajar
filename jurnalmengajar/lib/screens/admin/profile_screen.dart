@@ -835,41 +835,51 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                 ),
               ),
               SizedBox(height: 6.h),
-              Card(
-                margin: EdgeInsets.zero,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.r),
-                  side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
-                ),
-                child: Column(
-                  children: [
-                    _buildProfileDetailItem(
-                      Icons.badge_outlined,
-                      'Jabatan / Posisi',
-                      currentUser.position ?? 'Administrator',
+              Builder(
+                builder: (context) {
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  final dividerColor = isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9);
+
+                  return Card(
+                    margin: EdgeInsets.zero,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16.r),
+                      side: BorderSide(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        width: 1,
+                      ),
                     ),
-                    const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                    _buildProfileDetailItem(
-                      Icons.email_outlined,
-                      'Email',
-                      currentUser.email,
-                      isEmail: true,
+                    child: Column(
+                      children: [
+                        _buildProfileDetailItem(
+                          Icons.badge_outlined,
+                          'Jabatan / Posisi',
+                          currentUser.position ?? 'Administrator',
+                        ),
+                        Divider(height: 1, color: dividerColor),
+                        _buildProfileDetailItem(
+                          Icons.email_outlined,
+                          'Email',
+                          currentUser.email,
+                          isEmail: true,
+                        ),
+                        Divider(height: 1, color: dividerColor),
+                        _buildProfileDetailItem(
+                          Icons.phone_outlined,
+                          'No. Telepon',
+                          currentUser.phoneNumber ?? 'Belum Diisi',
+                        ),
+                        Divider(height: 1, color: dividerColor),
+                        _buildProfileDetailItem(
+                          Icons.home_outlined,
+                          'Alamat',
+                          currentUser.address ?? 'Belum Diisi',
+                        ),
+                      ],
                     ),
-                    const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                    _buildProfileDetailItem(
-                      Icons.phone_outlined,
-                      'No. Telepon',
-                      currentUser.phoneNumber ?? 'Belum Diisi',
-                    ),
-                    const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                    _buildProfileDetailItem(
-                      Icons.home_outlined,
-                      'Alamat',
-                      currentUser.address ?? 'Belum Diisi',
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
               SizedBox(height: 20.h),
               Text(
@@ -954,68 +964,76 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
               SizedBox(height: 20.h),
 
               // Danger Zone Panel (Compact & Elegant)
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF5F5),
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(
-                    color: Colors.red.withValues(alpha: 0.15),
-                    width: 1.r,
-                  ),
-                ),
-                child: ListTile(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
-                  leading: Container(
-                    padding: EdgeInsets.all(6.w),
+              Builder(
+                builder: (context) {
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
+
+                  return Container(
                     decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.warning_amber_rounded,
-                      color: Colors.red,
-                      size: 20,
-                    ),
-                  ),
-                  title: Text(
-                    'Zona Bahaya',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red[800],
-                    ),
-                  ),
-                  subtitle: Text(
-                    isSuperAdmin
-                        ? 'Akun utama dilindungi sistem'
-                        : 'Hapus akun administrator secara permanen',
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      color: Colors.red[700],
-                    ),
-                  ),
-                  trailing: TextButton(
-                    onPressed: isSuperAdmin ? null : () => _handleDeleteAccount(currentUser),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: isSuperAdmin ? Colors.grey[300] : Colors.red,
-                      disabledBackgroundColor: Colors.grey[300],
-                      disabledForegroundColor: Colors.grey[500],
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.r),
+                      color: isDark
+                          ? const Color(0xFF450A0A).withValues(alpha: 0.3)
+                          : const Color(0xFFFFF5F5),
+                      borderRadius: BorderRadius.circular(12.r),
+                      border: Border.all(
+                        color: Colors.red.withValues(alpha: isDark ? 0.35 : 0.15),
+                        width: 1.r,
                       ),
                     ),
-                    child: Text(
-                      'Hapus Akun',
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.bold,
-                        color: isSuperAdmin ? Colors.grey[500] : Colors.white,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
+                      leading: Container(
+                        padding: EdgeInsets.all(6.w),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.warning_amber_rounded,
+                          color: Colors.red,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        'Zona Bahaya',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? const Color(0xFFFCA5A5) : Colors.red[800],
+                        ),
+                      ),
+                      subtitle: Text(
+                        isSuperAdmin
+                            ? 'Akun utama dilindungi sistem'
+                            : 'Hapus akun administrator secara permanen',
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: isDark ? const Color(0xFFF87171) : Colors.red[700],
+                        ),
+                      ),
+                      trailing: TextButton(
+                        onPressed: isSuperAdmin ? null : () => _handleDeleteAccount(currentUser),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: isSuperAdmin ? Colors.grey[300] : Colors.red,
+                          disabledBackgroundColor: Colors.grey[300],
+                          disabledForegroundColor: Colors.grey[500],
+                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                        ),
+                        child: Text(
+                          'Hapus Akun',
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.bold,
+                            color: isSuperAdmin ? Colors.grey[500] : Colors.white,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ],
           ),
@@ -1032,12 +1050,17 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12.r),
-        side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+        side: BorderSide(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          width: 1,
+        ),
       ),
       child: InkWell(
         onTap: onTap,
@@ -1069,7 +1092,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF0F172A),
+                        color: Theme.of(context).colorScheme.onSurface,
                         height: 1.1,
                       ),
                     ),
