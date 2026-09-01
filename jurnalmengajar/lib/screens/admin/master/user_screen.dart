@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../models/user_model.dart';
@@ -768,12 +769,29 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                 child: TextField(
                   controller: _searchController,
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 13.sp,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Cari nama atau email...',
-                    prefixIcon: const Icon(Icons.search),
+                    hintStyle: GoogleFonts.hankenGrotesk(
+                      fontSize: 13.sp,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: const Color(0xFF2563EB),
+                      size: 20.r,
+                    ),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear),
+                            icon: Icon(
+                              Icons.clear_rounded,
+                              size: 18.r,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
                             onPressed: () => _searchController.clear(),
                           )
                         : null,
@@ -783,12 +801,24 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                     filled: true,
                     contentPadding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16.r),
                       borderSide: BorderSide(
                         color: Theme.of(context).brightness == Brightness.dark
                             ? const Color(0xFF334155)
-                            : Colors.grey[200]!,
+                            : const Color(0xFFE2E8F0),
                       ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16.r),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16.r),
+                      borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
                     ),
                   ),
                 ),
