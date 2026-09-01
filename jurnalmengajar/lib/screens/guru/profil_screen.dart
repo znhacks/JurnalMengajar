@@ -73,6 +73,16 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
   }
 
   Future<void> _handleDeleteAccount(UserModel user) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isSchoolAdmin = user.role == 'admin' || authProvider.userMemberships.any((s) => s.role == 'admin');
+    if (isSchoolAdmin) {
+      AppHelper.showSnackBar(
+        context,
+        'Akun admin sekolah dilindungi sistem dan tidak dapat dihapus.',
+        isError: true,
+      );
+      return;
+    }
     final confirmed1 = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -1827,15 +1837,17 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
               Builder(
                 builder: (context) {
                   final isDark = Theme.of(context).brightness == Brightness.dark;
+                  final isSchoolAdmin = currentUser.role == 'admin' ||
+                      authProvider.userMemberships.any((s) => s.role == 'admin');
 
                   return Container(
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color(0xFF450A0A).withValues(alpha: 0.3)
+                          ? const Color(0xFF450A0A).withValues(alpha: isSchoolAdmin ? 0.25 : 0.3)
                           : const Color(0xFFFFF5F5),
                       borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(
-                        color: Colors.red.withValues(alpha: isDark ? 0.35 : 0.15),
+                        color: Colors.red.withValues(alpha: isDark ? (isSchoolAdmin ? 0.3 : 0.35) : 0.15),
                         width: 1.r,
                       ),
                     ),
@@ -1847,8 +1859,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                           color: Colors.red.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
-                          Icons.warning_amber_rounded,
+                        child: Icon(
+                          isSchoolAdmin ? Icons.lock_outline_rounded : Icons.warning_amber_rounded,
                           color: Colors.red,
                           size: 20,
                         ),
@@ -1862,30 +1874,59 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         ),
                       ),
                       subtitle: Text(
-                        'Hapus akun guru secara permanen',
+                        isSchoolAdmin
+                            ? 'Akun admin sekolah dilindungi sistem'
+                            : 'Hapus akun guru secara permanen',
                         style: TextStyle(
                           fontSize: 11.sp,
                           color: isDark ? const Color(0xFFF87171) : Colors.red[700],
                         ),
                       ),
-                      trailing: TextButton(
-                        onPressed: () => _handleDeleteAccount(currentUser),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: Colors.red,
-                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                        ),
-                        child: Text(
-                          'Hapus Akun',
-                          style: TextStyle(
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      trailing: isSchoolAdmin
+                          ? TextButton.icon(
+                              onPressed: null,
+                              style: TextButton.styleFrom(
+                                foregroundColor: isDark ? const Color(0xFF94A3B8) : Colors.grey[500],
+                                backgroundColor: isDark ? const Color(0xFF334155) : Colors.grey[200],
+                                disabledBackgroundColor: isDark ? const Color(0xFF334155) : Colors.grey[200],
+                                disabledForegroundColor: isDark ? const Color(0xFF94A3B8) : Colors.grey[500],
+                                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
+                              ),
+                              icon: Icon(
+                                Icons.lock_rounded,
+                                size: 13.r,
+                                color: isDark ? const Color(0xFF94A3B8) : Colors.grey[500],
+                              ),
+                              label: Text(
+                                'Terkunci',
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? const Color(0xFF94A3B8) : Colors.grey[500],
+                                ),
+                              ),
+                            )
+                          : TextButton(
+                              onPressed: () => _handleDeleteAccount(currentUser),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                backgroundColor: Colors.red,
+                                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
+                              ),
+                              child: const Text(
+                                'Hapus Akun',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                     ),
                   );
                 },

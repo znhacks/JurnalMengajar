@@ -31,92 +31,6 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     await authProvider.logout();
   }
 
-  Future<void> _handleDeleteAccount(UserModel user) async {
-    // Safety check for main admin
-    if (user.email.toLowerCase() == 'smkn11malang@jurnal.com') {
-      AppHelper.showSnackBar(
-        context,
-        'Akun admin sekolah utama (smkn11malang@jurnal.com) tidak dapat dihapus.',
-        isError: true,
-      );
-      return;
-    }
-
-    final confirmed1 = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-        title: const Text(
-          'HAPUS AKUN ANDA',
-          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          'Apakah Anda yakin ingin menghapus akun administrator Anda secara permanen? '
-          'Seluruh data Anda akan terhapus dan Anda akan langsung dikeluarkan dari aplikasi.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Lanjutkan',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed1 == true && mounted) {
-      final confirmed2 = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-          title: const Text(
-            'Konfirmasi Terakhir',
-            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-          ),
-          content: const Text(
-            'TINDAKAN INI TIDAK BISA DIBATALKAN. Apakah Anda benar-benar yakin ingin menghapus akun Anda sekarang?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Kembali'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text(
-                'HAPUS AKUN SAYA',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-
-      if (confirmed2 == true && mounted) {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        final success = await authProvider.deleteAccount(user.id);
-        if (success && mounted) {
-          AppHelper.showSnackBar(context, 'Akun Anda berhasil dihapus.');
-        } else if (mounted) {
-          AppHelper.showSnackBar(
-            context,
-            authProvider.errorMessage ?? 'Gagal menghapus akun.',
-            isError: true,
-          );
-        }
-      }
-    }
-  }
-
   void _showEditProfileDialog(UserModel user) {
     final nameController = TextEditingController(text: user.fullName);
     final emailController = TextEditingController(text: user.email);
@@ -502,8 +416,6 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     if (currentUser == null) {
       return const Scaffold(body: Center(child: Text('User not found')));
     }
-
-    final isSuperAdmin = currentUser.email.toLowerCase() == 'admin@jurnal.com';
 
     final isLoading = masterProvider.isLoading || journalProvider.isLoading;
     final errorMessage = masterProvider.errorMessage ?? journalProvider.errorMessage;
@@ -980,7 +892,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
               ),
               SizedBox(height: 20.h),
 
-              // Danger Zone Panel (Compact & Elegant)
+              // Danger Zone Panel (Compact & Elegant - Locked for Admin)
               Builder(
                 builder: (context) {
                   final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -988,11 +900,11 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   return Container(
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color(0xFF450A0A).withValues(alpha: 0.3)
+                          ? const Color(0xFF450A0A).withValues(alpha: 0.25)
                           : const Color(0xFFFFF5F5),
                       borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(
-                        color: Colors.red.withValues(alpha: isDark ? 0.35 : 0.15),
+                        color: Colors.red.withValues(alpha: isDark ? 0.3 : 0.15),
                         width: 1.r,
                       ),
                     ),
@@ -1005,7 +917,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
-                          Icons.warning_amber_rounded,
+                          Icons.lock_outline_rounded,
                           color: Colors.red,
                           size: 20,
                         ),
@@ -1019,36 +931,35 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         ),
                       ),
                       subtitle: Text(
-                        isSuperAdmin
-                            ? 'Akun utama dilindungi sistem'
-                            : 'Hapus akun administrator secara permanen',
+                        'Akun admin sekolah dilindungi sistem',
                         style: TextStyle(
                           fontSize: 11.sp,
                           color: isDark ? const Color(0xFFF87171) : Colors.red[700],
                         ),
                       ),
-                      trailing: TextButton(
-                        onPressed: isSuperAdmin ? null : () => _handleDeleteAccount(currentUser),
+                      trailing: TextButton.icon(
+                        onPressed: null,
                         style: TextButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: isSuperAdmin
-                              ? (isDark ? const Color(0xFF334155) : Colors.grey[300])
-                              : Colors.red,
-                          disabledBackgroundColor: isDark ? const Color(0xFF334155) : Colors.grey[300],
+                          foregroundColor: isDark ? const Color(0xFF94A3B8) : Colors.grey[500],
+                          backgroundColor: isDark ? const Color(0xFF334155) : Colors.grey[200],
+                          disabledBackgroundColor: isDark ? const Color(0xFF334155) : Colors.grey[200],
                           disabledForegroundColor: isDark ? const Color(0xFF94A3B8) : Colors.grey[500],
                           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8.r),
                           ),
                         ),
-                        child: Text(
-                          'Hapus Akun',
+                        icon: Icon(
+                          Icons.lock_rounded,
+                          size: 13.r,
+                          color: isDark ? const Color(0xFF94A3B8) : Colors.grey[500],
+                        ),
+                        label: Text(
+                          'Terkunci',
                           style: TextStyle(
                             fontSize: 11.sp,
                             fontWeight: FontWeight.bold,
-                            color: isSuperAdmin
-                                ? (isDark ? const Color(0xFF94A3B8) : Colors.grey[500])
-                                : Colors.white,
+                            color: isDark ? const Color(0xFF94A3B8) : Colors.grey[500],
                           ),
                         ),
                       ),

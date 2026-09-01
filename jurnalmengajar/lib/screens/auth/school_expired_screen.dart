@@ -60,6 +60,17 @@ class _SchoolExpiredScreenState extends State<SchoolExpiredScreen> {
   }
 
   Future<void> _handleDeleteAccount(AuthProvider authProvider) async {
+    final isSchoolAdmin = authProvider.currentUser?.role == 'admin' ||
+        authProvider.userMemberships.any((s) => s.role == 'admin');
+    if (isSchoolAdmin) {
+      AppHelper.showSnackBar(
+        context,
+        'Akun admin sekolah dilindungi sistem dan tidak dapat dihapus.',
+        isError: true,
+      );
+      return;
+    }
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -298,15 +309,18 @@ class _SchoolExpiredScreenState extends State<SchoolExpiredScreen> {
                             icon: const Icon(Icons.logout_rounded),
                             label: const Text('Keluar dari Akun'),
                           ),
-                          TextButton.icon(
-                            style: TextButton.styleFrom(
-                              foregroundColor: const Color(0xFFEF4444),
-                              padding: EdgeInsets.symmetric(vertical: 12.h),
+                          if (authProvider.currentUser?.role != 'admin' &&
+                              !authProvider.userMemberships.any((s) => s.role == 'admin')) ...[
+                            TextButton.icon(
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFFEF4444),
+                                padding: EdgeInsets.symmetric(vertical: 12.h),
+                              ),
+                              onPressed: _isLoading ? null : () => _handleDeleteAccount(authProvider),
+                              icon: const Icon(Icons.delete_forever_rounded),
+                              label: const Text('Hapus Akun secara Permanen'),
                             ),
-                            onPressed: _isLoading ? null : () => _handleDeleteAccount(authProvider),
-                            icon: const Icon(Icons.delete_forever_rounded),
-                            label: const Text('Hapus Akun secara Permanen'),
-                          ),
+                          ],
                         ],
                       ),
                     ),

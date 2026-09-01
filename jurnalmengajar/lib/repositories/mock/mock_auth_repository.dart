@@ -174,6 +174,10 @@ class MockAuthRepository implements AuthRepository {
   @override
   Future<void> deleteAccount(String userId) async {
     await Future.delayed(const Duration(milliseconds: 500));
+    final targetIndex = _db.users.indexWhere((u) => u.id == userId);
+    if (targetIndex != -1 && _db.users[targetIndex].role == 'admin') {
+      throw Exception('Akun admin sekolah dilindungi sistem dan tidak dapat dihapus.');
+    }
     _db.users.removeWhere((u) => u.id == userId);
     if (_db.currentUser?.id == userId) {
       _db.currentUser = null;

@@ -91,12 +91,18 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
       setState(() {
         _isLoading = true;
       });
-      final idsToDelete = _selectedIds.toList();
+      final idsToDelete = _selectedIds.where((id) {
+        final u = _allUsers.firstWhere(
+          (user) => user.id == id,
+          orElse: () => UserModel(id: '', email: '', fullName: '', role: 'admin'),
+        );
+        return u.role != 'admin';
+      }).toList();
       for (final id in idsToDelete) {
         await authProvider.deleteAccount(id);
       }
       if (!mounted) return;
-      AppHelper.showSnackBar(context, '$count akun pengguna berhasil dihapus.');
+      AppHelper.showSnackBar(context, '${idsToDelete.length} akun pengguna berhasil dihapus.');
       setState(() {
         _selectedIds.clear();
         _isSelectionMode = false;
@@ -225,11 +231,10 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
   Future<void> _handleDeleteUser(UserModel user) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
-    // Safety checks
-    if (user.email.toLowerCase() == 'smkn11malang@jurnal.com') {
+    if (user.role == 'admin') {
       AppHelper.showSnackBar(
         context, 
-        'Akun admin sekolah utama tidak boleh dihapus.', 
+        'Akun admin sekolah dilindungi sistem dan tidak dapat dihapus.', 
         isError: true
       );
       return;
@@ -383,7 +388,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
         final isAdmin = user.role == 'admin';
         final isSuperAdmin = user.email.toLowerCase() == 'admin@jurnal.com';
         final isCurrentUser = user.id == authProvider.currentUser?.id;
-        final isSelectable = !isSuperAdmin && !isCurrentUser;
+        final isSelectable = !isSuperAdmin && !isCurrentUser && !isAdmin;
         final isSelected = _selectedIds.contains(user.id);
 
         final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -598,7 +603,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                         ),
                       ],
                     ),
-                    if (!isSuperAdmin && !isCurrentUser) ...[
+                    if (!isSuperAdmin && !isCurrentUser && !isAdmin) ...[
                       IconButton(
                         icon: const Icon(Icons.delete_outline, color: Colors.red),
                         padding: EdgeInsets.zero,

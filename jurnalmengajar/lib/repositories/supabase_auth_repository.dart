@@ -451,6 +451,26 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> deleteAccount(String userId) async {
     try {
+      // Periksa apakah akun adalah admin sekolah atau memiliki peran admin
+      final userRes = await _supabase
+          .from('users')
+          .select('role')
+          .eq('id', userId)
+          .maybeSingle();
+      if (userRes != null && userRes['role'] == 'admin') {
+        throw Exception('Akun admin sekolah dilindungi sistem dan tidak dapat dihapus.');
+      }
+
+      final schoolAdminRes = await _supabase
+          .from('user_schools')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('role', 'admin')
+          .limit(1);
+      if (schoolAdminRes.isNotEmpty) {
+        throw Exception('Akun admin sekolah dilindungi sistem dan tidak dapat dihapus.');
+      }
+
       await _supabase.from('users').delete().eq('id', userId);
     } catch (e) {
       throw Exception('Gagal menghapus akun: $e');
