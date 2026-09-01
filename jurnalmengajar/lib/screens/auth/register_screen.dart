@@ -555,9 +555,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 ),
                                 onChanged: (val) {
-                                  setState(() {
-                                    _selectedSchools.clear();
-                                  });
+                                   if (_selectedSchools.isNotEmpty) {
+                                     setState(() {
+                                       _selectedSchools.clear();
+                                     });
+                                   }
                                 },
                                 onFieldSubmitted: (val) {
                                   _resolveSchoolCode(val.trim(), masterProvider, showSnackBar: true);

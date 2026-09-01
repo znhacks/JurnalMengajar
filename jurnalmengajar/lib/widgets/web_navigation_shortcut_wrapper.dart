@@ -40,15 +40,6 @@ class _WebNavigationShortcutWrapperState
     super.dispose();
   }
 
-  bool _isEditingText() {
-    final focus = FocusManager.instance.primaryFocus;
-    if (focus == null) return false;
-    final context = focus.context;
-    if (context == null) return false;
-    // Check if the focused element is an input text field
-    return context.widget is EditableText;
-  }
-
   void _triggerGoBack() {
     final now = DateTime.now();
     if (now.difference(_lastPopTime).inMilliseconds < 350) return;
@@ -67,17 +58,11 @@ class _WebNavigationShortcutWrapperState
         HardwareKeyboard.instance.isControlPressed;
     final key = event.logicalKey;
 
-    // 1. Alt + Left Arrow or Cmd + Left Arrow or BrowserBack
+    // Alt + Left Arrow or Cmd + Left Arrow or BrowserBack key
     if ((isAlt && key == LogicalKeyboardKey.arrowLeft) ||
         (isMeta && key == LogicalKeyboardKey.arrowLeft) ||
         (isMeta && key == LogicalKeyboardKey.bracketLeft) ||
         key == LogicalKeyboardKey.browserBack) {
-      _triggerGoBack();
-      return true;
-    }
-
-    // 2. Backspace when not typing
-    if (key == LogicalKeyboardKey.backspace && !_isEditingText()) {
       _triggerGoBack();
       return true;
     }
