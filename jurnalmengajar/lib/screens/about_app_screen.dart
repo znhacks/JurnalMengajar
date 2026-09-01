@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -13,13 +14,20 @@ class AboutAppScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final isAdmin = authProvider.currentUser?.role == 'admin';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       drawer: isAdmin
           ? const AdminDrawer(currentRoute: '/about')
           : const GuruDrawer(currentRoute: '/about'),
       appBar: AppBar(
-        title: const Text('Tentang Aplikasi'),
+        title: Text(
+          'Tentang Aplikasi',
+          style: GoogleFonts.hankenGrotesk(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
         leading: Builder(
           builder: (ctx) => IconButton(
             icon: const Icon(Icons.menu_rounded),
@@ -48,10 +56,10 @@ class AboutAppScreen extends StatelessWidget {
               // App Name & Version
               Text(
                 'Jurnal Mengajar',
-                style: TextStyle(
+                style: GoogleFonts.hankenGrotesk(
                   fontSize: 22.sp,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1E3A5F),
+                  color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A5F),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -64,33 +72,43 @@ class AboutAppScreen extends StatelessWidget {
                       : 'Versi ...';
                   return Text(
                     versionText,
-                    style: TextStyle(fontSize: 13.sp, color: Colors.grey[500]),
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 13.sp,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   );
                 },
               ),
               SizedBox(height: 24.h),
 
-              const Divider(),
+              Divider(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              ),
               SizedBox(height: 16.h),
 
               // Description Card
               Card(
                 margin: EdgeInsets.zero,
+                elevation: 0,
+                color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  ),
                 ),
                 child: Padding(
                   padding: EdgeInsets.all(16.w),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionTitle('Deskripsi'),
+                      _buildSectionTitle(context, 'Deskripsi'),
                       SizedBox(height: 8.h),
                       Text(
                         'Jurnal Mengajar adalah aplikasi manajemen jurnal dan jadwal mengajar yang dirancang untuk memudahkan guru dalam mendokumentasikan kegiatan belajar mengajar secara digital.',
-                        style: TextStyle(
+                        style: GoogleFonts.hankenGrotesk(
                           fontSize: 13.sp,
-                          color: Colors.grey[700],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           height: 1.6,
                         ),
                       ),
@@ -103,33 +121,43 @@ class AboutAppScreen extends StatelessWidget {
               // Features Card
               Card(
                 margin: EdgeInsets.zero,
+                elevation: 0,
+                color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  ),
                 ),
                 child: Padding(
                   padding: EdgeInsets.all(16.w),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionTitle('Fitur Utama'),
+                      _buildSectionTitle(context, 'Fitur Utama'),
                       SizedBox(height: 12.h),
                       _buildFeatureItem(
+                        context,
                         Icons.assignment_outlined,
                         'Pencatatan jurnal mengajar harian',
                       ),
                       _buildFeatureItem(
+                        context,
                         Icons.calendar_month_outlined,
                         'Manajemen jadwal pelajaran',
                       ),
                       _buildFeatureItem(
+                        context,
                         Icons.people_outline,
                         'Pengelolaan data guru & kelas',
                       ),
                       _buildFeatureItem(
+                        context,
                         Icons.check_circle_outline,
                         'Persetujuan jurnal oleh admin',
                       ),
                       _buildFeatureItem(
+                        context,
                         Icons.bar_chart_outlined,
                         'Rekap & laporan kegiatan',
                       ),
@@ -142,23 +170,30 @@ class AboutAppScreen extends StatelessWidget {
               // Developer Card
               Card(
                 margin: EdgeInsets.zero,
+                elevation: 0,
+                color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  ),
                 ),
                 child: Padding(
                   padding: EdgeInsets.all(16.w),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionTitle('Pengembang'),
+                      _buildSectionTitle(context, 'Pengembang'),
                       SizedBox(height: 8.h),
                       _buildInfoRow(
+                        context,
                         Icons.code_outlined,
                         'Tim Pengembang',
                         'UBIG x JoeDevs',
                       ),
                       SizedBox(height: 8.h),
                       _buildInfoRow(
+                        context,
                         Icons.phone_android_outlined,
                         'Platform',
                         'Mobile',
@@ -171,7 +206,10 @@ class AboutAppScreen extends StatelessWidget {
               SizedBox(height: 40.h),
               Text(
                 '© 2025 Jurnal Mengajar - JDEVS. All rights reserved.',
-                style: TextStyle(fontSize: 11.sp, color: Colors.grey[400]),
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 11.sp,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -181,28 +219,32 @@ class AboutAppScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Text(
       title,
-      style: TextStyle(
+      style: GoogleFonts.hankenGrotesk(
         fontSize: 15.sp,
         fontWeight: FontWeight.bold,
-        color: const Color(0xFF1E3A5F),
+        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A5F),
       ),
     );
   }
 
-  Widget _buildFeatureItem(IconData icon, String label) {
+  Widget _buildFeatureItem(BuildContext context, IconData icon, String label) {
     return Padding(
       padding: EdgeInsets.only(bottom: 10.h),
       child: Row(
         children: [
-          Icon(icon, size: 20.w, color: const Color(0xFF2C7BE5)),
+          Icon(icon, size: 20.w, color: const Color(0xFF2563EB)),
           SizedBox(width: 12.w),
           Expanded(
             child: Text(
               label,
-              style: TextStyle(fontSize: 13.sp, color: Colors.grey[700]),
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 13.sp,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ),
         ],
@@ -210,25 +252,25 @@ class AboutAppScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(BuildContext context, IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, size: 18.w, color: const Color(0xFF2C7BE5)),
+        Icon(icon, size: 18.w, color: const Color(0xFF2563EB)),
         SizedBox(width: 10.w),
         Text(
           '$label: ',
-          style: TextStyle(
+          style: GoogleFonts.hankenGrotesk(
             fontSize: 13.sp,
-            color: Colors.grey[500],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
+            style: GoogleFonts.hankenGrotesk(
               fontSize: 13.sp,
-              color: const Color(0xFF0F172A),
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),

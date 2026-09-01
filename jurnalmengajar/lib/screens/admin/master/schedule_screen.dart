@@ -1307,7 +1307,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                   'Mata Pelajaran: ${subject.name}',
                                                   style: GoogleFonts.hankenGrotesk(
                                                     fontSize: 11.5.sp,
-                                                    color: const Color(0xFF475569),
+                                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                                     fontWeight: FontWeight.w600,
                                                   ),
                                                 ),
@@ -1318,14 +1318,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                     'Catatan: ${sched.note}',
                                                     style: GoogleFonts.hankenGrotesk(
                                                       fontSize: 11.sp,
-                                                      color: const Color(0xFF64748B),
+                                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                                       fontStyle: FontStyle.italic,
                                                     ),
                                                   ),
                                                 ],
-                                                const Divider(
+                                                Divider(
                                                   height: 12,
-                                                  color: Color(0xFFE2E8F0),
+                                                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                                                 ),
                                                 Row(
                                                   mainAxisAlignment:
@@ -1341,9 +1341,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                             style:
                                                                 GoogleFonts.hankenGrotesk(
                                                               fontSize: 11.sp,
-                                                              color: const Color(
-                                                                0xFF0F172A,
-                                                              ),
+                                                              color: Theme.of(context).colorScheme.onSurface,
                                                               fontWeight:
                                                                   FontWeight.w700,
                                                             ),
@@ -1354,9 +1352,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                             style:
                                                                 GoogleFonts.hankenGrotesk(
                                                               fontSize: 10.5.sp,
-                                                              color: const Color(
-                                                                0xFF94A3B8,
-                                                              ),
+                                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                                                             ),
                                                           ),
                                                         ],
@@ -1369,14 +1365,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                       ),
                                                       decoration: BoxDecoration(
                                                         color: sched.isActive
-                                                            ? const Color(0xFFECFDF5)
-                                                            : const Color(0xFFFFE4E6),
+                                                            ? (isDark ? const Color(0xFF064E3B).withValues(alpha: 0.35) : const Color(0xFFECFDF5))
+                                                            : (isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.35) : const Color(0xFFFFE4E6)),
                                                         borderRadius:
                                                             BorderRadius.circular(20.r),
                                                         border: Border.all(
                                                           color: sched.isActive
-                                                              ? const Color(0xFFA7F3D0)
-                                                              : const Color(0xFFFECDD3),
+                                                              ? (isDark ? const Color(0xFF059669) : const Color(0xFFA7F3D0))
+                                                              : (isDark ? const Color(0xFFE11D48) : const Color(0xFFFECDD3)),
                                                         ),
                                                       ),
                                                       child: Text(
@@ -1387,8 +1383,8 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                           fontSize: 10.sp,
                                                           fontWeight: FontWeight.w800,
                                                           color: sched.isActive
-                                                              ? const Color(0xFF059669)
-                                                              : const Color(0xFFE11D48),
+                                                              ? (isDark ? const Color(0xFF34D399) : const Color(0xFF059669))
+                                                              : (isDark ? const Color(0xFFF87171) : const Color(0xFFE11D48)),
                                                         ),
                                                       ),
                                                     ),

@@ -101,12 +101,24 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                       padding: EdgeInsets.all(16.w),
                       child: TextField(
                         controller: _searchController,
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 13.sp,
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Cari nama guru atau mata pelajaran...',
+                          hintStyle: GoogleFonts.hankenGrotesk(
+                            fontSize: 13.sp,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                           prefixIcon: const Icon(Icons.search, color: AppTheme.primaryColor),
                           suffixIcon: _searchQuery.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(Icons.clear),
+                                  icon: Icon(
+                                    Icons.clear,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
                                   onPressed: () {
                                     _searchController.clear();
                                   },
@@ -116,10 +128,22 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                           fillColor: Theme.of(context).brightness == Brightness.dark
                               ? Theme.of(context).colorScheme.surfaceContainerHighest
                               : Colors.white,
-                          contentPadding: EdgeInsets.symmetric(vertical: 12.h),
+                          contentPadding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
-                            borderSide: BorderSide(color: AppTheme.outlineVariant),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? const Color(0xFF334155)
+                                  : const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16.r),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? const Color(0xFF334155)
+                                  : const Color(0xFFE2E8F0),
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
@@ -140,7 +164,9 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                       Icon(
                                         Icons.mail_outline_rounded,
                                         size: 64.r,
-                                        color: AppTheme.outlineVariant,
+                                        color: Theme.of(context).brightness == Brightness.dark
+                                            ? const Color(0xFF334155)
+                                            : const Color(0xFFE2E8F0),
                                       ),
                                       SizedBox(height: 16.h),
                                       Text(
@@ -148,7 +174,7 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 16.sp,
                                           fontWeight: FontWeight.bold,
-                                          color: AppTheme.onSurfaceVariant,
+                                          color: Theme.of(context).colorScheme.onSurface,
                                         ),
                                       ),
                                       SizedBox(height: 8.h),
@@ -158,7 +184,7 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                             : 'Semua guru tertib mengisi jurnal tepat waktu.',
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 13.sp,
-                                          color: AppTheme.outline,
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                                         ),
                                         textAlign: TextAlign.center,
                                       ),
@@ -197,8 +223,8 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                     borderRadius: BorderRadius.circular(12.r),
                                     side: BorderSide(
                                       color: unreadCount > 0
-                                          ? const Color(0xFFFECACA)
-                                          : AppTheme.outlineVariant,
+                                          ? (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFECACA))
+                                          : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                                       width: unreadCount > 0 ? 1.5 : 1.0,
                                     ),
                                   ),
@@ -212,7 +238,7 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                       collapsedBackgroundColor: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                                       leading: CircleAvatar(
                                         backgroundColor: unreadCount > 0
-                                            ? const Color(0xFFFEE2E2)
+                                            ? (isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.35) : const Color(0xFFFEE2E2))
                                             : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
                                         backgroundImage: teacher.photoUrl != null && teacher.photoUrl!.isNotEmpty
                                             ? NetworkImage(teacher.photoUrl!)
@@ -221,8 +247,8 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                             ? Icon(
                                                 Icons.warning_amber_rounded,
                                                 color: unreadCount > 0
-                                                    ? const Color(0xFFEF4444)
-                                                    : const Color(0xFF64748B),
+                                                    ? (isDark ? const Color(0xFFF87171) : const Color(0xFFEF4444))
+                                                    : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                                               )
                                             : null,
                                       ),
@@ -233,7 +259,7 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                         style: GoogleFonts.hankenGrotesk(
                                           fontWeight: FontWeight.w800,
                                           fontSize: 14.sp,
-                                          color: AppTheme.onBackground,
+                                          color: Theme.of(context).colorScheme.onSurface,
                                         ),
                                       ),
                                       subtitle: Text(
@@ -242,7 +268,7 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                         overflow: TextOverflow.ellipsis,
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 11.sp,
-                                          color: AppTheme.onSurfaceVariant,
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -256,7 +282,7 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                             ),
                                             decoration: BoxDecoration(
                                               color: unreadCount > 0
-                                                  ? const Color(0xFFFEE2E2)
+                                                  ? (isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.35) : const Color(0xFFFEE2E2))
                                                   : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                                               borderRadius: BorderRadius.circular(999),
                                             ),
@@ -266,13 +292,16 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                                 fontSize: 9.sp,
                                                 fontWeight: FontWeight.w700,
                                                 color: unreadCount > 0
-                                                    ? const Color(0xFFB91C1C)
+                                                    ? (isDark ? const Color(0xFFF87171) : const Color(0xFFB91C1C))
                                                     : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569)),
                                               ),
                                             ),
                                           ),
                                           SizedBox(width: 4.w),
-                                          const Icon(Icons.keyboard_arrow_down_rounded, color: AppTheme.outline),
+                                          Icon(
+                                            Icons.keyboard_arrow_down_rounded,
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                          ),
                                         ],
                                       ),
                                       children: warnings.map((warning) {
@@ -324,18 +353,21 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                                     '${AppHelper.formatDate(warning.issuedAt)} ${DateFormat('HH:mm').format(warning.issuedAt)}',
                                                     style: GoogleFonts.hankenGrotesk(
                                                       fontSize: 10.sp,
-                                                      color: AppTheme.outline,
+                                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                                       fontWeight: FontWeight.w600,
                                                     ),
                                                   ),
                                                 ],
                                               ),
-                                              const Divider(height: 16),
+                                              Divider(
+                                                height: 16,
+                                                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                              ),
                                               Text(
                                                 warning.reason,
                                                 style: GoogleFonts.hankenGrotesk(
                                                   fontSize: 12.sp,
-                                                  color: AppTheme.onBackground,
+                                                  color: Theme.of(context).colorScheme.onSurface,
                                                   height: 1.35,
                                                 ),
                                               ),

@@ -220,19 +220,30 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                     controller: _tabController,
                     isScrollable: true,
                     tabAlignment: TabAlignment.start,
-                    indicatorColor: AppTheme.primaryColor,
+                    indicatorColor: const Color(0xFF2563EB),
                     indicatorWeight: 2.5,
                     indicatorSize: TabBarIndicatorSize.label,
-                    dividerColor: AppTheme.outlineVariant,
+                    dividerColor: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0),
                     dividerHeight: 1,
                     tabs: [
-                      _buildTab('Semua', allJournals.length),
+                      _buildTab('Semua', allJournals.length,
+                          badgeColor: Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFF60A5FA)
+                              : const Color(0xFF2563EB)),
                       _buildTab('Belum Diisi', unfilledGroups.length,
-                          badgeColor: const Color(0xFFBA1A1A)),
+                          badgeColor: Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFFF87171)
+                              : const Color(0xFFBA1A1A)),
                       _buildTab('Menunggu', pendingJournals.length,
-                          badgeColor: const Color(0xFF825100)),
+                          badgeColor: Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFFFBBF24)
+                              : const Color(0xFFD97706)),
                       _buildTab('Terverifikasi', verifiedJournals.length,
-                          badgeColor: AppTheme.primaryColor),
+                          badgeColor: Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFF60A5FA)
+                              : const Color(0xFF2563EB)),
                     ],
                   ),
                 ),
@@ -260,16 +271,29 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                           }
                         });
                       },
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 13.sp,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
                       decoration: InputDecoration(
                         hintText: 'Cari guru, kelas, atau mapel...',
                         hintStyle: GoogleFonts.hankenGrotesk(
-                            fontSize: 13.sp, color: Colors.grey[450]),
-                        prefixIcon:
-                            Icon(Icons.search, color: Colors.grey[400], size: 20.r),
+                          fontSize: 13.sp,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          size: 20.r,
+                        ),
                         suffixIcon: _searchQuery.isNotEmpty
                             ? IconButton(
-                                icon: Icon(Icons.clear,
-                                    size: 18.r, color: Colors.grey[400]),
+                                icon: Icon(
+                                  Icons.clear,
+                                  size: 18.r,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
                                 onPressed: () {
                                   _searchController.clear();
                                   setState(() => _searchQuery = '');
@@ -284,18 +308,24 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                             vertical: 8.h, horizontal: 16.w),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: AppTheme.outlineVariant),
+                          borderSide: BorderSide(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF334155)
+                                : const Color(0xFFE2E8F0),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: AppTheme.outlineVariant),
+                          borderSide: BorderSide(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF334155)
+                                : const Color(0xFFE2E8F0),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
-                              color: AppTheme.primaryColor, width: 1.5),
+                              color: Color(0xFF2563EB), width: 1.5),
                         ),
                       ),
                     ),
@@ -306,12 +336,18 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                       controller: _tabController,
                       children: [
                         _buildJournalList(allJournals, masterProvider,
-                            badgeColor: AppTheme.primaryColor),
+                            badgeColor: Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF60A5FA)
+                                : const Color(0xFF2563EB)),
                         _buildUnfilledList(unfilledGroups, masterProvider),
                         _buildJournalList(pendingJournals, masterProvider,
-                            badgeColor: const Color(0xFF825100)),
+                            badgeColor: Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFFFBBF24)
+                                : const Color(0xFFD97706)),
                         _buildJournalList(verifiedJournals, masterProvider,
-                            badgeColor: AppTheme.primaryColor),
+                            badgeColor: Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF60A5FA)
+                                : const Color(0xFF2563EB)),
                       ],
                     ),
                   ),
@@ -322,7 +358,8 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
   }
 
   Tab _buildTab(String label, int count, {Color? badgeColor}) {
-    final color = badgeColor ?? AppTheme.primaryColor;
+    final color = badgeColor ?? const Color(0xFF2563EB);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Tab(
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -330,14 +367,16 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
           Text(
             label,
             style: GoogleFonts.hankenGrotesk(
-                fontSize: 12, fontWeight: FontWeight.w600),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           if (count > 0) ...[
             SizedBox(width: 5.w),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.h),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
+                color: isDark ? color.withValues(alpha: 0.2) : color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
@@ -426,13 +465,16 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
           final teacherItems = groups[teacher]!
             ..sort((a, b) => b.date.compareTo(a.date));
           final isExpanded = _expandedTeacherIds.contains(teacher.id);
+          final isDark = Theme.of(context).brightness == Brightness.dark;
 
           return Card(
             margin: EdgeInsets.only(bottom: 12.h),
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: AppTheme.outlineVariant),
+              side: BorderSide(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              ),
             ),
             clipBehavior: Clip.antiAlias,
             child: Theme(
@@ -453,13 +495,13 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                   children: [
                     CircleAvatar(
                       radius: 16.r,
-                      backgroundColor: const Color(0xFFF1F5F9),
+                      backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
                       backgroundImage: teacher.photoUrl != null &&
                               teacher.photoUrl!.startsWith('http')
                           ? NetworkImage(teacher.photoUrl!)
                           : null,
                       child: teacher.photoUrl == null
-                          ? Icon(Icons.person, size: 16.r, color: Colors.grey[450])
+                          ? Icon(Icons.person, size: 16.r, color: isDark ? const Color(0xFF94A3B8) : Colors.grey[450])
                           : null,
                     ),
                     SizedBox(width: 10.w),
@@ -472,7 +514,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w700,
-                              color: AppTheme.onBackground,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -481,7 +523,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                             teacher.position.isNotEmpty ? teacher.position : 'Guru',
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 11.sp,
-                              color: AppTheme.onSurfaceVariant,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -493,7 +535,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                 trailing: Container(
                   padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                   decoration: BoxDecoration(
-                    color: activeColor.withValues(alpha: 0.1),
+                    color: isDark ? activeColor.withValues(alpha: 0.25) : activeColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -507,7 +549,9 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                 ),
                 children: [
                   Container(
-                    color: const Color(0xFFF8FAFC),
+                    color: isDark
+                        ? Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
+                        : const Color(0xFFF8FAFC),
                     padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
                     child: ListView.separated(
                       shrinkWrap: true,
@@ -551,6 +595,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
 
     final statusColor = AppHelper.getStatusColor(journal.status);
     final isSelected = _selectedIds.contains(journal.id);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return FadeSlideIn(
       delay: const Duration(milliseconds: 60),
@@ -568,13 +613,15 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
         child: Container(
           decoration: BoxDecoration(
             color: isSelected
-                ? (Theme.of(context).brightness == Brightness.dark
+                ? (isDark
                     ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
                     : const Color(0xFFEFF6FF))
                 : (Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected ? const Color(0xFF2563EB) : AppTheme.outlineVariant,
+              color: isSelected
+                  ? const Color(0xFF2563EB)
+                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
               width: isSelected ? 1.5 : 1.0,
             ),
           ),
@@ -622,7 +669,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                                   style: GoogleFonts.hankenGrotesk(
                                     fontSize: 15.sp,
                                     fontWeight: FontWeight.w700,
-                                    color: AppTheme.onBackground,
+                                    color: Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                                 SizedBox(height: 2.h),
@@ -630,7 +677,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                                   subject.name,
                                   style: GoogleFonts.hankenGrotesk(
                                     fontSize: 13.sp,
-                                    color: AppTheme.onSurfaceVariant,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -642,7 +689,9 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                             padding: EdgeInsets.symmetric(
                                 horizontal: 10.w, vertical: 4.h),
                             decoration: BoxDecoration(
-                              color: statusColor.withValues(alpha: 0.1),
+                              color: isDark
+                                  ? statusColor.withValues(alpha: 0.25)
+                                  : statusColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
@@ -662,14 +711,15 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                       Row(
                         children: [
                           Icon(Icons.person_outline,
-                              size: 13.sp, color: AppTheme.outline),
+                              size: 13.sp,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant),
                           SizedBox(width: 4.w),
                           Expanded(
                             child: Text(
                               teacher.name,
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 12.sp,
-                                color: AppTheme.onSurfaceVariant,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w600,
                               ),
                               maxLines: 1,
@@ -683,14 +733,16 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
                         decoration: BoxDecoration(
-                          color: AppTheme.surfaceContainerLow,
+                          color: isDark
+                              ? Theme.of(context).colorScheme.surfaceContainerHighest
+                              : const Color(0xFFF8FAFC),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           journal.material,
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 12.sp,
-                            color: AppTheme.onSurfaceVariant,
+                            color: Theme.of(context).colorScheme.onSurface,
                             height: 1.4,
                           ),
                           maxLines: 2,
@@ -701,23 +753,27 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                       // Footer row
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today_outlined,
-                              size: 12, color: AppTheme.outline),
+                          Icon(Icons.calendar_today_outlined,
+                              size: 12,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant),
                           SizedBox(width: 4.w),
                           Text(
                             AppHelper.formatDateShort(journal.date),
                             style: GoogleFonts.hankenGrotesk(
-                                fontSize: 11.sp, color: AppTheme.outline),
+                              fontSize: 11.sp,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
                           ),
                           const Spacer(),
-                          const Icon(Icons.people_outline,
-                              size: 12, color: AppTheme.outline),
+                          Icon(Icons.people_outline,
+                              size: 12,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant),
                           SizedBox(width: 4.w),
                           Text(
                             'S:${journal.sickCount} I:${journal.permissionCount} A:${journal.alphaCount}',
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 11.sp,
-                              color: AppTheme.onSurfaceVariant,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -780,13 +836,29 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
 
     return Column(
       children: [
-        
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+          child: Row(
+            children: [
+              Text(
+                'Terdeteksi ${filteredList.length} jadwal yang belum terisi jurnalnya',
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFFF87171)
+                      : const Color(0xFFBA1A1A),
+                ),
+              ),
+            ],
+          ),
+        ),
         Expanded(
-          child: filteredList.isEmpty
+          child: sortedTeachers.isEmpty
               ? (_searchQuery.isNotEmpty
                   ? const AppEmptyWidget(
                       title: 'Tidak Ditemukan',
-                      subtitle: 'Tidak ada hasil pencarian yang cocok.',
+                      subtitle: 'Tidak ada jadwal belum diisi yang cocok dengan pencarian.',
                     )
                   : const AppEmptyWidget(
                       title: 'Semua Jurnal Terisi',
@@ -794,7 +866,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                     ))
               : RefreshIndicator(
                   onRefresh: _refreshData,
-                  color: AppTheme.primaryColor,
+                  color: const Color(0xFF2563EB),
                   child: ListView.builder(
                     padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                     itemCount: sortedTeachers.length,
@@ -802,13 +874,16 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                       final teacher = sortedTeachers[teacherIndex];
                       final teacherItems = groups[teacher]!;
                       final isExpanded = _expandedTeacherIds.contains(teacher.id);
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
 
                       return Card(
                         margin: EdgeInsets.only(bottom: 12.h),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
-                          side: const BorderSide(color: AppTheme.outlineVariant),
+                          side: BorderSide(
+                            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          ),
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: Theme(
@@ -829,13 +904,13 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                               children: [
                                 CircleAvatar(
                                   radius: 16.r,
-                                  backgroundColor: const Color(0xFFF1F5F9),
+                                  backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
                                   backgroundImage: teacher.photoUrl != null &&
                                           teacher.photoUrl!.startsWith('http')
                                       ? NetworkImage(teacher.photoUrl!)
                                       : null,
                                   child: teacher.photoUrl == null
-                                      ? Icon(Icons.person, size: 16.r, color: Colors.grey[450])
+                                      ? Icon(Icons.person, size: 16.r, color: isDark ? const Color(0xFF94A3B8) : Colors.grey[450])
                                       : null,
                                 ),
                                 SizedBox(width: 10.w),
@@ -848,7 +923,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 14.sp,
                                           fontWeight: FontWeight.w700,
-                                          color: AppTheme.onBackground,
+                                          color: Theme.of(context).colorScheme.onSurface,
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -857,7 +932,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                                         teacher.position.isNotEmpty ? teacher.position : 'Guru',
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 11.sp,
-                                          color: AppTheme.onSurfaceVariant,
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -869,21 +944,23 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                             trailing: Container(
                               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFBA1A1A).withValues(alpha: 0.1),
+                                color: isDark
+                                    ? const Color(0xFFF87171).withValues(alpha: 0.25)
+                                    : const Color(0xFFBA1A1A).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
                                 '${teacherItems.length}',
                                 style: GoogleFonts.hankenGrotesk(
                                   fontSize: 10.sp,
-                                  color: const Color(0xFFBA1A1A),
+                                  color: isDark ? const Color(0xFFF87171) : const Color(0xFFBA1A1A),
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
                             children: [
                               Container(
-                                color: Theme.of(context).brightness == Brightness.dark
+                                color: isDark
                                     ? Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
                                     : const Color(0xFFF8FAFC),
                                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
@@ -930,13 +1007,16 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
           email: ''),
     );
 
-    final statusColor = const Color(0xFFBA1A1A);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final statusColor = isDark ? const Color(0xFFF87171) : const Color(0xFFBA1A1A);
 
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.outlineVariant),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        ),
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -970,7 +1050,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                                 style: GoogleFonts.hankenGrotesk(
                                   fontSize: 15.sp,
                                   fontWeight: FontWeight.w700,
-                                  color: AppTheme.onBackground,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                               SizedBox(height: 2.h),
@@ -978,7 +1058,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                                 subject.name,
                                 style: GoogleFonts.hankenGrotesk(
                                   fontSize: 13.sp,
-                                  color: AppTheme.onSurfaceVariant,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -990,7 +1070,9 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                           padding: EdgeInsets.symmetric(
                               horizontal: 10.w, vertical: 4.h),
                           decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.1),
+                            color: isDark
+                                ? statusColor.withValues(alpha: 0.25)
+                                : statusColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
@@ -1009,16 +1091,17 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                     Row(
                       children: [
                         Icon(Icons.person_outline,
-                            size: 13.sp, color: AppTheme.outline),
+                            size: 13.sp,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant),
                         SizedBox(width: 4.w),
                         Expanded(
                           child: Text(
                             teacher.name,
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 12.sp,
-                              color: AppTheme.onSurfaceVariant,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               fontWeight: FontWeight.w600,
-                              ),
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1030,14 +1113,16 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                       width: double.infinity,
                       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
                       decoration: BoxDecoration(
-                        color: AppTheme.surfaceContainerLow,
+                        color: isDark
+                            ? Theme.of(context).colorScheme.surfaceContainerHighest
+                            : const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         'Jurnal mengajar belum diisi oleh guru yang bersangkutan.',
                         style: GoogleFonts.hankenGrotesk(
                           fontSize: 12.sp,
-                          color: AppTheme.onSurfaceVariant.withValues(alpha: 0.8),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontStyle: FontStyle.italic,
                           height: 1.4,
                         ),
