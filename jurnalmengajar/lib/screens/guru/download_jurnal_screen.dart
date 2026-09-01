@@ -628,7 +628,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         builder: (context) => Scaffold(
           appBar: AppBar(
             title: Text(
-              'Pratinjau Laporan PDF',
+              'Preview',
               style: TextStyle(color: Theme.of(context).colorScheme.surface),
             ),
             backgroundColor: AppTheme.primaryColor,
