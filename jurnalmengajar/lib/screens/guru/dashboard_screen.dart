@@ -279,7 +279,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.w800,
-                    color: Theme.of(context).colorScheme.onBackground,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -353,7 +353,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 13.sp,
                                       fontWeight: FontWeight.w700,
-                                      color: Theme.of(context).colorScheme.onBackground,
+                                      color: Theme.of(context).colorScheme.onSurface,
                                     ),
                                   ),
                                   Text(
@@ -689,7 +689,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w800,
-                      color: Theme.of(context).colorScheme.onBackground,
+                      color: Theme.of(context).colorScheme.onSurface,
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -787,7 +787,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 21.sp,
                     height: 1.25,
-                    color: Theme.of(context).colorScheme.onBackground,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
                   ),
                   children: [
@@ -848,7 +848,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         style: GoogleFonts.hankenGrotesk(
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.onBackground,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -941,7 +941,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         ]
                       : [
                           BoxShadow(
-                            color: Theme.of(context).colorScheme.onBackground.withValues(alpha: 0.02),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.02),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -1023,7 +1023,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 style: GoogleFonts.hankenGrotesk(
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w800,
-                  color: Theme.of(context).colorScheme.onBackground,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
 
@@ -1157,7 +1157,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           style: GoogleFonts.hankenGrotesk(
             fontSize: 17.sp,
             fontWeight: FontWeight.w800,
-            color: Theme.of(context).colorScheme.onBackground,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         InkWell(
@@ -1244,7 +1244,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 13.5.sp,
                       fontWeight: FontWeight.w800,
-                      color: Theme.of(context).colorScheme.onBackground,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   SizedBox(height: 3.h),
@@ -1488,7 +1488,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         style: GoogleFonts.hankenGrotesk(
                           fontSize: 15.sp,
                           fontWeight: FontWeight.w800,
-                          color: Theme.of(context).colorScheme.onBackground,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       SizedBox(width: 6.w),
@@ -1596,7 +1596,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 17.sp,
                     fontWeight: FontWeight.w800,
-                    color: Theme.of(context).colorScheme.onBackground,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -1819,7 +1819,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 14.5.sp,
                               fontWeight: FontWeight.w800,
-                              color: Theme.of(context).colorScheme.onBackground,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           SizedBox(height: 3.h),

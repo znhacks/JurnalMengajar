@@ -283,17 +283,17 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                           child: Container(
                             width: 12.w,
                             height: 12.w,
-                            color: Theme.of(context).colorScheme.onBackground,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),
                       Container(
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onBackground, // Dark background matching browser Saved Info
+                          color: Theme.of(context).colorScheme.onSurface, // Dark background matching browser Saved Info
                           borderRadius: BorderRadius.circular(8.r),
                           boxShadow: [
                             BoxShadow(
-                              color: Theme.of(context).colorScheme.onBackground.withValues(alpha: 0.3),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                               blurRadius: 12,
                               offset: const Offset(0, 6),
                             ),
@@ -966,7 +966,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 12.5.sp,
                                           fontWeight: FontWeight.w700,
-                                          color: Theme.of(context).colorScheme.onBackground,
+                                          color: Theme.of(context).colorScheme.onSurface,
                                         ),
                                       ),
                                     ],
@@ -1023,7 +1023,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 12.5.sp,
                                           fontWeight: FontWeight.w700,
-                                          color: Theme.of(context).colorScheme.onBackground,
+                                          color: Theme.of(context).colorScheme.onSurface,
                                         ),
                                       ),
                                     ],
@@ -1180,7 +1180,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       ),
                       style: GoogleFonts.hankenGrotesk(
                         fontSize: 14.sp,
-                        color: Theme.of(context).colorScheme.onBackground,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
                       items: () {
@@ -1191,7 +1191,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                               m.schoolName,
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 14.sp,
-                                color: Theme.of(context).colorScheme.onBackground,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           );
@@ -1205,7 +1205,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                               _schoolNameController.text,
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 14.sp,
-                                color: Theme.of(context).colorScheme.onBackground,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ));
@@ -1478,7 +1478,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         borderRadius: BorderRadius.circular(14.r),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.onBackground.withValues(alpha: 0.03),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1497,7 +1497,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                 style: GoogleFonts.hankenGrotesk(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.onBackground,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],

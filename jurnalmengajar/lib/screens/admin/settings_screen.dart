@@ -171,21 +171,20 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
                         setModalState(() => isChecking = true);
                         final masterProvider = Provider.of<MasterDataProvider>(
-                          this.context,
+                          context,
                           listen: false,
                         );
                         
                         final matchedSchool = await masterProvider.validateActivationCode(code);
+                        if (!mounted) return;
                         setModalState(() => isChecking = false);
 
                         if (matchedSchool != null) {
-                          if (!mounted) return;
                           Navigator.pop(dialogContext);
                           _showConfirmationDialog(matchedSchool, code);
                         } else {
-                          if (!mounted) return;
                           AppHelper.showSnackBar(
-                            this.context,
+                            context,
                             'Kode tidak valid atau tidak ditemukan di database JM-Panel.',
                             isError: true,
                           );
@@ -348,8 +347,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(confirmCtx);
-              final authProvider = Provider.of<AuthProvider>(this.context, listen: false);
-              final masterProvider = Provider.of<MasterDataProvider>(this.context, listen: false);
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
               final userId = authProvider.currentUser?.id;
 
               try {
@@ -384,14 +383,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 if (mounted) {
                   setState(() {});
                   AppHelper.showSnackBar(
-                    this.context,
+                    context,
                     'Selamat! Paket $planName untuk ${matchedSchool.name} berhasil diaktifkan.',
                   );
                 }
               } catch (e) {
                 if (mounted) {
                   AppHelper.showSnackBar(
-                    this.context,
+                    context,
                     'Gagal mengaktifkan paket: $e',
                     isError: true,
                   );
@@ -631,7 +630,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                             Container(
                               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surfaceVariant.withValues(alpha: 0.4),
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                                 borderRadius: BorderRadius.circular(12.r),
                               ),
                               child: Row(

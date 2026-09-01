@@ -293,7 +293,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onBackground,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -685,7 +685,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     style: TextStyle(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onBackground,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   SizedBox(height: 8.h),
@@ -1227,7 +1227,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onBackground,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ],
@@ -1271,7 +1271,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                     style: TextStyle(
                                       fontSize: 13.sp,
                                       fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.onBackground,
+                                      color: Theme.of(context).colorScheme.onSurface,
                                     ),
                                   ),
                                   Text(
@@ -1402,7 +1402,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                             style: TextStyle(
                                               fontSize: 13.sp,
                                               fontWeight: FontWeight.bold,
-                                              color: Theme.of(context).colorScheme.onBackground,
+                                              color: Theme.of(context).colorScheme.onSurface,
                                             ),
                                           ),
                                           Text(
@@ -1574,7 +1574,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                               ),
                                             Text(
                                               authProvider.activeSchool!.name,
-                                              style: GoogleFonts.hankenGrotesk(fontSize: 13.sp, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onBackground),
+                                              style: GoogleFonts.hankenGrotesk(fontSize: 13.sp, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                                             ),
                                           ],
                                         ),
@@ -1864,7 +1864,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   value,
                   style: TextStyle(
                     fontSize: 13.sp,
-                    color: Theme.of(context).colorScheme.onBackground,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1972,7 +1972,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 9.sp,
                     fontWeight: FontWeight.w700,
-                    color: Theme.of(context).colorScheme.onBackground,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ],

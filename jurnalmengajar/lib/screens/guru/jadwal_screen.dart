@@ -189,7 +189,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         border: Border.all(color: const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.onBackground.withValues(alpha: 0.03),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.03),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -232,7 +232,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                         style: GoogleFonts.hankenGrotesk(
                           fontSize: 15.sp,
                           fontWeight: FontWeight.w800,
-                          color: Theme.of(context).colorScheme.onBackground,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const Icon(
@@ -410,7 +410,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onBackground,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         IconButton(
@@ -819,25 +819,25 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     final List<Map<String, dynamic>> softThemes = [
       {
         'bg': const Color(0xFFEEF2FF), // Soft Blue/Indigo
-        'text': Theme.of(context).colorScheme.onBackground,
+        'text': Theme.of(context).colorScheme.onSurface,
         'subtext': Theme.of(context).colorScheme.onSurfaceVariant,
         'node': const Color(0xFF6366F1),
       },
       {
         'bg': const Color(0xFFFEFCE8), // Soft Yellow
-        'text': Theme.of(context).colorScheme.onBackground,
+        'text': Theme.of(context).colorScheme.onSurface,
         'subtext': const Color(0xFF78350F),
         'node': const Color(0xFFF59E0B),
       },
       {
         'bg': const Color(0xFFECFDF5), // Soft Mint
-        'text': Theme.of(context).colorScheme.onBackground,
+        'text': Theme.of(context).colorScheme.onSurface,
         'subtext': const Color(0xFF047857),
         'node': const Color(0xFF10B981),
       },
       {
         'bg': const Color(0xFFFFF1F2), // Soft Coral
-        'text': Theme.of(context).colorScheme.onBackground,
+        'text': Theme.of(context).colorScheme.onSurface,
         'subtext': const Color(0xFFBE123C),
         'node': const Color(0xFFF43F5E),
       },
@@ -963,7 +963,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                       BoxShadow(
                         color: isHighlighted
                             ? const Color(0xFFF43F5E).withValues(alpha: 0.3)
-                            : Theme.of(context).colorScheme.onBackground.withValues(alpha: 0.03),
+                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.03),
                         blurRadius: isHighlighted ? 12 : 8,
                         offset: const Offset(0, 4),
                       ),
