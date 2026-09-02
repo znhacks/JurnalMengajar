@@ -357,7 +357,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               child: Icon(
                                 Icons.camera_alt,
                                 size: 16.r,
-                                color: Theme.of(context).colorScheme.surface,
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -596,8 +596,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         ? SizedBox(
                             width: 24.w,
                             height: 24.h,
-                            child: CircularProgressIndicator(
-                              color: Theme.of(context).colorScheme.surface,
+                            child: const CircularProgressIndicator(
+                              color: Colors.white,
                               strokeWidth: 2.5,
                             ),
                           )
@@ -928,7 +928,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                       style: ElevatedButton.styleFrom(
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                         backgroundColor: const Color(0xFF2563EB),
-                        foregroundColor: Theme.of(context).colorScheme.surface,
+                        foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14.r),
@@ -938,8 +938,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                           ? SizedBox(
                               width: 18.w,
                               height: 18.h,
-                              child: CircularProgressIndicator(
-                                color: Theme.of(context).colorScheme.surface,
+                              child: const CircularProgressIndicator(
+                                color: Colors.white,
                                 strokeWidth: 2,
                               ),
                             )
@@ -1033,7 +1033,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   label: const Text('Coba Lagi'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2563EB),
-                    foregroundColor: Theme.of(context).colorScheme.surface,
+                    foregroundColor: Colors.white,
                     elevation: 0,
                     minimumSize: Size(150.w, 40.h),
                     shape: RoundedRectangleBorder(

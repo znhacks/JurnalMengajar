@@ -141,6 +141,10 @@ class AppRouter {
           }
         }
 
+        if (user.role != 'admin' && user.role != 'guru') {
+          return '/login';
+        }
+
         if (state.matchedLocation.startsWith('/admin') && user.role != 'admin') {
           return '/guru/dashboard';
         }

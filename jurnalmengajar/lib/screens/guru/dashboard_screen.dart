@@ -385,7 +385,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     'Oke, Saya Isi Jurnal',
                     style: GoogleFonts.hankenGrotesk(
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.surface,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -540,9 +540,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                     color: Color(0xFFDC2626),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(
+                                  child: const Icon(
                                     Icons.event_busy_rounded,
-                                    color: Theme.of(context).colorScheme.surface,
+                                    color: Colors.white,
                                     size: 20,
                                   ),
                                 ),

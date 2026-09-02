@@ -574,13 +574,13 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
               onPressed: () {
                 context.push('/guru/journal-form?date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
               },
-              icon: Icon(Icons.add, size: 16, color: Theme.of(context).colorScheme.surface),
+              icon: const Icon(Icons.add, size: 16, color: Colors.white),
               label: Text(
                 'Tambah Task',
                 style: GoogleFonts.hankenGrotesk(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.surface,
+                  color: Colors.white,
                 ),
               ),
               style: ElevatedButton.styleFrom(
@@ -913,14 +913,14 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                           child: Container(
                             width: 6.w,
                             height: 6.w,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Theme.of(context).colorScheme.surface,
+                              color: Colors.white,
                             ),
                           ),
                         )
                       : (nodeIcon != null
-                          ? Icon(nodeIcon, size: 10.r, color: Theme.of(context).colorScheme.surface)
+                          ? Icon(nodeIcon, size: 10.r, color: Colors.white)
                           : null),
                 ),
                 // Connecting line

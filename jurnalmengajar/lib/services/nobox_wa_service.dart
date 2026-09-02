@@ -19,9 +19,13 @@ class NoboxWaService {
     String? note,
   }) async {
     try {
-      String parentPhone = (student.parentPhoneNumber != null && student.parentPhoneNumber!.trim().isNotEmpty)
-          ? student.parentPhoneNumber!.trim()
-          : '6282230090067';
+      final parentPhone = student.parentPhoneNumber?.trim();
+      if (parentPhone == null || parentPhone.isEmpty) {
+        if (kDebugMode) {
+          print('ℹ️ Skip Nobox WA Notification: No parent phone number for ${student.name}');
+        }
+        return;
+      }
 
       final payload = {
         'student_id': student.id,

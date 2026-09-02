@@ -627,12 +627,12 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       MaterialPageRoute(
         builder: (context) => Scaffold(
           appBar: AppBar(
-            title: Text(
+            title: const Text(
               'Preview',
-              style: TextStyle(color: Theme.of(context).colorScheme.surface),
+              style: TextStyle(color: Colors.white),
             ),
             backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Theme.of(context).colorScheme.surface,
+            foregroundColor: Colors.white,
           ),
           body: PdfPreview(
             build: (format) => JournalPdfService.generateJournalReportPdf(
@@ -843,12 +843,12 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                     Container(
                       padding: EdgeInsets.all(12.w),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.picture_as_pdf_rounded,
-                        color: Theme.of(context).colorScheme.surface,
+                        color: Colors.white,
                         size: 28.sp,
                       ),
                     ),
@@ -862,7 +862,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.w800,
-                              color: Theme.of(context).colorScheme.surface,
+                              color: Colors.white,
                             ),
                           ),
                           SizedBox(height: 4.h),
@@ -870,7 +870,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                             'Unduh laporan jurnal mengajar resmi dalam format PDF lengkap dengan tabel & kolom tanda tangan.',
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 11.5.sp,
-                              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
+                              color: Colors.white.withValues(alpha: 0.85),
                             ),
                           ),
                         ],
@@ -1433,15 +1433,15 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         masterProvider,
                         authProvider,
                       ),
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.download_rounded,
-                        color: Theme.of(context).colorScheme.surface,
+                        color: Colors.white,
                       ),
                       label: Text(
                         'Unduh / Cetak',
                         style: GoogleFonts.hankenGrotesk(
                           fontWeight: FontWeight.w800,
-                          color: Theme.of(context).colorScheme.surface,
+                          color: Colors.white,
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -1583,7 +1583,7 @@ class _HistoryItemRowState extends State<_HistoryItemRow> {
                   child: Text(
                     widget.item,
                     style: GoogleFonts.hankenGrotesk(
-                      color: Theme.of(context).colorScheme.surface,
+                      color: Colors.white,
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w500,
                     ),
