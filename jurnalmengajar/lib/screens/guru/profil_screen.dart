@@ -672,10 +672,9 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   TextField(
                     controller: codeController,
                     enabled: !isSubmitting,
-                    textCapitalization: TextCapitalization.characters,
                     decoration: InputDecoration(
-                      labelText: 'Kode / NPSN Sekolah',
-                      hintText: 'Contoh: 20533811',
+                      labelText: 'Kode Aktivasi (UUID) / NPSN',
+                      hintText: 'Contoh: e4d585a7-... atau NPSN',
                       prefixIcon: const Icon(Icons.vpn_key_rounded, color: Color(0xFF2563EB)),
                       filled: true,
                       fillColor: isDark

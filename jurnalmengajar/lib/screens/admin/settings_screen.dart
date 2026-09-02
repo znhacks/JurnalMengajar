@@ -127,7 +127,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Masukkan kode sekolah / lisensi yang diperoleh dari JM-Panel (misal: PRO-XXXXXX atau KODE-SEKOLAH):',
+                  'Masukkan kode aktivasi sekolah (format UUID) yang diperoleh dari JM-Panel:',
                   style: TextStyle(
                     fontSize: 13.sp,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -137,10 +137,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 SizedBox(height: 16.h),
                 TextField(
                   controller: codeController,
-                  textCapitalization: TextCapitalization.characters,
                   decoration: InputDecoration(
-                    labelText: 'Kode Aktivasi / Sekolah',
-                    hintText: 'Contoh: PRO-684D386E',
+                    labelText: 'Kode Aktivasi Sekolah (UUID)',
+                    hintText: 'Contoh: e4d585a7-23b3-494d-885e-1f282f05c54a',
                     prefixIcon: const Icon(Icons.key_rounded),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12.r),
@@ -185,7 +184,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                         } else {
                           AppHelper.showSnackBar(
                             context,
-                            'Kode tidak valid atau tidak ditemukan di database JM-Panel.',
+                            'Kode aktivasi tidak valid',
                             isError: true,
                           );
                         }
@@ -369,39 +368,47 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               final userId = authProvider.currentUser?.id;
 
               try {
-                // 1. Connect user to school with role 'admin' in user_schools if not yet connected
+                final currentSchoolId = authProvider.activeSchoolId ?? matchedSchool.id;
+
+                // 1. Update schools table according to JM Panel activation architecture
+                final updatedSchool = await masterProvider.activateSchoolWithCode(
+                  currentSchoolId: currentSchoolId,
+                  activationCode: code,
+                );
+
+                // 2. Connect user to school with role 'admin' in user_schools if not yet connected
                 if (userId != null) {
                   final supabase = Supabase.instance.client;
                   final existing = await supabase
                       .from('user_schools')
                       .select('id')
                       .eq('user_id', userId)
-                      .eq('school_id', matchedSchool.id)
+                      .eq('school_id', updatedSchool.id)
                       .maybeSingle();
 
                   if (existing == null) {
                     await supabase.from('user_schools').insert({
                       'user_id': userId,
-                      'school_id': matchedSchool.id,
+                      'school_id': updatedSchool.id,
                       'role': 'admin',
                     });
                   }
                 }
 
-                // 2. Update active school & refresh
+                // 3. Update active school & refresh
                 await authProvider.switchActiveSchool(
-                  matchedSchool.id,
-                  matchedSchool.name,
+                  updatedSchool.id,
+                  updatedSchool.name,
                   'admin',
                 );
                 await authProvider.loadUserMemberships();
-                await masterProvider.loadAllData(matchedSchool.id);
+                await masterProvider.loadAllData(updatedSchool.id);
 
                 if (mounted) {
                   setState(() {});
                   AppHelper.showSnackBar(
                     context,
-                    'Selamat! Paket $planName untuk ${matchedSchool.name} berhasil diaktifkan.',
+                    'Selamat! Paket ${updatedSchool.plan.toUpperCase()} untuk ${updatedSchool.name} berhasil diaktifkan.',
                   );
                 }
               } catch (e) {
@@ -513,9 +520,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     }
     school ??= masterProvider.schools.isNotEmpty ? masterProvider.schools.first : null;
 
-    final plan = (school?.plan ?? 'free').toLowerCase().trim();
-    final isPro = plan == 'pro';
-    final isEnterprise = plan == 'enterprise';
+    final isPro = school?.isPro ?? false;
+    final isEnterprise = school?.isEnterprise ?? false;
     final maxTeachers = school?.maxTeachers ?? (isPro ? 50 : 30);
     final currentTeacherCount = masterProvider.teachers.length;
     final usagePercent = maxTeachers > 0 ? (currentTeacherCount / maxTeachers).clamp(0.0, 1.0) : 0.0;
@@ -674,6 +680,17 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
+                                        if (school?.subscriptionUntil != null && isPro) ...[
+                                          SizedBox(height: 3.h),
+                                          Text(
+                                            'Masa Aktif Pro: s/d ${AppHelper.formatDate(school!.subscriptionUntil!)}',
+                                            style: TextStyle(
+                                              fontSize: 11.5.sp,
+                                              color: const Color(0xFFD97706),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
                                       ],
                                     ),
                                   ),

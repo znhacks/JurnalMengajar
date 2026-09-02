@@ -300,6 +300,31 @@ class MasterDataProvider with ChangeNotifier {
     return null;
   }
 
+  Future<SchoolModel> activateSchoolWithCode({
+    required String currentSchoolId,
+    required String activationCode,
+  }) async {
+    if (schoolRepository == null) {
+      throw Exception('Repository sekolah belum diinisialisasi');
+    }
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final updatedSchool = await schoolRepository!.activateSchoolWithCode(
+        currentSchoolId: currentSchoolId,
+        activationCode: activationCode,
+      );
+      _schools = await schoolRepository!.getAll();
+      return updatedSchool;
+    } catch (e) {
+      _errorMessage = e.toString();
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<bool> updateSchoolPlan(String schoolId, String plan, String activationCode) async {
     _isLoading = true;
     notifyListeners();

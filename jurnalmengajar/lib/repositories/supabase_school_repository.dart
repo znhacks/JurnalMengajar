@@ -26,38 +26,194 @@ class SupabaseSchoolRepository implements SchoolRepository {
   @override
   Future<SchoolModel?> validateActivationCode(String code) async {
     try {
-      final cleanCode = code.trim().toUpperCase().replaceAll(RegExp(r'\s+'), '');
+      final cleanCode = code.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '');
       if (cleanCode.isEmpty) return null;
 
-      // 1. Fetch matching school from schools table
-      final response = await _supabase
+      // 1. Search tenant in tenants table by school_code or ID (UUID)
+      var tenantRes = await _supabase
+          .from('tenants')
+          .select('id, name, school_code, status')
+          .ilike('school_code', '%$cleanCode%')
+          .maybeSingle();
+
+      tenantRes ??= await _supabase
+          .from('tenants')
+          .select('id, name, school_code, status')
+          .eq('id', cleanCode)
+          .maybeSingle();
+
+      if (tenantRes != null) {
+        final tenantId = tenantRes['id'] as String;
+        final tenantName = tenantRes['name'] as String? ?? 'Sekolah';
+        final tenantStatus = (tenantRes['status'] as String? ?? 'active').toLowerCase();
+
+        if (tenantStatus == 'inactive') {
+          throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).');
+        }
+
+        // Check active subscription in subscriptions table
+        final subRes = await _supabase
+            .from('subscriptions')
+            .select('id, plan_id, status, ends_at')
+            .eq('tenant_id', tenantId)
+            .eq('status', 'active')
+            .order('ends_at', ascending: false)
+            .limit(1)
+            .maybeSingle();
+
+        bool isTenantPro = false;
+        DateTime? endsAt;
+
+        if (subRes != null) {
+          final rawEndsAt = subRes['ends_at'];
+          if (rawEndsAt != null) {
+            endsAt = DateTime.tryParse(rawEndsAt.toString());
+          }
+          final planId = (subRes['plan_id'] as String? ?? 'free').toLowerCase();
+          final isActive = endsAt == null || DateTime.now().isBefore(endsAt);
+          if (isActive && (planId == 'pro' || planId == 'enterprise')) {
+            isTenantPro = true;
+          }
+        }
+
+        return SchoolModel(
+          id: tenantId,
+          name: tenantName,
+          code: cleanCode,
+          plan: isTenantPro ? 'pro' : 'free',
+          maxTeachers: isTenantPro ? 50 : 30,
+          status: 'active',
+          subscriptionUntil: endsAt,
+        );
+      }
+
+      // 2. Direct query on schools table: WHERE code = :cleanCode AND status = 'active'
+      final schoolResponse = await _supabase
+          .from('schools')
+          .select()
+          .ilike('code', cleanCode)
+          .eq('status', 'active')
+          .maybeSingle();
+
+      if (schoolResponse != null) {
+        return SchoolModel.fromJson(schoolResponse);
+      }
+
+      // 3. Check if school exists with this code but status is inactive
+      final existingSchool = await _supabase
           .from('schools')
           .select()
           .ilike('code', cleanCode)
           .maybeSingle();
 
-      if (response != null) {
-        return SchoolModel.fromJson(response);
+      if (existingSchool != null) {
+        final school = SchoolModel.fromJson(existingSchool);
+        if (school.isInactive) {
+          throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).');
+        }
+        return school;
       }
 
-      // 2. Fallback scan all schools in case of npsn or exact case differences
-      final allSchools = await _supabase.from('schools').select();
-      for (final s in (allSchools as List)) {
-        final sCode = ((s['code'] as String?) ?? '').toUpperCase().replaceAll(RegExp(r'\s+'), '');
-        final sNpsn = ((s['npsn'] as String?) ?? '').toUpperCase().replaceAll(RegExp(r'\s+'), '');
-        final sId = ((s['id'] as String?) ?? '').toUpperCase().replaceAll(RegExp(r'\s+'), '');
+      // 4. Fallback check by npsn or id in schools table
+      final fallbackResponse = await _supabase
+          .from('schools')
+          .select()
+          .or('npsn.ilike.$cleanCode,id.eq.$cleanCode')
+          .maybeSingle();
 
-        if ((sCode.isNotEmpty && sCode == cleanCode) ||
-            (sNpsn.isNotEmpty && sNpsn == cleanCode) ||
-            (sId.isNotEmpty && sId == cleanCode)) {
-          return SchoolModel.fromJson(Map<String, dynamic>.from(s));
+      if (fallbackResponse != null) {
+        final school = SchoolModel.fromJson(fallbackResponse);
+        if (school.isInactive) {
+          throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).');
         }
+        return school;
       }
 
       return null;
     } catch (e) {
+      if (e.toString().contains('Aktivasi sekolah sedang dinonaktifkan')) {
+        rethrow;
+      }
       return null;
     }
+  }
+
+  @override
+  Future<SchoolModel> activateSchoolWithCode({
+    required String currentSchoolId,
+    required String activationCode,
+  }) async {
+    final cleanCode = activationCode.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '');
+    if (cleanCode.isEmpty) {
+      throw Exception('Kode aktivasi tidak valid');
+    }
+
+    // 1. Search tenant in tenants table by school_code or ID (UUID)
+    var tenantRes = await _supabase
+        .from('tenants')
+        .select('id, name, school_code, status')
+        .ilike('school_code', '%$cleanCode%')
+        .maybeSingle();
+
+    tenantRes ??= await _supabase
+        .from('tenants')
+        .select('id, name, school_code, status')
+        .eq('id', cleanCode)
+        .maybeSingle();
+
+    if (tenantRes == null) {
+      throw Exception('Kode aktivasi tidak valid');
+    }
+
+    final tenantId = tenantRes['id'] as String;
+    final tenantStatus = (tenantRes['status'] as String? ?? 'active').toLowerCase();
+
+    if (tenantStatus == 'inactive') {
+      throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).');
+    }
+
+    // 2. Check active subscription in subscriptions table (status = 'active' and now() < ends_at)
+    final subRes = await _supabase
+        .from('subscriptions')
+        .select('id, plan_id, status, ends_at')
+        .eq('tenant_id', tenantId)
+        .eq('status', 'active')
+        .order('ends_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    bool isTenantPro = false;
+    DateTime? endsAt;
+
+    if (subRes != null) {
+      final rawEndsAt = subRes['ends_at'];
+      if (rawEndsAt != null) {
+        endsAt = DateTime.tryParse(rawEndsAt.toString());
+      }
+      final planId = (subRes['plan_id'] as String? ?? 'free').toLowerCase();
+      final isActive = endsAt == null || DateTime.now().isBefore(endsAt);
+      if (isActive && (planId == 'pro' || planId == 'enterprise')) {
+        isTenantPro = true;
+      }
+    }
+
+    // 3. Update schools table for current_school_id
+    final updateData = <String, dynamic>{
+      'code': cleanCode,
+      'subscription_plan': isTenantPro ? 'pro' : 'free',
+      'max_teachers': isTenantPro ? 50 : 30,
+      'status': 'active',
+      if (endsAt != null) 'subscription_until': endsAt.toIso8601String(),
+    };
+
+    final updated = await _supabase
+        .from('schools')
+        .update(updateData)
+        .eq('id', currentSchoolId)
+        .select()
+        .single();
+
+    return SchoolModel.fromJson(updated);
   }
 
   @override

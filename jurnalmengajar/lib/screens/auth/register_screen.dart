@@ -545,13 +545,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               SizedBox(height: 24.h),
 
                               // Sekolah Tempat Mengajar / Mengelola (Wajib) - Kolom bertanda kunci untuk NPSN/Kode Sekolah
-                              _buildFieldLabel(_registerType == 'guru' ? 'SEKOLAH TEMPAT MENGAJAR (MASUKKAN KODE/NPSN)' : 'SEKOLAH YANG DIKELOLA (MASUKKAN KODE/NPSN)'),
+                              _buildFieldLabel(_registerType == 'guru' ? 'SEKOLAH TEMPAT MENGAJAR (KODE AKTIVASI UUID / NPSN)' : 'SEKOLAH YANG DIKELOLA (KODE AKTIVASI UUID / NPSN)'),
                               TextFormField(
                                 controller: _schoolCodeController,
                                 focusNode: _schoolCodeFocusNode,
-                                textCapitalization: TextCapitalization.characters,
                                 decoration: InputDecoration(
-                                  hintText: 'Masukkan Kode Sekolah / NPSN...',
+                                  hintText: 'Masukkan Kode Aktivasi (UUID) / NPSN...',
                                   hintStyle: TextStyle(
                                     color: Colors.grey[400],
                                     fontWeight: FontWeight.normal,
@@ -1041,11 +1040,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-  void _resolveSchoolCode(String inputCode, MasterDataProvider masterProvider, {bool showSnackBar = true}) {
+  Future<void> _resolveSchoolCode(String inputCode, MasterDataProvider masterProvider, {bool showSnackBar = true}) async {
     if (inputCode.trim().isEmpty) return;
 
-    final cleanCode = inputCode.toUpperCase().replaceAll(RegExp(r'\s+'), '');
+    final cleanCode = inputCode.trim();
 
+    try {
+      final remoteMatched = await masterProvider.validateActivationCode(cleanCode);
+      if (remoteMatched != null) {
+        if (remoteMatched.isInactive) {
+          setState(() {
+            _selectedSchools.clear();
+          });
+          if (showSnackBar && mounted) {
+            AppHelper.showSnackBar(context, 'Aktivasi sekolah sedang dinonaktifkan oleh administrator.', isError: true);
+          }
+          return;
+        }
+
+        setState(() {
+          _selectedSchools.clear();
+          _selectedSchools.add(remoteMatched.name);
+        });
+        if (showSnackBar && mounted) {
+          AppHelper.showSnackBar(context, 'Sekolah ditemukan: ${remoteMatched.name}');
+        }
+        return;
+      }
+    } catch (e) {
+      if (e.toString().contains('dinonaktifkan')) {
+        setState(() {
+          _selectedSchools.clear();
+        });
+        if (showSnackBar && mounted) {
+          AppHelper.showSnackBar(context, 'Aktivasi sekolah sedang dinonaktifkan oleh administrator.', isError: true);
+        }
+        return;
+      }
+    }
+
+    final searchCode = cleanCode.toUpperCase().replaceAll(RegExp(r'\s+'), '');
     SchoolModel? matchedSchool;
     for (final s in masterProvider.schools) {
       final sCode = s.code?.toUpperCase().replaceAll(RegExp(r'\s+'), '') ?? '';
@@ -1055,11 +1089,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final sName = s.name.toUpperCase().replaceAll(RegExp(r'\s+'), '');
 
       // Strict exact match for Code, NPSN, NSS, ID, or exact School Name
-      if ((sCode.isNotEmpty && sCode == cleanCode) ||
-          (sNpsn.isNotEmpty && sNpsn == cleanCode) ||
-          (sNss.isNotEmpty && sNss == cleanCode) ||
-          (sId.isNotEmpty && sId == cleanCode) ||
-          (sName.isNotEmpty && sName == cleanCode)) {
+      if ((sCode.isNotEmpty && sCode == searchCode) ||
+          (sNpsn.isNotEmpty && sNpsn == searchCode) ||
+          (sNss.isNotEmpty && sNss == searchCode) ||
+          (sId.isNotEmpty && sId == searchCode) ||
+          (sName.isNotEmpty && sName == searchCode)) {
         matchedSchool = s;
         break;
       }
@@ -1067,20 +1101,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     String? foundName = matchedSchool?.name;
 
+    if (matchedSchool != null && matchedSchool.isInactive) {
+      setState(() {
+        _selectedSchools.clear();
+      });
+      if (showSnackBar && mounted) {
+        AppHelper.showSnackBar(context, 'Aktivasi sekolah sedang dinonaktifkan oleh administrator.', isError: true);
+      }
+      return;
+    }
+
     if (foundName != null && foundName.isNotEmpty) {
       final validSchoolName = foundName;
       setState(() {
         _selectedSchools.clear();
         _selectedSchools.add(validSchoolName);
       });
-      if (showSnackBar) {
+      if (showSnackBar && mounted) {
         AppHelper.showSnackBar(context, 'Sekolah ditemukan: $validSchoolName');
       }
     } else {
       setState(() {
         _selectedSchools.clear();
       });
-      if (showSnackBar) {
+      if (showSnackBar && mounted) {
         AppHelper.showSnackBar(context, 'Tidak terdapat sekolah dengan kode ini, mungkin berlangganan pada jmpanel.vercel.app telah expired/school dihapus', isError: true);
       }
     }

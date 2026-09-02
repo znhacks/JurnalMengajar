@@ -252,10 +252,9 @@ class _SchoolExpiredScreenState extends State<SchoolExpiredScreen> {
                           TextFormField(
                             controller: _schoolCodeController,
                             focusNode: _schoolCodeFocusNode,
-                            textCapitalization: TextCapitalization.characters,
                             onFieldSubmitted: _isLoading ? null : (_) => _handleLinkSchool(authProvider),
                             decoration: InputDecoration(
-                              hintText: 'Masukkan Kode Sekolah baru...',
+                              hintText: 'Masukkan Kode Aktivasi (UUID) / NPSN...',
                               prefixIcon: const Icon(Icons.key_rounded, color: Color(0xFF64748B)),
                               filled: true,
                               fillColor: const Color(0xFFF1F5F9),

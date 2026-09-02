@@ -86,6 +86,11 @@ class AuthProvider with ChangeNotifier {
       if (res != null) {
         _activeSchool = SchoolModel.fromJson(res);
         _activeSchoolName = _activeSchool!.name;
+        if (_activeSchool!.isInactive) {
+          _isSchoolExpired = true;
+          notifyListeners();
+          throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator.');
+        }
       } else {
         _activeSchool = null;
         if (!isExclusiveAdmin) {
@@ -93,7 +98,7 @@ class AuthProvider with ChangeNotifier {
         }
       }
     } catch (e) {
-      if (e.toString().contains('jmpanel.vercel.app')) {
+      if (e.toString().contains('jmpanel.vercel.app') || e.toString().contains('dinonaktifkan')) {
         rethrow;
       }
       debugPrint('Error fetching active school details: $e');
@@ -136,7 +141,7 @@ class AuthProvider with ChangeNotifier {
     try {
       await fetchActiveSchoolDetails();
     } catch (e) {
-      if (e.toString().contains('jmpanel.vercel.app')) {
+      if (e.toString().contains('jmpanel.vercel.app') || e.toString().contains('dinonaktifkan')) {
         _isSchoolExpired = true;
         notifyListeners();
         return;
@@ -153,39 +158,90 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     try {
       final supabase = Supabase.instance.client;
-      final cleanCode = code.trim().toUpperCase().replaceAll(RegExp(r'\s+'), '');
+      final cleanCode = code.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '');
 
-      // 1. Fetch matching school from schools table by code or npsn or id
-      final schoolsRes = await supabase
+      // 1. Direct query: SELECT * FROM schools WHERE code = :cleanCode AND status = 'active'
+      var res = await supabase
           .from('schools')
-          .select();
+          .select()
+          .ilike('code', cleanCode)
+          .eq('status', 'active')
+          .maybeSingle();
 
-      Map<String, dynamic>? matchedSchool;
-      for (final s in (schoolsRes as List)) {
-        final sCode = ((s['code'] as String?) ?? '').toUpperCase().replaceAll(RegExp(r'\s+'), '');
-        final sNpsn = ((s['npsn'] as String?) ?? '').toUpperCase().replaceAll(RegExp(r'\s+'), '');
-        final sId = ((s['id'] as String?) ?? '').toUpperCase().replaceAll(RegExp(r'\s+'), '');
-        final sName = ((s['name'] as String?) ?? '').toUpperCase().replaceAll(RegExp(r'\s+'), '');
+      // 2. If not found, check if exists with inactive status
+      if (res == null) {
+        final inactiveRes = await supabase
+            .from('schools')
+            .select()
+            .ilike('code', cleanCode)
+            .maybeSingle();
 
-        if ((sCode.isNotEmpty && sCode == cleanCode) ||
-            (sNpsn.isNotEmpty && sNpsn == cleanCode) ||
-            (sId.isNotEmpty && sId == cleanCode) ||
-            (sName.isNotEmpty && sName == cleanCode)) {
-          matchedSchool = Map<String, dynamic>.from(s);
-          break;
+        if (inactiveRes != null) {
+          final s = SchoolModel.fromJson(inactiveRes);
+          if (s.isInactive) {
+            throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).');
+          }
+        }
+
+        // 3. Fallback check by npsn or id
+        res = await supabase
+            .from('schools')
+            .select()
+            .or('npsn.ilike.$cleanCode,id.eq.$cleanCode')
+            .eq('status', 'active')
+            .maybeSingle();
+
+        // 4. Fallback check by tenant
+        if (res == null) {
+          var tenantRes = await supabase
+              .from('tenants')
+              .select('id, name, school_code, status')
+              .ilike('school_code', '%$cleanCode%')
+              .maybeSingle();
+
+          tenantRes ??= await supabase
+              .from('tenants')
+              .select('id, name, school_code, status')
+              .eq('id', cleanCode)
+              .maybeSingle();
+
+          if (tenantRes != null) {
+            final tenantId = tenantRes['id'] as String;
+            res = await supabase
+                .from('schools')
+                .select()
+                .or('id.eq.$tenantId,code.ilike.$cleanCode')
+                .eq('status', 'active')
+                .maybeSingle();
+          }
         }
       }
 
-      if (matchedSchool == null) {
-        throw Exception('Tidak terdapat sekolah dengan kode ini, mungkin berlangganan pada jmpanel.vercel.app telah expired/school dihapus');
+      if (res == null) {
+        throw Exception('Kode aktivasi tidak valid');
       }
 
-      final schoolId = matchedSchool['id'] as String;
-      final schoolName = matchedSchool['name'] as String? ?? 'Sekolah';
+      final matchedSchool = SchoolModel.fromJson(res);
+      final schoolId = matchedSchool.id;
+      final schoolName = matchedSchool.name;
 
       final effectiveRole = role;
 
-      // 2. Check if already exists, otherwise insert user_schools relationship
+      // Check max teachers quota for new teacher registration/join
+      if (effectiveRole == 'guru') {
+        final existingTeachers = await supabase
+            .from('user_schools')
+            .select('id')
+            .eq('school_id', schoolId)
+            .eq('role', 'guru');
+        
+        final teacherCount = (existingTeachers as List).length;
+        if (teacherCount >= matchedSchool.maxTeachers) {
+          throw Exception('Batas maksimal ${matchedSchool.maxTeachers} guru untuk sekolah ini telah tercapai.');
+        }
+      }
+
+      // Check if user is already connected in user_schools
       final existingRole = await supabase.from('user_schools')
           .select('id')
           .eq('user_id', _currentUser!.id)
@@ -201,7 +257,7 @@ class AuthProvider with ChangeNotifier {
         });
       }
 
-      // 3. Update active school locally & persist
+      // Update active school locally & persist
       await switchActiveSchool(schoolId, schoolName, effectiveRole);
       await loadUserMemberships();
       _isSchoolExpired = false;
