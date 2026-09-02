@@ -260,11 +260,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       body: Container(
         color: Theme.of(context).scaffoldBackgroundColor,
-        child: Stack(
-          children: [
-            SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(
                 horizontal: kIsWeb ? 16 : 24.w,
                 vertical: kIsWeb ? 16 : 32.h,
@@ -319,6 +317,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 ],
                               ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 8.h,
+                            left: 8.w,
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.arrow_back_rounded,
+                                color: Colors.white,
+                                size: 22.sp,
+                              ),
+                              tooltip: 'Kembali ke Login',
+                              onPressed: () {
+                                if (context.canPop()) {
+                                  context.pop();
+                                } else {
+                                  context.go('/login');
+                                }
+                              },
+                            ),
+                          ),
+                          Positioned(
+                            top: 8.h,
+                            right: 8.w,
+                            child: Consumer<ThemeProvider>(
+                              builder: (context, themeProvider, child) {
+                                return IconButton(
+                                  icon: Icon(
+                                    themeProvider.isDarkMode
+                                        ? Icons.dark_mode_rounded
+                                        : Icons.light_mode_rounded,
+                                    color: Colors.white,
+                                    size: 22.sp,
+                                  ),
+                                  tooltip: themeProvider.isDarkMode
+                                      ? 'Mode Gelap'
+                                      : 'Mode Terang',
+                                  onPressed: () {
+                                    themeProvider.toggleTheme(!themeProvider.isDarkMode);
+                                  },
+                                );
+                              },
                             ),
                           ),
                         ],
@@ -866,27 +906,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
           ),
-        ),
-            Positioned(
-              top: 16.h,
-              right: 16.w,
-              child: Consumer<ThemeProvider>(
-                builder: (context, themeProvider, child) {
-                  return IconButton(
-                    icon: Icon(
-                      themeProvider.isDarkMode
-                          ? Icons.light_mode_rounded
-                          : Icons.dark_mode_rounded,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    onPressed: () {
-                      themeProvider.toggleTheme(!themeProvider.isDarkMode);
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
         ),
       ),
     );
