@@ -1354,6 +1354,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                       role: 'admin',
                                       membershipId: m.id,
                                       status: m.status,
+                                      logoUrl: m.logoUrl,
                                     ),
                                     if (!isSmkn8)
                                       SchoolRoleOption(
@@ -1362,6 +1363,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                         role: 'guru',
                                         membershipId: m.id,
                                         status: m.status,
+                                        logoUrl: m.logoUrl,
                                       ),
                                   ];
                                 } else {
@@ -1372,6 +1374,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                       role: m.role,
                                       membershipId: m.id,
                                       status: m.status,
+                                      logoUrl: m.logoUrl,
                                     ),
                                   ];
                                 }
@@ -1424,21 +1427,11 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                     ),
                                     child: Row(
                                       children: [
-                                        CircleAvatar(
-                                          backgroundColor: isActive
-                                              ? const Color(0xFF3B82F6)
-                                              : (isDark ? const Color(0xFF334155) : const Color(0xFF64748B)),
-                                          radius: 18.r,
-                                          child: Text(
-                                            sName.isNotEmpty
-                                                ? sName[0].toUpperCase()
-                                                : 'S',
-                                            style: TextStyle(
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
-                                          ),
+                                        SchoolAvatar(
+                                          logoUrl: item.logoUrl,
+                                          schoolName: sName,
+                                          radius: 18,
+                                          isSelected: isActive,
                                         ),
                                         SizedBox(width: 10.w),
                                         Expanded(
@@ -2230,6 +2223,7 @@ class SchoolRoleOption {
   final String role;
   final String membershipId;
   final String? status;
+  final String? logoUrl;
 
   SchoolRoleOption({
     required this.schoolId,
@@ -2237,6 +2231,7 @@ class SchoolRoleOption {
     required this.role,
     required this.membershipId,
     this.status,
+    this.logoUrl,
   });
 }
 
