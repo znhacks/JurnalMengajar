@@ -797,8 +797,6 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       style: const TextStyle(
                         color: Color(0xFF4F7CFF),
                         fontWeight: FontWeight.w900,
-                        decoration: TextDecoration.underline,
-                        decorationStyle: TextDecorationStyle.dotted,
                       ),
                     ),
                     const TextSpan(text: 'bulan ini'),
