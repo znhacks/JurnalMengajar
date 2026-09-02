@@ -96,13 +96,13 @@ class SchoolSwitcherModal extends StatelessWidget {
                 padding: EdgeInsets.all(10.w),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF312E81).withValues(alpha: 0.4)
+                      ? const Color(0xFF312E81).withValues(alpha: 0.5)
                       : const Color(0xFFEEF2FF),
                   borderRadius: BorderRadius.circular(12.r),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.business_rounded,
-                  color: Color(0xFF4F46E5),
+                  color: isDark ? const Color(0xFF818CF8) : const Color(0xFF4F46E5),
                   size: 24,
                 ),
               ),
@@ -187,7 +187,12 @@ class SchoolSwitcherModal extends StatelessWidget {
                     child: ListTile(
                       contentPadding:
                           EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-                      onTap: () async {
+                      onTap: () {
+                        if (isSelected) {
+                          Navigator.pop(context);
+                          return;
+                        }
+
                         final scheduleProvider =
                             Provider.of<ScheduleProvider>(context, listen: false);
                         final journalProvider =
@@ -195,20 +200,19 @@ class SchoolSwitcherModal extends StatelessWidget {
                         final masterProvider =
                             Provider.of<MasterDataProvider>(context, listen: false);
 
+                        // Close modal immediately for snappy, instantaneous UX
+                        Navigator.pop(context);
+
                         scheduleProvider.clearTeacherSchedulesCache();
                         journalProvider.clearTeacherJournalsCache();
 
-                        await authProvider.switchActiveSchool(
+                        authProvider.switchActiveSchool(
                           item.schoolId,
                           item.schoolName,
                           item.role,
                         );
 
-                        await masterProvider.loadAllData(item.schoolId);
-
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                        }
+                        masterProvider.loadAllData(item.schoolId);
                       },
                       leading: SchoolAvatar(
                         logoUrl: item.logoUrl,
@@ -238,16 +242,16 @@ class SchoolSwitcherModal extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: isAdmin
                                   ? (isDark
-                                      ? const Color(0xFF7F1D1D).withValues(alpha: 0.4)
+                                      ? const Color(0xFF7F1D1D).withValues(alpha: 0.35)
                                       : const Color(0xFFFEF2F2))
                                   : (isDark
-                                      ? const Color(0xFF14532D).withValues(alpha: 0.4)
+                                      ? const Color(0xFF14532D).withValues(alpha: 0.35)
                                       : const Color(0xFFF0FDF4)),
                               borderRadius: BorderRadius.circular(6.r),
                               border: Border.all(
                                 color: isAdmin
-                                    ? (isDark ? const Color(0xFF991B1B) : const Color(0xFFFCA5A5))
-                                    : (isDark ? const Color(0xFF166534) : const Color(0xFF86EFAC)),
+                                    ? (isDark ? const Color(0xFFEF4444).withValues(alpha: 0.5) : const Color(0xFFFCA5A5))
+                                    : (isDark ? const Color(0xFF22C55E).withValues(alpha: 0.5) : const Color(0xFF86EFAC)),
                               ),
                             ),
                             child: Text(

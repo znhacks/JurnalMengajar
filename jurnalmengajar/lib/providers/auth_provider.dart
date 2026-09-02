@@ -111,6 +111,8 @@ class AuthProvider with ChangeNotifier {
         role: role,
       );
     }
+    // Notify listeners immediately so the UI switches context with 0ms delay
+    notifyListeners();
     
     // Persist active school & role locally to SharedPreferences
     try {

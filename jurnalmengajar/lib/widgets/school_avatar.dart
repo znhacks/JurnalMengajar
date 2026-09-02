@@ -17,13 +17,19 @@ class SchoolAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final Color backgroundColor = isSelected 
         ? const Color(0xFF4F46E5) 
-        : const Color(0xFFCBD5E1);
+        : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0));
+
+    final Color iconColor = isSelected
+        ? Colors.white
+        : (isDark ? const Color(0xFFE2E8F0) : const Color(0xFF64748B));
 
     final fallbackIcon = Icon(
-      Icons.school, // Standard school / education icon representing academia
-      color: Colors.white,
+      Icons.school_rounded,
+      color: iconColor,
       size: (radius * 1.1).r,
     );
 
