@@ -353,7 +353,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   accentColor: const Color(0xFF2563EB),
                                   bgColor: const Color(0xFFEFF6FF),
                                   borderColor: const Color(0xFFDBEAFE),
-                                  subtitle: 'Hari ini',
                                 ),
                               ),
                               SizedBox(width: 8.w),
@@ -365,7 +364,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   accentColor: const Color(0xFF0284C7),
                                   bgColor: const Color(0xFFF0F9FF),
                                   borderColor: const Color(0xFFBAE6FD),
-                                  subtitle: 'Ketuk Detail',
                                   onTap: () => context.push('/admin/journals'),
                                 ),
                               ),
@@ -378,7 +376,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   accentColor: const Color(0xFFD97706),
                                   bgColor: const Color(0xFFFEF3C7),
                                   borderColor: const Color(0xFFFDE68A),
-                                  subtitle: 'Ketuk Detail',
                                   onTap: () => context.push('/admin/journals?tab=2'),
                                 ),
                               ),
@@ -391,7 +388,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   accentColor: const Color(0xFFE11D48),
                                   bgColor: const Color(0xFFFFE4E6),
                                   borderColor: const Color(0xFFFECDD3),
-                                  subtitle: 'Hari ini',
                                   onTap: () => context.push('/admin/journals?tab=1'),
                                 ),
                               ),
@@ -449,7 +445,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     required Color accentColor,
     required Color bgColor,
     required Color borderColor,
-    String? subtitle,
     VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -516,18 +511,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-              ),
-              SizedBox(height: 3.h),
-              // Subtitle / Indicator
-              Text(
-                subtitle ?? (onTap != null ? 'Ketuk Detail' : ' '),
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 8.sp,
-                  color: onTap != null ? accentColor : Theme.of(context).colorScheme.outline,
-                  fontWeight: FontWeight.w600,
-                  height: 1.1,
-                ),
-                textAlign: TextAlign.center,
               ),
             ],
           ),
