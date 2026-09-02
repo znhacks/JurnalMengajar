@@ -1388,22 +1388,26 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                     sRole.toLowerCase() == authProvider.activeRole.toLowerCase();
 
                                 return InkWell(
-                                  onTap: () async {
+                                  onTap: () {
+                                    if (isActive) return;
                                     final messenger = ScaffoldMessenger.of(context);
                                     final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
                                     final journalProvider = Provider.of<JournalProvider>(context, listen: false);
                                     
-                                    await authProvider.switchActiveSchool(sId, sName, sRole);
-                                    
                                     scheduleProvider.clearTeacherSchedulesCache();
                                     journalProvider.clearTeacherJournalsCache();
-                                    await masterProvider.loadAllData(sId);
+                                    
+                                    messenger.hideCurrentSnackBar();
                                     messenger.showSnackBar(
                                       SnackBar(
                                         content: Text('Berhasil beralih ke $sName (${sRole.toUpperCase()})'),
                                         behavior: SnackBarBehavior.floating,
+                                        duration: const Duration(seconds: 2),
                                       ),
                                     );
+
+                                    authProvider.switchActiveSchool(sId, sName, sRole);
+                                    masterProvider.loadAllData(sId);
                                   },
                                   borderRadius: BorderRadius.circular(12.r),
                                   child: Container(

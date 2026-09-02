@@ -77,10 +77,10 @@ class MasterDataProvider with ChangeNotifier {
         (schoolId != null && schoolId.isNotEmpty)
             ? teacherRepository.getAllForSchool(schoolId).catchError((_) => <TeacherModel>[])
             : teacherRepository.getAll().catchError((_) => <TeacherModel>[]),
-        if (schoolRepository != null)
+        if (schoolRepository != null && _schools.isEmpty)
           schoolRepository!.getAll().catchError((_) => <SchoolModel>[])
         else
-          Future.value(<SchoolModel>[]),
+          Future.value(_schools),
       ]);
       _periods = results[0] as List<PeriodModel>;
       _subjects = results[1] as List<SubjectModel>;

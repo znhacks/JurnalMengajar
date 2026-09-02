@@ -111,17 +111,27 @@ class AuthProvider with ChangeNotifier {
         role: role,
       );
     }
+
+    // Immediately populate basic activeSchool from userMemberships so UI has full context instantly
+    try {
+      final m = _userMemberships.firstWhere((element) => element.schoolId == schoolId);
+      _activeSchool = SchoolModel(
+        id: m.schoolId,
+        name: m.schoolName,
+        logoUrl: m.logoUrl,
+      );
+    } catch (_) {}
+
     // Notify listeners immediately so the UI switches context with 0ms delay
     notifyListeners();
     
-    // Persist active school & role locally to SharedPreferences
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_kActiveSchoolIdKey, schoolId);
-      await prefs.setString(_kActiveRoleKey, role);
-    } catch (e) {
+    // Persist active school & role locally in background
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString(_kActiveSchoolIdKey, schoolId);
+      prefs.setString(_kActiveRoleKey, role);
+    }).catchError((e) {
       debugPrint('Error saving active school to SharedPreferences: $e');
-    }
+    });
 
     try {
       await fetchActiveSchoolDetails();
