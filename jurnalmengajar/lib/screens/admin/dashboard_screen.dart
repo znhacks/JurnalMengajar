@@ -353,6 +353,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   accentColor: const Color(0xFF2563EB),
                                   bgColor: const Color(0xFFEFF6FF),
                                   borderColor: const Color(0xFFDBEAFE),
+                                  onTap: () => context.push('/admin/schedules'),
                                 ),
                               ),
                               SizedBox(width: 8.w),
