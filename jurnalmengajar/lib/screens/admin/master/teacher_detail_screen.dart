@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -206,7 +207,7 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                       backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
                       backgroundImage: teacher.photoUrl != null && teacher.photoUrl!.startsWith('http')
                           ? NetworkImage(teacher.photoUrl!)
-                          : (teacher.photoUrl != null ? FileImage(File(teacher.photoUrl!)) : null) as ImageProvider?,
+                          : (teacher.photoUrl != null && !kIsWeb ? FileImage(File(teacher.photoUrl!)) : null) as ImageProvider?,
                       child: teacher.photoUrl == null
                           ? Icon(Icons.person, size: 36.r, color: Colors.grey[400])
                           : null,

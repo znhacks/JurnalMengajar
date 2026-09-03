@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -37,11 +37,20 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshData();
     });
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.toLowerCase();
-      });
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text.toLowerCase();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _toggleSelectionMode({String? initialId}) {
@@ -110,12 +119,6 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
         AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menghapus data guru.', isError: true);
       }
     }
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 
   Future<void> _refreshData() async {
@@ -251,7 +254,7 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                               ? MemoryImage(tempImageBytes!)
                               : (teacher?.photoUrl != null && teacher!.photoUrl!.startsWith('http')
                                   ? NetworkImage(teacher.photoUrl!)
-                                  : (teacher?.photoUrl != null
+                                  : (teacher?.photoUrl != null && !kIsWeb
                                       ? FileImage(File(teacher!.photoUrl!))
                                       : null)) as ImageProvider?,
                           child: tempImageBytes == null && teacher?.photoUrl == null
@@ -567,7 +570,7 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                       backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
                       backgroundImage: t.photoUrl != null && t.photoUrl!.startsWith('http')
                           ? NetworkImage(t.photoUrl!)
-                          : (t.photoUrl != null ? FileImage(File(t.photoUrl!)) : null) as ImageProvider?,
+                          : (t.photoUrl != null && !kIsWeb ? FileImage(File(t.photoUrl!)) : null) as ImageProvider?,
                       child: t.photoUrl == null
                           ? Icon(Icons.person, size: 20.r, color: Colors.grey[400])
                           : null,

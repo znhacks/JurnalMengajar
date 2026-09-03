@@ -208,7 +208,8 @@ class SupabaseAuthRepository implements AuthRepository {
       String? finalPhotoUrl = user.photoUrl;
       if (finalPhotoUrl != null &&
           finalPhotoUrl.isNotEmpty &&
-          !finalPhotoUrl.startsWith('http')) {
+          !finalPhotoUrl.startsWith('http') &&
+          !kIsWeb) {
         try {
           final file = File(finalPhotoUrl);
           if (await file.exists()) {

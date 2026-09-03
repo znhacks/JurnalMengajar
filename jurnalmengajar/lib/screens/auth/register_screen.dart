@@ -40,6 +40,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordFocusNode = FocusNode();
 
   File? _profileImage;
+  Uint8List? _profileImageBytes;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String _registerType = 'guru'; // 'guru' or 'admin'
@@ -81,15 +82,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
         source: source,
       );
       if (result != null) {
-        final tempDir = Directory.systemTemp;
-        final tempFile = File(
-          '${tempDir.path}/profile_crop_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        );
-        await tempFile.writeAsBytes(result.bytes);
-
         setState(() {
-          _profileImage = tempFile;
+          _profileImageBytes = result.bytes;
         });
+
+        if (!kIsWeb) {
+          try {
+            final tempDir = Directory.systemTemp;
+            final tempFile = File(
+              '${tempDir.path}/profile_crop_${DateTime.now().millisecondsSinceEpoch}.jpg',
+            );
+            await tempFile.writeAsBytes(result.bytes);
+
+            setState(() {
+              _profileImage = tempFile;
+            });
+          } catch (_) {}
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -509,10 +518,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     CircleAvatar(
                                       radius: 46.r,
                                       backgroundColor: const Color(0xFFF1F5F9),
-                                      backgroundImage: _profileImage != null
-                                          ? FileImage(_profileImage!)
-                                          : null,
-                                      child: _profileImage == null
+                                      backgroundImage: _profileImageBytes != null
+                                          ? MemoryImage(_profileImageBytes!)
+                                          : (_profileImage != null && !kIsWeb
+                                              ? FileImage(_profileImage!)
+                                              : null) as ImageProvider?,
+                                      child: _profileImageBytes == null && _profileImage == null
                                           ? Icon(
                                               Icons.person_outline_rounded,
                                               size: 46.r,

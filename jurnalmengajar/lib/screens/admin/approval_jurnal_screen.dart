@@ -66,13 +66,11 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
     final journalProvider = context.watch<JournalProvider>();
     final masterProvider = context.watch<MasterDataProvider>();
 
-    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
-    final validSubjectIds = masterProvider.subjects.map((s) => s.id).toSet();
+    final schoolTeacherIds = masterProvider.teachers.map((t) => t.id).toSet();
 
     final pendingJournals = journalProvider.journals.where((j) {
       return j.status == 'pending' &&
-          validClassIds.contains(j.classId) &&
-          validSubjectIds.contains(j.subjectId);
+          (schoolTeacherIds.isEmpty || schoolTeacherIds.contains(j.teacherId));
     }).toList();
     final isLoading = journalProvider.isLoading || masterProvider.isLoading;
     final isDark = Theme.of(context).brightness == Brightness.dark;

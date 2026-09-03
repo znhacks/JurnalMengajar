@@ -475,7 +475,6 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        centerTitle: true,
         leading: Builder(
           builder: (ctx) => IconButton(
             icon: const Icon(Icons.menu_rounded),
@@ -489,41 +488,22 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
             },
           ),
         ),
-        title: Text(
-          'Jadwal Mengajar',
+        title: const Text('Jadwal Mengajar'),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          context.push('/guru/journal-form?date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
+        },
+        backgroundColor: const Color(0xFF4F46E5),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: Text(
+          'Tambah Task',
           style: GoogleFonts.hankenGrotesk(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w800,
-            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
           ),
         ),
-        actions: [
-          Padding(
-            padding: EdgeInsets.only(right: 12.w),
-            child: ElevatedButton.icon(
-              onPressed: () {
-                context.push('/guru/journal-form?date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
-              },
-              icon: const Icon(Icons.add, size: 16, color: Colors.white),
-              label: Text(
-                'Tambah Task',
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4F46E5),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
-              ),
-            ),
-          ),
-        ],
       ),
       body: SafeArea(
         child: Column(

@@ -7,12 +7,14 @@ import 'package:provider/provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/journal_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../models/schedule_model.dart';
 import '../../models/journal_model.dart';
 import '../../models/journal_attachment_model.dart';
 import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
 import '../../models/student_model.dart';
+import '../../models/teacher_model.dart';
 import '../../models/hour_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/utils/helper.dart';
@@ -56,10 +58,14 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
   JournalModel? _existingJournal;
   bool _isEditing = false;
+  String? _selectedScheduleId;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
+    _selectedScheduleId = widget.scheduleId.isNotEmpty ? widget.scheduleId : null;
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final scheduleProvider = Provider.of<ScheduleProvider>(
         context,
@@ -71,6 +77,50 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         listen: false,
       );
 
+      final masterProvider = Provider.of<MasterDataProvider>(
+        context,
+        listen: false,
+      );
+
+      DateTime? targetDate;
+      if (widget.dateStr != null) {
+        try {
+          targetDate = DateTime.parse(widget.dateStr!);
+        } catch (_) {}
+      }
+
+      // If no scheduleId provided (e.g. opened via Tambah Task), auto-select first schedule for target date
+      if (_selectedScheduleId == null || _selectedScheduleId!.isEmpty) {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        final currentUser = authProvider.currentUser;
+        if (currentUser != null) {
+          final teacher = masterProvider.teachers.firstWhere(
+            (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
+            orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
+          );
+          if (teacher.id.isNotEmpty && targetDate != null) {
+            await scheduleProvider.loadTeacherSchedules(teacher.id, targetDate);
+          }
+        }
+
+        final availableSchedules = scheduleProvider.cachedTeacherSchedules.where((s) {
+          if (!s.isActive) return false;
+          if (targetDate != null) {
+            return s.date.year == targetDate.year &&
+                s.date.month == targetDate.month &&
+                s.date.day == targetDate.day;
+          }
+          return true;
+        }).toList();
+
+        if (availableSchedules.isNotEmpty) {
+          setState(() {
+            _selectedScheduleId = availableSchedules.first.id;
+          });
+        }
+      }
+
+      final activeId = _selectedScheduleId ?? widget.scheduleId;
       JournalModel? existing;
 
       // 1. Try finding by journalId
@@ -85,19 +135,12 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         } catch (_) {}
       }
 
-      DateTime? targetDate;
-      if (widget.dateStr != null) {
-        try {
-          targetDate = DateTime.parse(widget.dateStr!);
-        } catch (_) {}
-      }
-
       // 2. Try finding in loaded journals by scheduleId and date
-      if (existing == null && widget.scheduleId.isNotEmpty) {
+      if (existing == null && activeId.isNotEmpty) {
         try {
           existing = journalProvider.teacherJournals.firstWhere(
             (j) {
-              final sameSchedule = j.scheduleId == widget.scheduleId;
+              final sameSchedule = j.scheduleId == activeId;
               if (targetDate != null) {
                 return sameSchedule &&
                     j.date.year == targetDate.year &&
@@ -108,7 +151,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             },
             orElse: () => journalProvider.journals.firstWhere(
               (j) {
-                final sameSchedule = j.scheduleId == widget.scheduleId;
+                final sameSchedule = j.scheduleId == activeId;
                 if (targetDate != null) {
                   return sameSchedule &&
                       j.date.year == targetDate.year &&
@@ -123,35 +166,36 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
         // 3. Fallback DB lookup
         existing ??= await journalProvider.getJournalForSchedule(
-          widget.scheduleId,
+          activeId,
           date: targetDate,
         );
       }
 
       ScheduleModel? schedule;
-      try {
-        schedule = scheduleProvider.cachedTeacherSchedules.firstWhere(
-          (s) => s.id == widget.scheduleId,
-          orElse: () => scheduleProvider.schedules.firstWhere(
-            (s) => s.id == widget.scheduleId,
-            orElse: () => scheduleProvider.teacherSchedulesForSelectedDate.firstWhere(
-              (s) => s.id == widget.scheduleId,
+      if (activeId.isNotEmpty) {
+        try {
+          schedule = scheduleProvider.cachedTeacherSchedules.firstWhere(
+            (s) => s.id == activeId,
+            orElse: () => scheduleProvider.schedules.firstWhere(
+              (s) => s.id == activeId,
+              orElse: () => scheduleProvider.teacherSchedulesForSelectedDate.firstWhere(
+                (s) => s.id == activeId,
+              ),
             ),
-          ),
-        );
-      } catch (_) {}
+          );
+        } catch (_) {}
+      }
 
-      if (schedule == null && mounted) {
+      if (schedule == null && activeId.isNotEmpty && mounted) {
         await scheduleProvider.loadAllSchedules();
         try {
           schedule = scheduleProvider.schedules.firstWhere(
-            (s) => s.id == widget.scheduleId,
+            (s) => s.id == activeId,
           );
         } catch (_) {}
       }
 
       if (schedule != null && mounted) {
-        final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
         await masterProvider.loadStudentsForClass(schedule.classId);
 
         if (existing != null) {
@@ -328,236 +372,245 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
   }
 
   Future<void> _submitForm(ScheduleModel schedule) async {
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-    final sickNamesList = masterProvider.students
-        .where((s) => _studentAttendance[s.id] == 'S')
-        .map((s) => s.name)
-        .toList();
-    final permNamesList = masterProvider.students
-        .where((s) => _studentAttendance[s.id] == 'I')
-        .map((s) => s.name)
-        .toList();
-    final alphaNamesList = masterProvider.students
-        .where((s) => _studentAttendance[s.id] == 'A')
-        .map((s) => s.name)
-        .toList();
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
 
-    _sickCount = sickNamesList.length;
-    _permissionCount = permNamesList.length;
-    _alphaCount = alphaNamesList.length;
+    try {
+      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+      final sickNamesList = masterProvider.students
+          .where((s) => _studentAttendance[s.id] == 'S')
+          .map((s) => s.name)
+          .toList();
+      final permNamesList = masterProvider.students
+          .where((s) => _studentAttendance[s.id] == 'I')
+          .map((s) => s.name)
+          .toList();
+      final alphaNamesList = masterProvider.students
+          .where((s) => _studentAttendance[s.id] == 'A')
+          .map((s) => s.name)
+          .toList();
 
-    _sickNamesController.text = sickNamesList.join(', ');
-    _permissionNamesController.text = permNamesList.join(', ');
-    _alphaNamesController.text = alphaNamesList.join(', ');
+      _sickCount = sickNamesList.length;
+      _permissionCount = permNamesList.length;
+      _alphaCount = alphaNamesList.length;
 
-    if (_formKey.currentState!.validate()) {
-      final totalPhotos = _imageBytesList.length + _existingImageUrls.length;
-      if (totalPhotos < 1) {
-        AppHelper.showSnackBar(
+      _sickNamesController.text = sickNamesList.join(', ');
+      _permissionNamesController.text = permNamesList.join(', ');
+      _alphaNamesController.text = alphaNamesList.join(', ');
+
+      if (_formKey.currentState!.validate()) {
+        final totalPhotos = _imageBytesList.length + _existingImageUrls.length;
+        if (totalPhotos < 1) {
+          AppHelper.showSnackBar(
+            context,
+            'Wajib melampirkan minimal 1 foto kegiatan pembelajaran!',
+            isError: true,
+          );
+          return;
+        }
+
+        final journalProvider = Provider.of<JournalProvider>(
           context,
-          'Wajib melampirkan minimal 1 foto kegiatan pembelajaran!',
-          isError: true,
+          listen: false,
         );
-        return;
-      }
+        _formKey.currentState!.save();
 
-      final journalProvider = Provider.of<JournalProvider>(
-        context,
-        listen: false,
-      );
-      _formKey.currentState!.save();
-
-      // Build first attachment model (for legacy compat)
-      JournalAttachmentModel? attachment;
-      final hasNewImages = _imageBytesList.isNotEmpty;
-      final hasExisting = _existingImageUrls.isNotEmpty;
-      if (hasNewImages) {
-        attachment = JournalAttachmentModel(
-          id: _existingJournal?.attachment?.id ?? 'ja_${DateTime.now().millisecondsSinceEpoch}',
-          filePath: _existingJournal?.attachment?.filePath ?? 'pending_upload',
-          fileType: 'image',
-          fileName: _imageNamesList.first,
-        );
-      } else if (hasExisting) {
-        attachment = _existingJournal?.attachment;
-      }
-
-      // Construct structured note
-      String? combinedNote;
-      final absenceDetails = <String>[];
-      if (_sickCount > 0 && _sickNamesController.text.trim().isNotEmpty) {
-        absenceDetails.add('Sakit ($_sickCount siswa): ${_sickNamesController.text.trim()}');
-      }
-      if (_permissionCount > 0 && _permissionNamesController.text.trim().isNotEmpty) {
-        absenceDetails.add('Izin ($_permissionCount siswa): ${_permissionNamesController.text.trim()}');
-      }
-      if (_alphaCount > 0 && _alphaNamesController.text.trim().isNotEmpty) {
-        absenceDetails.add('Alfa ($_alphaCount siswa): ${_alphaNamesController.text.trim()}');
-      }
-
-      final generalNote = _noteController.text.trim();
-      if (absenceDetails.isNotEmpty) {
-        combinedNote = 'Keterangan Absensi:\n${absenceDetails.join('\n')}';
-        if (generalNote.isNotEmpty) {
-          combinedNote = '$combinedNote\n\nCatatan Pembelajaran:\n$generalNote';
+        // Build first attachment model (for legacy compat)
+        JournalAttachmentModel? attachment;
+        final hasNewImages = _imageBytesList.isNotEmpty;
+        final hasExisting = _existingImageUrls.isNotEmpty;
+        if (hasNewImages) {
+          attachment = JournalAttachmentModel(
+            id: _existingJournal?.attachment?.id ?? 'ja_${DateTime.now().millisecondsSinceEpoch}',
+            filePath: _existingJournal?.attachment?.filePath ?? 'pending_upload',
+            fileType: 'image',
+            fileName: _imageNamesList.first,
+          );
+        } else if (hasExisting) {
+          attachment = _existingJournal?.attachment;
         }
-      } else {
-        combinedNote = generalNote.isEmpty ? null : generalNote;
-      }
 
-      if (_isEditing) {
-        final updatedJournal = JournalModel(
-          id: _existingJournal!.id,
-          scheduleId: schedule.id,
-          date: _existingJournal!.date,
-          teachingHour: schedule.teachingHour,
-          classId: schedule.classId,
-          subjectId: schedule.subjectId,
-          teacherId: schedule.teacherId,
-          material: _materialController.text.trim(),
-          sickCount: _sickCount,
-          permissionCount: _permissionCount,
-          alphaCount: _alphaCount,
-          note: combinedNote,
-          attachment: attachment,
-          status: 'pending', // Reset status to pending when revised!
-          attachmentUrl: attachment == null
-              ? null
-              : _existingJournal!.attachmentUrl,
-          rejectionNote: null, // Clear rejection note when revised!
-        );
+        // Construct structured note
+        String? combinedNote;
+        final absenceDetails = <String>[];
+        if (_sickCount > 0 && _sickNamesController.text.trim().isNotEmpty) {
+          absenceDetails.add('Sakit ($_sickCount siswa): ${_sickNamesController.text.trim()}');
+        }
+        if (_permissionCount > 0 && _permissionNamesController.text.trim().isNotEmpty) {
+          absenceDetails.add('Izin ($_permissionCount siswa): ${_permissionNamesController.text.trim()}');
+        }
+        if (_alphaCount > 0 && _alphaNamesController.text.trim().isNotEmpty) {
+          absenceDetails.add('Alfa ($_alphaCount siswa): ${_alphaNamesController.text.trim()}');
+        }
 
-        final success = await journalProvider.updateJournal(
-          updatedJournal,
-          imageBytesList: _imageBytesList,
-          imageNamesList: _imageNamesList,
-        );
+        final generalNote = _noteController.text.trim();
+        if (absenceDetails.isNotEmpty) {
+          combinedNote = 'Keterangan Absensi:\n${absenceDetails.join('\n')}';
+          if (generalNote.isNotEmpty) {
+            combinedNote = '$combinedNote\n\nCatatan Pembelajaran:\n$generalNote';
+          }
+        } else {
+          combinedNote = generalNote.isEmpty ? null : generalNote;
+        }
 
-        if (success && mounted) {
-          final cls = masterProvider.classes.firstWhere(
-            (c) => c.id == schedule.classId,
-            orElse: () => ClassModel(id: '', name: 'Kelas', periodId: '', studentCount: 0),
+        if (_isEditing) {
+          final updatedJournal = JournalModel(
+            id: _existingJournal!.id,
+            scheduleId: schedule.id,
+            date: _existingJournal!.date,
+            teachingHour: schedule.teachingHour,
+            classId: schedule.classId,
+            subjectId: schedule.subjectId,
+            teacherId: schedule.teacherId,
+            material: _materialController.text.trim(),
+            sickCount: _sickCount,
+            permissionCount: _permissionCount,
+            alphaCount: _alphaCount,
+            note: combinedNote,
+            attachment: attachment,
+            status: 'pending', // Reset status to pending when revised!
+            attachmentUrl: attachment == null
+                ? null
+                : _existingJournal!.attachmentUrl,
+            rejectionNote: null, // Clear rejection note when revised!
           );
-          final subject = masterProvider.subjects.firstWhere(
-            (s) => s.id == schedule.subjectId,
-            orElse: () => SubjectModel(id: '', name: 'Mata Pelajaran', isActive: true),
+
+          final success = await journalProvider.updateJournal(
+            updatedJournal,
+            imageBytesList: _imageBytesList,
+            imageNamesList: _imageNamesList,
           );
 
-          // Trigger Nobox AI WhatsApp Student Absence notifications (Sakit / Izin / Alpha)
-          _studentAttendance.forEach((studentId, status) {
-            if (status == 'S' || status == 'I' || status == 'A') {
-              final student = masterProvider.students.firstWhere(
-                (s) => s.id == studentId,
-                orElse: () => StudentModel(
-                  id: '',
-                  classId: '',
-                  name: 'Siswa',
-                  parentPhoneNumber: '082230090067',
-                ),
+          if (success && mounted) {
+            final cls = masterProvider.classes.firstWhere(
+              (c) => c.id == schedule.classId,
+              orElse: () => ClassModel(id: '', name: 'Kelas', periodId: '', studentCount: 0),
+            );
+            final subject = masterProvider.subjects.firstWhere(
+              (s) => s.id == schedule.subjectId,
+              orElse: () => SubjectModel(id: '', name: 'Mata Pelajaran', isActive: true),
+            );
+
+            // Trigger Nobox AI WhatsApp Student Absence notifications (Sakit / Izin / Alpha)
+            _studentAttendance.forEach((studentId, status) {
+              if (status == 'S' || status == 'I' || status == 'A') {
+                final student = masterProvider.students.firstWhere(
+                  (s) => s.id == studentId,
+                  orElse: () => StudentModel(
+                    id: '',
+                    classId: '',
+                    name: 'Siswa',
+                    parentPhoneNumber: '082230090067',
+                  ),
+                );
+                NoboxWaService.sendAbsenceNotification(
+                  student: student,
+                  statusType: status,
+                  classModel: cls,
+                  subjectModel: subject,
+                  date: updatedJournal.date,
+                );
+              }
+            });
+
+            if (journalProvider.errorMessage != null) {
+              AppHelper.showSnackBar(
+                context,
+                journalProvider.errorMessage!,
+                isError: true,
               );
-              NoboxWaService.sendAbsenceNotification(
-                student: student,
-                statusType: status,
-                classModel: cls,
-                subjectModel: subject,
-                date: updatedJournal.date,
-              );
+            } else {
+              AppHelper.showSnackBar(context, 'Revisi jurnal berhasil dikirim!');
             }
-          });
-
-          if (journalProvider.errorMessage != null) {
+            context.pop();
+          } else if (mounted) {
             AppHelper.showSnackBar(
               context,
-              journalProvider.errorMessage!,
+              journalProvider.errorMessage ?? 'Gagal menyimpan revisi jurnal.',
               isError: true,
             );
-          } else {
-            AppHelper.showSnackBar(context, 'Revisi jurnal berhasil dikirim!');
           }
-          context.pop();
-        } else if (mounted) {
-          AppHelper.showSnackBar(
-            context,
-            journalProvider.errorMessage ?? 'Gagal menyimpan revisi jurnal.',
-            isError: true,
-          );
-        }
-      } else {
-        final newJournal = JournalModel(
-          id: '', // Will be generated in repository
-          scheduleId: schedule.id,
-          date: widget.dateStr != null ? DateTime.parse(widget.dateStr!) : schedule.date,
-          teachingHour: schedule.teachingHour,
-          classId: schedule.classId,
-          subjectId: schedule.subjectId,
-          teacherId: schedule.teacherId,
-          material: _materialController.text.trim(),
-          sickCount: _sickCount,
-          permissionCount: _permissionCount,
-          alphaCount: _alphaCount,
-          note: combinedNote,
-          attachment: attachment,
-          status: 'pending',
-        );
-
-        final success = await journalProvider.createJournal(
-          newJournal,
-          imageBytesList: _imageBytesList,
-          imageNamesList: _imageNamesList,
-        );
-
-        if (success && mounted) {
-          final cls = masterProvider.classes.firstWhere(
-            (c) => c.id == schedule.classId,
-            orElse: () => ClassModel(id: '', name: 'Kelas', periodId: '', studentCount: 0),
-          );
-          final subject = masterProvider.subjects.firstWhere(
-            (s) => s.id == schedule.subjectId,
-            orElse: () => SubjectModel(id: '', name: 'Mata Pelajaran', isActive: true),
+        } else {
+          final newJournal = JournalModel(
+            id: '', // Will be generated in repository
+            scheduleId: schedule.id,
+            date: widget.dateStr != null ? DateTime.parse(widget.dateStr!) : schedule.date,
+            teachingHour: schedule.teachingHour,
+            classId: schedule.classId,
+            subjectId: schedule.subjectId,
+            teacherId: schedule.teacherId,
+            material: _materialController.text.trim(),
+            sickCount: _sickCount,
+            permissionCount: _permissionCount,
+            alphaCount: _alphaCount,
+            note: combinedNote,
+            attachment: attachment,
+            status: 'pending',
           );
 
-          // Trigger Nobox AI WhatsApp Student Absence notifications (Sakit / Izin / Alpha)
-          _studentAttendance.forEach((studentId, status) {
-            if (status == 'S' || status == 'I' || status == 'A') {
-              final student = masterProvider.students.firstWhere(
-                (s) => s.id == studentId,
-                orElse: () => StudentModel(
-                  id: '',
-                  classId: '',
-                  name: 'Siswa',
-                  parentPhoneNumber: '082230090067',
-                ),
+          final success = await journalProvider.createJournal(
+            newJournal,
+            imageBytesList: _imageBytesList,
+            imageNamesList: _imageNamesList,
+          );
+
+          if (success && mounted) {
+            final cls = masterProvider.classes.firstWhere(
+              (c) => c.id == schedule.classId,
+              orElse: () => ClassModel(id: '', name: 'Kelas', periodId: '', studentCount: 0),
+            );
+            final subject = masterProvider.subjects.firstWhere(
+              (s) => s.id == schedule.subjectId,
+              orElse: () => SubjectModel(id: '', name: 'Mata Pelajaran', isActive: true),
+            );
+
+            // Trigger Nobox AI WhatsApp Student Absence notifications (Sakit / Izin / Alpha)
+            _studentAttendance.forEach((studentId, status) {
+              if (status == 'S' || status == 'I' || status == 'A') {
+                final student = masterProvider.students.firstWhere(
+                  (s) => s.id == studentId,
+                  orElse: () => StudentModel(
+                    id: '',
+                    classId: '',
+                    name: 'Siswa',
+                    parentPhoneNumber: '082230090067',
+                  ),
+                );
+                NoboxWaService.sendAbsenceNotification(
+                  student: student,
+                  statusType: status,
+                  classModel: cls,
+                  subjectModel: subject,
+                  date: newJournal.date,
+                );
+              }
+            });
+
+            if (journalProvider.errorMessage != null) {
+              AppHelper.showSnackBar(
+                context,
+                journalProvider.errorMessage!,
+                isError: true,
               );
-              NoboxWaService.sendAbsenceNotification(
-                student: student,
-                statusType: status,
-                classModel: cls,
-                subjectModel: subject,
-                date: newJournal.date,
+            } else {
+              AppHelper.showSnackBar(
+                context,
+                'Jurnal berhasil dikirim untuk verifikasi!',
               );
             }
-          });
-
-          if (journalProvider.errorMessage != null) {
+            context.pop();
+          } else if (mounted) {
             AppHelper.showSnackBar(
               context,
-              journalProvider.errorMessage!,
+              journalProvider.errorMessage ?? 'Gagal menyimpan jurnal.',
               isError: true,
             );
-          } else {
-            AppHelper.showSnackBar(
-              context,
-              'Jurnal berhasil dikirim untuk verifikasi!',
-            );
           }
-          context.pop();
-        } else if (mounted) {
-          AppHelper.showSnackBar(
-            context,
-            journalProvider.errorMessage ?? 'Gagal menyimpan jurnal.',
-            isError: true,
-          );
         }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
       }
     }
   }
@@ -568,23 +621,81 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     final scheduleProvider = context.watch<ScheduleProvider>();
     final journalProvider = context.watch<JournalProvider>();
 
+    final activeId = _selectedScheduleId ?? widget.scheduleId;
+    DateTime? targetDate;
+    if (widget.dateStr != null) {
+      try {
+        targetDate = DateTime.parse(widget.dateStr!);
+      } catch (_) {}
+    }
+
+    final availableSchedules = scheduleProvider.cachedTeacherSchedules.where((s) {
+      if (!s.isActive) return false;
+      if (targetDate != null) {
+        return s.date.year == targetDate.year &&
+            s.date.month == targetDate.month &&
+            s.date.day == targetDate.day;
+      }
+      return true;
+    }).toList();
+
     ScheduleModel? schedule;
-    try {
-      schedule = scheduleProvider.cachedTeacherSchedules.firstWhere(
-        (s) => s.id == widget.scheduleId,
-        orElse: () => scheduleProvider.schedules.firstWhere(
-          (s) => s.id == widget.scheduleId,
-          orElse: () => scheduleProvider.teacherSchedulesForSelectedDate.firstWhere(
-            (s) => s.id == widget.scheduleId,
+    if (activeId.isNotEmpty) {
+      try {
+        schedule = scheduleProvider.cachedTeacherSchedules.firstWhere(
+          (s) => s.id == activeId,
+          orElse: () => scheduleProvider.schedules.firstWhere(
+            (s) => s.id == activeId,
+            orElse: () => scheduleProvider.teacherSchedulesForSelectedDate.firstWhere(
+              (s) => s.id == activeId,
+            ),
           ),
-        ),
-      );
-    } catch (_) {
+        );
+      } catch (_) {}
+    }
+
+    if (schedule == null && availableSchedules.isNotEmpty) {
+      schedule = availableSchedules.first;
+    }
+
+    if (schedule == null) {
       return Scaffold(
         appBar: AppBar(
           title: Text(_isEditing ? 'Revisi Jurnal' : 'Isi Jurnal'),
         ),
-        body: const Center(child: Text('Jadwal tidak ditemukan')),
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.w),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.event_busy_rounded, size: 64.r, color: Colors.grey[400]),
+                SizedBox(height: 16.h),
+                Text(
+                  'Tidak Ada Jadwal',
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                SizedBox(height: 6.h),
+                Text(
+                  'Tidak ada jadwal mengajar pada tanggal ini. Silakan pilih tanggal yang memiliki jadwal mengajar.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 13.sp,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                ElevatedButton(
+                  onPressed: () => context.pop(),
+                  child: const Text('Kembali ke Kalender'),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     }
 
