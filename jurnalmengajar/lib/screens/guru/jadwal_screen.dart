@@ -475,6 +475,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         leading: Builder(
           builder: (ctx) => IconButton(
             icon: const Icon(Icons.menu_rounded),
@@ -488,7 +489,14 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
             },
           ),
         ),
-        title: const Text('Jadwal Mengajar'),
+        title: Text(
+          'Jadwal Mengajar',
+          style: GoogleFonts.hankenGrotesk(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w800,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
         actions: [
           Padding(
             padding: EdgeInsets.only(right: 12.w),
@@ -718,9 +726,10 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         .toList()
       ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
 
-    final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '00:00';
+    final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '';
+    final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '';
     final hoursStr = AppHelper.formatTeachingHours(scheduleGroup.teachingHours);
-    final timeDisplay = matchedHours.isNotEmpty ? '$hrStart WIB' : 'Jam #$hoursStr';
+    final timeRange = hrStart.isNotEmpty ? (hrEnd.isNotEmpty ? '$hrStart - $hrEnd WIB' : '$hrStart WIB') : '';
 
     // Find matching journal for this schedule group on the selected day
     JournalModel? matchingJournal;
@@ -735,66 +744,43 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     }
 
     final String? journalStatus = matchingJournal?.status;
-    final bool isFilled = journalStatus != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Color themes for soft non-highlighted items
-    final List<Map<String, dynamic>> softThemes = [
-      {
-        'bg': const Color(0xFFEEF2FF), // Soft Blue/Indigo
-        'text': Theme.of(context).colorScheme.onSurface,
-        'subtext': Theme.of(context).colorScheme.onSurfaceVariant,
-        'node': const Color(0xFF6366F1),
-      },
-      {
-        'bg': const Color(0xFFFEFCE8), // Soft Yellow
-        'text': Theme.of(context).colorScheme.onSurface,
-        'subtext': const Color(0xFF78350F),
-        'node': const Color(0xFFF59E0B),
-      },
-      {
-        'bg': const Color(0xFFECFDF5), // Soft Mint
-        'text': Theme.of(context).colorScheme.onSurface,
-        'subtext': const Color(0xFF047857),
-        'node': const Color(0xFF10B981),
-      },
-      {
-        'bg': const Color(0xFFFFF1F2), // Soft Coral
-        'text': Theme.of(context).colorScheme.onSurface,
-        'subtext': const Color(0xFFBE123C),
-        'node': const Color(0xFFF43F5E),
-      },
-    ];
+    final Color cardBg = isDark
+        ? (Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface)
+        : Colors.white;
 
-    final theme = softThemes[index % softThemes.length];
-
-    // Colors when highlighted
-    final Color cardBg = isHighlighted
-        ? const Color(0xFFF43F5E) // Vibrant Red/Pink for highlighted card
-        : (isFilled ? const Color(0xFFF8FAFC) : (theme['bg'] as Color));
-
-    final Color textColor = isHighlighted
-        ? Theme.of(context).colorScheme.surface
-        : (theme['text'] as Color);
-
-    final Color subtextColor = isHighlighted
-        ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.9)
-        : (theme['subtext'] as Color);
+    final Color textColor = Theme.of(context).colorScheme.onSurface;
+    final Color subtextColor = Theme.of(context).colorScheme.onSurfaceVariant;
+    final Color borderColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
 
     Color nodeColor;
     IconData? nodeIcon;
-    if (isHighlighted) {
-      nodeColor = const Color(0xFFF43F5E);
-    } else if (journalStatus == 'verified') {
+    String statusBadgeText = 'Belum Diisi';
+    Color statusBadgeBg = isDark ? const Color(0xFF334155).withValues(alpha: 0.5) : const Color(0xFFF1F5F9);
+    Color statusBadgeTextColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
+    if (journalStatus == 'verified') {
       nodeColor = const Color(0xFF10B981); // Green for ACC
       nodeIcon = Icons.check;
+      statusBadgeText = 'Disetujui';
+      statusBadgeBg = const Color(0xFF10B981).withValues(alpha: isDark ? 0.2 : 0.12);
+      statusBadgeTextColor = const Color(0xFF10B981);
     } else if (journalStatus == 'pending') {
-      nodeColor = const Color(0xFFF59E0B); // Amber for Pending (Clock icon)
+      nodeColor = const Color(0xFFF59E0B); // Amber for Pending
       nodeIcon = Icons.access_time_rounded;
+      statusBadgeText = 'Menunggu ACC';
+      statusBadgeBg = const Color(0xFFF59E0B).withValues(alpha: isDark ? 0.2 : 0.12);
+      statusBadgeTextColor = const Color(0xFFF59E0B);
     } else if (journalStatus == 'rejected') {
       nodeColor = const Color(0xFFEF4444); // Red for Rejected
       nodeIcon = Icons.priority_high_rounded;
+      statusBadgeText = 'Ditolak';
+      statusBadgeBg = Colors.red.withValues(alpha: isDark ? 0.2 : 0.12);
+      statusBadgeTextColor = Colors.red;
     } else {
-      nodeColor = Theme.of(context).colorScheme.surface; // Default unfilled
+      nodeColor = isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB);
+      nodeIcon = null;
     }
 
     return IntrinsicHeight(
@@ -809,41 +795,26 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                 SizedBox(height: 14.h),
                 // Node circle
                 Container(
-                  width: isHighlighted ? 20.w : 16.w,
-                  height: isHighlighted ? 20.w : 16.w,
+                  width: 16.w,
+                  height: 16.w,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: nodeColor,
                     border: Border.all(
-                      color: isHighlighted
-                          ? Theme.of(context).colorScheme.surface
-                          : (journalStatus != null ? nodeColor : (theme['node'] as Color)),
-                      width: isHighlighted ? 3.5 : 2.5,
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      width: 2.5,
                     ),
-                    boxShadow: isHighlighted
-                        ? [
-                            BoxShadow(
-                              color: const Color(0xFFF43F5E).withValues(alpha: 0.4),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            )
-                          ]
-                        : null,
+                    boxShadow: [
+                      BoxShadow(
+                        color: nodeColor.withValues(alpha: 0.3),
+                        blurRadius: 6,
+                        spreadRadius: 1,
+                      )
+                    ],
                   ),
-                  child: isHighlighted
-                      ? Center(
-                          child: Container(
-                            width: 6.w,
-                            height: 6.w,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white,
-                            ),
-                          ),
-                        )
-                      : (nodeIcon != null
-                          ? Icon(nodeIcon, size: 10.r, color: Colors.white)
-                          : null),
+                  child: nodeIcon != null
+                      ? Icon(nodeIcon, size: 9.r, color: Colors.white)
+                      : null,
                 ),
                 // Connecting line
                 if (!isLast)
@@ -851,7 +822,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                     child: Container(
                       width: 2.w,
                       margin: EdgeInsets.symmetric(vertical: 4.h),
-                      color: const Color(0xFFFDA4AF).withValues(alpha: 0.6),
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
                     ),
                   ),
               ],
@@ -875,32 +846,28 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                     context.push('/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
                   }
                 },
-                borderRadius: BorderRadius.circular(20.r),
+                borderRadius: BorderRadius.circular(16.r),
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
                   decoration: BoxDecoration(
                     color: cardBg,
-                    borderRadius: BorderRadius.circular(20.r),
+                    borderRadius: BorderRadius.circular(16.r),
+                    border: Border.all(
+                      color: borderColor,
+                      width: 1,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: isHighlighted
-                            ? const Color(0xFFF43F5E).withValues(alpha: 0.3)
-                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.03),
-                        blurRadius: isHighlighted ? 12 : 8,
-                        offset: const Offset(0, 4),
+                        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
                     ],
-                    border: isHighlighted
-                        ? null
-                        : Border.all(
-                            color: isFilled ? const Color(0xFFCBD5E1) : const Color(0xFFE2E8F0),
-                            width: 1,
-                          ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header Row: Subject & Time
+                      // Header Row: Subject & Status Badge
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -916,21 +883,41 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          Text(
-                            timeDisplay,
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w700,
-                              color: subtextColor,
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                            decoration: BoxDecoration(
+                              color: statusBadgeBg,
+                              borderRadius: BorderRadius.circular(6.r),
+                            ),
+                            child: Text(
+                              statusBadgeText,
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 10.5.sp,
+                                fontWeight: FontWeight.w700,
+                                color: statusBadgeTextColor,
+                              ),
                             ),
                           ),
                         ],
                       ),
                       SizedBox(height: 6.h),
                       Text(
-                        'Kelas ${cls.name} • Jam ke-$hoursStr\n${matchingJournal != null ? 'Jurnal: ${matchingJournal.material}' : 'Jurnal belum diisi. Ketuk untuk menginput jurnal.'}',
+                        'Kelas ${cls.name} • Jam ke-$hoursStr${timeRange.isNotEmpty ? ' ($timeRange)' : ''}',
                         style: GoogleFonts.hankenGrotesk(
                           fontSize: 12.sp,
+                          color: subtextColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 3.h),
+                      Text(
+                        matchingJournal != null
+                            ? 'Jurnal: ${matchingJournal.material}'
+                            : 'Jurnal belum diisi. Ketuk untuk menginput jurnal.',
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 11.5.sp,
                           color: subtextColor,
                           fontWeight: FontWeight.w400,
                           height: 1.3,
