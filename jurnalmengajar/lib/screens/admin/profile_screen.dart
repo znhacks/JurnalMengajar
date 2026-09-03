@@ -425,7 +425,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     final currentUser = authProvider.currentUser;
 
     if (currentUser == null) {
-      return const Scaffold(body: Center(child: Text('User not found')));
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     final isLoading = masterProvider.isLoading || journalProvider.isLoading;

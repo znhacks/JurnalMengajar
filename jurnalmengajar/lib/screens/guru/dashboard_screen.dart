@@ -419,8 +419,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
     final currentUser = authProvider.currentUser;
     if (currentUser == null) {
-      return const Scaffold(
-        body: Center(child: Text('User session not found')),
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
