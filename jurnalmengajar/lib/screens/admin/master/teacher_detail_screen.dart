@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -89,11 +90,12 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
   ) {
     final hasSchedule = _hasTeacherScheduleOnDay(schedules, day);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isSunday = day.weekday == DateTime.sunday;
 
     Color bgColor = Colors.transparent;
     Color textColor = isOutside
         ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
-        : Theme.of(context).colorScheme.onSurface;
+        : (isSunday ? const Color(0xFFEF4444) : Theme.of(context).colorScheme.onSurface);
     FontWeight fontWeight = FontWeight.w500;
 
     if (isSelected) {
@@ -266,6 +268,7 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                 ),
                 padding: EdgeInsets.symmetric(vertical: 8.h),
                 child: TableCalendar(
+                  locale: 'id_ID',
                   headerStyle: HeaderStyle(
                     titleCentered: true,
                     formatButtonVisible: false,
@@ -281,18 +284,6 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w800,
                       color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  daysOfWeekStyle: DaysOfWeekStyle(
-                    weekdayStyle: GoogleFonts.hankenGrotesk(
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    weekendStyle: GoogleFonts.hankenGrotesk(
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFFEF4444),
                     ),
                   ),
                   rowHeight: 42.h,
@@ -314,6 +305,22 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                     });
                   },
                   calendarBuilders: CalendarBuilders(
+                    dowBuilder: (context, day) {
+                      final dayName = DateFormat.E('id_ID').format(day);
+                      final isSunday = day.weekday == DateTime.sunday;
+                      return Center(
+                        child: Text(
+                          dayName,
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w700,
+                            color: isSunday
+                                ? const Color(0xFFEF4444)
+                                : Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      );
+                    },
                     defaultBuilder: (context, day, focusedDay) {
                       return _buildScheduledDayCell(day, false, false, false, scheduleProvider.schedules);
                     },

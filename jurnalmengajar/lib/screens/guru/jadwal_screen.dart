@@ -136,40 +136,50 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     final holidayProvider = Provider.of<HolidayProvider>(context, listen: false);
     final holiday = holidayProvider.getHolidayForDate(day);
     final isHoliday = holiday != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final isSunday = day.weekday == DateTime.sunday;
 
     Color bgColor = Colors.transparent;
-    Color textColor = isOutside ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : Theme.of(context).colorScheme.onSurface;
-    FontWeight fontWeight = FontWeight.w600;
+    Color textColor = isOutside
+        ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
+        : (isSunday ? const Color(0xFFEF4444) : Theme.of(context).colorScheme.onSurface);
+    FontWeight fontWeight = FontWeight.w500;
 
     if (isSelected) {
-      bgColor = isHoliday ? const Color(0xFFDC2626) : const Color(0xFF2563EB);
-      textColor = Theme.of(context).colorScheme.surface;
-      fontWeight = FontWeight.w800;
+      bgColor = isHoliday ? const Color(0xFFDC2626) : AppTheme.primaryColor;
+      textColor = Colors.white;
+      fontWeight = FontWeight.w700;
     } else if (isHoliday) {
-      bgColor = const Color(0xFFFEE2E2);
-      textColor = const Color(0xFFDC2626);
-      fontWeight = FontWeight.w800;
+      bgColor = const Color(0xFFDC2626).withValues(alpha: isDark ? 0.2 : 0.15);
+      textColor = const Color(0xFFEF4444);
+      fontWeight = FontWeight.w700;
     } else if (hasSchedule) {
-      bgColor = const Color(0xFFEFF6FF);
-      textColor = const Color(0xFF1D4ED8);
+      bgColor = const Color(0xFFFFEB3B).withValues(alpha: isDark ? 0.2 : 0.35);
+      textColor = isOutside
+          ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
+          : (isDark ? const Color(0xFFFDE047) : const Color(0xFFB45309));
       fontWeight = FontWeight.w700;
     } else if (isToday) {
-      bgColor = const Color(0xFFF1F5F9);
-      textColor = const Color(0xFF2563EB);
-      fontWeight = FontWeight.w800;
+      bgColor = AppTheme.primaryColor.withValues(alpha: isDark ? 0.25 : 0.15);
+      textColor = isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor;
+      fontWeight = FontWeight.w700;
     }
 
     return Container(
-      margin: const EdgeInsets.all(4),
+      margin: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,
+        border: hasSchedule && !isSelected
+            ? Border.all(color: const Color(0xFFF59E0B), width: 1.5)
+            : null,
       ),
       alignment: Alignment.center,
       child: Text(
         '${day.day}',
         style: GoogleFonts.hankenGrotesk(
-          fontSize: 13.sp,
+          fontSize: 12.sp,
           fontWeight: fontWeight,
           color: textColor,
         ),
@@ -181,201 +191,113 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     ScheduleProvider scheduleProvider,
     TeacherModel teacher,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.03),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : AppTheme.outlineVariant,
+        ),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.chevron_left_rounded,
-                    color: Color(0xFF64748B),
-                    size: 22,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _focusedDay = _focusedDay.subtract(
-                        const Duration(days: 7),
-                      );
-                    });
-                  },
-                ),
-                TextButton.icon(
-                  onPressed: () => _showFullCalendarDialog(context, scheduleProvider, teacher),
-                  icon: const Icon(
-                    Icons.calendar_month_rounded,
-                    color: Color(0xFF2563EB),
-                    size: 18,
-                  ),
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        DateFormat('MMMM yyyy', 'id_ID').format(_focusedDay),
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w800,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      const Icon(
-                        Icons.arrow_drop_down_rounded,
-                        color: Color(0xFF64748B),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.chevron_right_rounded,
-                    color: Color(0xFF64748B),
-                    size: 22,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _focusedDay = _focusedDay.add(const Duration(days: 7));
-                    });
-                  },
-                ),
-              ],
-            ),
+      padding: EdgeInsets.symmetric(vertical: 8.h),
+      child: TableCalendar(
+        locale: 'id_ID',
+        headerStyle: HeaderStyle(
+          titleCentered: true,
+          formatButtonVisible: false,
+          leftChevronIcon: Icon(
+            Icons.chevron_left,
+            color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
           ),
-          TableCalendar(
-            headerVisible: false,
-            firstDay: DateTime.now().subtract(const Duration(days: 365)),
-            lastDay: DateTime.now().add(const Duration(days: 365)),
-            focusedDay: _focusedDay,
-            calendarFormat: CalendarFormat.week,
-            startingDayOfWeek: StartingDayOfWeek.monday,
-            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-            onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                _selectedDay = selectedDay;
-                _focusedDay = focusedDay;
-              });
-              if (teacher.id.isNotEmpty) {
-                scheduleProvider.loadTeacherSchedules(teacher.id, selectedDay);
-              }
-            },
-            onPageChanged: (focusedDay) {
-              setState(() {
-                _focusedDay = focusedDay;
-              });
-            },
-            calendarBuilders: CalendarBuilders(
-              defaultBuilder: (context, day, focusedDay) {
-                return _buildScheduledDayCell(
-                  day,
-                  false,
-                  false,
-                  false,
-                  scheduleProvider.cachedTeacherSchedules,
-                );
-              },
-              outsideBuilder: (context, day, focusedDay) {
-                return _buildScheduledDayCell(
-                  day,
-                  false,
-                  false,
-                  true,
-                  scheduleProvider.cachedTeacherSchedules,
-                );
-              },
-              todayBuilder: (context, day, focusedDay) {
-                return _buildScheduledDayCell(
-                  day,
-                  false,
-                  true,
-                  false,
-                  scheduleProvider.cachedTeacherSchedules,
-                );
-              },
-              selectedBuilder: (context, day, focusedDay) {
-                return _buildScheduledDayCell(
-                  day,
-                  true,
-                  false,
-                  false,
-                  scheduleProvider.cachedTeacherSchedules,
-                );
-              },
-            ),
-            calendarStyle: CalendarStyle(
-              selectedDecoration: const BoxDecoration(
-                color: Color(0xFF2563EB),
-                shape: BoxShape.circle,
-              ),
-              selectedTextStyle: GoogleFonts.hankenGrotesk(
-                color: Theme.of(context).colorScheme.surface,
-                fontWeight: FontWeight.w800,
-              ),
-              todayDecoration: const BoxDecoration(
-                color: Color(0xFFF1F5F9),
-                shape: BoxShape.circle,
-              ),
-              todayTextStyle: GoogleFonts.hankenGrotesk(
-                color: Color(0xFF2563EB),
-                fontWeight: FontWeight.w800,
-              ),
-              weekendTextStyle: GoogleFonts.hankenGrotesk(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              defaultTextStyle: GoogleFonts.hankenGrotesk(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              outsideTextStyle: GoogleFonts.hankenGrotesk(
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-              ),
-            ),
+          rightChevronIcon: Icon(
+            Icons.chevron_right,
+            color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
           ),
-          // ── Legend ────────────────────────────────────────────────────────
-          Padding(
-            padding: EdgeInsets.only(
-              left: 16.w,
-              right: 16.w,
-              bottom: 12.h,
-              top: 4.h,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 10.w,
-                  height: 10.w,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF2563EB),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                SizedBox(width: 6.w),
-                Text(
-                  'Ada jadwal mengajar',
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 11.sp,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+          titleTextStyle: GoogleFonts.hankenGrotesk(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w800,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
-        ],
+        ),
+        rowHeight: 42.h,
+        firstDay: DateTime.now().subtract(const Duration(days: 365)),
+        lastDay: DateTime.now().add(const Duration(days: 365)),
+        focusedDay: _focusedDay,
+        calendarFormat: CalendarFormat.week,
+        startingDayOfWeek: StartingDayOfWeek.monday,
+        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+        onDaySelected: (selectedDay, focusedDay) {
+          setState(() {
+            _selectedDay = selectedDay;
+            _focusedDay = focusedDay;
+          });
+          if (teacher.id.isNotEmpty) {
+            scheduleProvider.loadTeacherSchedules(teacher.id, selectedDay);
+          }
+        },
+        onPageChanged: (focusedDay) {
+          setState(() {
+            _focusedDay = focusedDay;
+          });
+        },
+        onHeaderTapped: (_) => _showFullCalendarDialog(context, scheduleProvider, teacher),
+        calendarBuilders: CalendarBuilders(
+          dowBuilder: (context, day) {
+            final dayName = DateFormat.E('id_ID').format(day);
+            final isSunday = day.weekday == DateTime.sunday;
+            return Center(
+              child: Text(
+                dayName,
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w700,
+                  color: isSunday
+                      ? const Color(0xFFEF4444)
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            );
+          },
+          defaultBuilder: (context, day, focusedDay) {
+            return _buildScheduledDayCell(
+              day,
+              false,
+              false,
+              false,
+              scheduleProvider.cachedTeacherSchedules,
+            );
+          },
+          outsideBuilder: (context, day, focusedDay) {
+            return _buildScheduledDayCell(
+              day,
+              false,
+              false,
+              true,
+              scheduleProvider.cachedTeacherSchedules,
+            );
+          },
+          todayBuilder: (context, day, focusedDay) {
+            return _buildScheduledDayCell(
+              day,
+              false,
+              true,
+              false,
+              scheduleProvider.cachedTeacherSchedules,
+            );
+          },
+          selectedBuilder: (context, day, focusedDay) {
+            return _buildScheduledDayCell(
+              day,
+              true,
+              false,
+              false,
+              scheduleProvider.cachedTeacherSchedules,
+            );
+          },
+        ),
       ),
     );
   }

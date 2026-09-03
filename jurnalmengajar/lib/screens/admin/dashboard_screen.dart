@@ -22,6 +22,7 @@ import '../../providers/warning_letter_provider.dart';
 import '../../widgets/animated_widgets.dart';
 import '../../widgets/role_badge.dart';
 import '../../widgets/school_switcher_modal.dart';
+import '../../core/theme/app_theme.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final String? selectedTeacherId;
@@ -555,42 +556,48 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final holiday = holidayProvider.getHolidayForDate(day);
     final isHoliday = holiday != null;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isSunday = day.weekday == DateTime.sunday;
 
     Color bgColor = Colors.transparent;
     Color textColor = isOutside
-        ? (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1))
-        : (isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155));
-    FontWeight fontWeight = FontWeight.w600;
+        ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
+        : (isSunday ? const Color(0xFFEF4444) : Theme.of(context).colorScheme.onSurface);
+    FontWeight fontWeight = FontWeight.w500;
 
     if (isSelected) {
-      bgColor = isHoliday ? const Color(0xFFDC2626) : const Color(0xFF2563EB);
+      bgColor = isHoliday ? const Color(0xFFDC2626) : AppTheme.primaryColor;
       textColor = Colors.white;
-      fontWeight = FontWeight.w800;
+      fontWeight = FontWeight.w700;
     } else if (isHoliday) {
-      bgColor = isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.4) : const Color(0xFFFEE2E2);
-      textColor = isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626);
-      fontWeight = FontWeight.w800;
+      bgColor = const Color(0xFFDC2626).withValues(alpha: isDark ? 0.2 : 0.15);
+      textColor = const Color(0xFFEF4444);
+      fontWeight = FontWeight.w700;
     } else if (hasSchedule) {
-      bgColor = isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.4) : const Color(0xFFEFF6FF);
-      textColor = isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8);
+      bgColor = const Color(0xFFFFEB3B).withValues(alpha: isDark ? 0.2 : 0.35);
+      textColor = isOutside
+          ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
+          : (isDark ? const Color(0xFFFDE047) : const Color(0xFFB45309));
       fontWeight = FontWeight.w700;
     } else if (isToday) {
-      bgColor = isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9);
-      textColor = isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB);
-      fontWeight = FontWeight.w800;
+      bgColor = AppTheme.primaryColor.withValues(alpha: isDark ? 0.25 : 0.15);
+      textColor = isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor;
+      fontWeight = FontWeight.w700;
     }
 
     return Container(
-      margin: const EdgeInsets.all(4),
+      margin: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,
+        border: hasSchedule && !isSelected
+            ? Border.all(color: const Color(0xFFF59E0B), width: 1.5)
+            : null,
       ),
       alignment: Alignment.center,
       child: Text(
         '${day.day}',
         style: GoogleFonts.hankenGrotesk(
-          fontSize: 13.sp,
+          fontSize: 12.sp,
           fontWeight: fontWeight,
           color: textColor,
         ),
@@ -607,198 +614,105 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
+        color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+          color: isDark ? const Color(0xFF334155) : AppTheme.outlineVariant,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.chevron_left_rounded,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    size: 22,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _focusedDay = _focusedDay.subtract(
-                        const Duration(days: 7),
-                      );
-                    });
-                  },
-                ),
-                TextButton.icon(
-                  onPressed: () => _showFullCalendarDialog(context, schedules),
-                  icon: const Icon(
-                    Icons.calendar_month_rounded,
-                    color: Color(0xFF2563EB),
-                    size: 18,
-                  ),
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        DateFormat('MMMM yyyy', 'id_ID').format(_focusedDay),
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w800,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      Icon(
-                        Icons.arrow_drop_down_rounded,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.chevron_right_rounded,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    size: 22,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _focusedDay = _focusedDay.add(const Duration(days: 7));
-                    });
-                  },
-                ),
-              ],
-            ),
+      padding: EdgeInsets.symmetric(vertical: 8.h),
+      child: TableCalendar(
+        locale: 'id_ID',
+        headerStyle: HeaderStyle(
+          titleCentered: true,
+          formatButtonVisible: false,
+          leftChevronIcon: Icon(
+            Icons.chevron_left,
+            color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
           ),
-          TableCalendar(
-            headerVisible: false,
-            firstDay: DateTime.now().subtract(const Duration(days: 365)),
-            lastDay: DateTime.now().add(const Duration(days: 365)),
-            focusedDay: _focusedDay,
-            calendarFormat: CalendarFormat.week,
-            startingDayOfWeek: StartingDayOfWeek.monday,
-            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-            onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                _selectedDay = selectedDay;
-                _focusedDay = focusedDay;
-              });
-            },
-            onPageChanged: (focusedDay) {
-              setState(() {
-                _focusedDay = focusedDay;
-              });
-            },
-            calendarBuilders: CalendarBuilders(
-              defaultBuilder: (context, day, focusedDay) {
-                return _buildScheduledDayCell(
-                  day,
-                  false,
-                  false,
-                  false,
-                  schedules,
-                );
-              },
-              outsideBuilder: (context, day, focusedDay) {
-                return _buildScheduledDayCell(
-                  day,
-                  false,
-                  false,
-                  true,
-                  schedules,
-                );
-              },
-              todayBuilder: (context, day, focusedDay) {
-                return _buildScheduledDayCell(
-                  day,
-                  false,
-                  true,
-                  false,
-                  schedules,
-                );
-              },
-              selectedBuilder: (context, day, focusedDay) {
-                return _buildScheduledDayCell(
-                  day,
-                  true,
-                  false,
-                  false,
-                  schedules,
-                );
-              },
-            ),
-
-            calendarStyle: CalendarStyle(
-              selectedDecoration: const BoxDecoration(
-                color: Color(0xFF2563EB),
-                shape: BoxShape.circle,
-              ),
-              selectedTextStyle: GoogleFonts.hankenGrotesk(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-              ),
-              todayDecoration: BoxDecoration(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
-                shape: BoxShape.circle,
-              ),
-              todayTextStyle: GoogleFonts.hankenGrotesk(
-                color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
-                fontWeight: FontWeight.w800,
-              ),
-              weekendTextStyle: GoogleFonts.hankenGrotesk(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              defaultTextStyle: GoogleFonts.hankenGrotesk(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              outsideTextStyle: GoogleFonts.hankenGrotesk(
-                color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
-              ),
-            ),
+          rightChevronIcon: Icon(
+            Icons.chevron_right,
+            color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
           ),
-          if (_selectedTeacherId != null)
-            Padding(
-              padding: EdgeInsets.only(
-                left: 16.w,
-                right: 16.w,
-                bottom: 12.h,
-                top: 4.h,
+          titleTextStyle: GoogleFonts.hankenGrotesk(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w800,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        rowHeight: 42.h,
+        firstDay: DateTime.now().subtract(const Duration(days: 365)),
+        lastDay: DateTime.now().add(const Duration(days: 365)),
+        focusedDay: _focusedDay,
+        calendarFormat: CalendarFormat.week,
+        startingDayOfWeek: StartingDayOfWeek.monday,
+        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+        onDaySelected: (selectedDay, focusedDay) {
+          setState(() {
+            _selectedDay = selectedDay;
+            _focusedDay = focusedDay;
+          });
+        },
+        onPageChanged: (focusedDay) {
+          setState(() {
+            _focusedDay = focusedDay;
+          });
+        },
+        onHeaderTapped: (_) => _showFullCalendarDialog(context, schedules),
+        calendarBuilders: CalendarBuilders(
+          dowBuilder: (context, day) {
+            final dayName = DateFormat.E('id_ID').format(day);
+            final isSunday = day.weekday == DateTime.sunday;
+            return Center(
+              child: Text(
+                dayName,
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w700,
+                  color: isSunday
+                      ? const Color(0xFFEF4444)
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 10.w,
-                    height: 10.w,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF2563EB),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  SizedBox(width: 6.w),
-                  Text(
-                    'Jadwal guru terpilih',
-                    style: GoogleFonts.hankenGrotesk(
-                      fontSize: 11.sp,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
+            );
+          },
+          defaultBuilder: (context, day, focusedDay) {
+            return _buildScheduledDayCell(
+              day,
+              false,
+              false,
+              false,
+              schedules,
+            );
+          },
+          outsideBuilder: (context, day, focusedDay) {
+            return _buildScheduledDayCell(
+              day,
+              false,
+              false,
+              true,
+              schedules,
+            );
+          },
+          todayBuilder: (context, day, focusedDay) {
+            return _buildScheduledDayCell(
+              day,
+              false,
+              true,
+              false,
+              schedules,
+            );
+          },
+          selectedBuilder: (context, day, focusedDay) {
+            return _buildScheduledDayCell(
+              day,
+              true,
+              false,
+              false,
+              schedules,
+            );
+          },
+        ),
       ),
     );
   }
