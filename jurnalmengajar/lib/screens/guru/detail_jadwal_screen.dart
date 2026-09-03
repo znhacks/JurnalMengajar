@@ -201,6 +201,8 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
       return FormJurnalScreen(scheduleId: widget.scheduleId);
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Jadwal'),
@@ -224,22 +226,24 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                           style: TextStyle(
                             fontSize: 18.sp,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF0F172A),
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const Divider(height: 32),
 
-                        _buildDetailRow(Icons.person, 'Guru Pengampu', teacher.name),
-                        _buildDetailRow(Icons.class_, 'Kelas / Siswa', '${cls.name} (${cls.studentCount} Siswa)'),
-                        _buildDetailRow(Icons.menu_book, 'Mata Pelajaran', subject.name),
-                        _buildDetailRow(Icons.calendar_today, 'Tanggal', AppHelper.formatDate(schedule.date)),
+                        _buildDetailRow(context, Icons.person, 'Guru Pengampu', teacher.name),
+                        _buildDetailRow(context, Icons.class_, 'Kelas / Siswa', '${cls.name} (${cls.studentCount} Siswa)'),
+                        _buildDetailRow(context, Icons.menu_book, 'Mata Pelajaran', subject.name),
+                        _buildDetailRow(context, Icons.calendar_today, 'Tanggal', AppHelper.formatDate(schedule.date)),
                         _buildDetailRow(
+                          context,
                           Icons.access_time,
                           'Jam Pelajaran',
                           'Jam Ke-$hoursStr ($hrStart - $hrEnd)',
                         ),
-                        _buildDetailRow(Icons.date_range, 'Periode Akademik', period.name),
+                        _buildDetailRow(context, Icons.date_range, 'Periode Akademik', period.name),
                         _buildDetailRow(
+                          context,
                           Icons.description,
                           'Catatan Jadwal',
                           (schedule.note != null && schedule.note!.trim().isNotEmpty)
@@ -268,7 +272,8 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                                 icon: const Icon(Icons.assignment),
                                 label: const Text('Lihat Jurnal'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0F172A),
+                                  backgroundColor: const Color(0xFF2563EB),
+                                  foregroundColor: Colors.white,
                                 ),
                               ),
                             ),
@@ -278,13 +283,13 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                           width: double.infinity,
                           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFEE2E2),
+                            color: isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.3) : const Color(0xFFFEE2E2),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFFCA5A5), width: 1.5),
+                            border: Border.all(color: isDark ? const Color(0xFF991B1B) : const Color(0xFFFCA5A5), width: 1.5),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.info_outline, color: Color(0xFFDC2626)),
+                              const Icon(Icons.info_outline, color: Color(0xFFEF4444)),
                               SizedBox(width: 12.w),
                               Expanded(
                                 child: Text(
@@ -292,7 +297,7 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                                   style: TextStyle(
                                     fontSize: 13.sp,
                                     fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF991B1B),
+                                    color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B),
                                   ),
                                 ),
                               ),
@@ -310,7 +315,8 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                                 icon: const Icon(Icons.assignment),
                                 label: const Text('Lihat Jurnal'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0F172A),
+                                  backgroundColor: const Color(0xFF2563EB),
+                                  foregroundColor: Colors.white,
                                 ),
                               ),
                             ),
@@ -333,7 +339,7 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                             ],
                           ],
                         )
-                      : _buildFutureDateBanner(schedule.date),
+                      : _buildFutureDateBanner(context, schedule.date),
             ),
           ],
         ),
@@ -351,18 +357,19 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
     return dateOnly.isAfter(todayOnly);
   }
 
-  Widget _buildFutureDateBanner(DateTime date) {
+  Widget _buildFutureDateBanner(BuildContext context, DateTime date) {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
     final year = date.year;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFDE7),
+        color: isDark ? const Color(0xFF78350F).withValues(alpha: 0.3) : const Color(0xFFFFFDE7),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF59E0B), width: 1.5),
+        border: Border.all(color: isDark ? const Color(0xFFB45309) : const Color(0xFFF59E0B), width: 1.5),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,7 +386,7 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF92400E),
+                    color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
                   ),
                 ),
                 SizedBox(height: 4.h),
@@ -387,7 +394,7 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                   'Tidak bisa mengisi jurnal sekarang, tunggu sampai hari tersebut tiba ($day/$month/$year).',
                   style: TextStyle(
                     fontSize: 12.sp,
-                    color: const Color(0xFF78350F),
+                    color: isDark ? const Color(0xFFFCD34D) : const Color(0xFF78350F),
                     height: 1.4,
                   ),
                 ),
@@ -399,7 +406,7 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
+  Widget _buildDetailRow(BuildContext context, IconData icon, String label, String value) {
     return Padding(
       padding: EdgeInsets.only(bottom: 20.h),
       child: Row(
@@ -415,7 +422,7 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                   label,
                   style: TextStyle(
                     fontSize: 12.sp,
-                    color: Colors.grey[500],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -424,7 +431,7 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                   value,
                   style: TextStyle(
                     fontSize: 14.sp,
-                    color: const Color(0xFF0F172A),
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

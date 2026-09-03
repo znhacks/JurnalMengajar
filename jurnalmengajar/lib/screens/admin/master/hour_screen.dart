@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/master_data_provider.dart';
 import '../../../models/hour_model.dart';
 import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../providers/auth_provider.dart';
 
 class MasterHourScreen extends StatefulWidget {
@@ -108,11 +110,14 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+
           Future<void> selectTime(bool isStart) async {
             final parts = (isStart ? startTimeStr : endTimeStr).split(':');
             final initialTime = TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
@@ -148,16 +153,27 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                 children: [
                   Text(
                     hour == null ? 'Tambah Jam Pelajaran Baru' : 'Edit Jam Pelajaran',
-                    style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 16.h),
                   TextField(
                     controller: hourNumberController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
+                    style: GoogleFonts.hankenGrotesk(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    decoration: InputDecoration(
                       labelText: 'Jam Ke-',
                       hintText: 'Contoh: 1, 2, 3',
+                      labelStyle: GoogleFonts.hankenGrotesk(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                   SizedBox(height: 16.h),
@@ -168,11 +184,28 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () => selectTime(true),
-                          icon: const Icon(Icons.access_time),
-                          label: Text('Mulai: $startTimeStr'),
+                          icon: Icon(
+                            Icons.access_time_rounded,
+                            size: 18.sp,
+                            color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
+                          ),
+                          label: Text(
+                            'Mulai: $startTimeStr',
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Colors.grey[300]!),
-                            foregroundColor: const Color(0xFF0F172A),
+                            side: BorderSide(
+                              color: isDark ? const Color(0xFF475569) : AppTheme.outlineVariant,
+                              width: 1.2,
+                            ),
+                            padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 8.w),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
@@ -180,11 +213,28 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () => selectTime(false),
-                          icon: const Icon(Icons.access_time),
-                          label: Text('Selesai: $endTimeStr'),
+                          icon: Icon(
+                            Icons.access_time_rounded,
+                            size: 18.sp,
+                            color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
+                          ),
+                          label: Text(
+                            'Selesai: $endTimeStr',
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Colors.grey[300]!),
-                            foregroundColor: const Color(0xFF0F172A),
+                            side: BorderSide(
+                              color: isDark ? const Color(0xFF475569) : AppTheme.outlineVariant,
+                              width: 1.2,
+                            ),
+                            padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 8.w),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
@@ -377,12 +427,16 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                                 Row(
                                    mainAxisSize: MainAxisSize.min,
                                    children: [
-                                     IconButton(
-                                       icon: const Icon(Icons.edit_outlined, color: Colors.indigo, size: 18),
-                                       onPressed: () => _showFormDialog(hour: hour),
-                                       constraints: const BoxConstraints(),
-                                       padding: EdgeInsets.all(8.w),
-                                     ),
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.edit_outlined,
+                                          color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB),
+                                          size: 18,
+                                        ),
+                                        onPressed: () => _showFormDialog(hour: hour),
+                                        constraints: const BoxConstraints(),
+                                        padding: EdgeInsets.all(8.w),
+                                      ),
                                      IconButton(
                                        icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
                                        onPressed: () async {

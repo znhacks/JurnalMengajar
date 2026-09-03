@@ -15,7 +15,6 @@ import '../../models/subject_model.dart';
 import '../../models/student_model.dart';
 import '../../models/hour_model.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/utils/helper.dart';
 import '../../services/nobox_wa_service.dart';
 
@@ -670,32 +669,41 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                   SizedBox(height: 16.h),
                 ],
                 // Info Summary Card (Read-only)
-                Card(
-                  color: const Color(0xFFF1F5F9),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.all(16.w),
-                    child: Column(
-                      children: [
-                        _buildSummaryRow('Kelas', cls.name),
-                        const Divider(height: 16),
-                        _buildSummaryRow('Mata Pelajaran', subject.name),
-                        const Divider(height: 16),
-                        _buildSummaryRow(
-                          'Tanggal',
-                          AppHelper.formatDate(_existingJournal?.date ?? (widget.dateStr != null ? DateTime.parse(widget.dateStr!) : schedule.date)),
+                Builder(
+                  builder: (context) {
+                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    return Card(
+                      color: isDark
+                          ? Theme.of(context).colorScheme.surfaceContainerHighest
+                          : const Color(0xFFF1F5F9),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(16.w),
+                        child: Column(
+                          children: [
+                            _buildSummaryRow(context, 'Kelas', cls.name),
+                            const Divider(height: 16),
+                            _buildSummaryRow(context, 'Mata Pelajaran', subject.name),
+                            const Divider(height: 16),
+                            _buildSummaryRow(
+                              context,
+                              'Tanggal',
+                              AppHelper.formatDate(_existingJournal?.date ?? (widget.dateStr != null ? DateTime.parse(widget.dateStr!) : (schedule?.date ?? DateTime.now()))),
+                            ),
+                            const Divider(height: 16),
+                            _buildSummaryRow(
+                              context,
+                              'Jam Pelajaran',
+                              'Jam Ke-${schedule?.teachingHour ?? 1} (${hr.startTime} - ${hr.endTime})',
+                            ),
+                          ],
                         ),
-                        const Divider(height: 16),
-                        _buildSummaryRow(
-                          'Jam Pelajaran',
-                          'Jam Ke-${schedule.teachingHour} (${hr.startTime} - ${hr.endTime})',
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  }
                 ),
                 SizedBox(height: 24.h),
 
@@ -705,7 +713,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF0F172A),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 SizedBox(height: 8.h),
@@ -721,7 +729,6 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                   decoration: const InputDecoration(
                     hintText:
                         'Jelaskan secara ringkas materi yang diajarkan hari ini...',
-                    fillColor: Colors.white,
                   ),
                 ),
                 SizedBox(height: 20.h),
@@ -732,7 +739,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF0F172A),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 SizedBox(height: 8.h),
@@ -745,17 +752,23 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                     final totalIzin = masterProvider.students.where((s) => _studentAttendance[s.id] == 'I').length;
                     final totalAlfa = masterProvider.students.where((s) => _studentAttendance[s.id] == 'A').length;
 
+                    final isDark = Theme.of(context).brightness == Brightness.dark;
+
                     return Container(
                       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
+                        color: isDark
+                            ? Theme.of(context).colorScheme.surfaceContainerHighest
+                            : const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(8.r),
-                        border: Border.all(color: AppTheme.outlineVariant),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildSummaryItem('Total', '$totalStudents', Colors.black87),
+                          _buildSummaryItem('Total', '$totalStudents', Theme.of(context).colorScheme.onSurface),
                           _buildSummaryItem('Hadir', '$totalHadir', const Color(0xFF10B981)),
                           _buildSummaryItem('Sakit', '$totalSakit', const Color(0xFF2563EB)),
                           _buildSummaryItem('Izin', '$totalIzin', const Color(0xFFF59E0B)),
@@ -767,97 +780,108 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 ),
                 SizedBox(height: 12.h),
                 // Students List
-                Container(
-                  constraints: BoxConstraints(maxHeight: 280.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: masterProvider.students.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16.w),
-                            child: Text(
-                              'Tidak ada siswa terdaftar di kelas ini',
-                              style: TextStyle(color: Colors.grey[500], fontSize: 13.sp),
+                Builder(builder: (context) {
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  return Container(
+                    constraints: BoxConstraints(maxHeight: 280.h),
+                    decoration: BoxDecoration(
+                      color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    child: masterProvider.students.isEmpty
+                        ? Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.w),
+                              child: Text(
+                                'Tidak ada siswa terdaftar di kelas ini',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  fontSize: 13.sp,
+                                ),
+                              ),
                             ),
-                          ),
-                        )
-                      : ListView.separated(
-                          shrinkWrap: true,
-                          padding: EdgeInsets.all(10.w),
-                          itemCount: masterProvider.students.length,
-                          separatorBuilder: (context, _) => const Divider(height: 8, color: Color(0xFFF1F5F9)),
-                          itemBuilder: (context, index) {
-                            final student = masterProvider.students[index];
-                            final status = _studentAttendance[student.id] ?? 'H';
+                          )
+                        : ListView.separated(
+                            shrinkWrap: true,
+                            padding: EdgeInsets.all(10.w),
+                            itemCount: masterProvider.students.length,
+                            separatorBuilder: (context, _) => Divider(
+                              height: 8,
+                              color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                            ),
+                            itemBuilder: (context, index) {
+                              final student = masterProvider.students[index];
+                              final status = _studentAttendance[student.id] ?? 'H';
 
-                            return Padding(
-                              padding: EdgeInsets.symmetric(vertical: 4.h),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          student.name,
-                                          style: GoogleFonts.hankenGrotesk(
-                                            fontSize: 12.5.sp,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppTheme.onBackground,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        if (student.nis != null && student.nis!.isNotEmpty)
+                              return Padding(
+                                padding: EdgeInsets.symmetric(vertical: 4.h),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
                                           Text(
-                                            'NIS: ${student.nis}',
+                                            student.name,
                                             style: GoogleFonts.hankenGrotesk(
-                                              fontSize: 10.sp,
-                                              color: AppTheme.outline,
+                                              fontSize: 12.5.sp,
+                                              fontWeight: FontWeight.w700,
+                                              color: Theme.of(context).colorScheme.onSurface,
                                             ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
+                                          if (student.nis != null && student.nis!.isNotEmpty)
+                                            Text(
+                                              'NIS: ${student.nis}',
+                                              style: GoogleFonts.hankenGrotesk(
+                                                fontSize: 10.sp,
+                                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(width: 8.w),
+                                    // H, S, I, A Status Toggle Buttons
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        _buildStatusToggle(context, 'H', status == 'H', const Color(0xFF10B981), () {
+                                          setState(() {
+                                            _studentAttendance[student.id] = 'H';
+                                          });
+                                        }),
+                                        SizedBox(width: 4.w),
+                                        _buildStatusToggle(context, 'S', status == 'S', const Color(0xFF2563EB), () {
+                                          setState(() {
+                                            _studentAttendance[student.id] = 'S';
+                                          });
+                                        }),
+                                        SizedBox(width: 4.w),
+                                        _buildStatusToggle(context, 'I', status == 'I', const Color(0xFFF59E0B), () {
+                                          setState(() {
+                                            _studentAttendance[student.id] = 'I';
+                                          });
+                                        }),
+                                        SizedBox(width: 4.w),
+                                        _buildStatusToggle(context, 'A', status == 'A', Colors.red, () {
+                                          setState(() {
+                                            _studentAttendance[student.id] = 'A';
+                                          });
+                                        }),
                                       ],
                                     ),
-                                  ),
-                                  SizedBox(width: 8.w),
-                                  // H, S, I, A Status Toggle Buttons
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      _buildStatusToggle('H', status == 'H', const Color(0xFF10B981), () {
-                                        setState(() {
-                                          _studentAttendance[student.id] = 'H';
-                                        });
-                                      }),
-                                      SizedBox(width: 4.w),
-                                      _buildStatusToggle('S', status == 'S', const Color(0xFF2563EB), () {
-                                        setState(() {
-                                          _studentAttendance[student.id] = 'S';
-                                        });
-                                      }),
-                                      SizedBox(width: 4.w),
-                                      _buildStatusToggle('I', status == 'I', const Color(0xFFF59E0B), () {
-                                        setState(() {
-                                          _studentAttendance[student.id] = 'I';
-                                        });
-                                      }),
-                                      SizedBox(width: 4.w),
-                                      _buildStatusToggle('A', status == 'A', Colors.red, () {
-                                        setState(() {
-                                          _studentAttendance[student.id] = 'A';
-                                        });
-                                      }),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                  );
+                }),
                 SizedBox(height: 24.h),
 
                 // Catatan Mengajar
@@ -866,7 +890,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF0F172A),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 SizedBox(height: 8.h),
@@ -876,7 +900,6 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                   decoration: const InputDecoration(
                     hintText:
                         'Catatan tambahan seperti siswa yang tidak kondusif, kendala sarana, dll (Opsional)...',
-                    fillColor: Colors.white,
                   ),
                 ),
                 SizedBox(height: 20.h),
@@ -889,7 +912,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF0F172A),
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     Text(
@@ -905,12 +928,17 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 SizedBox(height: 4.h),
                 Text(
                   'Tambahkan foto bukti kegiatan mengajar (1 - 3 foto)',
-                  style: TextStyle(fontSize: 11.sp, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 SizedBox(height: 10.h),
                 Builder(builder: (context) {
                   final totalSlots = _existingImageUrls.length + _imageBytesList.length;
                   final canAdd = totalSlots < _maxImages;
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
+
                   return Wrap(
                     spacing: 10.w,
                     runSpacing: 10.h,
@@ -946,10 +974,14 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                             width: 80.w,
                             height: 80.w,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
+                              color: isDark
+                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                  : const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: const Color(0xFFCBD5E1),
+                                color: isDark
+                                    ? const Color(0xFF334155)
+                                    : const Color(0xFFCBD5E1),
                                 style: BorderStyle.solid,
                               ),
                             ),
@@ -1003,20 +1035,23 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value) {
+  Widget _buildSummaryRow(BuildContext context, String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+          style: TextStyle(
+            fontSize: 12.sp,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         Text(
           value,
           style: TextStyle(
             fontSize: 12.sp,
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF0F172A),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],
@@ -1048,11 +1083,14 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
   }
 
   Widget _buildStatusToggle(
+    BuildContext context,
     String label,
     bool isSelected,
     Color activeColor,
     VoidCallback onTap,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
@@ -1060,10 +1098,14 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         width: 28.w,
         height: 28.w,
         decoration: BoxDecoration(
-          color: isSelected ? activeColor : Colors.white,
+          color: isSelected
+              ? activeColor
+              : (isDark ? Theme.of(context).colorScheme.surface : Colors.white),
           shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected ? activeColor : const Color(0xFFE2E8F0),
+            color: isSelected
+                ? activeColor
+                : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
             width: isSelected ? 1.5 : 1.0,
           ),
         ),
@@ -1073,7 +1115,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           style: GoogleFonts.hankenGrotesk(
             fontSize: 11.sp,
             fontWeight: FontWeight.w800,
-            color: isSelected ? Colors.white : const Color(0xFF64748B),
+            color: isSelected
+                ? Colors.white
+                : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
           ),
         ),
       ),

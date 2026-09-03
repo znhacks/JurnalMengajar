@@ -83,11 +83,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+
           Future<void> selectStartDate() async {
             final DateTime? picked = await showDatePicker(
               context: context,
@@ -116,7 +119,11 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                 children: [
                   Text(
                     groupedSchedule == null ? 'Tambah Jadwal Baru' : 'Edit Jadwal',
-                    style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 16.h),
@@ -127,15 +134,27 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                     children: [
                       Text(
                         'Periode',
-                        style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A)),
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                       SizedBox(height: 6.h),
                       DropdownButtonFormField<String>(
                         initialValue: selectedPeriodId,
-                        hint: const Text('Pilih Periode'),
+                        hint: Text(
+                          'Pilih Periode',
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        ),
+                        dropdownColor: Theme.of(context).colorScheme.surface,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                         decoration: InputDecoration(
                           contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
-                          fillColor: const Color(0xFFF1F5F9),
+                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                           filled: true,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10.r),
@@ -143,7 +162,13 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           ),
                         ),
                         items: masterProvider.periods.map((p) {
-                          return DropdownMenuItem<String>(value: p.id, child: Text(p.name));
+                          return DropdownMenuItem<String>(
+                            value: p.id,
+                            child: Text(
+                              p.name,
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                            ),
+                          );
                         }).toList(),
                         onChanged: (val) => setDialogState(() => selectedPeriodId = val),
                       ),
@@ -160,7 +185,11 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           children: [
                             Text(
                               'Tanggal',
-                              style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A)),
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                             ),
                             SizedBox(height: 6.h),
                             InkWell(
@@ -168,7 +197,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                               child: Container(
                                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F5F9),
+                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(10.r),
                                 ),
                                 child: Row(
@@ -178,14 +207,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                       AppHelper.formatDateShort(startDate),
                                       style: TextStyle(
                                         fontSize: 13.sp,
-                                        color: const Color(0xFF0F172A),
+                                        color: Theme.of(context).colorScheme.onSurface,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
                                     Icon(
                                       Icons.calendar_month_outlined,
                                       size: 16.sp,
-                                      color: Colors.grey[500],
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   ],
                                 ),
@@ -210,8 +239,15 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                             SizedBox(height: 6.h),
                             DropdownButtonFormField<String>(
                               initialValue: selectedClassId,
-                              hint: const Text('Pilih Kelas'),
+                              hint: Text(
+                                'Pilih Kelas',
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                              ),
                               dropdownColor: Theme.of(context).colorScheme.surface,
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                               decoration: InputDecoration(
                                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
                                 fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -222,7 +258,13 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                 ),
                               ),
                               items: masterProvider.classes.map((c) {
-                                return DropdownMenuItem<String>(value: c.id, child: Text(c.name));
+                                return DropdownMenuItem<String>(
+                                  value: c.id,
+                                  child: Text(
+                                    c.name,
+                                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                                  ),
+                                );
                               }).toList(),
                               onChanged: (val) => setDialogState(() => selectedClassId = val),
                             ),
@@ -257,7 +299,6 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           runSpacing: 8.h,
                           children: masterProvider.hours.map((h) {
                             final isSelected = selectedHours.contains(h.teachingHour);
-                            final isDark = Theme.of(context).brightness == Brightness.dark;
                             return InkWell(
                               onTap: () {
                                 setDialogState(() {
@@ -321,8 +362,15 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                       SizedBox(height: 6.h),
                       DropdownButtonFormField<String>(
                         initialValue: selectedSubjectId,
-                        hint: const Text('Pilih Pelajaran'),
+                        hint: Text(
+                          'Pilih Pelajaran',
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        ),
                         dropdownColor: Theme.of(context).colorScheme.surface,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                         decoration: InputDecoration(
                           contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
                           fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -333,7 +381,13 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           ),
                         ),
                         items: masterProvider.subjects.map((s) {
-                          return DropdownMenuItem<String>(value: s.id, child: Text(s.name));
+                          return DropdownMenuItem<String>(
+                            value: s.id,
+                            child: Text(
+                              s.name,
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                            ),
+                          );
                         }).toList(),
                         onChanged: (val) => setDialogState(() => selectedSubjectId = val),
                       ),
@@ -356,8 +410,15 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                       SizedBox(height: 6.h),
                       DropdownButtonFormField<String>(
                         initialValue: selectedTeacherId,
-                        hint: const Text('Pilih Guru'),
+                        hint: Text(
+                          'Pilih Guru',
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        ),
                         dropdownColor: Theme.of(context).colorScheme.surface,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                         decoration: InputDecoration(
                           contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
                           fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -368,7 +429,13 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           ),
                         ),
                         items: masterProvider.teachers.map((t) {
-                          return DropdownMenuItem<String>(value: t.id, child: Text(t.name));
+                          return DropdownMenuItem<String>(
+                            value: t.id,
+                            child: Text(
+                              t.name,
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                            ),
+                          );
                         }).toList(),
                         onChanged: (val) => setDialogState(() => selectedTeacherId = val),
                       ),
@@ -379,11 +446,23 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                   // Catatan Jadwal (TextField)
                   TextField(
                     controller: noteController,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Catatan Jadwal',
+                      labelStyle: TextStyle(
+                        fontSize: 13.sp,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       hintText: 'Opsional',
+                      hintStyle: TextStyle(
+                        fontSize: 13.sp,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      ),
                       contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
-                      fillColor: const Color(0xFFF1F5F9),
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       filled: true,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10.r),
@@ -413,7 +492,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                         style: TextStyle(
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0F172A),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ],
@@ -424,10 +503,10 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
+                      color: isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.25) : const Color(0xFFEFF6FF),
                       borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(
-                        color: const Color(0xFFDBEAFE),
+                        color: isDark ? const Color(0xFF1E40AF).withValues(alpha: 0.5) : const Color(0xFFDBEAFE),
                         width: 1.5,
                       ),
                     ),
@@ -435,13 +514,13 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                       children: [
                         Container(
                           padding: EdgeInsets.all(8.w),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFDBEAFE),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.5) : const Color(0xFFDBEAFE),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.sync_alt,
-                            color: Color(0xFF2563EB),
+                            color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB),
                             size: 20,
                           ),
                         ),
@@ -455,7 +534,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                 style: TextStyle(
                                   fontSize: 13.sp,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF1E40AF),
+                                  color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E40AF),
                                 ),
                               ),
                               SizedBox(height: 2.h),
@@ -463,7 +542,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                 'Otomatis membuat jadwal mingguan untuk 6 bulan ke depan (1 Semester)',
                                 style: TextStyle(
                                   fontSize: 10.sp,
-                                  color: const Color(0xFF64748B),
+                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                 ),
                               ),
                             ],

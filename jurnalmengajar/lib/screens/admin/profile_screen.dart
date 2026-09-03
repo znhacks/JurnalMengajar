@@ -46,7 +46,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
@@ -68,6 +68,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
           Future<void> showImageSourceSheet() async {
             await showModalBottomSheet<void>(
               context: context,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
               ),
@@ -80,14 +81,18 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                       width: 40.w,
                       height: 4.h,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF475569) : Colors.grey[300],
                         borderRadius: BorderRadius.circular(2.r),
                       ),
                     ),
                     SizedBox(height: 12.h),
                     Text(
                       'Pilih Sumber Foto',
-                      style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                     SizedBox(height: 8.h),
                     ListTile(
@@ -95,7 +100,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         backgroundColor: Color(0xFFE0F2F1),
                         child: Icon(Icons.photo_library_outlined, color: Color(0xFF2563EB)),
                       ),
-                      title: const Text('Galeri Foto'),
+                      title: Text(
+                        'Galeri Foto',
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                      ),
                       onTap: () {
                         Navigator.pop(sheetCtx);
                         pickDialogImage(source: ImageSource.gallery);
@@ -106,7 +114,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         backgroundColor: Color(0xFFE0F2F1),
                         child: Icon(Icons.camera_alt_outlined, color: Color(0xFF2563EB)),
                       ),
-                      title: const Text('Kamera'),
+                      title: Text(
+                        'Kamera',
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                      ),
                       onTap: () {
                         Navigator.pop(sheetCtx);
                         pickDialogImage(source: ImageSource.camera);
@@ -136,7 +147,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                       width: 40.w,
                       height: 4.h,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF475569) : Colors.grey[300],
                         borderRadius: BorderRadius.circular(2.r),
                       ),
                     ),
@@ -147,7 +158,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF0F172A),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     textAlign: TextAlign.center,
                   ),

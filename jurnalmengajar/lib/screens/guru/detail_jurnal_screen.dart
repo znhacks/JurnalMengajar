@@ -12,6 +12,7 @@ import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
 import '../../models/teacher_model.dart';
 import '../../core/utils/helper.dart';
+import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 
 class DetailJurnalScreen extends StatelessWidget {
@@ -25,6 +26,7 @@ class DetailJurnalScreen extends StatelessWidget {
     final authProvider = context.watch<AuthProvider>();
     final currentUser = authProvider.currentUser;
     final isAdmin = currentUser?.role == 'admin';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     late JournalModel journal;
     try {
@@ -57,6 +59,7 @@ class DetailJurnalScreen extends StatelessWidget {
     );
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Detail Jurnal'),
       ),
@@ -70,7 +73,7 @@ class DetailJurnalScreen extends StatelessWidget {
               Card(
                 margin: EdgeInsets.zero,
                 elevation: 0,
-                color: Colors.white,
+                color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                 child: Padding(
                   padding: EdgeInsets.all(16.w),
                   child: Row(
@@ -82,14 +85,22 @@ class DetailJurnalScreen extends StatelessWidget {
                           children: [
                             Text(
                               cls.name,
-                              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                              style: TextStyle(
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             SizedBox(height: 4.h),
                             Text(
                               subject.name,
-                              style: TextStyle(fontSize: 14.sp, color: Colors.grey[600], fontWeight: FontWeight.w500),
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w500,
+                              ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -100,7 +111,7 @@ class DetailJurnalScreen extends StatelessWidget {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                         decoration: BoxDecoration(
-                          color: AppHelper.getStatusColor(journal.status).withValues(alpha: 0.1),
+                          color: AppHelper.getStatusColor(journal.status).withValues(alpha: isDark ? 0.2 : 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -121,15 +132,16 @@ class DetailJurnalScreen extends StatelessWidget {
               // Info Details
               Card(
                 margin: EdgeInsets.zero,
+                color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                 child: Padding(
                   padding: EdgeInsets.all(16.w),
                   child: Column(
                     children: [
-                      _buildInfoRow(Icons.person_outline, 'Pengajar', teacher.name),
+                      _buildInfoRow(context, Icons.person_outline, 'Pengajar', teacher.name),
                       const Divider(height: 24),
-                      _buildInfoRow(Icons.calendar_today_outlined, 'Tanggal', AppHelper.formatDate(journal.date)),
+                      _buildInfoRow(context, Icons.calendar_today_outlined, 'Tanggal', AppHelper.formatDate(journal.date)),
                       const Divider(height: 24),
-                      _buildInfoRow(Icons.access_time_outlined, 'Jam Ke', '${journal.teachingHour}'),
+                      _buildInfoRow(context, Icons.access_time_outlined, 'Jam Ke', '${journal.teachingHour}'),
                     ],
                   ),
                 ),
@@ -139,6 +151,7 @@ class DetailJurnalScreen extends StatelessWidget {
               // Materi Pembelajaran
               Card(
                 margin: EdgeInsets.zero,
+                color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                 child: Padding(
                   padding: EdgeInsets.all(16.w),
                   child: Column(
@@ -146,12 +159,20 @@ class DetailJurnalScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Materi Pembelajaran',
-                        style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                       SizedBox(height: 8.h),
                       Text(
                         journal.material,
-                        style: TextStyle(fontSize: 14.sp, color: Colors.grey[750], height: 1.5),
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85),
+                          height: 1.5,
+                        ),
                       ),
                     ],
                   ),
@@ -162,6 +183,7 @@ class DetailJurnalScreen extends StatelessWidget {
               // Absensi Siswa
               Card(
                 margin: EdgeInsets.zero,
+                color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                 child: Padding(
                   padding: EdgeInsets.all(16.w),
                   child: Column(
@@ -169,15 +191,19 @@ class DetailJurnalScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Kehadiran Siswa',
-                        style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                       SizedBox(height: 16.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildAbsentStats('Sakit', journal.sickCount, Colors.amber),
-                          _buildAbsentStats('Izin', journal.permissionCount, Colors.blue),
-                          _buildAbsentStats('Alpha', journal.alphaCount, Colors.red),
+                          _buildAbsentStats(context, 'Sakit', journal.sickCount, Colors.amber),
+                          _buildAbsentStats(context, 'Izin', journal.permissionCount, Colors.blue),
+                          _buildAbsentStats(context, 'Alpha', journal.alphaCount, Colors.red),
                         ],
                       ),
                     ],
@@ -189,6 +215,7 @@ class DetailJurnalScreen extends StatelessWidget {
               // Catatan
               Card(
                 margin: EdgeInsets.zero,
+                color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                 child: Padding(
                   padding: EdgeInsets.all(16.w),
                   child: Column(
@@ -196,12 +223,20 @@ class DetailJurnalScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Catatan Guru',
-                        style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                       SizedBox(height: 8.h),
                       Text(
                         journal.note ?? 'Tidak ada catatan.',
-                        style: TextStyle(fontSize: 14.sp, color: Colors.grey[700], height: 1.4),
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.4,
+                        ),
                       ),
                     ],
                   ),
@@ -212,6 +247,7 @@ class DetailJurnalScreen extends StatelessWidget {
               // Lampiran
               Card(
                 margin: EdgeInsets.zero,
+                color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                 child: Padding(
                   padding: EdgeInsets.all(16.w),
                   child: Column(
@@ -219,7 +255,11 @@ class DetailJurnalScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Lampiran Dokumen',
-                        style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                       SizedBox(height: 12.h),
                       _buildAttachmentPreview(context, journal),
@@ -231,10 +271,10 @@ class DetailJurnalScreen extends StatelessWidget {
                 SizedBox(height: 16.h),
                 Card(
                   margin: EdgeInsets.zero,
-                  color: Colors.red.withValues(alpha: 0.05),
+                  color: Colors.red.withValues(alpha: isDark ? 0.15 : 0.05),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
-                    side: const BorderSide(color: Colors.red, width: 1.2),
+                    side: BorderSide(color: isDark ? const Color(0xFFEF4444) : Colors.red, width: 1.2),
                   ),
                   child: Padding(
                     padding: EdgeInsets.all(16.w),
@@ -250,7 +290,7 @@ class DetailJurnalScreen extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 13.sp,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.red[800],
+                                color: isDark ? const Color(0xFFFCA5A5) : Colors.red[800],
                               ),
                             ),
                           ],
@@ -260,7 +300,7 @@ class DetailJurnalScreen extends StatelessWidget {
                           journal.rejectionNote!,
                           style: TextStyle(
                             fontSize: 13.sp,
-                            color: Colors.red[900],
+                            color: isDark ? const Color(0xFFFECACA) : Colors.red[900],
                             height: 1.4,
                             fontWeight: FontWeight.w600,
                           ),
@@ -384,9 +424,9 @@ class DetailJurnalScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
+                Text(
                   'Masukkan alasan penolakan jurnal ini. Catatan wajib diisi agar guru dapat merevisi dengan jelas.',
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                  style: TextStyle(fontSize: 13, color: Theme.of(ctx).colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -435,20 +475,28 @@ class DetailJurnalScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(BuildContext context, IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, size: 20.w, color: const Color(0xFF2563EB)),
+        Icon(icon, size: 20.w, color: AppTheme.primaryColor),
         SizedBox(width: 12.w),
         Text(
           label,
-          style: TextStyle(fontSize: 13.sp, color: Colors.grey[500], fontWeight: FontWeight.w500),
+          style: TextStyle(
+            fontSize: 13.sp,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         SizedBox(width: 16.w),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
             textAlign: TextAlign.right,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -458,18 +506,23 @@ class DetailJurnalScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAbsentStats(String title, int count, Color color) {
+  Widget _buildAbsentStats(BuildContext context, String title, int count, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         Text(
           title,
-          style: TextStyle(fontSize: 12.sp, color: Colors.grey[500], fontWeight: FontWeight.w500),
+          style: TextStyle(
+            fontSize: 12.sp,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         SizedBox(height: 4.h),
         Container(
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
+            color: color.withValues(alpha: isDark ? 0.2 : 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
@@ -488,7 +541,7 @@ class DetailJurnalScreen extends StatelessWidget {
       if (attachment == null) {
         return Text(
           'Tidak ada lampiran diunggah.',
-          style: TextStyle(fontSize: 13.sp, color: Colors.grey[500]),
+          style: TextStyle(fontSize: 13.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
         );
       }
       return _buildSingleAttachment(context, attachment);
@@ -498,7 +551,7 @@ class DetailJurnalScreen extends StatelessWidget {
     if (urls.isEmpty) {
       return Text(
         'Tidak ada lampiran diunggah.',
-        style: TextStyle(fontSize: 13.sp, color: Colors.grey[500]),
+        style: TextStyle(fontSize: 13.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
       );
     }
 
@@ -538,6 +591,8 @@ class DetailJurnalScreen extends StatelessWidget {
   }
 
   Widget _buildSingleAttachment(BuildContext context, JournalAttachmentModel attachment) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (attachment.fileType == 'image') {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -546,7 +601,9 @@ class DetailJurnalScreen extends StatelessWidget {
             height: 200.h,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              ),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
@@ -573,11 +630,11 @@ class DetailJurnalScreen extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.image_outlined, size: 40, color: Colors.grey[400]),
+                          Icon(Icons.image_outlined, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant),
                           const SizedBox(height: 8),
                           Text(
                             attachment.fileName,
-                            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -588,7 +645,7 @@ class DetailJurnalScreen extends StatelessWidget {
           SizedBox(height: 8.h),
           Text(
             attachment.fileName,
-            style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+            style: TextStyle(fontSize: 12.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
         ],
@@ -597,9 +654,9 @@ class DetailJurnalScreen extends StatelessWidget {
       return Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: Colors.red.withValues(alpha: 0.05),
+          color: Colors.red.withValues(alpha: isDark ? 0.15 : 0.05),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+          border: Border.all(color: Colors.red.withValues(alpha: isDark ? 0.35 : 0.2)),
         ),
         child: Row(
           children: [
@@ -611,12 +668,19 @@ class DetailJurnalScreen extends StatelessWidget {
                 children: [
                   Text(
                     attachment.fileName,
-                    style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 2.h),
-                  Text('Tipe: PDF Dokumen', style: TextStyle(fontSize: 11.sp, color: Colors.grey[600])),
+                  Text(
+                    'Tipe: PDF Dokumen',
+                    style: TextStyle(fontSize: 11.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
                 ],
               ),
             ),

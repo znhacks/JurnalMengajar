@@ -116,6 +116,7 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -125,6 +126,8 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
         ),
         child: StatefulBuilder(
           builder: (context, setDialogState) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+
             return Padding(
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -140,7 +143,11 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                     children: [
                       Text(
                         period == null ? 'Tambah Periode Baru' : 'Edit Periode',
-                        style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       SizedBox(height: 16.h),
@@ -170,9 +177,11 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                         Container(
                           padding: EdgeInsets.all(12.w),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFFBEB),
+                            color: isDark ? const Color(0xFF78350F).withValues(alpha: 0.3) : const Color(0xFFFFFBEB),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFFDE68A)),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF92400E) : const Color(0xFFFDE68A),
+                            ),
                           ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,7 +201,7 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                                       style: TextStyle(
                                         fontSize: 13.sp,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF92400E),
+                                        color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
                                       ),
                                     ),
                                     SizedBox(height: 2.h),
@@ -200,7 +209,7 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                                       'Mengaktifkan periode ini akan menonaktifkan periode "$existingActivePeriodName" yang saat ini sedang aktif.',
                                       style: TextStyle(
                                         fontSize: 12.sp,
-                                        color: const Color(0xFFB45309),
+                                        color: isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309),
                                       ),
                                     ),
                                   ],

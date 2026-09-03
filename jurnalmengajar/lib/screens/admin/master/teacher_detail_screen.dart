@@ -88,9 +88,12 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
     List<ScheduleModel> schedules,
   ) {
     final hasSchedule = _hasTeacherScheduleOnDay(schedules, day);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     Color bgColor = Colors.transparent;
-    Color textColor = isOutside ? AppTheme.outline : AppTheme.onBackground;
+    Color textColor = isOutside
+        ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
+        : Theme.of(context).colorScheme.onSurface;
     FontWeight fontWeight = FontWeight.w500;
 
     if (isSelected) {
@@ -98,12 +101,14 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
       textColor = Colors.white;
       fontWeight = FontWeight.w700;
     } else if (hasSchedule) {
-      bgColor = const Color(0xFFFFEB3B).withValues(alpha: 0.35);
-      textColor = isOutside ? AppTheme.outline : AppTheme.onBackground;
+      bgColor = const Color(0xFFFFEB3B).withValues(alpha: isDark ? 0.2 : 0.35);
+      textColor = isOutside
+          ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
+          : (isDark ? const Color(0xFFFDE047) : const Color(0xFFB45309));
       fontWeight = FontWeight.w700;
     } else if (isToday) {
-      bgColor = AppTheme.primaryColor.withValues(alpha: 0.15);
-      textColor = AppTheme.primaryColor;
+      bgColor = AppTheme.primaryColor.withValues(alpha: isDark ? 0.25 : 0.15);
+      textColor = isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor;
       fontWeight = FontWeight.w700;
     }
 
@@ -133,6 +138,7 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
     final journalProvider = context.watch<JournalProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final teacher = masterProvider.teachers.firstWhere(
       (t) => t.id == widget.teacherId,
@@ -188,18 +194,14 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                   color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFF334155)
-                        : AppTheme.outlineVariant,
+                    color: isDark ? const Color(0xFF334155) : AppTheme.outlineVariant,
                   ),
                 ),
                 child: Column(
                   children: [
                     CircleAvatar(
                       radius: 36.r,
-                      backgroundColor: Theme.of(context).brightness == Brightness.dark
-                          ? const Color(0xFF334155)
-                          : const Color(0xFFF1F5F9),
+                      backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
                       backgroundImage: teacher.photoUrl != null && teacher.photoUrl!.startsWith('http')
                           ? NetworkImage(teacher.photoUrl!)
                           : (teacher.photoUrl != null ? FileImage(File(teacher.photoUrl!)) : null) as ImageProvider?,
@@ -228,9 +230,7 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                     ),
                     Divider(
                       height: 16,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? const Color(0xFF334155)
-                          : const Color(0xFFE2E8F0),
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                     ),
                     // Contact Info Details
                     _buildContactRow(
@@ -261,9 +261,7 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                   color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFF334155)
-                        : AppTheme.outlineVariant,
+                    color: isDark ? const Color(0xFF334155) : AppTheme.outlineVariant,
                   ),
                 ),
                 padding: EdgeInsets.symmetric(vertical: 8.h),
@@ -273,20 +271,28 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                     formatButtonVisible: false,
                     leftChevronIcon: Icon(
                       Icons.chevron_left,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? const Color(0xFF93C5FD)
-                          : AppTheme.primaryColor,
+                      color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
                     ),
                     rightChevronIcon: Icon(
                       Icons.chevron_right,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? const Color(0xFF93C5FD)
-                          : AppTheme.primaryColor,
+                      color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
                     ),
                     titleTextStyle: GoogleFonts.hankenGrotesk(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w800,
                       color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  daysOfWeekStyle: DaysOfWeekStyle(
+                    weekdayStyle: GoogleFonts.hankenGrotesk(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    weekendStyle: GoogleFonts.hankenGrotesk(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFEF4444),
                     ),
                   ),
                   rowHeight: 42.h,
@@ -326,10 +332,10 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
               SizedBox(height: 12.h),
 
               // 3. Jadwal Mengajar Section
-              _buildSectionHeader('Jadwal Mengajar'),
+              _buildSectionHeader(context, 'Jadwal Mengajar'),
               SizedBox(height: 6.h),
               dailySchedules.isEmpty
-                  ? _buildEmptyState('Tidak ada jadwal mengajar pada hari ini.')
+                  ? _buildEmptyState(context, 'Tidak ada jadwal mengajar pada hari ini.')
                   : ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -353,16 +359,22 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                         return Container(
                           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.06),
+                            color: isDark
+                                ? Theme.of(context).colorScheme.surface
+                                : AppTheme.primaryColor.withValues(alpha: 0.06),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.15)),
+                            border: Border.all(
+                              color: isDark
+                                  ? const Color(0xFF334155)
+                                  : AppTheme.primaryColor.withValues(alpha: 0.15),
+                            ),
                           ),
                           child: Row(
                             children: [
                               Container(
                                 padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                  color: AppTheme.primaryColor.withValues(alpha: isDark ? 0.25 : 0.1),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
@@ -370,7 +382,7 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                                   style: GoogleFonts.hankenGrotesk(
                                     fontSize: 9.sp,
                                     fontWeight: FontWeight.w700,
-                                    color: AppTheme.primaryColor,
+                                    color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
                                     height: 1.2,
                                   ),
                                   textAlign: TextAlign.center,
@@ -386,14 +398,14 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                                       style: GoogleFonts.hankenGrotesk(
                                         fontSize: 13.sp,
                                         fontWeight: FontWeight.bold,
-                                        color: AppTheme.onBackground,
+                                        color: Theme.of(context).colorScheme.onSurface,
                                       ),
                                     ),
                                     Text(
                                       subject.name,
                                       style: GoogleFonts.hankenGrotesk(
                                         fontSize: 11.5.sp,
-                                        color: AppTheme.onSurfaceVariant,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -408,10 +420,10 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
               SizedBox(height: 12.h),
 
               // 4. Jurnal Mengajar Section
-              _buildSectionHeader('Jurnal Mengajar'),
+              _buildSectionHeader(context, 'Jurnal Mengajar'),
               SizedBox(height: 6.h),
               dailyJournals.isEmpty
-                  ? _buildEmptyState('Tidak ada jurnal mengajar pada hari ini.')
+                  ? _buildEmptyState(context, 'Tidak ada jurnal mengajar pada hari ini.')
                   : ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -444,9 +456,15 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                         return Container(
                           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: isDark
+                                ? Theme.of(context).colorScheme.surface
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppTheme.outlineVariant),
+                            border: Border.all(
+                              color: isDark
+                                  ? const Color(0xFF334155)
+                                  : const Color(0xFFE2E8F0),
+                            ),
                           ),
                           child: Row(
                             children: [
@@ -459,7 +477,7 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                                       style: GoogleFonts.hankenGrotesk(
                                         fontSize: 13.sp,
                                         fontWeight: FontWeight.bold,
-                                        color: AppTheme.onBackground,
+                                        color: Theme.of(context).colorScheme.onSurface,
                                       ),
                                     ),
                                     SizedBox(height: 2.h),
@@ -467,7 +485,7 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                                       subject.name,
                                       style: GoogleFonts.hankenGrotesk(
                                         fontSize: 11.5.sp,
-                                        color: AppTheme.onSurfaceVariant,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -476,7 +494,7 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                                       'Sakit: ${journal.sickCount}  ·  Izin: ${journal.permissionCount}  ·  Alpa: ${journal.alphaCount}',
                                       style: GoogleFonts.hankenGrotesk(
                                         fontSize: 10.sp,
-                                        color: AppTheme.outline,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -496,7 +514,7 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Row(
       children: [
         Container(
@@ -513,26 +531,31 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
           style: GoogleFonts.hankenGrotesk(
             fontSize: 13.sp,
             fontWeight: FontWeight.w800,
-            color: AppTheme.onBackground,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyState(String text) {
+  Widget _buildEmptyState(BuildContext context, String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        color: isDark
+            ? Theme.of(context).colorScheme.surface
+            : const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        ),
       ),
       child: Text(
         text,
         style: GoogleFonts.hankenGrotesk(
           fontSize: 11.5.sp,
-          color: AppTheme.outline,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w500,
         ),
         textAlign: TextAlign.center,
@@ -547,35 +570,42 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
     IconData? actionIcon,
     Color? actionColor,
   }) {
-    return Row(
-      children: [
-        Icon(icon, size: 14.w, color: const Color(0xFF64748B)),
-        SizedBox(width: 8.w),
-        Expanded(
-          child: Text(
-            text,
-            style: GoogleFonts.hankenGrotesk(
-              fontSize: 11.5.sp,
-              color: AppTheme.onBackground,
-              fontWeight: FontWeight.w500,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+    return Builder(builder: (context) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      return Row(
+        children: [
+          Icon(
+            icon,
+            size: 14.w,
+            color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
           ),
-        ),
-        if (actionIcon != null && onTap != null)
-          GestureDetector(
-            onTap: onTap,
-            child: Container(
-              padding: EdgeInsets.all(4.w),
-              decoration: BoxDecoration(
-                color: (actionColor ?? AppTheme.primaryColor).withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              text,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 11.5.sp,
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
               ),
-              child: Icon(actionIcon, size: 12.w, color: actionColor ?? AppTheme.primaryColor),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-      ],
-    );
+          if (actionIcon != null && onTap != null)
+            GestureDetector(
+              onTap: onTap,
+              child: Container(
+                padding: EdgeInsets.all(4.w),
+                decoration: BoxDecoration(
+                  color: (actionColor ?? AppTheme.primaryColor).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(actionIcon, size: 12.w, color: actionColor ?? AppTheme.primaryColor),
+              ),
+            ),
+        ],
+      );
+    });
   }
 }

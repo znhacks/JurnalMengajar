@@ -514,10 +514,10 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                           color: const Color(0xFF825100),
                         ),
                         defaultTextStyle: GoogleFonts.hankenGrotesk(
-                          color: AppTheme.onBackground,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                         outsideTextStyle: GoogleFonts.hankenGrotesk(
-                          color: AppTheme.outline,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                         ),
                       ),
                     ),

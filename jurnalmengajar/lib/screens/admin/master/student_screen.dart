@@ -122,14 +122,15 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      ),
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          return Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+
+          return Padding(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
               top: 24.h,
@@ -147,7 +148,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                       width: 40.w,
                       height: 4.h,
                       decoration: BoxDecoration(
-                        color: AppTheme.outlineVariant,
+                        color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -158,7 +159,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w800,
-                      color: AppTheme.onBackground,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -171,15 +172,23 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                       labelText: 'Nama Lengkap Siswa',
                       hintText: 'Masukkan nama lengkap siswa',
                       prefixIcon: const Icon(Icons.person_outline),
+                      labelStyle: GoogleFonts.hankenGrotesk(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppTheme.outlineVariant),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        ),
                       ),
                     ),
-                    style: GoogleFonts.hankenGrotesk(fontSize: 14.sp),
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 14.sp,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                   SizedBox(height: 16.h),
 
@@ -191,15 +200,23 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                       labelText: 'Nomor Induk Siswa (NIS)',
                       hintText: 'Masukkan NIS siswa (opsional)',
                       prefixIcon: const Icon(Icons.badge_outlined),
+                      labelStyle: GoogleFonts.hankenGrotesk(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppTheme.outlineVariant),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        ),
                       ),
                     ),
-                    style: GoogleFonts.hankenGrotesk(fontSize: 14.sp),
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 14.sp,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                   SizedBox(height: 16.h),
 
@@ -211,15 +228,23 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                       labelText: 'Nomor Telepon Orang Tua',
                       hintText: 'Masukkan No. HP ortu (opsional)',
                       prefixIcon: const Icon(Icons.phone_android_outlined),
+                      labelStyle: GoogleFonts.hankenGrotesk(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppTheme.outlineVariant),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        ),
                       ),
                     ),
-                    style: GoogleFonts.hankenGrotesk(fontSize: 14.sp),
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 14.sp,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                   SizedBox(height: 16.h),
 
@@ -229,7 +254,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.onSurfaceVariant,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                   SizedBox(height: 8.h),
@@ -246,13 +271,18 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                 fontWeight: FontWeight.bold,
                                 color: selectedGender == 'L'
                                     ? Colors.white
-                                    : AppTheme.onSurfaceVariant,
+                                    : Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ),
                           selected: selectedGender == 'L',
-                          selectedColor: AppTheme.primaryColor,
-                          backgroundColor: AppTheme.surfaceContainerLow,
+                          selectedColor: const Color(0xFF2563EB),
+                          backgroundColor: isDark ? Theme.of(context).colorScheme.surfaceContainerHighest : const Color(0xFFF1F5F9),
+                          side: BorderSide(
+                            color: selectedGender == 'L'
+                                ? const Color(0xFF2563EB)
+                                : (isDark ? const Color(0xFF475569) : AppTheme.outlineVariant),
+                          ),
                           onSelected: (selected) {
                             if (selected) {
                               setDialogState(() {
@@ -274,13 +304,18 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                 fontWeight: FontWeight.bold,
                                 color: selectedGender == 'P'
                                     ? Colors.white
-                                    : AppTheme.onSurfaceVariant,
+                                    : Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ),
                           selected: selectedGender == 'P',
                           selectedColor: const Color(0xFFEC4899), // Pink for females
-                          backgroundColor: AppTheme.surfaceContainerLow,
+                          backgroundColor: isDark ? Theme.of(context).colorScheme.surfaceContainerHighest : const Color(0xFFF1F5F9),
+                          side: BorderSide(
+                            color: selectedGender == 'P'
+                                ? const Color(0xFFEC4899)
+                                : (isDark ? const Color(0xFF475569) : AppTheme.outlineVariant),
+                          ),
                           onSelected: (selected) {
                             if (selected) {
                               setDialogState(() {
@@ -429,13 +464,8 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                 'Daftar Siswa',
                 style: GoogleFonts.hankenGrotesk(
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
-              scrolledUnderElevation: 0,
-              backgroundColor: Colors.white,
-              elevation: 0,
-              iconTheme: const IconThemeData(color: AppTheme.onBackground),
               actions: [
                 IconButton(
                   icon: const Icon(Icons.checklist_rounded),
@@ -648,7 +678,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                               style: GoogleFonts.hankenGrotesk(
                                                 fontSize: 13.sp,
                                                 fontWeight: FontWeight.bold,
-                                                color: AppTheme.onBackground,
+                                                color: Theme.of(context).colorScheme.onSurface,
                                               ),
                                             ),
                                             SizedBox(height: 2.h),
@@ -658,7 +688,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                                   student.nis != null ? 'NIS: ${student.nis}' : 'NIS: -',
                                                   style: GoogleFonts.hankenGrotesk(
                                                     fontSize: 11.sp,
-                                                    color: AppTheme.onSurfaceVariant,
+                                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                                   ),
                                                 ),
                                                 Text(
@@ -677,7 +707,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                                 'No. Ortu: ${student.parentPhoneNumber}',
                                                 style: GoogleFonts.hankenGrotesk(
                                                   fontSize: 10.sp,
-                                                  color: Colors.grey[600],
+                                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                                 ),
                                               ),
                                             ],
@@ -692,7 +722,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                           children: [
                                             _actionIcon(
                                               Icons.edit_outlined,
-                                              Colors.indigo,
+                                              isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB),
                                               () => _showFormDialog(studentItem: student),
                                             ),
                                             _actionIcon(
