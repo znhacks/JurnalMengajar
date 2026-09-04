@@ -287,7 +287,8 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  rowHeight: 42.h,
+                  daysOfWeekHeight: 30.h,
+                  rowHeight: 46.h,
                   firstDay: DateTime.now().subtract(const Duration(days: 365)),
                   lastDay: DateTime.now().add(const Duration(days: 365)),
                   focusedDay: _focusedDay,
@@ -309,9 +310,11 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                     dowBuilder: (context, day) {
                       final dayName = DateFormat.E('id_ID').format(day);
                       final isSunday = day.weekday == DateTime.sunday;
-                      return Center(
+                      return Container(
+                        alignment: Alignment.center,
                         child: Text(
                           dayName,
+                          textAlign: TextAlign.center,
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 11.sp,
                             fontWeight: FontWeight.w700,

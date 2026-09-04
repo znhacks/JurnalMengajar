@@ -640,7 +640,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        rowHeight: 42.h,
+        daysOfWeekHeight: 30.h,
+        rowHeight: 46.h,
         firstDay: DateTime.now().subtract(const Duration(days: 365)),
         lastDay: DateTime.now().add(const Duration(days: 365)),
         focusedDay: _focusedDay,
@@ -663,9 +664,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           dowBuilder: (context, day) {
             final dayName = DateFormat.E('id_ID').format(day);
             final isSunday = day.weekday == DateTime.sunday;
-            return Center(
+            return Container(
+              alignment: Alignment.center,
               child: Text(
                 dayName,
+                textAlign: TextAlign.center,
                 style: GoogleFonts.hankenGrotesk(
                   fontSize: 11.sp,
                   fontWeight: FontWeight.w700,
@@ -763,6 +766,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                     ),
                     TableCalendar(
+                      locale: 'id_ID',
+                      daysOfWeekHeight: 30.h,
+                      rowHeight: 44.h,
                       firstDay: DateTime.now().subtract(const Duration(days: 365)),
                       lastDay: DateTime.now().add(const Duration(days: 365)),
                       focusedDay: focused,
@@ -805,6 +811,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         });
                       },
                       calendarBuilders: CalendarBuilders(
+                        dowBuilder: (context, day) {
+                          final dayName = DateFormat.E('id_ID').format(day);
+                          final isSunday = day.weekday == DateTime.sunday;
+                          return Container(
+                            alignment: Alignment.center,
+                            child: Text(
+                              dayName,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w700,
+                                color: isSunday
+                                    ? const Color(0xFFEF4444)
+                                    : Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          );
+                        },
                         defaultBuilder: (context, day, focusedDay) {
                           return _buildScheduledDayCell(
                             day,
