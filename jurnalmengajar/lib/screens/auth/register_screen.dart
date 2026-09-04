@@ -537,13 +537,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               SizedBox(height: 24.h),
 
-                              // Sekolah Tempat Mengajar / Mengelola (Wajib) - Kolom bertanda kunci untuk NPSN/Kode Sekolah
-                              _buildFieldLabel(_registerType == 'guru' ? 'SEKOLAH TEMPAT MENGAJAR (KODE AKTIVASI UUID / NPSN)' : 'SEKOLAH YANG DIKELOLA (KODE AKTIVASI UUID / NPSN)'),
+                              // Sekolah Tempat Mengajar / Mengelola (Wajib) - Kolom bertanda kunci untuk Kode Aktivasi UUID
+                              _buildFieldLabel(_registerType == 'guru' ? 'SEKOLAH TEMPAT MENGAJAR (KODE AKTIVASI UUID)' : 'SEKOLAH YANG DIKELOLA (KODE AKTIVASI UUID)'),
                               TextFormField(
                                 controller: _schoolCodeController,
                                 focusNode: _schoolCodeFocusNode,
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                ),
                                 decoration: InputDecoration(
-                                  hintText: 'Masukkan Kode Aktivasi (UUID) / NPSN...',
+                                  hintText: 'Masukkan Kode Aktivasi (UUID)...',
                                   hintStyle: TextStyle(
                                     color: Colors.grey[400],
                                     fontWeight: FontWeight.normal,
@@ -571,18 +575,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     ],
                                   ),
                                   filled: true,
-                                  fillColor: const Color(0xFFEFF6FF).withValues(alpha: 0.5),
+                                  fillColor: Theme.of(context).brightness == Brightness.dark
+                                      ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                      : const Color(0xFFEFF6FF).withValues(alpha: 0.5),
                                   contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16.r),
-                                    borderSide: BorderSide(
-                                      color: _selectedSchools.isEmpty ? Colors.red : const Color(0xFFE2E8F0),
-                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16.r),
-                                    borderSide: BorderSide(
-                                      color: _selectedSchools.isEmpty ? Colors.red : const Color(0xFFE2E8F0),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16.r),
+                                    borderSide: const BorderSide(
+                                      color: Color.fromARGB(255, 37, 99, 235),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16.r),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFFEF4444),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16.r),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFFEF4444),
+                                      width: 2,
                                     ),
                                   ),
                                 ),
@@ -599,7 +622,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 },
                                 validator: (value) {
                                   if (_selectedSchools.isEmpty) {
-                                    return 'Tekan tombol centang biru untuk verifikasi NPSN Sekolah';
+                                    return 'Tekan tombol centang biru untuk verifikasi Kode Aktivasi Sekolah';
                                   }
                                   return null;
                                 },
