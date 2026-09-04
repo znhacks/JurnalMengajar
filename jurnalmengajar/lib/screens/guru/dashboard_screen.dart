@@ -32,6 +32,7 @@ class GuruDashboardScreen extends StatefulWidget {
 
 class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   DateTime _selectedDay = DateTime.now();
+  DateTime _focusedDay = DateTime.now();
   bool _hasCheckedReminder = false;
 
   final TextEditingController _searchController = TextEditingController();
@@ -169,6 +170,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   void _onDateSelected(DateTime date) {
     setState(() {
       _selectedDay = date;
+      _focusedDay = date;
     });
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final masterProvider = Provider.of<MasterDataProvider>(
@@ -964,11 +966,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
   // ─── 4. KARTU KALENDER ─────────────────────────────────────────────────────
   Widget _buildCalendarCard() {
-    final monthYearStr = DateFormat('MMMM yyyy', 'id_ID').format(_selectedDay);
+    final monthYearStr = DateFormat('MMMM yyyy', 'id_ID').format(_focusedDay);
 
-    // Calculate current week days starting from Monday of the selected day's week
-    final monday = _selectedDay.subtract(
-      Duration(days: _selectedDay.weekday - 1),
+    // Calculate current week days starting from Monday of the focused day's week
+    final monday = _focusedDay.subtract(
+      Duration(days: _focusedDay.weekday - 1),
     );
     final weekDays = List.generate(7, (i) => monday.add(Duration(days: i)));
 
@@ -997,10 +999,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
             children: [
               InkWell(
                 onTap: () {
-                  final newDate = _selectedDay.subtract(
-                    const Duration(days: 7),
-                  );
-                  _onDateSelected(newDate);
+                  setState(() {
+                    _focusedDay = _focusedDay.subtract(const Duration(days: 7));
+                  });
                 },
                 borderRadius: BorderRadius.circular(50.r),
                 child: Container(
@@ -1028,8 +1029,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
               InkWell(
                 onTap: () {
-                  final newDate = _selectedDay.add(const Duration(days: 7));
-                  _onDateSelected(newDate);
+                  setState(() {
+                    _focusedDay = _focusedDay.add(const Duration(days: 7));
+                  });
                 },
                 borderRadius: BorderRadius.circular(50.r),
                 child: Container(
@@ -1054,6 +1056,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: dayNames.map((name) {
+              final isSunday = name == 'Min';
               return SizedBox(
                 width: 38.w,
                 child: Text(
@@ -1061,8 +1064,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   textAlign: TextAlign.center,
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 11.5.sp,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF94A3B8),
+                    fontWeight: FontWeight.w700,
+                    color: isSunday
+                        ? const Color(0xFFEF4444)
+                        : const Color(0xFF94A3B8),
                   ),
                 ),
               );
@@ -1079,6 +1084,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   date.year == _selectedDay.year &&
                   date.month == _selectedDay.month &&
                   date.day == _selectedDay.day;
+              final isSunday = date.weekday == DateTime.sunday;
 
               return InkWell(
                 onTap: () => _onDateSelected(date),
@@ -1120,7 +1126,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                 : FontWeight.w600,
                             color: isSelected
                                 ? Theme.of(context).colorScheme.surface
-                                : Theme.of(context).colorScheme.onSurface,
+                                : (isSunday
+                                    ? const Color(0xFFEF4444)
+                                    : Theme.of(context).colorScheme.onSurface),
                           ),
                         ),
                       ),
