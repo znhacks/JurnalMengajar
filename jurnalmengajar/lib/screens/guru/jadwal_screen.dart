@@ -514,21 +514,6 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         ),
         title: const Text('Jadwal Mengajar'),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          context.push('/guru/journal-form?date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
-        },
-        backgroundColor: const Color(0xFF4F46E5),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text(
-          'Tambah Task',
-          style: GoogleFonts.hankenGrotesk(
-            fontSize: 13.sp,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-      ),
       body: SafeArea(
         child: Column(
           children: [
