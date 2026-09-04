@@ -1,7 +1,7 @@
 import '../models/journal_model.dart';
 
 abstract class JournalRepository {
-  Future<List<JournalModel>> getAll();
+  Future<List<JournalModel>> getAll([String? schoolId]);
   Future<List<JournalModel>> getJournalsForTeacher(String teacherId);
   Future<JournalModel?> getJournalForSchedule(String scheduleId, {DateTime? date});
   Future<void> create(JournalModel model);

@@ -9,6 +9,7 @@ class JournalProvider with ChangeNotifier {
 
   List<JournalModel> _journals = [];
   List<JournalModel> _teacherJournals = [];
+  String? _currentSchoolId;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -19,12 +20,13 @@ class JournalProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  Future<void> loadAllJournals() async {
+  Future<void> loadAllJournals([String? schoolId]) async {
+    _currentSchoolId = schoolId ?? _currentSchoolId;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      _journals = await journalRepository.getAll();
+      _journals = await journalRepository.getAll(_currentSchoolId);
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -69,7 +71,10 @@ class JournalProvider with ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
-      await journalRepository.create(model);
+      final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+          ? model.copyWith(schoolId: _currentSchoolId)
+          : model;
+      await journalRepository.create(finalModel);
 
       // Upload foto lampiran jika ada (max 3, web-compatible)
       if (imageBytesList != null && imageBytesList.isNotEmpty &&
@@ -98,14 +103,14 @@ class JournalProvider with ChangeNotifier {
           } catch (storageError) {
             debugPrint('Gagal mengunggah lampiran: $storageError');
             _errorMessage = 'Jurnal berhasil disimpan, namun lampiran gagal diunggah: ${storageError.toString().replaceAll('Exception: ', '')}';
-            await loadAllJournals();
+            await loadAllJournals(_currentSchoolId);
             if (model.teacherId.isNotEmpty) await loadTeacherJournals(model.teacherId);
             return true;
           }
         }
       }
 
-      await loadAllJournals();
+      await loadAllJournals(_currentSchoolId);
       if (model.teacherId.isNotEmpty) {
         await loadTeacherJournals(model.teacherId);
       }
@@ -132,7 +137,10 @@ class JournalProvider with ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
-      await journalRepository.update(model);
+      final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+          ? model.copyWith(schoolId: _currentSchoolId)
+          : model;
+      await journalRepository.update(finalModel);
 
       // Upload foto lampiran baru jika ada (max 3)
       if (imageBytesList != null && imageBytesList.isNotEmpty &&
@@ -156,13 +164,13 @@ class JournalProvider with ChangeNotifier {
         } catch (storageError) {
           debugPrint('Gagal mengunggah lampiran saat update: $storageError');
           _errorMessage = 'Jurnal berhasil diperbarui, namun lampiran gagal diunggah: ${storageError.toString().replaceAll('Exception: ', '')}';
-          await loadAllJournals();
+          await loadAllJournals(_currentSchoolId);
           if (model.teacherId.isNotEmpty) await loadTeacherJournals(model.teacherId);
           return true;
         }
       }
 
-      await loadAllJournals();
+      await loadAllJournals(_currentSchoolId);
       if (model.teacherId.isNotEmpty) {
         await loadTeacherJournals(model.teacherId);
       }
@@ -204,7 +212,7 @@ class JournalProvider with ChangeNotifier {
     notifyListeners();
     try {
       await journalRepository.verifyJournal(journalId, status, rejectionNote: rejectionNote);
-      await loadAllJournals();
+      await loadAllJournals(_currentSchoolId);
       if (teacherId != null && teacherId.isNotEmpty) {
         await loadTeacherJournals(teacherId);
       }

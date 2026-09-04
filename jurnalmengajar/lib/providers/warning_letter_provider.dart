@@ -22,12 +22,12 @@ class WarningLetterProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  Future<void> loadAllWarningLetters() async {
+  Future<void> loadAllWarningLetters([String? schoolId]) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      _warningLetters = await warningLetterRepository.getAll();
+      _warningLetters = await warningLetterRepository.getAll(schoolId);
     } catch (e) {
       _errorMessage = e.toString();
     } finally {

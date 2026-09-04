@@ -130,9 +130,9 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     await Future.wait([
-      journalProvider.loadAllJournals(),
+      journalProvider.loadAllJournals(authProvider.activeSchoolId),
       masterProvider.loadAllData(authProvider.activeSchoolId),
-      scheduleProvider.loadAllSchedules(),
+      scheduleProvider.loadAllSchedules(authProvider.activeSchoolId),
     ]);
   }
 

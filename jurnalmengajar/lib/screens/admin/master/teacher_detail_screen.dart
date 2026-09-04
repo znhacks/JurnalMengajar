@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../providers/master_data_provider.dart';
 import '../../../providers/schedule_provider.dart';
 import '../../../providers/journal_provider.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../models/teacher_model.dart';
 import '../../../models/schedule_model.dart';
 import '../../../models/class_model.dart';
@@ -39,9 +40,10 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
   Future<void> _loadData() async {
     final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
     final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await Future.wait([
-      scheduleProvider.loadAllSchedules(),
-      journalProvider.loadAllJournals(),
+      scheduleProvider.loadAllSchedules(authProvider.activeSchoolId),
+      journalProvider.loadAllJournals(authProvider.activeSchoolId),
     ]);
   }
 

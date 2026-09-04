@@ -9,6 +9,7 @@ class ScheduleProvider with ChangeNotifier {
   List<ScheduleModel> _teacherSchedulesForSelectedDate = [];
   List<ScheduleModel> _cachedTeacherSchedules = [];
   String? _cachedTeacherId;
+  String? _currentSchoolId;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -25,12 +26,13 @@ class ScheduleProvider with ChangeNotifier {
     _cachedTeacherSchedules.clear();
   }
 
-  Future<void> loadAllSchedules() async {
+  Future<void> loadAllSchedules([String? schoolId]) async {
+    _currentSchoolId = schoolId ?? _currentSchoolId;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      _schedules = await scheduleRepository.getAll();
+      _schedules = await scheduleRepository.getAll(_currentSchoolId);
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -112,9 +114,12 @@ class ScheduleProvider with ChangeNotifier {
     notifyListeners();
     try {
       _validateNoActiveOverlap(model, teachers: teachers);
-      await scheduleRepository.create(model);
+      final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+          ? model.copyWith(schoolId: _currentSchoolId)
+          : model;
+      await scheduleRepository.create(finalModel);
       clearTeacherSchedulesCache();
-      await loadAllSchedules();
+      await loadAllSchedules(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString().replaceFirst('Exception: ', '');
@@ -132,9 +137,15 @@ class ScheduleProvider with ChangeNotifier {
       for (final m in models) {
         _validateNoActiveOverlap(m, teachers: teachers);
       }
-      await scheduleRepository.createMultiple(models);
+      final finalModels = models.map((m) {
+        if (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (m.schoolId == null || m.schoolId!.isEmpty)) {
+          return m.copyWith(schoolId: _currentSchoolId);
+        }
+        return m;
+      }).toList();
+      await scheduleRepository.createMultiple(finalModels);
       clearTeacherSchedulesCache();
-      await loadAllSchedules();
+      await loadAllSchedules(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString().replaceFirst('Exception: ', '');
@@ -150,9 +161,12 @@ class ScheduleProvider with ChangeNotifier {
     notifyListeners();
     try {
       _validateNoActiveOverlap(model, excludeId: model.id, teachers: teachers);
-      await scheduleRepository.update(model);
+      final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+          ? model.copyWith(schoolId: _currentSchoolId)
+          : model;
+      await scheduleRepository.update(finalModel);
       clearTeacherSchedulesCache();
-      await loadAllSchedules();
+      await loadAllSchedules(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString().replaceFirst('Exception: ', '');
@@ -169,7 +183,7 @@ class ScheduleProvider with ChangeNotifier {
     try {
       await scheduleRepository.delete(id);
       clearTeacherSchedulesCache();
-      await loadAllSchedules();
+      await loadAllSchedules(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -186,7 +200,7 @@ class ScheduleProvider with ChangeNotifier {
     try {
       await scheduleRepository.deleteMultiple(ids);
       clearTeacherSchedulesCache();
-      await loadAllSchedules();
+      await loadAllSchedules(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();

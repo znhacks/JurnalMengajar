@@ -14,13 +14,18 @@ class SupabaseJournalRepository implements JournalRepository {
   SupabaseJournalRepository(this._supabase);
 
   @override
-  Future<List<JournalModel>> getAll() async {
+  Future<List<JournalModel>> getAll([String? schoolId]) async {
     try {
-      final response = await _supabase
+      var query = _supabase
           .from(SupabaseConstants.tableJournals)
           .select()
-          .eq('is_soft_deleted', false)
-          .order(SupabaseConstants.fieldDate, ascending: false);
+          .eq('is_soft_deleted', false);
+
+      if (schoolId != null && schoolId.isNotEmpty) {
+        query = query.eq('school_id', schoolId);
+      }
+
+      final response = await query.order(SupabaseConstants.fieldDate, ascending: false);
 
       return (response as List)
           .map((json) => JournalModel.fromJson(json))

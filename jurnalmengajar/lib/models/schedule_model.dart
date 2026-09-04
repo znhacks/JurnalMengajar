@@ -8,6 +8,7 @@ class ScheduleModel {
   final String teacherId;
   final String? note;
   final bool isActive;
+  final String? schoolId;
 
   ScheduleModel({
     required this.id,
@@ -19,6 +20,7 @@ class ScheduleModel {
     required this.teacherId,
     this.note,
     required this.isActive,
+    this.schoolId,
   });
 
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
@@ -32,11 +34,12 @@ class ScheduleModel {
       teacherId: json['teacher_id'] as String? ?? json['teacherId'] as String,
       note: json['note'] as String?,
       isActive: json['is_active'] as bool? ?? json['isActive'] as bool? ?? true,
+      schoolId: json['school_id'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final map = <String, dynamic>{
       'id': id,
       'period_id': periodId,
       'date': date.toIso8601String(),
@@ -47,6 +50,10 @@ class ScheduleModel {
       'note': note,
       'is_active': isActive,
     };
+    if (schoolId != null && schoolId!.isNotEmpty) {
+      map['school_id'] = schoolId;
+    }
+    return map;
   }
 
   ScheduleModel copyWith({
@@ -59,6 +66,7 @@ class ScheduleModel {
     String? teacherId,
     String? note,
     bool? isActive,
+    String? schoolId,
   }) {
     return ScheduleModel(
       id: id ?? this.id,
@@ -70,6 +78,7 @@ class ScheduleModel {
       teacherId: teacherId ?? this.teacherId,
       note: note ?? this.note,
       isActive: isActive ?? this.isActive,
+      schoolId: schoolId ?? this.schoolId,
     );
   }
 }

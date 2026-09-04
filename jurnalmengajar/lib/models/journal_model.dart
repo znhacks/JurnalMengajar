@@ -19,6 +19,7 @@ class JournalModel {
   final String? rejectionNote;
   final bool isSoftDeleted;
   final DateTime? deletedAt;
+  final String? schoolId;
 
   JournalModel({
     required this.id,
@@ -39,6 +40,7 @@ class JournalModel {
     this.rejectionNote,
     this.isSoftDeleted = false,
     this.deletedAt,
+    this.schoolId,
   });
 
   factory JournalModel.fromJson(Map<String, dynamic> json) {
@@ -82,11 +84,12 @@ class JournalModel {
       deletedAt: json['deleted_at'] != null
           ? DateTime.tryParse(json['deleted_at'] as String)
           : null,
+      schoolId: json['school_id'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final map = <String, dynamic>{
       'id': id,
       'schedule_id': scheduleId,
       'date': date.toIso8601String(),
@@ -105,6 +108,10 @@ class JournalModel {
       'is_soft_deleted': isSoftDeleted,
       'deleted_at': deletedAt?.toIso8601String(),
     };
+    if (schoolId != null && schoolId!.isNotEmpty) {
+      map['school_id'] = schoolId;
+    }
+    return map;
   }
 
   JournalModel copyWith({
@@ -126,6 +133,7 @@ class JournalModel {
     String? rejectionNote,
     bool? isSoftDeleted,
     DateTime? deletedAt,
+    String? schoolId,
   }) {
     return JournalModel(
       id: id ?? this.id,
@@ -146,6 +154,7 @@ class JournalModel {
       rejectionNote: rejectionNote ?? this.rejectionNote,
       isSoftDeleted: isSoftDeleted ?? this.isSoftDeleted,
       deletedAt: deletedAt ?? this.deletedAt,
+      schoolId: schoolId ?? this.schoolId,
     );
   }
 }

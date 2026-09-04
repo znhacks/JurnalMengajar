@@ -12,12 +12,13 @@ class SupabaseScheduleRepository implements ScheduleRepository {
   SupabaseScheduleRepository(this._supabase);
 
   @override
-  Future<List<ScheduleModel>> getAll() async {
+  Future<List<ScheduleModel>> getAll([String? schoolId]) async {
     try {
-      final response = await _supabase
-          .from(SupabaseConstants.tableSchedules)
-          .select()
-          .order(SupabaseConstants.fieldDate, ascending: true);
+      var query = _supabase.from(SupabaseConstants.tableSchedules).select();
+      if (schoolId != null && schoolId.isNotEmpty) {
+        query = query.eq('school_id', schoolId);
+      }
+      final response = await query.order(SupabaseConstants.fieldDate, ascending: true);
 
       return (response as List)
           .map((json) => ScheduleModel.fromJson(json))

@@ -9,12 +9,13 @@ class SupabaseWarningLetterRepository implements WarningLetterRepository {
   SupabaseWarningLetterRepository(this._supabase);
 
   @override
-  Future<List<WarningLetterModel>> getAll() async {
+  Future<List<WarningLetterModel>> getAll([String? schoolId]) async {
     try {
-      final response = await _supabase
-          .from('warning_letters')
-          .select()
-          .order('issued_at', ascending: false);
+      var query = _supabase.from('warning_letters').select();
+      if (schoolId != null && schoolId.isNotEmpty) {
+        query = query.eq('school_id', schoolId);
+      }
+      final response = await query.order('issued_at', ascending: false);
 
       return (response as List)
           .map((json) => WarningLetterModel.fromJson(json))

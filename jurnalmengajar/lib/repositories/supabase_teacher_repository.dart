@@ -36,64 +36,64 @@ class SupabaseTeacherRepository implements TeacherRepository {
   Future<List<TeacherModel>> getAllForSchool(String schoolId) async {
     if (schoolId.isEmpty) return [];
     try {
-      // 1. Query user_schools for userIds belonging to this schoolId
-      List<String> userIds = [];
+      final Map<String, TeacherModel> teachersMap = {};
+
+      // 1. Fetch user IDs linked in user_schools for this school
       try {
         final userSchoolsRes = await _supabase
             .from('user_schools')
             .select('user_id')
             .eq('school_id', schoolId);
 
-        userIds = (userSchoolsRes as List)
+        final userIds = (userSchoolsRes as List)
             .map((row) => row['user_id'] as String)
             .toList();
-      } catch (_) {}
 
-      // 2. Query users where role = 'guru' AND belonging to schoolId
-      List<dynamic> response = [];
-      if (userIds.isNotEmpty) {
-        final res = await _supabase
-            .from('users')
-            .select()
-            .eq('role', 'guru')
-            .or('id.in.(${userIds.join(",")})')
-            .order('full_name', ascending: true);
-        response = res as List;
-      } else {
-        try {
+        if (userIds.isNotEmpty) {
           final res = await _supabase
               .from('users')
               .select()
               .eq('role', 'guru')
-              .or('school_id.ilike.%$schoolId%,school_ids.cs.{"$schoolId"}')
+              .inFilter('id', userIds)
               .order('full_name', ascending: true);
-          response = res as List;
-        } catch (_) {
-          try {
-            final res = await _supabase
-                .from('users')
-                .select()
-                .eq('role', 'guru')
-                .eq('school_id', schoolId)
-                .order('full_name', ascending: true);
-            response = res as List;
-          } catch (_) {
-            response = [];
+          for (final json in (res as List)) {
+            teachersMap[json['id'] as String] = TeacherModel(
+              id: json['id'] as String,
+              name: json['full_name'] as String,
+              position: json['position'] as String? ?? 'Guru Bidang Studi',
+              address: json['address'] as String? ?? '',
+              phoneNumber: json['phone'] as String? ?? '',
+              email: json['email'] as String,
+              photoUrl: json['photo_url'] as String?,
+            );
           }
         }
-      }
+      } catch (_) {}
 
-      return response
-          .map((json) => TeacherModel(
-                id: json['id'] as String,
-                name: json['full_name'] as String,
-                position: json['position'] as String? ?? 'Guru Bidang Studi',
-                address: json['address'] as String? ?? '',
-                phoneNumber: json['phone'] as String? ?? '',
-                email: json['email'] as String,
-                photoUrl: json['photo_url'] as String?,
-              ))
-          .toList();
+      // 2. Fetch users with school_id = schoolId directly
+      try {
+        final resDirect = await _supabase
+            .from('users')
+            .select()
+            .eq('role', 'guru')
+            .eq('school_id', schoolId)
+            .order('full_name', ascending: true);
+        for (final json in (resDirect as List)) {
+          teachersMap[json['id'] as String] = TeacherModel(
+            id: json['id'] as String,
+            name: json['full_name'] as String,
+            position: json['position'] as String? ?? 'Guru Bidang Studi',
+            address: json['address'] as String? ?? '',
+            phoneNumber: json['phone'] as String? ?? '',
+            email: json['email'] as String,
+            photoUrl: json['photo_url'] as String?,
+          );
+        }
+      } catch (_) {}
+
+      final result = teachersMap.values.toList();
+      result.sort((a, b) => a.name.compareTo(b.name));
+      return result;
     } catch (e) {
       return [];
     }

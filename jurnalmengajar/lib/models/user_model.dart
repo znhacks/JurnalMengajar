@@ -2,13 +2,13 @@ class UserModel {
   final String id;
   final String email;
   final String fullName;
-  final String role; // 'guru' | 'admin'
+  final String role; // 'guru' | 'admin' | 'pending_guru' | 'superadmin'
   final String? photoUrl;
   final String? phoneNumber;
   final String? position;
   final String? address;
   final String? schoolName; // e.g. 'SMKN 11 Malang'
-
+  final String? schoolId;
   final List<String> schoolIds;
 
   UserModel({
@@ -21,23 +21,24 @@ class UserModel {
     this.position,
     this.address,
     this.schoolName,
+    this.schoolId,
     this.schoolIds = const [],
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     List<String> parsedSchoolIds = [];
+    String? rawSchoolId = json['school_id']?.toString().trim();
     if (json['school_ids'] != null) {
       if (json['school_ids'] is List) {
         parsedSchoolIds = (json['school_ids'] as List).map((e) => e.toString().trim()).toList();
       } else if (json['school_ids'] is String) {
         parsedSchoolIds = (json['school_ids'] as String).split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
       }
-    } else if (json['school_id'] != null) {
-      final sId = json['school_id'].toString().trim();
-      if (sId.contains(',')) {
-        parsedSchoolIds = sId.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-      } else if (sId.isNotEmpty) {
-        parsedSchoolIds = [sId];
+    } else if (rawSchoolId != null && rawSchoolId.isNotEmpty) {
+      if (rawSchoolId.contains(',')) {
+        parsedSchoolIds = rawSchoolId.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      } else {
+        parsedSchoolIds = [rawSchoolId];
       }
     }
 
@@ -51,12 +52,13 @@ class UserModel {
       position: json['position'] as String?,
       address: json['address'] as String?,
       schoolName: json['school_name'] as String? ?? json['schoolName'] as String?,
+      schoolId: rawSchoolId,
       schoolIds: parsedSchoolIds,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final map = <String, dynamic>{
       'id': id,
       'email': email,
       'full_name': fullName,
@@ -68,6 +70,10 @@ class UserModel {
       'school_name': schoolName,
       'school_ids': schoolIds,
     };
+    if (schoolId != null && schoolId!.isNotEmpty) {
+      map['school_id'] = schoolId;
+    }
+    return map;
   }
 
   UserModel copyWith({
@@ -80,6 +86,7 @@ class UserModel {
     String? position,
     String? address,
     String? schoolName,
+    String? schoolId,
     List<String>? schoolIds,
   }) {
     return UserModel(
@@ -92,8 +99,8 @@ class UserModel {
       position: position ?? this.position,
       address: address ?? this.address,
       schoolName: schoolName ?? this.schoolName,
+      schoolId: schoolId ?? this.schoolId,
       schoolIds: schoolIds ?? this.schoolIds,
     );
   }
 }
-

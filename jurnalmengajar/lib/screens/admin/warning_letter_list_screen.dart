@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/warning_letter_provider.dart';
 import '../../providers/master_data_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../models/teacher_model.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../core/theme/app_theme.dart';
@@ -30,7 +31,8 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
       });
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<WarningLetterProvider>(context, listen: false).loadAllWarningLetters();
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      Provider.of<WarningLetterProvider>(context, listen: false).loadAllWarningLetters(authProvider.activeSchoolId);
     });
   }
 
@@ -92,7 +94,7 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
               child: RefreshIndicator(
-                onRefresh: () => warningProvider.loadAllWarningLetters(),
+                onRefresh: () => warningProvider.loadAllWarningLetters(context.read<AuthProvider>().activeSchoolId),
                 color: AppTheme.primaryColor,
                 child: Column(
                   children: [

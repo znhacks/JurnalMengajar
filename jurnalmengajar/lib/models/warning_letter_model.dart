@@ -5,6 +5,7 @@ class WarningLetterModel {
   final DateTime issuedAt;
   final String reason;
   final String status; // 'unread' | 'read'
+  final String? schoolId;
 
   WarningLetterModel({
     required this.id,
@@ -13,6 +14,7 @@ class WarningLetterModel {
     required this.issuedAt,
     required this.reason,
     required this.status,
+    this.schoolId,
   });
 
   factory WarningLetterModel.fromJson(Map<String, dynamic> json) {
@@ -25,11 +27,12 @@ class WarningLetterModel {
           : (json['issued_at'] as DateTime).toLocal(),
       reason: json['reason'] as String,
       status: json['status'] as String? ?? 'unread',
+      schoolId: json['school_id'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final map = <String, dynamic>{
       if (id.isNotEmpty) 'id': id,
       'teacher_id': teacherId,
       'schedule_id': scheduleId,
@@ -37,6 +40,10 @@ class WarningLetterModel {
       'reason': reason,
       'status': status,
     };
+    if (schoolId != null && schoolId!.isNotEmpty) {
+      map['school_id'] = schoolId;
+    }
+    return map;
   }
 
   WarningLetterModel copyWith({
@@ -46,6 +53,7 @@ class WarningLetterModel {
     DateTime? issuedAt,
     String? reason,
     String? status,
+    String? schoolId,
   }) {
     return WarningLetterModel(
       id: id ?? this.id,
@@ -54,6 +62,7 @@ class WarningLetterModel {
       issuedAt: issuedAt ?? this.issuedAt,
       reason: reason ?? this.reason,
       status: status ?? this.status,
+      schoolId: schoolId ?? this.schoolId,
     );
   }
 }

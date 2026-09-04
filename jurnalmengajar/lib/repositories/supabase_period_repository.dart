@@ -31,10 +31,14 @@ class SupabasePeriodRepository implements PeriodRepository {
   Future<void> create(PeriodModel model) async {
     try {
       if (model.isActive) {
-        await _supabase
+        var deactivateQuery = _supabase
             .from('periods')
             .update({'is_active': false})
             .eq('is_active', true);
+        if (model.schoolId != null && model.schoolId!.isNotEmpty) {
+          deactivateQuery = deactivateQuery.eq('school_id', model.schoolId!);
+        }
+        await deactivateQuery;
       }
       final payload = model.toJson();
       if ((payload['id'] as String?)?.isEmpty ?? true) {
@@ -50,10 +54,14 @@ class SupabasePeriodRepository implements PeriodRepository {
   Future<void> update(PeriodModel model) async {
     try {
       if (model.isActive) {
-        await _supabase
+        var deactivateQuery = _supabase
             .from('periods')
             .update({'is_active': false})
             .eq('is_active', true);
+        if (model.schoolId != null && model.schoolId!.isNotEmpty) {
+          deactivateQuery = deactivateQuery.eq('school_id', model.schoolId!);
+        }
+        await deactivateQuery;
       }
       await _supabase
           .from('periods')

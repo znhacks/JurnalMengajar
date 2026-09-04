@@ -197,6 +197,8 @@ class SupabaseAuthRepository implements AuthRepository {
           'school_name': canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
           'schoolName': canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
           'school': canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
+          'school_id': schoolId.isNotEmpty ? schoolId : null,
+          'schoolId': schoolId.isNotEmpty ? schoolId : null,
         },
       );
 
@@ -214,6 +216,8 @@ class SupabaseAuthRepository implements AuthRepository {
         id: userId,
         role: user.role,
         photoUrl: finalPhotoUrl,
+        schoolId: schoolId.isNotEmpty ? schoolId : null,
+        schoolName: canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
       ).toJson();
       try {
         await _supabase
@@ -386,7 +390,7 @@ class SupabaseAuthRepository implements AuthRepository {
           final res2 = await _supabase
               .from('users')
               .select()
-              .or('id.in.(${userIds.join(",")})')
+              .inFilter('id', userIds.toList())
               .order('full_name', ascending: true);
           for (final json in (res2 as List)) {
             final u = UserModel.fromJson(json);

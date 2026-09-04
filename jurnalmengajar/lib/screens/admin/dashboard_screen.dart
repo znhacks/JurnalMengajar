@@ -99,8 +99,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     await Future.wait([
       masterProvider.loadAllData(authProvider.activeSchoolId),
-      scheduleProvider.loadAllSchedules(),
-      journalProvider.loadAllJournals(),
+      scheduleProvider.loadAllSchedules(authProvider.activeSchoolId),
+      journalProvider.loadAllJournals(authProvider.activeSchoolId),
       Provider.of<HolidayProvider>(context, listen: false).loadHolidays(schoolId),
     ]);
 
@@ -124,7 +124,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         maxDays: maxDays,
         masterProvider: masterProvider,
       );
-      await warningProvider.loadAllWarningLetters();
+      await warningProvider.loadAllWarningLetters(authProvider.activeSchoolId);
     }
   }
 

@@ -181,8 +181,10 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
         .toList();
-    if (selectedSchools.isEmpty) {
-      selectedSchools.add('SMKN 11 Malang');
+    if (selectedSchools.isEmpty &&
+        authProvider.activeSchoolName.isNotEmpty &&
+        authProvider.activeSchoolName != 'Sekolah') {
+      selectedSchools.add(authProvider.activeSchoolName);
     }
     Uint8List? tempImageBytes;
     String? tempImageName;

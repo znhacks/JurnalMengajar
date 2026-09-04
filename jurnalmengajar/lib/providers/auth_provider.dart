@@ -289,6 +289,55 @@ class AuthProvider with ChangeNotifier {
 
       _userMemberships = loadedMemberships;
 
+      if (_userMemberships.isEmpty && _currentUser != null) {
+        // Self-heal: If user has schoolId or schoolName in profile, look up school and link
+        try {
+          Map<String, dynamic>? schoolData;
+          if (_currentUser!.schoolId != null && _currentUser!.schoolId!.isNotEmpty) {
+            schoolData = await supabase
+                .from('schools')
+                .select('id, name, code, logo_url')
+                .eq('id', _currentUser!.schoolId!)
+                .maybeSingle();
+          }
+          if (schoolData == null && _currentUser!.schoolName != null && _currentUser!.schoolName!.isNotEmpty) {
+            schoolData = await supabase
+                .from('schools')
+                .select('id, name, code, logo_url')
+                .ilike('name', _currentUser!.schoolName!.trim())
+                .maybeSingle();
+          }
+          if (schoolData != null) {
+            final sId = schoolData['id'] as String;
+            final sName = schoolData['name'] as String;
+            final sLogo = schoolData['logo_url'] as String?;
+            final sCode = schoolData['code'] as String?;
+
+            try {
+              await supabase.from('user_schools').insert({
+                'user_id': _currentUser!.id,
+                'school_id': sId,
+                'role': _currentUser!.role,
+                'status': 'active',
+              });
+            } catch (_) {}
+
+            final healedMember = UserSchoolModel(
+              id: 'us_healed',
+              userId: _currentUser!.id,
+              schoolId: sId,
+              role: _currentUser!.role,
+              schoolName: sName,
+              schoolCode: sCode,
+              logoUrl: sLogo,
+            );
+            _userMemberships = [healedMember];
+          }
+        } catch (healErr) {
+          debugPrint('Error self-healing user memberships: $healErr');
+        }
+      }
+
       if (_userMemberships.isNotEmpty) {
         // Load saved preference if available
         final prefs = await SharedPreferences.getInstance();
@@ -317,6 +366,7 @@ class AuthProvider with ChangeNotifier {
 
         if (_currentUser != null) {
           _currentUser = _currentUser!.copyWith(
+            schoolId: _activeSchoolId,
             schoolName: _activeSchoolName,
             role: _activeRole,
           );

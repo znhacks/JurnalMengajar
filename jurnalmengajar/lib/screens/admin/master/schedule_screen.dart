@@ -40,8 +40,8 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
 
     await Future.wait([
       masterProvider.loadAllData(authProvider.activeSchoolId),
-      scheduleProvider.loadAllSchedules(),
-      journalProvider.loadAllJournals(),
+      scheduleProvider.loadAllSchedules(authProvider.activeSchoolId),
+      journalProvider.loadAllJournals(authProvider.activeSchoolId),
     ]);
   }
 

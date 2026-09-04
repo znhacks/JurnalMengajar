@@ -6,7 +6,7 @@ class MockScheduleRepository implements ScheduleRepository {
   final MockDatabase _db = MockDatabase();
 
   @override
-  Future<List<ScheduleModel>> getAll() async {
+  Future<List<ScheduleModel>> getAll([String? schoolId]) async {
     await Future.delayed(const Duration(milliseconds: 300));
     return List.from(_db.schedules);
   }
