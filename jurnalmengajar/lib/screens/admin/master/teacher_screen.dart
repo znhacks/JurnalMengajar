@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -252,12 +251,10 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                           backgroundColor: Colors.grey[200],
                           backgroundImage: tempImageBytes != null
                               ? MemoryImage(tempImageBytes!)
-                              : (teacher?.photoUrl != null && teacher!.photoUrl!.startsWith('http')
-                                  ? NetworkImage(teacher.photoUrl!)
-                                  : (teacher?.photoUrl != null && !kIsWeb
-                                      ? FileImage(File(teacher!.photoUrl!))
-                                      : null)) as ImageProvider?,
-                          child: tempImageBytes == null && teacher?.photoUrl == null
+                              : ((teacher?.photoUrl?.startsWith('http') ?? false)
+                                  ? NetworkImage(teacher!.photoUrl!)
+                                  : null),
+                          child: tempImageBytes == null && !(teacher?.photoUrl?.startsWith('http') ?? false)
                               ? Icon(Icons.person, size: 44.r, color: Colors.grey[400])
                               : null,
                         ),
@@ -570,8 +567,8 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                       backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
                       backgroundImage: t.photoUrl != null && t.photoUrl!.startsWith('http')
                           ? NetworkImage(t.photoUrl!)
-                          : (t.photoUrl != null && !kIsWeb ? FileImage(File(t.photoUrl!)) : null) as ImageProvider?,
-                      child: t.photoUrl == null
+                          : null,
+                      child: t.photoUrl == null || !t.photoUrl!.startsWith('http')
                           ? Icon(Icons.person, size: 20.r, color: Colors.grey[400])
                           : null,
                     ),

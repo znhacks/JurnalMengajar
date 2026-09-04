@@ -12,7 +12,7 @@ abstract class AuthRepository {
   Future<UserModel> updateProfile(UserModel user);
   Future<List<UserModel>> getAllUsers();
   Future<List<UserModel>> getAllUsersForSchool(String schoolId);
-  Future<void> updateUserRole(String userId, String role);
+  Future<void> updateUserRole(String userId, String role, [String? schoolId]);
   Future<void> deleteAccount(String userId);
   Future<void> updateFcmToken(String userId, String token);
   Future<void> requestExitFromSchool(String membershipId);

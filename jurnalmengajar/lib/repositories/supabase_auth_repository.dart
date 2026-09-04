@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
@@ -204,23 +203,10 @@ class SupabaseAuthRepository implements AuthRepository {
       final userId = authResponse.user?.id;
       if (userId == null) throw Exception('Gagal membuat akun');
 
-      // 2. Upload profile photo if provided and is a local file path
+      // 2. Set profile photo URL if valid remote URL
       String? finalPhotoUrl = user.photoUrl;
-      if (finalPhotoUrl != null &&
-          finalPhotoUrl.isNotEmpty &&
-          !finalPhotoUrl.startsWith('http') &&
-          !kIsWeb) {
-        try {
-          final file = File(finalPhotoUrl);
-          if (await file.exists()) {
-            final bytes = await file.readAsBytes();
-            final fileName = finalPhotoUrl.split('/').last;
-            finalPhotoUrl = await uploadProfilePhoto(bytes, fileName, userId);
-          }
-        } catch (uploadError) {
-          debugPrint('Error uploading profile photo during registration: $uploadError');
-          finalPhotoUrl = null;
-        }
+      if (finalPhotoUrl != null && !finalPhotoUrl.startsWith('http')) {
+        finalPhotoUrl = null;
       }
 
       // 3. Create or update user profile in database
@@ -269,13 +255,9 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> resetPassword(String email) async {
     try {
-      // Always redirect back into the app via the registered custom scheme.
-      // On Android the OS intercepts this URL and opens the app via the intent
-      // filter registered in AndroidManifest.xml. Avoid using Uri.base.origin
-      // because during development that resolves to http://localhost:<port>,
-      // which would cause the reset link in the email to open the desktop browser
-      // instead of the mobile app.
-      const redirectTo = 'io.supabase.jurnalmengajar://login-callback/reset-password';
+      final String redirectTo = kIsWeb
+          ? '${Uri.base.origin}/reset-password'
+          : 'io.supabase.jurnalmengajar://login-callback/reset-password';
 
       await _supabase.auth.resetPasswordForEmail(email, redirectTo: redirectTo);
     } catch (e) {
@@ -295,9 +277,13 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> changeEmail(String newEmail) async {
     try {
+      final String redirectTo = kIsWeb
+          ? '${Uri.base.origin}/login-callback'
+          : 'io.supabase.jurnalmengajar://login-callback';
+
       await _supabase.auth.updateUser(
         UserAttributes(email: newEmail),
-        emailRedirectTo: 'io.supabase.jurnalmengajar://login-callback',
+        emailRedirectTo: redirectTo,
       );
     } catch (e) {
       throw Exception('Gagal mengubah email: $e');
@@ -438,11 +424,22 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> updateUserRole(String userId, String role) async {
+  Future<void> updateUserRole(String userId, String role, [String? schoolId]) async {
     try {
       await _supabase.from('users').update({'role': role}).eq('id', userId);
       try {
-        await _supabase.from('user_schools').update({'role': role}).eq('user_id', userId);
+        if (schoolId != null && schoolId.isNotEmpty) {
+          await _supabase
+              .from('user_schools')
+              .update({'role': role})
+              .eq('user_id', userId)
+              .eq('school_id', schoolId);
+        } else {
+          await _supabase
+              .from('user_schools')
+              .update({'role': role})
+              .eq('user_id', userId);
+        }
       } catch (_) {}
     } catch (e) {
       throw Exception('Gagal memperbarui peran pengguna: $e');

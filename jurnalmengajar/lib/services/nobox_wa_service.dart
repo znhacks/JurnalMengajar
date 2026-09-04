@@ -1,14 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/student_model.dart';
 import '../models/class_model.dart';
 import '../models/subject_model.dart';
 
 class NoboxWaService {
-  static const String _edgeFunctionUrl =
-      'https://egcxjuudphnbjwqhhbra.supabase.co/functions/v1/send-nobox-wa-notification';
-
   /// Send WhatsApp notification to parent via Nobox AI Edge Function
   static Future<void> sendAbsenceNotification({
     required StudentModel student,
@@ -42,14 +38,13 @@ class NoboxWaService {
         print('🤖 Sending Nobox AI WA Notification for ${student.name} to $parentPhone...');
       }
 
-      final response = await http.post(
-        Uri.parse(_edgeFunctionUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
+      final response = await Supabase.instance.client.functions.invoke(
+        'send-nobox-wa-notification',
+        body: payload,
       );
 
       if (kDebugMode) {
-        print('Nobox AI WA Response: ${response.statusCode} - ${response.body}');
+        print('Nobox AI WA Response: ${response.status} - ${response.data}');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -64,9 +59,17 @@ class NoboxWaService {
     required String schoolName,
     required DateTime date,
     required List<Map<String, String>> journalItems,
-    String parentPhone = '6282230090067',
+    String? parentPhone,
   }) async {
     try {
+      final phone = parentPhone?.trim();
+      if (phone == null || phone.isEmpty) {
+        if (kDebugMode) {
+          print('ℹ️ Skip Nobox WA Daily Report: No destination phone number provided');
+        }
+        return;
+      }
+
       const months = [
         '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
         'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
@@ -91,22 +94,21 @@ class NoboxWaService {
       final reportText = buffer.toString();
 
       final payload = {
-        'parent_phone': parentPhone,
+        'parent_phone': phone,
         'custom_message': reportText,
       };
 
       if (kDebugMode) {
-        print('🤖 Sending Nobox AI WA Daily Report to $parentPhone...');
+        print('🤖 Sending Nobox AI WA Daily Report to $phone...');
       }
 
-      final response = await http.post(
-        Uri.parse(_edgeFunctionUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
+      final response = await Supabase.instance.client.functions.invoke(
+        'send-nobox-wa-notification',
+        body: payload,
       );
 
       if (kDebugMode) {
-        print('Nobox AI WA Daily Report Response: ${response.statusCode} - ${response.body}');
+        print('Nobox AI WA Daily Report Response: ${response.status} - ${response.data}');
       }
     } catch (e) {
       if (kDebugMode) {

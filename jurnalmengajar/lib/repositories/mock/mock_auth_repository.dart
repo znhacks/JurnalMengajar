@@ -163,7 +163,7 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> updateUserRole(String userId, String role) async {
+  Future<void> updateUserRole(String userId, String role, [String? schoolId]) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final index = _db.users.indexWhere((u) => u.id == userId);
     if (index != -1) {

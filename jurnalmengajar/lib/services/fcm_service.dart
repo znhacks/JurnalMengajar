@@ -46,21 +46,6 @@ class FcmService {
     if (kIsWeb) {
       if (_isInitialized) return;
       _isInitialized = true;
-      if (context != null && context.mounted) {
-        Future.delayed(const Duration(seconds: 3), () {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Silakan periksa di handphone / perangkat genggam Anda untuk menerima notifikasi.',
-                ),
-                backgroundColor: Color(0xFF4F46E5),
-                duration: Duration(seconds: 5),
-              ),
-            );
-          }
-        });
-      }
       return;
     }
 

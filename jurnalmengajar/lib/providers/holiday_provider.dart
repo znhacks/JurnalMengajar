@@ -88,18 +88,34 @@ class HolidayProvider with ChangeNotifier {
 
       await supabase.from('school_holidays').insert(payload);
 
-      // 2. Soft-delete journals within this date range for this school
+      // 2. Soft-delete journals within this date range for this school only
       final startStr = startDate.toIso8601String().split('T').first;
       final endStr = endDate.add(const Duration(days: 1)).toIso8601String().split('T').first;
 
-      await supabase
-          .from('journals')
-          .update({
-            'is_soft_deleted': true,
-            'deleted_at': DateTime.now().toIso8601String(),
-          })
-          .gte('date', startStr)
-          .lt('date', endStr);
+      try {
+        final classesRes = await supabase
+            .from('classes')
+            .select('id')
+            .eq('school_id', targetSchoolId);
+        final classIds = (classesRes as List)
+            .map((c) => c['id'] as String)
+            .where((id) => id.isNotEmpty)
+            .toList();
+
+        if (classIds.isNotEmpty) {
+          await supabase
+              .from('journals')
+              .update({
+                'is_soft_deleted': true,
+                'deleted_at': DateTime.now().toIso8601String(),
+              })
+              .inFilter('class_id', classIds)
+              .gte('date', startStr)
+              .lt('date', endStr);
+        }
+      } catch (e) {
+        debugPrint('Note: soft-deleting school journals during addHoliday: $e');
+      }
 
       await loadHolidays(schoolId);
       return true;
@@ -120,19 +136,35 @@ class HolidayProvider with ChangeNotifier {
     try {
       final supabase = Supabase.instance.client;
 
-      // Restore journals if dates are provided
+      // Restore journals if dates are provided, scoped to this school
       if (startDate != null && endDate != null) {
         final startStr = startDate.toIso8601String().split('T').first;
         final endStr = endDate.add(const Duration(days: 1)).toIso8601String().split('T').first;
 
-        await supabase
-            .from('journals')
-            .update({
-              'is_soft_deleted': false,
-              'deleted_at': null,
-            })
-            .gte('date', startStr)
-            .lt('date', endStr);
+        try {
+          final classesRes = await supabase
+              .from('classes')
+              .select('id')
+              .eq('school_id', schoolId);
+          final classIds = (classesRes as List)
+              .map((c) => c['id'] as String)
+              .where((id) => id.isNotEmpty)
+              .toList();
+
+          if (classIds.isNotEmpty) {
+            await supabase
+                .from('journals')
+                .update({
+                  'is_soft_deleted': false,
+                  'deleted_at': null,
+                })
+                .inFilter('class_id', classIds)
+                .gte('date', startStr)
+                .lt('date', endStr);
+          }
+        } catch (e) {
+          debugPrint('Note: restoring school journals during deleteHoliday: $e');
+        }
       }
 
       await supabase.from('school_holidays').delete().eq('id', holidayId);

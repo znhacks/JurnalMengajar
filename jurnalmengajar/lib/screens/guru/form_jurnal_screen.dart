@@ -469,9 +469,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             note: combinedNote,
             attachment: attachment,
             status: 'pending', // Reset status to pending when revised!
-            attachmentUrl: attachment == null
-                ? null
-                : _existingJournal!.attachmentUrl,
+            attachmentUrl: _existingImageUrls.isNotEmpty
+                ? _existingImageUrls.join(',')
+                : null,
             rejectionNote: null, // Clear rejection note when revised!
           );
 
@@ -500,7 +500,6 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                     id: '',
                     classId: '',
                     name: 'Siswa',
-                    parentPhoneNumber: '082230090067',
                   ),
                 );
                 NoboxWaService.sendAbsenceNotification(
@@ -573,7 +572,6 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                     id: '',
                     classId: '',
                     name: 'Siswa',
-                    parentPhoneNumber: '082230090067',
                   ),
                 );
                 NoboxWaService.sendAbsenceNotification(

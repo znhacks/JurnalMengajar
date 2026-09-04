@@ -31,6 +31,7 @@ class MasterDataProvider with ChangeNotifier {
   List<TeacherModel> _teachers = [];
   List<StudentModel> _students = [];
   List<SchoolModel> _schools = [];
+  String? _currentSchoolId;
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -53,6 +54,7 @@ class MasterDataProvider with ChangeNotifier {
   List<TeacherModel> get teachers => _teachers;
   List<StudentModel> get students => _students;
   List<SchoolModel> get schools => _schools;
+  String? get currentSchoolId => _currentSchoolId;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -65,6 +67,7 @@ class MasterDataProvider with ChangeNotifier {
   }
 
   Future<void> loadAllData([String? schoolId]) async {
+    _currentSchoolId = schoolId;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -102,7 +105,7 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await periodRepository.create(model);
-      _periods = await periodRepository.getAll();
+      _periods = await periodRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -118,7 +121,7 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await periodRepository.update(model);
-      _periods = await periodRepository.getAll();
+      _periods = await periodRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -134,7 +137,7 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await periodRepository.delete(id);
-      _periods = await periodRepository.getAll();
+      _periods = await periodRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -151,7 +154,7 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await subjectRepository.create(model);
-      _subjects = await subjectRepository.getAll();
+      _subjects = await subjectRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -167,7 +170,7 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await subjectRepository.update(model);
-      _subjects = await subjectRepository.getAll();
+      _subjects = await subjectRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -183,7 +186,7 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await subjectRepository.delete(id);
-      _subjects = await subjectRepository.getAll();
+      _subjects = await subjectRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -200,7 +203,7 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await hourRepository.create(model);
-      _hours = await hourRepository.getAll();
+      _hours = await hourRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -216,7 +219,7 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await hourRepository.update(model);
-      _hours = await hourRepository.getAll();
+      _hours = await hourRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -232,7 +235,7 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await hourRepository.delete(id);
-      _hours = await hourRepository.getAll();
+      _hours = await hourRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -249,7 +252,7 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await classRepository.create(model);
-      _classes = await classRepository.getAll();
+      _classes = await classRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -265,7 +268,7 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await classRepository.update(model);
-      _classes = await classRepository.getAll();
+      _classes = await classRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -281,7 +284,7 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await classRepository.delete(id);
-      _classes = await classRepository.getAll();
+      _classes = await classRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -349,7 +352,9 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await teacherRepository.create(model);
-      _teachers = await teacherRepository.getAll();
+      _teachers = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty)
+          ? await teacherRepository.getAllForSchool(_currentSchoolId!)
+          : await teacherRepository.getAll();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -365,7 +370,9 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await teacherRepository.update(model);
-      _teachers = await teacherRepository.getAll();
+      _teachers = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty)
+          ? await teacherRepository.getAllForSchool(_currentSchoolId!)
+          : await teacherRepository.getAll();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -381,7 +388,9 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await teacherRepository.delete(id);
-      _teachers = await teacherRepository.getAll();
+      _teachers = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty)
+          ? await teacherRepository.getAllForSchool(_currentSchoolId!)
+          : await teacherRepository.getAll();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -427,7 +436,7 @@ class MasterDataProvider with ChangeNotifier {
     try {
       await studentRepository.create(model);
       _students = await studentRepository.getAllByClass(model.classId);
-      _classes = await classRepository.getAll();
+      _classes = await classRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -444,7 +453,7 @@ class MasterDataProvider with ChangeNotifier {
     try {
       await studentRepository.update(model);
       _students = await studentRepository.getAllByClass(model.classId);
-      _classes = await classRepository.getAll();
+      _classes = await classRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -461,7 +470,7 @@ class MasterDataProvider with ChangeNotifier {
     try {
       await studentRepository.delete(id);
       _students = await studentRepository.getAllByClass(classId);
-      _classes = await classRepository.getAll();
+      _classes = await classRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -479,7 +488,7 @@ class MasterDataProvider with ChangeNotifier {
       for (final id in ids) {
         await periodRepository.delete(id);
       }
-      _periods = await periodRepository.getAll();
+      _periods = await periodRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -497,7 +506,7 @@ class MasterDataProvider with ChangeNotifier {
       for (final id in ids) {
         await subjectRepository.delete(id);
       }
-      _subjects = await subjectRepository.getAll();
+      _subjects = await subjectRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -515,7 +524,7 @@ class MasterDataProvider with ChangeNotifier {
       for (final id in ids) {
         await hourRepository.delete(id);
       }
-      _hours = await hourRepository.getAll();
+      _hours = await hourRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -533,7 +542,7 @@ class MasterDataProvider with ChangeNotifier {
       for (final id in ids) {
         await classRepository.delete(id);
       }
-      _classes = await classRepository.getAll();
+      _classes = await classRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -551,7 +560,9 @@ class MasterDataProvider with ChangeNotifier {
       for (final id in ids) {
         await teacherRepository.delete(id);
       }
-      _teachers = await teacherRepository.getAll();
+      _teachers = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty)
+          ? await teacherRepository.getAllForSchool(_currentSchoolId!)
+          : await teacherRepository.getAll();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -570,7 +581,7 @@ class MasterDataProvider with ChangeNotifier {
         await studentRepository.delete(id);
       }
       _students = await studentRepository.getAllByClass(classId);
-      _classes = await classRepository.getAll();
+      _classes = await classRepository.getAll(_currentSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();

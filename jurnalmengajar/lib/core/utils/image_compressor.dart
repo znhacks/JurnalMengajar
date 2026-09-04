@@ -37,10 +37,10 @@ class ImageCompressor {
         final nameWithoutExt = originalFileName.contains('.')
             ? originalFileName.substring(0, originalFileName.lastIndexOf('.'))
             : originalFileName;
-        return (bytes: result, fileName: '$nameWithoutExt.webp');
+        return (bytes: result, fileName: '$nameWithoutExt.jpg');
       }
     } catch (e) {
-      debugPrint('Failed to compress image to WebP: $e');
+      debugPrint('Failed to compress image: $e');
     }
 
     // Fallback: return original bytes if processing failed

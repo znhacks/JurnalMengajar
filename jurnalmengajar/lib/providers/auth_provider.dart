@@ -63,13 +63,11 @@ class AuthProvider with ChangeNotifier {
   SchoolModel? get activeSchool => _activeSchool;
 
   bool get isExclusiveAdmin {
-    if (_currentUser == null) return true;
+    if (_currentUser == null) return false;
     final emailLower = _currentUser!.email.toLowerCase().trim();
-    final nameLower = _currentUser!.fullName.toLowerCase().trim();
     return emailLower == 'admin@jurnal.com' ||
            emailLower == 'smkn11malang@jurnal.com' ||
-           emailLower.startsWith('admin@') ||
-           nameLower.contains('admin');
+           _currentUser!.role == 'superadmin';
   }
 
   Future<void> fetchActiveSchoolDetails() async {
@@ -585,12 +583,13 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> updateUserRole(String userId, String role) async {
+  Future<bool> updateUserRole(String userId, String role, [String? schoolId]) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      await authRepository.updateUserRole(userId, role);
+      final targetSchoolId = schoolId ?? _activeSchoolId;
+      await authRepository.updateUserRole(userId, role, targetSchoolId);
       // If the modified user is current user, update local profile as well
       if (_currentUser != null && _currentUser!.id == userId) {
         _currentUser = _currentUser!.copyWith(role: role);

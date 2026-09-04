@@ -78,7 +78,10 @@ class JournalProvider with ChangeNotifier {
         final supabaseRepo = journalRepository as SupabaseJournalRepository;
         final bytesList = imageBytesList;
         final namesList = imageNamesList;
-        final createdJournal = await journalRepository.getJournalForSchedule(model.scheduleId);
+        final createdJournal = await journalRepository.getJournalForSchedule(
+          model.scheduleId,
+          date: model.date,
+        );
         if (createdJournal != null) {
           try {
             final uploadedUrls = <String>[];

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -39,7 +38,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordFocusNode = FocusNode();
   final _confirmPasswordFocusNode = FocusNode();
 
-  File? _profileImage;
   Uint8List? _profileImageBytes;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -85,20 +83,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         setState(() {
           _profileImageBytes = result.bytes;
         });
-
-        if (!kIsWeb) {
-          try {
-            final tempDir = Directory.systemTemp;
-            final tempFile = File(
-              '${tempDir.path}/profile_crop_${DateTime.now().millisecondsSinceEpoch}.jpg',
-            );
-            await tempFile.writeAsBytes(result.bytes);
-
-            setState(() {
-              _profileImage = tempFile;
-            });
-          } catch (_) {}
-        }
       }
     } catch (e) {
       if (mounted) {
@@ -208,7 +192,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             : 'Admin Sekolah (${_schoolCodeController.text.trim().toUpperCase()})',
         address: _addressController.text.trim(),
         role: assignedRole,
-        photoUrl: _profileImage?.path,
+        photoUrl: null,
         schoolName: _selectedSchools.join(', '),
       );
 
@@ -520,10 +504,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       backgroundColor: const Color(0xFFF1F5F9),
                                       backgroundImage: _profileImageBytes != null
                                           ? MemoryImage(_profileImageBytes!)
-                                          : (_profileImage != null && !kIsWeb
-                                              ? FileImage(_profileImage!)
-                                              : null) as ImageProvider?,
-                                      child: _profileImageBytes == null && _profileImage == null
+                                          : null,
+                                      child: _profileImageBytes == null
                                           ? Icon(
                                               Icons.person_outline_rounded,
                                               size: 46.r,

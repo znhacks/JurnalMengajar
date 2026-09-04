@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -452,10 +450,8 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                       backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
                       backgroundImage: user.photoUrl != null && user.photoUrl!.startsWith('http')
                           ? NetworkImage(user.photoUrl!)
-                          : (user.photoUrl != null && !kIsWeb
-                              ? FileImage(File(user.photoUrl!))
-                              : null) as ImageProvider?,
-                      child: user.photoUrl == null
+                          : null,
+                      child: user.photoUrl == null || !user.photoUrl!.startsWith('http')
                           ? Icon(Icons.person_outline, size: 24.r, color: Colors.grey[400])
                           : null,
                     ),
