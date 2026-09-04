@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -23,6 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
   bool _obscurePassword = true;
+  DateTime? _lastBackPressTime;
 
   @override
   void initState() {
@@ -131,8 +133,40 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final isLoading = context.watch<AuthProvider>().isLoading;
 
-    return Scaffold(
-      body: Container(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        final now = DateTime.now();
+        if (_lastBackPressTime == null ||
+            now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+          _lastBackPressTime = now;
+          ScaffoldMessenger.of(context).removeCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Tekan sekali lagi untuk keluar dari aplikasi',
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              backgroundColor: const Color(0xFF1E293B),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              margin: EdgeInsets.all(16.w),
+            ),
+          );
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        body: Container(
         color: Theme.of(context).scaffoldBackgroundColor,
         child: SafeArea(
           child: Center(
@@ -584,6 +618,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
