@@ -227,7 +227,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
                       // Form Section
                       Padding(
-                        padding: EdgeInsets.fromLTRB(24.w, 10.h, 24.w, 20.h),
+                        padding: EdgeInsets.fromLTRB(
+                          kIsWeb ? 20 : 24.w,
+                          kIsWeb ? 8 : 12.h,
+                          kIsWeb ? 20 : 24.w,
+                          kIsWeb ? 16 : 20.h,
+                        ),
                         child: Form(
                           key: _formKey,
                           child: Column(
@@ -238,44 +243,46 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     ? 'Ubah Password'
                                     : 'Lupa Password?',
                                 style: TextStyle(
-                                  fontSize: 22.sp,
+                                  fontSize: kIsWeb ? 20 : 22.sp,
                                   fontWeight: FontWeight.bold,
                                   color:
                                       Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
-                              SizedBox(height: 6.h),
+                              SizedBox(height: 5.h),
                               Text(
                                 isRecoveryMode
                                     ? 'Masukkan password baru Anda untuk mengaktifkan kembali akun.'
-                                    : 'Masukkan email terdaftar Anda. Kami akan mengirimkan tautan untuk mengatur ulang kata sandi.',
+                                    : 'Masukkan email terdaftar Anda untuk mengatur ulang kata sandi.',
                                 style: TextStyle(
-                                  fontSize: 13.sp,
+                                  fontSize: kIsWeb ? 13 : 13.5.sp,
                                   color: Theme.of(
                                     context,
                                   ).colorScheme.onSurfaceVariant,
                                   height: 1.4,
                                 ),
                               ),
-                              SizedBox(height: 16.h),
+                              SizedBox(height: kIsWeb ? 14 : 22.h),
 
                               if (!isRecoveryMode) ...[
                                 // Email field label
                                 Text(
-                                  'EMAIL TERDAFTAR',
+                                  'EMAIL',
                                   style: TextStyle(
-                                    fontSize: 11.sp,
+                                    fontSize: kIsWeb ? 11.5 : 12.sp,
                                     fontWeight: FontWeight.bold,
                                     color: const Color(0xFF94A3B8),
                                     letterSpacing: 0.5,
                                   ),
                                 ),
-                                SizedBox(height: 6.h),
+                                SizedBox(height: 5.h),
                                 TextFormField(
                                   controller: _emailController,
                                   keyboardType: TextInputType.emailAddress,
+                                  textInputAction: TextInputAction.done,
+                                  onFieldSubmitted: (_) => _handleReset(),
                                   style: TextStyle(
-                                    fontSize: 14.sp,
+                                    fontSize: kIsWeb ? 14 : 14.5.sp,
                                     color:
                                         Theme.of(context).colorScheme.onSurface,
                                   ),
@@ -296,7 +303,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     icon: Icons.email_outlined,
                                   ),
                                 ),
-                                SizedBox(height: 16.h),
+                                SizedBox(height: kIsWeb ? 12 : 16.h),
                               ],
 
                               if (isRecoveryMode) ...[
@@ -304,18 +311,19 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 Text(
                                   'PASSWORD BARU',
                                   style: TextStyle(
-                                    fontSize: 11.sp,
+                                    fontSize: kIsWeb ? 11.5 : 12.sp,
                                     fontWeight: FontWeight.bold,
                                     color: const Color(0xFF94A3B8),
                                     letterSpacing: 0.5,
                                   ),
                                 ),
-                                SizedBox(height: 6.h),
+                                SizedBox(height: 5.h),
                                 TextFormField(
                                   controller: _passwordController,
                                   obscureText: _obscurePassword,
+                                  textInputAction: TextInputAction.next,
                                   style: TextStyle(
-                                    fontSize: 14.sp,
+                                    fontSize: kIsWeb ? 14 : 14.5.sp,
                                     color:
                                         Theme.of(context).colorScheme.onSurface,
                                   ),
@@ -337,7 +345,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                         _obscurePassword
                                             ? Icons.visibility_off_outlined
                                             : Icons.visibility_outlined,
-                                        color: const Color(0xFF2563EB),
+                                        color: Colors.grey,
                                       ),
                                       onPressed: () {
                                         setState(() {
@@ -347,24 +355,26 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     ),
                                   ),
                                 ),
-                                SizedBox(height: 20.h),
+                                SizedBox(height: kIsWeb ? 10 : 14.h),
 
                                 // Confirm Password
                                 Text(
                                   'KONFIRMASI PASSWORD',
                                   style: TextStyle(
-                                    fontSize: 11.sp,
+                                    fontSize: kIsWeb ? 11.5 : 12.sp,
                                     fontWeight: FontWeight.bold,
                                     color: const Color(0xFF94A3B8),
                                     letterSpacing: 0.5,
                                   ),
                                 ),
-                                SizedBox(height: 6.h),
+                                SizedBox(height: 5.h),
                                 TextFormField(
                                   controller: _confirmPasswordController,
                                   obscureText: _obscureConfirmPassword,
+                                  textInputAction: TextInputAction.done,
+                                  onFieldSubmitted: (_) => _handleReset(),
                                   style: TextStyle(
-                                    fontSize: 14.sp,
+                                    fontSize: kIsWeb ? 14 : 14.5.sp,
                                     color:
                                         Theme.of(context).colorScheme.onSurface,
                                   ),
@@ -386,7 +396,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                         _obscureConfirmPassword
                                             ? Icons.visibility_off_outlined
                                             : Icons.visibility_outlined,
-                                        color: const Color(0xFF2563EB),
+                                        color: Colors.grey,
                                       ),
                                       onPressed: () {
                                         setState(() {
@@ -397,20 +407,30 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     ),
                                   ),
                                 ),
-                                SizedBox(height: 16.h),
+                                SizedBox(height: kIsWeb ? 12 : 16.h),
                               ],
 
                               // Submit Button
                               ElevatedButton(
                                 onPressed: isLoading ? null : _handleReset,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF2563EB),
+                                  backgroundColor: const Color.fromARGB(
+                                    255,
+                                    37,
+                                    99,
+                                    235,
+                                  ),
                                   foregroundColor: Colors.white,
                                   elevation: 4,
-                                  shadowColor: const Color(
-                                    0xFF2563EB,
+                                  shadowColor: const Color.fromARGB(
+                                    255,
+                                    37,
+                                    99,
+                                    235,
                                   ).withValues(alpha: 0.4),
-                                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: kIsWeb ? 10 : 13.h,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16.r),
                                   ),
@@ -432,12 +452,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                             ? 'Simpan Password'
                                             : 'Kirim Link Reset',
                                         style: TextStyle(
-                                          fontSize: 15.sp,
+                                          fontSize: kIsWeb ? 14.5 : 15.5.sp,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                               ),
-                              SizedBox(height: 20.h),
+                              SizedBox(height: kIsWeb ? 14 : 22.h),
 
                               // Back to login link
                               Row(
@@ -446,7 +466,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                   Text(
                                     'Ingat password? ',
                                     style: TextStyle(
-                                      fontSize: 13.sp,
+                                      fontSize: kIsWeb ? 13 : 13.5.sp,
                                       color: Theme.of(
                                         context,
                                       ).colorScheme.onSurfaceVariant,
@@ -463,9 +483,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     child: Text(
                                       'Kembali Login',
                                       style: TextStyle(
-                                        fontSize: 13.sp,
+                                        fontSize: kIsWeb ? 13 : 13.5.sp,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF2563EB),
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                    Brightness.dark
+                                                ? const Color(0xFF60A5FA)
+                                                : const Color(0xFF2563EB),
                                       ),
                                     ),
                                   ),
@@ -492,16 +516,20 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     required IconData icon,
     Widget? suffixIcon,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecoration(
       hintText: hintText,
-      hintStyle: TextStyle(color: Colors.grey[400]),
+      hintStyle: TextStyle(
+        color: isDark ? const Color(0xFF64748B) : Colors.grey[400],
+        fontSize: 14.sp,
+      ),
       prefixIcon: Icon(
         icon,
-        color: const Color.fromARGB(255, 37, 99, 235),
+        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
       ),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: Theme.of(context).brightness == Brightness.dark
+      fillColor: isDark
           ? Theme.of(context).colorScheme.surfaceContainerHighest
           : const Color(0xFFEFF6FF).withValues(alpha: 0.5),
       border: OutlineInputBorder(
@@ -510,13 +538,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16.r),
-        borderSide: const BorderSide(
-          color: Color.fromARGB(255, 37, 99, 235),
+        borderSide: BorderSide(
+          color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
           width: 2,
         ),
       ),
       contentPadding: EdgeInsets.symmetric(
-        vertical: 10.h,
+        vertical: kIsWeb ? 8 : 10.h,
         horizontal: 12.w,
       ),
     );
