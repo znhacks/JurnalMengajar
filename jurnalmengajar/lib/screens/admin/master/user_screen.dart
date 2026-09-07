@@ -874,94 +874,111 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
         final email = userMap['email'] as String? ?? '';
         final photoUrl = userMap['photo_url'] as String?;
 
-        return Card(
-          margin: EdgeInsets.only(bottom: 12.h),
-          elevation: 0,
-          color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-            side: BorderSide(
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-            ),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(12.w),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 24.r,
-                  backgroundColor: isDark
-                      ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
-                      : const Color(0xFFEFF6FF),
-                  backgroundImage: photoUrl != null && photoUrl.isNotEmpty
-                      ? NetworkImage(photoUrl)
-                      : null,
-                  child: photoUrl == null || photoUrl.isEmpty
-                      ? Text(
-                          name.isNotEmpty ? name[0].toUpperCase() : 'G',
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB),
-                          ),
-                        )
-                      : null,
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
+                    final role = (req['role'] as String? ?? 'guru').toUpperCase();
+                    return Card(
+                      margin: EdgeInsets.only(bottom: 12.h),
+                      elevation: 0,
+                      color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        side: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                         ),
                       ),
-                      SizedBox(height: 2.h),
-                      Text(
-                        email,
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  children: [
-                    ElevatedButton(
-                      onPressed: () async {
-                        final confirmed = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Setujui Pengajuan Keluar'),
-                            content: Text('Apakah Anda yakin ingin menyetujui pengajuan keluar untuk $name? Akun ini tidak akan lagi terhubung dengan sekolah ini.'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Batal'),
+                      child: Padding(
+                        padding: EdgeInsets.all(12.w),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 24.r,
+                              backgroundColor: isDark
+                                  ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
+                                  : const Color(0xFFEFF6FF),
+                              backgroundImage: photoUrl != null && photoUrl.isNotEmpty
+                                  ? NetworkImage(photoUrl)
+                                  : null,
+                              child: photoUrl == null || photoUrl.isEmpty
+                                  ? Text(
+                                      name.isNotEmpty ? name[0].toUpperCase() : 'G',
+                                      style: TextStyle(
+                                        fontSize: 16.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB),
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            SizedBox(width: 12.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    name,
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  SizedBox(height: 2.h),
+                                  Text(
+                                    email,
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4.h),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(6.r),
+                                    ),
+                                    child: Text(
+                                      'Pengajuan Keluar: $role',
+                                      style: TextStyle(
+                                        fontSize: 10.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Setujui', style: TextStyle(color: Colors.green)),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (confirmed == true) {
-                          setState(() {
-                            _isLoading = true;
-                          });
-                          final success = await authProvider.approveExitRequest(membershipId);
-                          if (!context.mounted) return;
-                          if (success) {
-                            AppHelper.showSnackBar(context, 'Berhasil menyetujui pengajuan keluar untuk $name');
-                            _fetchUsers();
-                          } else {
+                            ),
+                            Column(
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    final confirmed = await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('Setujui Pengajuan Keluar'),
+                                        content: Text('Apakah Anda yakin ingin menyetujui pengajuan keluar untuk $name sebagai peran $role? Peran $role tidak akan lagi aktif untuk akun ini di sekolah ini.'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context, false),
+                                            child: const Text('Batal'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context, true),
+                                            child: const Text('Setujui', style: TextStyle(color: Colors.green)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirmed == true) {
+                                      setState(() {
+                                        _isLoading = true;
+                                      });
+                                      final success = await authProvider.approveExitRequest(membershipId);
+                                      if (!context.mounted) return;
+                                      if (success) {
+                                        AppHelper.showSnackBar(context, 'Berhasil menyetujui pengajuan keluar peran $role untuk $name');
+                                        _fetchUsers();
+                                      } else {
                             AppHelper.showSnackBar(
                               context,
                               authProvider.errorMessage ?? 'Gagal memproses pengajuan',

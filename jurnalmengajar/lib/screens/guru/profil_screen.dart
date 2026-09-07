@@ -1348,41 +1348,45 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         else
                           Column(
                             children: [
-                              ...authProvider.userMemberships.expand((m) {
-                                if (m.role.toLowerCase() == 'admin' && !authProvider.isExclusiveAdmin) {
-                                  final isSmkn8 = m.schoolName.toLowerCase().contains('smkn 8');
-                                  return [
-                                    SchoolRoleOption(
-                                      schoolId: m.schoolId,
-                                      schoolName: m.schoolName,
-                                      role: 'admin',
-                                      membershipId: m.id,
-                                      status: m.status,
-                                      logoUrl: m.logoUrl,
-                                    ),
-                                    if (!isSmkn8)
-                                      SchoolRoleOption(
-                                        schoolId: m.schoolId,
-                                        schoolName: m.schoolName,
-                                        role: 'guru',
-                                        membershipId: m.id,
-                                        status: m.status,
-                                        logoUrl: m.logoUrl,
-                                      ),
-                                  ];
-                                } else {
-                                  return [
-                                    SchoolRoleOption(
+                              ...() {
+                                final List<SchoolRoleOption> list = [];
+                                final Set<String> seen = {};
+
+                                // 1. Tambahkan semua keanggotaan nyata dari database
+                                for (final m in authProvider.userMemberships) {
+                                  final baseKey = '${m.schoolId}_${m.role.toLowerCase()}';
+                                  if (!seen.contains(baseKey)) {
+                                    seen.add(baseKey);
+                                    list.add(SchoolRoleOption(
                                       schoolId: m.schoolId,
                                       schoolName: m.schoolName,
                                       role: m.role,
                                       membershipId: m.id,
                                       status: m.status,
                                       logoUrl: m.logoUrl,
-                                    ),
-                                  ];
+                                    ));
+                                  }
                                 }
-                              }).map((item) {
+
+                                // 2. Tambahkan opsi guru hanya jika akun admin belum memiliki baris guru terpisah
+                                for (final m in authProvider.userMemberships) {
+                                  if (m.role.toLowerCase() == 'admin' && !authProvider.isExclusiveAdmin) {
+                                    final guruKey = '${m.schoolId}_guru';
+                                    if (!seen.contains(guruKey)) {
+                                      seen.add(guruKey);
+                                      list.add(SchoolRoleOption(
+                                        schoolId: m.schoolId,
+                                        schoolName: m.schoolName,
+                                        role: 'guru',
+                                        membershipId: null, // Jangan gunakan ID milik admin
+                                        status: 'active',   // Jangan ambil status milik admin
+                                        logoUrl: m.logoUrl,
+                                      ));
+                                    }
+                                  }
+                                }
+                                return list;
+                              }().map((item) {
                                 final sName = item.schoolName;
                                 final sRole = item.role;
                                 final sId = item.schoolId;
@@ -1499,11 +1503,15 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                                     ),
                                                   );
                                                   if (confirmed == true) {
-                                                    final success = await authProvider.cancelExitRequest(membershipId);
+                                                    final success = await authProvider.cancelExitRequest(
+                                                      membershipId,
+                                                      schoolId: sId,
+                                                      role: sRole,
+                                                    );
                                                     if (!context.mounted) return;
                                                     if (success) {
                                                       ScaffoldMessenger.of(context).showSnackBar(
-                                                        SnackBar(content: Text('Berhasil membatalkan pengajuan keluar dari $sName')),
+                                                        SnackBar(content: Text('Berhasil membatalkan pengajuan keluar dari $sName (${sRole.toUpperCase()})')),
                                                       );
                                                     }
                                                   }
@@ -1546,15 +1554,15 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                           SizedBox(width: 8.w),
                                           IconButton(
                                             icon: const Icon(Icons.exit_to_app_rounded, color: Colors.redAccent),
-                                            tooltip: 'Keluar dari Sekolah',
+                                            tooltip: 'Keluar dari Sekolah (${sRole.toUpperCase()})',
                                             onPressed: () async {
                                               final confirmed = await showDialog<bool>(
                                                 context: context,
                                                 builder: (context) => AlertDialog(
-                                                  title: const Text('Keluar dari Sekolah'),
+                                                  title: Text('Keluar dari Sekolah (${sRole.toUpperCase()})'),
                                                   content: Text(
-                                                    'Apakah Anda yakin ingin keluar dari sekolah $sName?\n\n'
-                                                    'Pengajuan ini memerlukan persetujuan dari Administrator sekolah sebelum Anda benar-benar dikeluarkan. '
+                                                    'Apakah Anda yakin ingin keluar dari sekolah $sName sebagai peran ${sRole.toUpperCase()}?\n\n'
+                                                    'Pengajuan ini memerlukan persetujuan dari Administrator sekolah sebelum peran Anda dinonaktifkan. '
                                                     'Anda tetap dapat mengakses data sekolah sampai pengajuan disetujui.',
                                                   ),
                                                   actions: [
@@ -1570,11 +1578,15 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                                 ),
                                               );
                                               if (confirmed == true) {
-                                                final success = await authProvider.requestExitFromSchool(membershipId);
+                                                final success = await authProvider.requestExitFromSchool(
+                                                  membershipId,
+                                                  schoolId: sId,
+                                                  role: sRole,
+                                                );
                                                 if (!context.mounted) return;
                                                 if (success) {
                                                   ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(content: Text('Pengajuan keluar dari $sName berhasil dikirim ke Admin')),
+                                                    SnackBar(content: Text('Pengajuan keluar peran ${sRole.toUpperCase()} dari $sName berhasil dikirim ke Admin')),
                                                   );
                                                 }
                                               }
@@ -2229,7 +2241,7 @@ class SchoolRoleOption {
   final String schoolId;
   final String schoolName;
   final String role;
-  final String membershipId;
+  final String? membershipId;
   final String? status;
   final String? logoUrl;
 
@@ -2237,7 +2249,7 @@ class SchoolRoleOption {
     required this.schoolId,
     required this.schoolName,
     required this.role,
-    required this.membershipId,
+    this.membershipId,
     this.status,
     this.logoUrl,
   });

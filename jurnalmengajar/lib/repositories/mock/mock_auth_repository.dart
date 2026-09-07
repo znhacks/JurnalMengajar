@@ -208,12 +208,12 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> requestExitFromSchool(String membershipId) async {
+  Future<void> requestExitFromSchool(String membershipId, {String? schoolId, String? role, String? userId}) async {
     await Future.delayed(const Duration(milliseconds: 300));
   }
 
   @override
-  Future<void> cancelExitRequest(String membershipId) async {
+  Future<void> cancelExitRequest(String membershipId, {String? schoolId, String? role, String? userId}) async {
     await Future.delayed(const Duration(milliseconds: 300));
   }
 

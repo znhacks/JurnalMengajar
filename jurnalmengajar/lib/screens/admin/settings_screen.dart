@@ -387,11 +387,12 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       .maybeSingle();
 
                   if (existing == null) {
-                    await supabase.from('user_schools').insert({
+                    await supabase.from('user_schools').upsert({
                       'user_id': userId,
                       'school_id': updatedSchool.id,
                       'role': 'admin',
-                    });
+                      'status': 'active',
+                    }, onConflict: 'user_id, school_id');
                   }
                 }
 

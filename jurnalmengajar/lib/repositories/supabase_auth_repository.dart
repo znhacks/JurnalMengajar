@@ -237,11 +237,11 @@ class SupabaseAuthRepository implements AuthRepository {
           }).eq('id', userId);
 
           // Connect user to school in user_schools table
-          await _supabase.from('user_schools').insert({
+          await _supabase.from('user_schools').upsert({
             'user_id': userId,
             'school_id': schoolId,
             'role': user.role,
-          });
+          }, onConflict: 'user_id, school_id');
         } catch (schoolRelErr) {
           debugPrint('Error inserting user_schools during registration: $schoolRelErr');
         }
@@ -529,24 +529,42 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> requestExitFromSchool(String membershipId) async {
+  Future<void> requestExitFromSchool(String membershipId, {String? schoolId, String? role, String? userId}) async {
     try {
-      await _supabase
-          .from('user_schools')
-          .update({'status': 'requested_exit'})
-          .eq('id', membershipId);
+      if (membershipId.isNotEmpty) {
+        await _supabase
+            .from('user_schools')
+            .update({'status': 'requested_exit'})
+            .eq('id', membershipId);
+      } else if (schoolId != null && role != null && userId != null) {
+        await _supabase
+            .from('user_schools')
+            .update({'status': 'requested_exit'})
+            .eq('user_id', userId)
+            .eq('school_id', schoolId)
+            .eq('role', role);
+      }
     } catch (e) {
       throw Exception('Gagal mengajukan keluar: $e');
     }
   }
 
   @override
-  Future<void> cancelExitRequest(String membershipId) async {
+  Future<void> cancelExitRequest(String membershipId, {String? schoolId, String? role, String? userId}) async {
     try {
-      await _supabase
-          .from('user_schools')
-          .update({'status': 'active'})
-          .eq('id', membershipId);
+      if (membershipId.isNotEmpty) {
+        await _supabase
+            .from('user_schools')
+            .update({'status': 'active'})
+            .eq('id', membershipId);
+      } else if (schoolId != null && role != null && userId != null) {
+        await _supabase
+            .from('user_schools')
+            .update({'status': 'active'})
+            .eq('user_id', userId)
+            .eq('school_id', schoolId)
+            .eq('role', role);
+      }
     } catch (e) {
       throw Exception('Gagal membatalkan pengajuan: $e');
     }
@@ -571,10 +589,55 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> approveExitRequest(String membershipId) async {
     try {
+      // 1. Fetch membership details before deleting
+      final membership = await _supabase
+          .from('user_schools')
+          .select('user_id, school_id, role')
+          .eq('id', membershipId)
+          .maybeSingle();
+
+      // 2. Delete the specific role membership from user_schools
       await _supabase
           .from('user_schools')
           .delete()
           .eq('id', membershipId);
+
+      // 3. Update users table if user has no more active roles in this school
+      if (membership != null) {
+        final uId = membership['user_id'] as String;
+        final sId = membership['school_id'] as String;
+
+        final remaining = await _supabase
+            .from('user_schools')
+            .select('id, school_id, role')
+            .eq('user_id', uId);
+
+        final remList = (remaining as List);
+        final stillInThisSchool = remList.where((m) => m['school_id'] == sId).toList();
+
+        if (stillInThisSchool.isEmpty) {
+          // User completely exited this school
+          if (remList.isNotEmpty) {
+            final next = remList.first;
+            await _supabase.from('users').update({
+              'school_id': next['school_id'],
+              'role': next['role'],
+            }).eq('id', uId);
+          } else {
+            await _supabase.from('users').update({
+              'school_id': null,
+              'school_name': null,
+            }).eq('id', uId);
+          }
+        } else {
+          // User still has another role in this school (e.g. admin)!
+          // Update users table role to their remaining role in this school
+          final nextRole = stillInThisSchool.first['role'] as String;
+          await _supabase.from('users').update({
+            'role': nextRole,
+          }).eq('id', uId);
+        }
+      }
     } catch (e) {
       throw Exception('Gagal menyetujui pengajuan keluar: $e');
     }

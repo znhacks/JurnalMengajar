@@ -15,8 +15,8 @@ abstract class AuthRepository {
   Future<void> updateUserRole(String userId, String role, [String? schoolId]);
   Future<void> deleteAccount(String userId);
   Future<void> updateFcmToken(String userId, String token);
-  Future<void> requestExitFromSchool(String membershipId);
-  Future<void> cancelExitRequest(String membershipId);
+  Future<void> requestExitFromSchool(String membershipId, {String? schoolId, String? role, String? userId});
+  Future<void> cancelExitRequest(String membershipId, {String? schoolId, String? role, String? userId});
   Future<List<Map<String, dynamic>>> getPendingExitRequests(String schoolId);
   Future<void> approveExitRequest(String membershipId);
   Future<void> rejectExitRequest(String membershipId);

@@ -76,13 +76,45 @@ class AuthProvider with ChangeNotifier {
       return;
     }
     try {
-      final res = await Supabase.instance.client
+      final supabase = Supabase.instance.client;
+      final res = await supabase
           .from('schools')
           .select()
           .eq('id', _activeSchoolId!)
           .maybeSingle();
       if (res != null) {
-        _activeSchool = SchoolModel.fromJson(res);
+        var schoolModel = SchoolModel.fromJson(res);
+
+        // Otomatis: jika logo_url kosong, ambil dari foto profil akun khusus admin (bukan guru yang switch)
+        String? resolvedLogo = schoolModel.logoUrl;
+        if (resolvedLogo == null || resolvedLogo.trim().isEmpty) {
+          try {
+            final adminUsers = await supabase
+                .from('users')
+                .select('id, photo_url, role')
+                .eq('school_id', _activeSchoolId!)
+                .eq('role', 'admin');
+
+            for (final u in (adminUsers as List)) {
+              if (u['photo_url'] != null && (u['photo_url'] as String).trim().isNotEmpty) {
+                resolvedLogo = (u['photo_url'] as String).trim();
+                // Simpan otomatis ke tabel schools agar sinkron di semua tempat
+                await supabase.from('schools').update({
+                  'logo_url': resolvedLogo,
+                }).eq('id', _activeSchoolId!);
+                break;
+              }
+            }
+          } catch (adminPhotoErr) {
+            debugPrint('Note resolving dedicated admin photo for school logo: $adminPhotoErr');
+          }
+        }
+
+        if (resolvedLogo != null && resolvedLogo.trim().isNotEmpty && resolvedLogo != schoolModel.logoUrl) {
+          schoolModel = schoolModel.copyWith(logoUrl: resolvedLogo);
+        }
+
+        _activeSchool = schoolModel;
         _activeSchoolName = _activeSchool!.name;
         if (_activeSchool!.isInactive) {
           _isSchoolExpired = true;
@@ -225,8 +257,17 @@ class AuthProvider with ChangeNotifier {
 
       final effectiveRole = role;
 
-      // Check max teachers quota for new teacher registration/join
-      if (effectiveRole == 'guru') {
+      // Check if user is already connected with this specific role in user_schools
+      final existingRoleMember = await supabase
+          .from('user_schools')
+          .select('id, role')
+          .eq('user_id', _currentUser!.id)
+          .eq('school_id', schoolId)
+          .eq('role', effectiveRole)
+          .maybeSingle();
+
+      // Check max teachers quota for new teacher registration/join (only if not already a member with this role)
+      if (effectiveRole == 'guru' && existingRoleMember == null) {
         final existingTeachers = await supabase
             .from('user_schools')
             .select('id')
@@ -239,20 +280,17 @@ class AuthProvider with ChangeNotifier {
         }
       }
 
-      // Check if user is already connected in user_schools
-      final existingRole = await supabase.from('user_schools')
-          .select('id')
-          .eq('user_id', _currentUser!.id)
-          .eq('school_id', schoolId)
-          .eq('role', effectiveRole)
-          .maybeSingle();
-
-      if (existingRole == null) {
-        await supabase.from('user_schools').insert({
-          'user_id': _currentUser!.id,
-          'school_id': schoolId,
-          'role': effectiveRole,
-        });
+      if (existingRoleMember == null) {
+        try {
+          await supabase.from('user_schools').upsert({
+            'user_id': _currentUser!.id,
+            'school_id': schoolId,
+            'role': effectiveRole,
+            'status': 'active',
+          }, onConflict: 'user_id, school_id, role');
+        } catch (insertErr) {
+          debugPrint('Note inserting user_schools: $insertErr');
+        }
       }
 
       // Update active school locally & persist
@@ -276,7 +314,7 @@ class AuthProvider with ChangeNotifier {
       final supabase = Supabase.instance.client;
       final res = await supabase
           .from('user_schools')
-          .select('*, schools(name, code)')
+          .select('*, schools(id, name, code, logo_url, npsn, status)')
           .eq('user_id', _currentUser!.id);
 
       final loadedMemberships = (res as List)
@@ -602,6 +640,27 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     try {
       _currentUser = await authRepository.updateProfile(updatedUser);
+
+      // Hanya sinkronkan ke logo sekolah jika user adalah KHUSUS ADMIN (bukan guru yang bisa switch)
+      if (updatedUser.photoUrl != null && updatedUser.photoUrl!.isNotEmpty) {
+        final isDedicatedAdmin = _currentUser?.role == 'admin' &&
+            !_userMemberships.any((m) => m.role == 'guru');
+        if (isDedicatedAdmin && _activeSchoolId != null && _activeSchoolId!.isNotEmpty) {
+          try {
+            await Supabase.instance.client.from('schools').update({
+              'logo_url': updatedUser.photoUrl,
+            }).eq('id', _activeSchoolId!);
+
+            if (_activeSchool != null) {
+              _activeSchool = _activeSchool!.copyWith(logoUrl: updatedUser.photoUrl);
+            }
+          } catch (syncErr) {
+            debugPrint('Note syncing school logo: $syncErr');
+          }
+        }
+      }
+
+      await loadUserMemberships();
       _isLoading = false;
       notifyListeners();
       return true;
@@ -676,12 +735,34 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> requestExitFromSchool(String membershipId) async {
+  Future<bool> requestExitFromSchool(String? membershipId, {String? schoolId, String? role}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      await _authRepository.requestExitFromSchool(membershipId);
+      if (membershipId != null && membershipId.isNotEmpty) {
+        await _authRepository.requestExitFromSchool(membershipId, schoolId: schoolId, role: role, userId: _currentUser?.id);
+      } else if (schoolId != null && role != null && _currentUser != null) {
+        final supabase = Supabase.instance.client;
+        final existing = await supabase
+            .from('user_schools')
+            .select('id')
+            .eq('user_id', _currentUser!.id)
+            .eq('school_id', schoolId)
+            .eq('role', role)
+            .maybeSingle();
+
+        if (existing != null) {
+          await _authRepository.requestExitFromSchool(existing['id'] as String);
+        } else {
+          await supabase.from('user_schools').upsert({
+            'user_id': _currentUser!.id,
+            'school_id': schoolId,
+            'role': role,
+            'status': 'requested_exit',
+          }, onConflict: 'user_id, school_id, role');
+        }
+      }
       await loadUserMemberships();
       _isLoading = false;
       notifyListeners();
@@ -694,12 +775,22 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> cancelExitRequest(String membershipId) async {
+  Future<bool> cancelExitRequest(String? membershipId, {String? schoolId, String? role}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      await _authRepository.cancelExitRequest(membershipId);
+      if (membershipId != null && membershipId.isNotEmpty) {
+        await _authRepository.cancelExitRequest(membershipId, schoolId: schoolId, role: role, userId: _currentUser?.id);
+      } else if (schoolId != null && role != null && _currentUser != null) {
+        final supabase = Supabase.instance.client;
+        await supabase
+            .from('user_schools')
+            .update({'status': 'active'})
+            .eq('user_id', _currentUser!.id)
+            .eq('school_id', schoolId)
+            .eq('role', role);
+      }
       await loadUserMemberships();
       _isLoading = false;
       notifyListeners();
@@ -795,8 +886,28 @@ class AuthProvider with ChangeNotifier {
     if (errorString.contains('user already exists') || errorString.contains('user_already_exists')) {
       return 'Email sudah terdaftar. Silakan gunakan email lain atau masuk.';
     }
+
+    // Deteksi error constraint database (duplicate key / unique constraint)
+    if (errorString.contains('user_schools_user_id_school_id_key') ||
+        (errorString.contains('duplicate key') && errorString.contains('user_schools'))) {
+      return 'Akun Anda sudah terhubung dengan sekolah ini.';
+    }
+    if (errorString.contains('duplicate key') || errorString.contains('23505')) {
+      return 'Data ini sudah terdaftar di dalam sistem.';
+    }
+    if (errorString.contains('row-level security') || errorString.contains('violates row-level security policy')) {
+      return 'Akses ditolak oleh kebijakan keamanan sistem (RLS). Silakan hubungi admin.';
+    }
     
     // Bersihkan prefix "Exception: " jika ada
-    return e.toString().replaceAll('Exception: ', '');
+    String cleaned = e.toString().replaceAll('Exception: ', '');
+    // Jika ada format PostgrestException(message: ..., code: ...) ambil messagenya saja
+    if (cleaned.contains('PostgrestException(') && cleaned.contains('message:')) {
+      final msgMatch = RegExp(r'message:\s*([^,\)]+)').firstMatch(cleaned);
+      if (msgMatch != null && msgMatch.group(1) != null) {
+        cleaned = msgMatch.group(1)!.trim();
+      }
+    }
+    return cleaned;
   }
 }

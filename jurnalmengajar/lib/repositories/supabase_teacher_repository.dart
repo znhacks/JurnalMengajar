@@ -38,12 +38,14 @@ class SupabaseTeacherRepository implements TeacherRepository {
     try {
       final Map<String, TeacherModel> teachersMap = {};
 
-      // 1. Fetch user IDs linked in user_schools for this school
+      // 1. Fetch user IDs linked in user_schools for this school with role 'guru' and active status
       try {
         final userSchoolsRes = await _supabase
             .from('user_schools')
             .select('user_id')
-            .eq('school_id', schoolId);
+            .eq('school_id', schoolId)
+            .eq('role', 'guru')
+            .neq('status', 'requested_exit');
 
         final userIds = (userSchoolsRes as List)
             .map((row) => row['user_id'] as String)
@@ -53,7 +55,6 @@ class SupabaseTeacherRepository implements TeacherRepository {
           final res = await _supabase
               .from('users')
               .select()
-              .eq('role', 'guru')
               .inFilter('id', userIds)
               .order('full_name', ascending: true);
           for (final json in (res as List)) {
@@ -67,27 +68,6 @@ class SupabaseTeacherRepository implements TeacherRepository {
               photoUrl: json['photo_url'] as String?,
             );
           }
-        }
-      } catch (_) {}
-
-      // 2. Fetch users with school_id = schoolId directly
-      try {
-        final resDirect = await _supabase
-            .from('users')
-            .select()
-            .eq('role', 'guru')
-            .eq('school_id', schoolId)
-            .order('full_name', ascending: true);
-        for (final json in (resDirect as List)) {
-          teachersMap[json['id'] as String] = TeacherModel(
-            id: json['id'] as String,
-            name: json['full_name'] as String,
-            position: json['position'] as String? ?? 'Guru Bidang Studi',
-            address: json['address'] as String? ?? '',
-            phoneNumber: json['phone'] as String? ?? '',
-            email: json['email'] as String,
-            photoUrl: json['photo_url'] as String?,
-          );
         }
       } catch (_) {}
 
