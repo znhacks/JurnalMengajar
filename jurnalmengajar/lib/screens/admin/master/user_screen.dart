@@ -682,75 +682,32 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                   ),
                 ],
                 bottom: TabBar(
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
                   labelColor: const Color(0xFF2563EB),
-                  unselectedLabelColor: Colors.grey,
+                  unselectedLabelColor: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFF64748B),
                   indicatorColor: const Color(0xFF2563EB),
+                  indicatorWeight: 2.5,
+                  indicatorSize: TabBarIndicatorSize.label,
+                  dividerColor: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFE2E8F0),
+                  dividerHeight: 1,
                   tabs: [
-                    const Tab(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.people_outline),
-                          SizedBox(width: 8),
-                          Text('Pengguna Aktif'),
-                        ],
-                      ),
+                    _buildTab('Pengguna Aktif', activeUsers.length, icon: Icons.people_outline),
+                    _buildTab(
+                      'Guru Mendaftar',
+                      pendingUsers.length,
+                      icon: Icons.person_add_outlined,
+                      badgeColor: Colors.red,
                     ),
-                    Tab(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.person_add_outlined),
-                          const SizedBox(width: 8),
-                          const Text('Guru Mendaftar'),
-                          if (pendingUsers.isNotEmpty) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                '${pendingUsers.length}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    Tab(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.exit_to_app_rounded),
-                          const SizedBox(width: 8),
-                          const Text('Menunggu Keluar'),
-                          if (_exitRequests.isNotEmpty) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.orange,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                '${_exitRequests.length}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
+                    _buildTab(
+                      'Menunggu Keluar',
+                      _exitRequests.length,
+                      icon: Icons.exit_to_app_rounded,
+                      badgeColor: Colors.orange,
                     ),
                   ],
                 ),
@@ -1062,6 +1019,49 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
           ),
         );
       },
+    );
+  }
+
+  Tab _buildTab(String label, int count, {required IconData icon, Color? badgeColor}) {
+    final color = badgeColor ?? const Color(0xFF2563EB);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Tab(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18.r),
+          SizedBox(width: 8.w),
+          Text(
+            label,
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (count > 0) ...[
+            SizedBox(width: 6.w),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+              decoration: BoxDecoration(
+                color: isDark ? color.withValues(alpha: 0.25) : color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: isDark ? color.withValues(alpha: 0.4) : color.withValues(alpha: 0.2),
+                  width: 0.8,
+                ),
+              ),
+              child: Text(
+                '$count',
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
