@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../core/utils/helper.dart';
 import '../../widgets/wave_clipper.dart';
 
@@ -79,7 +80,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             context,
             'Link reset password berhasil dikirim ke email Anda!',
           );
-          context.pop();
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/login');
+          }
         } else if (mounted) {
           AppHelper.showSnackBar(
             context,
@@ -100,16 +105,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color.fromARGB(255, 37, 99, 235),
-              Color.fromARGB(255, 147, 197, 253),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -125,7 +121,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24.r),
                   ),
-                  color: Colors.white,
+                  color:
+                      Theme.of(context).cardTheme.color ??
+                      Theme.of(context).colorScheme.surface,
                   clipBehavior: Clip.antiAlias,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -136,7 +134,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           ClipPath(
                             clipper: const WaveClipper(),
                             child: Container(
-                              height: kIsWeb ? 130 : 155.h,
+                              height: kIsWeb ? 145 : 170.h,
                               decoration: const BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
@@ -152,8 +150,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           Positioned.fill(
                             child: Padding(
                               padding: EdgeInsets.only(
-                                top: kIsWeb ? 16 : 20.h,
-                                bottom: kIsWeb ? 28 : 36.h,
+                                top: kIsWeb ? 12 : 16.h,
+                                bottom: kIsWeb ? 36 : 46.h,
                                 left: 16.w,
                                 right: 16.w,
                               ),
@@ -161,7 +159,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Container(
-                                    padding: EdgeInsets.all(12.w),
+                                    padding: EdgeInsets.all(11.w),
                                     decoration: BoxDecoration(
                                       color: Colors.white.withValues(
                                         alpha: 0.2,
@@ -172,12 +170,56 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                       isRecoveryMode
                                           ? Icons.lock_reset_rounded
                                           : Icons.email_outlined,
-                                      size: 38.w,
+                                      size: 34.sp,
                                       color: Colors.white,
                                     ),
                                   ),
                                 ],
                               ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 8.h,
+                            left: 8.w,
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.arrow_back_rounded,
+                                color: Colors.white,
+                                size: 22.sp,
+                              ),
+                              tooltip: 'Kembali ke Login',
+                              onPressed: () {
+                                if (context.canPop()) {
+                                  context.pop();
+                                } else {
+                                  context.go('/login');
+                                }
+                              },
+                            ),
+                          ),
+                          Positioned(
+                            top: 8.h,
+                            right: 8.w,
+                            child: Consumer<ThemeProvider>(
+                              builder: (context, themeProvider, child) {
+                                return IconButton(
+                                  icon: Icon(
+                                    themeProvider.isDarkMode
+                                        ? Icons.dark_mode_rounded
+                                        : Icons.light_mode_rounded,
+                                    color: Colors.white,
+                                    size: 22.sp,
+                                  ),
+                                  tooltip: themeProvider.isDarkMode
+                                      ? 'Mode Gelap'
+                                      : 'Mode Terang',
+                                  onPressed: () {
+                                    themeProvider.toggleTheme(
+                                      !themeProvider.isDarkMode,
+                                    );
+                                  },
+                                );
+                              },
                             ),
                           ),
                         ],
@@ -198,7 +240,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 style: TextStyle(
                                   fontSize: 22.sp,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF1E293B),
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                               SizedBox(height: 6.h),
@@ -208,7 +251,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     : 'Masukkan email terdaftar Anda. Kami akan mengirimkan tautan untuk mengatur ulang kata sandi.',
                                 style: TextStyle(
                                   fontSize: 13.sp,
-                                  color: const Color(0xFF64748B),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                   height: 1.4,
                                 ),
                               ),
@@ -231,7 +276,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                   keyboardType: TextInputType.emailAddress,
                                   style: TextStyle(
                                     fontSize: 14.sp,
-                                    color: const Color(0xFF1E293B),
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   ),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
@@ -245,6 +291,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     return null;
                                   },
                                   decoration: _inputDecoration(
+                                    context,
                                     hintText: 'nama@sekolah.id',
                                     icon: Icons.email_outlined,
                                   ),
@@ -269,7 +316,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                   obscureText: _obscurePassword,
                                   style: TextStyle(
                                     fontSize: 14.sp,
-                                    color: const Color(0xFF1E293B),
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   ),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
@@ -281,6 +329,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     return null;
                                   },
                                   decoration: _inputDecoration(
+                                    context,
                                     hintText: 'Password minimal 6 karakter',
                                     icon: Icons.lock_outline,
                                     suffixIcon: IconButton(
@@ -316,7 +365,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                   obscureText: _obscureConfirmPassword,
                                   style: TextStyle(
                                     fontSize: 14.sp,
-                                    color: const Color(0xFF1E293B),
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   ),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
@@ -328,6 +378,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     return null;
                                   },
                                   decoration: _inputDecoration(
+                                    context,
                                     hintText: 'Ulangi password baru',
                                     icon: Icons.lock_clock_outlined,
                                     suffixIcon: IconButton(
@@ -356,7 +407,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                   backgroundColor: const Color(0xFF2563EB),
                                   foregroundColor: Colors.white,
                                   elevation: 4,
-                                  shadowColor: const Color(0xFF2563EB).withValues(alpha: 0.4),
+                                  shadowColor: const Color(
+                                    0xFF2563EB,
+                                  ).withValues(alpha: 0.4),
                                   padding: EdgeInsets.symmetric(vertical: 12.h),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16.r),
@@ -394,11 +447,19 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     'Ingat password? ',
                                     style: TextStyle(
                                       fontSize: 13.sp,
-                                      color: const Color(0xFF64748B),
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                   GestureDetector(
-                                    onTap: () => context.pop(),
+                                    onTap: () {
+                                      if (context.canPop()) {
+                                        context.pop();
+                                      } else {
+                                        context.go('/login');
+                                      }
+                                    },
                                     child: Text(
                                       'Kembali Login',
                                       style: TextStyle(
@@ -425,7 +486,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  InputDecoration _inputDecoration({
+  InputDecoration _inputDecoration(
+    BuildContext context, {
     required String hintText,
     required IconData icon,
     Widget? suffixIcon,
@@ -439,7 +501,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       ),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: const Color(0xFFEFF6FF).withValues(alpha: 0.5),
+      fillColor: Theme.of(context).brightness == Brightness.dark
+          ? Theme.of(context).colorScheme.surfaceContainerHighest
+          : const Color(0xFFEFF6FF).withValues(alpha: 0.5),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16.r),
         borderSide: BorderSide.none,
