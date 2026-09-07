@@ -901,11 +901,21 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                             'Semester Ini',
                           ].map((preset) {
                             final isSelected = _presetRange == preset;
+                            final isDark = Theme.of(context).brightness == Brightness.dark;
                             return ChoiceChip(
                               label: Text(preset),
                               selected: isSelected,
-                              selectedColor: AppTheme.primaryColor.withValues(
-                                alpha: 0.15,
+                              selectedColor: isDark
+                                  ? const Color(0xFF1E3A8A).withValues(alpha: 0.5)
+                                  : AppTheme.primaryColor.withValues(alpha: 0.15),
+                              backgroundColor: isDark
+                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                  : const Color(0xFFF1F5F9),
+                              side: BorderSide(
+                                color: isSelected
+                                    ? (isDark ? const Color(0xFF60A5FA) : AppTheme.primaryColor)
+                                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                                width: isSelected ? 1.5 : 1.0,
                               ),
                               labelStyle: GoogleFonts.hankenGrotesk(
                                 fontSize: 11.5.sp,
@@ -913,8 +923,8 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                                     ? FontWeight.w700
                                     : FontWeight.w500,
                                 color: isSelected
-                                    ? AppTheme.primaryColor
-                                    : const Color(0xFF475569),
+                                    ? (isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor)
+                                    : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569)),
                               ),
                               onSelected: (_) => _applyPresetRange(preset),
                             );
@@ -937,7 +947,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                               ),
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color: const Color(0xFFCBD5E1),
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? const Color(0xFF334155)
+                                      : const Color(0xFFCBD5E1),
                                 ),
                                 borderRadius: BorderRadius.circular(10.r),
                               ),
@@ -994,7 +1006,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                               ),
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color: const Color(0xFFCBD5E1),
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? const Color(0xFF334155)
+                                      : const Color(0xFFCBD5E1),
                                 ),
                                 borderRadius: BorderRadius.circular(10.r),
                               ),
@@ -1332,7 +1346,11 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0),
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -1344,7 +1362,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 13.sp,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF475569),
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFFCBD5E1)
+                                : const Color(0xFF475569),
                           ),
                         ),
                         Container(
@@ -1483,7 +1503,11 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF334155)
+              : const Color(0xFFF1F5F9),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

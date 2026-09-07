@@ -231,7 +231,9 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                     'Anda tidak memiliki surat peringatan. Terus pertahankan kedisiplinan dalam mengisi jurnal mengajar!',
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 13.sp,
-                                      color: Theme.of(context).colorScheme.outline,
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                          ? const Color(0xFF94A3B8)
+                                          : const Color(0xFF64748B),
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
@@ -307,7 +309,9 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                               'Peringatan Keterlambatan (${groupWarnings.length} Surat)',
                                               style: GoogleFonts.hankenGrotesk(
                                                 fontSize: 11.sp,
-                                                color: theme.colorScheme.outline,
+                                                color: theme.brightness == Brightness.dark
+                                                    ? const Color(0xFF94A3B8)
+                                                    : const Color(0xFF64748B),
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
