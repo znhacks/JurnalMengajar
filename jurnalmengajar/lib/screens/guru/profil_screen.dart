@@ -1053,7 +1053,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: Builder(
           builder: (ctx) => IconButton(
