@@ -1352,7 +1352,6 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                 final List<SchoolRoleOption> list = [];
                                 final Set<String> seen = {};
 
-                                // 1. Tambahkan semua keanggotaan nyata dari database
                                 for (final m in authProvider.userMemberships) {
                                   final baseKey = '${m.schoolId}_${m.role.toLowerCase()}';
                                   if (!seen.contains(baseKey)) {
@@ -1365,24 +1364,6 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                       status: m.status,
                                       logoUrl: m.logoUrl,
                                     ));
-                                  }
-                                }
-
-                                // 2. Tambahkan opsi guru hanya jika akun admin belum memiliki baris guru terpisah
-                                for (final m in authProvider.userMemberships) {
-                                  if (m.role.toLowerCase() == 'admin' && !authProvider.isExclusiveAdmin) {
-                                    final guruKey = '${m.schoolId}_guru';
-                                    if (!seen.contains(guruKey)) {
-                                      seen.add(guruKey);
-                                      list.add(SchoolRoleOption(
-                                        schoolId: m.schoolId,
-                                        schoolName: m.schoolName,
-                                        role: 'guru',
-                                        membershipId: null, // Jangan gunakan ID milik admin
-                                        status: 'active',   // Jangan ambil status milik admin
-                                        logoUrl: m.logoUrl,
-                                      ));
-                                    }
                                   }
                                 }
                                 return list;

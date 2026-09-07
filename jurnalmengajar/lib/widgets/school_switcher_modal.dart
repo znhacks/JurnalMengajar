@@ -29,7 +29,6 @@ class SchoolSwitcherModal extends StatelessWidget {
 
     final List<SchoolRoleOption> options = [];
     final Set<String> seen = {};
-    final isExclusiveAdmin = authProvider.isExclusiveAdmin;
 
     for (final m in userMemberships) {
       final baseKey = '${m.schoolId}_${m.role.toLowerCase()}';
@@ -41,19 +40,6 @@ class SchoolSwitcherModal extends StatelessWidget {
           role: m.role,
           logoUrl: m.logoUrl,
         ));
-      }
-
-      if (m.role.toLowerCase() == 'admin' && !isExclusiveAdmin) {
-        final guruKey = '${m.schoolId}_guru';
-        if (!seen.contains(guruKey)) {
-          seen.add(guruKey);
-          options.add(SchoolRoleOption(
-            schoolId: m.schoolId,
-            schoolName: m.schoolName,
-            role: 'guru',
-            logoUrl: m.logoUrl,
-          ));
-        }
       }
     }
 
