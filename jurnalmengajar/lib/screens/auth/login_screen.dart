@@ -282,16 +282,16 @@ class _LoginScreenState extends State<LoginScreen> {
                               Text(
                                 'Selamat Datang Kembali',
                                 style: TextStyle(
-                                  fontSize: kIsWeb ? 18 : 22.sp,
+                                  fontSize: kIsWeb ? 22 : 24.sp,
                                   fontWeight: FontWeight.bold,
                                   color: Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
-                              SizedBox(height: 4.h),
+                              SizedBox(height: 6.h),
                               Text(
                                 'Silakan masuk ke akun Anda',
                                 style: TextStyle(
-                                  fontSize: kIsWeb ? 12 : 13.sp,
+                                  fontSize: kIsWeb ? 14 : 14.5.sp,
                                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
@@ -301,7 +301,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               Text(
                                 'EMAIL',
                                 style: TextStyle(
-                                  fontSize: 11.sp,
+                                  fontSize: kIsWeb ? 11.5 : 12.sp,
                                   fontWeight: FontWeight.bold,
                                   color: const Color(0xFF94A3B8),
                                   letterSpacing: 0.5,
@@ -317,7 +317,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   FocusScope.of(context).requestFocus(_passwordFocusNode);
                                 },
                                 style: TextStyle(
-                                  fontSize: 14.sp,
+                                  fontSize: kIsWeb ? 14.5 : 15.sp,
                                   color: Theme.of(context).colorScheme.onSurface,
                                 ),
                                 validator: (value) {
@@ -333,7 +333,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 },
                                 decoration: InputDecoration(
                                   hintText: 'nama@sekolah.id',
-                                  hintStyle: TextStyle(color: Colors.grey[400]),
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: kIsWeb ? 14 : 14.5.sp,
+                                  ),
                                   prefixIcon: const Icon(
                                     Icons.person_outline,
                                     color: Color.fromARGB(255, 37, 99, 235),
@@ -365,7 +368,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               Text(
                                 'KATA SANDI',
                                 style: TextStyle(
-                                  fontSize: 11.sp,
+                                  fontSize: kIsWeb ? 11.5 : 12.sp,
                                   fontWeight: FontWeight.bold,
                                   color: const Color(0xFF94A3B8),
                                   letterSpacing: 0.5,
@@ -379,7 +382,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 textInputAction: TextInputAction.done,
                                 onFieldSubmitted: (_) => _handleLogin(),
                                 style: TextStyle(
-                                  fontSize: 14.sp,
+                                  fontSize: kIsWeb ? 14.5 : 15.sp,
                                   color: Theme.of(context).colorScheme.onSurface,
                                 ),
                                 validator: (value) {
@@ -393,7 +396,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 },
                                 decoration: InputDecoration(
                                   hintText: '••••••••',
-                                  hintStyle: TextStyle(color: Colors.grey[400]),
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: kIsWeb ? 14 : 14.5.sp,
+                                  ),
                                   prefixIcon: const Icon(
                                     Icons.lock_outline,
                                     color: Color.fromARGB(255, 37, 99, 235),
@@ -442,7 +448,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: Text(
                                     'Lupa Password?',
                                     style: TextStyle(
-                                      fontSize: kIsWeb ? 12 : 13.sp,
+                                      fontSize: kIsWeb ? 13 : 13.5.sp,
                                       fontWeight: FontWeight.bold,
                                       color: const Color.fromARGB(
                                         255,
@@ -496,7 +502,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     : Text(
                                         'Masuk',
                                         style: TextStyle(
-                                          fontSize: kIsWeb ? 14 : 15.sp,
+                                          fontSize: kIsWeb ? 15 : 16.sp,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -519,7 +525,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     child: Text(
                                       'Atau masuk dengan',
                                       style: TextStyle(
-                                        fontSize: 12.sp,
+                                        fontSize: kIsWeb ? 12.5 : 13.sp,
                                         color: const Color(0xFF94A3B8),
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -566,7 +572,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     Text(
                                       'Google',
                                       style: TextStyle(
-                                        fontSize: 14.sp,
+                                        fontSize: kIsWeb ? 14.5 : 15.sp,
                                         fontWeight: FontWeight.bold,
                                         color: Theme.of(context).colorScheme.onSurface,
                                       ),
@@ -583,7 +589,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Text(
                                     'Belum punya akun? ',
                                     style: TextStyle(
-                                      fontSize: kIsWeb ? 12.5 : 13.sp,
+                                      fontSize: kIsWeb ? 13.5 : 14.sp,
                                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
@@ -592,7 +598,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     child: Text(
                                       'Daftar Sekarang',
                                       style: TextStyle(
-                                        fontSize: kIsWeb ? 12.5 : 13.sp,
+                                        fontSize: kIsWeb ? 13.5 : 14.sp,
                                         fontWeight: FontWeight.bold,
                                         color: const Color.fromARGB(
                                           255,

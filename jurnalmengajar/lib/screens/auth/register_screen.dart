@@ -397,7 +397,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               _buildFieldLabel('TIPE PENDAFTARAN'),
                               Container(
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F5F9),
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                      : const Color(0xFFF1F5F9),
                                   borderRadius: BorderRadius.circular(16.r),
                                 ),
                                 padding: EdgeInsets.all(4.w),
@@ -423,17 +425,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                 size: 16.r,
                                                 color: _registerType == 'guru'
                                                     ? Colors.white
-                                                    : const Color(0xFF64748B),
+                                                    : Theme.of(context).colorScheme.onSurfaceVariant,
                                               ),
                                               SizedBox(width: 6.w),
                                               Text(
                                                 'Register Guru',
                                                 style: TextStyle(
-                                                  fontSize: 13.sp,
+                                                  fontSize: kIsWeb ? 13 : 13.5.sp,
                                                   fontWeight: FontWeight.bold,
                                                   color: _registerType == 'guru'
                                                       ? Colors.white
-                                                      : const Color(0xFF64748B),
+                                                      : Theme.of(context).colorScheme.onSurfaceVariant,
                                                 ),
                                               ),
                                             ],
@@ -461,17 +463,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                 size: 16.r,
                                                 color: _registerType == 'admin'
                                                     ? Colors.white
-                                                    : const Color(0xFF64748B),
+                                                    : Theme.of(context).colorScheme.onSurfaceVariant,
                                               ),
                                               SizedBox(width: 6.w),
                                               Text(
                                                 'Admin Sekolah',
                                                 style: TextStyle(
-                                                  fontSize: 13.sp,
+                                                  fontSize: kIsWeb ? 13 : 13.5.sp,
                                                   fontWeight: FontWeight.bold,
                                                   color: _registerType == 'admin'
                                                       ? Colors.white
-                                                      : const Color(0xFF64748B),
+                                                      : Theme.of(context).colorScheme.onSurfaceVariant,
                                                 ),
                                               ),
                                             ],
@@ -543,16 +545,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 controller: _schoolCodeController,
                                 focusNode: _schoolCodeFocusNode,
                                 style: TextStyle(
-                                  fontSize: 14.sp,
+                                  fontSize: kIsWeb ? 14.5 : 15.sp,
                                   color: Theme.of(context).colorScheme.onSurface,
                                 ),
                                 decoration: InputDecoration(
                                   hintText: 'Masukkan Kode Aktivasi (UUID)...',
                                   hintStyle: TextStyle(
-                                    color: Colors.grey[400],
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                        ? const Color(0xFF64748B)
+                                        : Colors.grey[400],
+                                    fontSize: kIsWeb ? 14 : 14.5.sp,
                                     fontWeight: FontWeight.normal,
                                   ),
-                                  prefixIcon: const Icon(Icons.key_rounded, color: Color.fromARGB(255, 37, 99, 235)),
+                                  prefixIcon: Icon(
+                                    Icons.key_rounded,
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                        ? const Color(0xFF60A5FA)
+                                        : const Color.fromARGB(255, 37, 99, 235),
+                                  ),
                                   suffixIcon: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -567,7 +577,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           },
                                         ),
                                       IconButton(
-                                        icon: const Icon(Icons.check_circle, color: Color.fromARGB(255, 37, 99, 235)),
+                                        icon: Icon(
+                                          Icons.check_circle,
+                                          color: Theme.of(context).brightness == Brightness.dark
+                                              ? const Color(0xFF60A5FA)
+                                              : const Color.fromARGB(255, 37, 99, 235),
+                                        ),
                                         onPressed: () {
                                           _resolveSchoolCode(_schoolCodeController.text.trim(), masterProvider);
                                         },
@@ -578,7 +593,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   fillColor: Theme.of(context).brightness == Brightness.dark
                                       ? Theme.of(context).colorScheme.surfaceContainerHighest
                                       : const Color(0xFFEFF6FF).withValues(alpha: 0.5),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 14.w,
+                                    vertical: kIsWeb ? 10 : 12.h,
+                                  ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16.r),
                                     borderSide: BorderSide.none,
@@ -589,8 +607,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16.r),
-                                    borderSide: const BorderSide(
-                                      color: Color.fromARGB(255, 37, 99, 235),
+                                    borderSide: BorderSide(
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                          ? const Color(0xFF60A5FA)
+                                          : const Color.fromARGB(255, 37, 99, 235),
                                       width: 2,
                                     ),
                                   ),
@@ -780,7 +800,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   FocusScope.of(context).requestFocus(_confirmPasswordFocusNode);
                                 },
                                 style: TextStyle(
-                                  fontSize: 14.sp,
+                                  fontSize: kIsWeb ? 14.5 : 15.sp,
                                   color: Theme.of(context).colorScheme.onSurface,
                                 ),
                                 validator: (value) {
@@ -821,7 +841,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 textInputAction: TextInputAction.done,
                                 onFieldSubmitted: (_) => _handleRegister(),
                                 style: TextStyle(
-                                  fontSize: 14.sp,
+                                  fontSize: kIsWeb ? 14.5 : 15.sp,
                                   color: Theme.of(context).colorScheme.onSurface,
                                 ),
                                 validator: (value) {
@@ -859,7 +879,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   foregroundColor: Colors.white,
                                   elevation: 4,
                                   shadowColor: const Color.fromARGB(255, 37, 99, 235).withValues(alpha: 0.4),
-                                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                                  padding: EdgeInsets.symmetric(vertical: kIsWeb ? 10 : 13.h),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16.r),
                                   ),
@@ -879,7 +899,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     : Text(
                                         'Daftar Sekarang',
                                         style: TextStyle(
-                                          fontSize: 15.sp,
+                                          fontSize: kIsWeb ? 15 : 16.sp,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -893,18 +913,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   Text(
                                     'Sudah punya akun? ',
                                     style: TextStyle(
-                                      fontSize: 13.sp,
-                                      color: const Color(0xFF64748B),
+                                      fontSize: kIsWeb ? 13.5 : 14.sp,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                   GestureDetector(
-                                    onTap: () => context.pop(),
+                                    onTap: () {
+                                      if (context.canPop()) {
+                                        context.pop();
+                                      } else {
+                                        context.go('/login');
+                                      }
+                                    },
                                     child: Text(
                                       'Masuk Sekarang',
                                       style: TextStyle(
-                                        fontSize: 13.sp,
+                                        fontSize: kIsWeb ? 13.5 : 14.sp,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color.fromARGB(255, 37, 99, 235),
+                                        color: Theme.of(context).brightness == Brightness.dark
+                                            ? const Color(0xFF60A5FA)
+                                            : const Color.fromARGB(255, 37, 99, 235),
                                       ),
                                     ),
                                   ),
@@ -932,7 +960,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Text(
         label,
         style: TextStyle(
-          fontSize: 11.sp,
+          fontSize: kIsWeb ? 11.5 : 12.sp,
           fontWeight: FontWeight.bold,
           color: const Color(0xFF94A3B8),
           letterSpacing: 0.5,
@@ -962,7 +990,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           FocusScope.of(context).requestFocus(nextFocusNode);
         }
       },
-      style: TextStyle(fontSize: 14.sp, color: Theme.of(context).colorScheme.onSurface),
+      style: TextStyle(fontSize: kIsWeb ? 14.5 : 15.sp, color: Theme.of(context).colorScheme.onSurface),
       validator: validator,
       decoration: _getInputDecoration(
         hintText: hintText,
@@ -1151,13 +1179,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     required IconData prefixIcon,
     Widget? suffixIcon,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecoration(
       hintText: hintText,
-      hintStyle: TextStyle(color: Colors.grey[400]),
-      prefixIcon: Icon(prefixIcon, color: const Color.fromARGB(255, 37, 99, 235)),
+      hintStyle: TextStyle(
+        color: isDark ? const Color(0xFF64748B) : Colors.grey[400],
+        fontSize: kIsWeb ? 14 : 14.5.sp,
+      ),
+      prefixIcon: Icon(
+        prefixIcon,
+        color: isDark ? const Color(0xFF60A5FA) : const Color.fromARGB(255, 37, 99, 235),
+      ),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: Theme.of(context).brightness == Brightness.dark
+      fillColor: isDark
           ? Theme.of(context).colorScheme.surfaceContainerHighest
           : const Color(0xFFEFF6FF).withValues(alpha: 0.5),
       border: OutlineInputBorder(
@@ -1166,9 +1201,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16.r),
-        borderSide: const BorderSide(color: Color.fromARGB(255, 37, 99, 235), width: 2),
+        borderSide: BorderSide(
+          color: isDark ? const Color(0xFF60A5FA) : const Color.fromARGB(255, 37, 99, 235),
+          width: 2,
+        ),
       ),
-      contentPadding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 16.w),
+      contentPadding: EdgeInsets.symmetric(
+        vertical: kIsWeb ? 10 : 12.h,
+        horizontal: 14.w,
+      ),
     );
   }
 }

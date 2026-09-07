@@ -243,26 +243,26 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     ? 'Ubah Password'
                                     : 'Lupa Password?',
                                 style: TextStyle(
-                                  fontSize: kIsWeb ? 20 : 22.sp,
+                                  fontSize: kIsWeb ? 22 : 24.sp,
                                   fontWeight: FontWeight.bold,
                                   color:
                                       Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
-                              SizedBox(height: 5.h),
+                              SizedBox(height: 6.h),
                               Text(
                                 isRecoveryMode
                                     ? 'Masukkan password baru Anda untuk mengaktifkan kembali akun.'
                                     : 'Masukkan email terdaftar Anda untuk mengatur ulang kata sandi.',
                                 style: TextStyle(
-                                  fontSize: kIsWeb ? 13 : 13.5.sp,
+                                  fontSize: kIsWeb ? 14 : 14.5.sp,
                                   color: Theme.of(
                                     context,
                                   ).colorScheme.onSurfaceVariant,
                                   height: 1.4,
                                 ),
                               ),
-                              SizedBox(height: kIsWeb ? 14 : 22.h),
+                              SizedBox(height: kIsWeb ? 14 : 24.h),
 
                               if (!isRecoveryMode) ...[
                                 // Email field label
@@ -282,7 +282,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                   textInputAction: TextInputAction.done,
                                   onFieldSubmitted: (_) => _handleReset(),
                                   style: TextStyle(
-                                    fontSize: kIsWeb ? 14 : 14.5.sp,
+                                    fontSize: kIsWeb ? 14.5 : 15.sp,
                                     color:
                                         Theme.of(context).colorScheme.onSurface,
                                   ),
@@ -323,7 +323,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                   obscureText: _obscurePassword,
                                   textInputAction: TextInputAction.next,
                                   style: TextStyle(
-                                    fontSize: kIsWeb ? 14 : 14.5.sp,
+                                    fontSize: kIsWeb ? 14.5 : 15.sp,
                                     color:
                                         Theme.of(context).colorScheme.onSurface,
                                   ),
@@ -374,7 +374,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                   textInputAction: TextInputAction.done,
                                   onFieldSubmitted: (_) => _handleReset(),
                                   style: TextStyle(
-                                    fontSize: kIsWeb ? 14 : 14.5.sp,
+                                    fontSize: kIsWeb ? 14.5 : 15.sp,
                                     color:
                                         Theme.of(context).colorScheme.onSurface,
                                   ),
@@ -452,12 +452,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                             ? 'Simpan Password'
                                             : 'Kirim Link Reset',
                                         style: TextStyle(
-                                          fontSize: kIsWeb ? 14.5 : 15.5.sp,
+                                          fontSize: kIsWeb ? 15 : 16.sp,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                               ),
-                              SizedBox(height: kIsWeb ? 14 : 22.h),
+                              SizedBox(height: kIsWeb ? 14 : 24.h),
 
                               // Back to login link
                               Row(
@@ -466,7 +466,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                   Text(
                                     'Ingat password? ',
                                     style: TextStyle(
-                                      fontSize: kIsWeb ? 13 : 13.5.sp,
+                                      fontSize: kIsWeb ? 13.5 : 14.sp,
                                       color: Theme.of(
                                         context,
                                       ).colorScheme.onSurfaceVariant,
@@ -483,7 +483,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     child: Text(
                                       'Kembali Login',
                                       style: TextStyle(
-                                        fontSize: kIsWeb ? 13 : 13.5.sp,
+                                        fontSize: kIsWeb ? 13.5 : 14.sp,
                                         fontWeight: FontWeight.bold,
                                         color:
                                             Theme.of(context).brightness ==
@@ -521,7 +521,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       hintText: hintText,
       hintStyle: TextStyle(
         color: isDark ? const Color(0xFF64748B) : Colors.grey[400],
-        fontSize: 14.sp,
+        fontSize: kIsWeb ? 14 : 14.5.sp,
       ),
       prefixIcon: Icon(
         icon,
