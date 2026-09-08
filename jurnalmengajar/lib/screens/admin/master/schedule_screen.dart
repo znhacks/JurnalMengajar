@@ -937,13 +937,16 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
       teacherGroupedMap.putIfAbsent(sched.teacherId, () => []).add(sched);
     }
 
-    // Build unified set of all teacher IDs to display (from masterProvider.teachers + scheduled teachers)
+    // Build unified set of all teacher IDs to display (STRICTLY from verified teachers in masterProvider.teachers)
     final Set<String> allAvailableTeacherIds = {};
     for (final t in masterProvider.teachers) {
       if (t.id.isNotEmpty) allAvailableTeacherIds.add(t.id);
     }
+    // Any scheduled teacher must also be a recognized teacher of this school
     for (final s in validSchedules) {
-      if (s.teacherId.isNotEmpty) allAvailableTeacherIds.add(s.teacherId);
+      if (s.teacherId.isNotEmpty && masterProvider.teachers.any((t) => t.id == s.teacherId)) {
+        allAvailableTeacherIds.add(s.teacherId);
+      }
     }
 
     // Filter by search query

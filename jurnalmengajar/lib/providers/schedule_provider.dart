@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/schedule_model.dart';
 import '../repositories/schedule_repository.dart';
 import '../core/services/cache_service.dart';
+import '../core/utils/helper.dart';
 
 class ScheduleProvider with ChangeNotifier {
   final ScheduleRepository scheduleRepository;
@@ -28,7 +29,19 @@ class ScheduleProvider with ChangeNotifier {
   }
 
   Future<void> loadAllSchedules([String? schoolId]) async {
-    _currentSchoolId = schoolId ?? _currentSchoolId;
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId?.trim();
+    final isSchoolChanged = cleanSchoolId != null && cleanSchoolId.isNotEmpty && cleanSchoolId != _currentSchoolId;
+
+    if (isSchoolChanged) {
+      _schedules = [];
+      _teacherSchedulesForSelectedDate = [];
+      _cachedTeacherSchedules = [];
+      _cachedTeacherId = null;
+      _errorMessage = null;
+      debugPrint('[RUNTIME_DEBUG:SCHEDULE_PROVIDER] Switched school context from "$_currentSchoolId" to "$cleanSchoolId". In-memory schedules purged.');
+    }
+
+    _currentSchoolId = cleanSchoolId ?? _currentSchoolId;
     _errorMessage = null;
 
     // SWR Instant Cache Population: If _schedules is empty, show cached data immediately (0ms)
@@ -55,10 +68,8 @@ class ScheduleProvider with ChangeNotifier {
 
     try {
       final fresh = await scheduleRepository.getAll(_currentSchoolId);
-      if (fresh.isNotEmpty || _schedules.isEmpty) {
-        _schedules = fresh;
-      }
-      debugPrint('[RUNTIME_DEBUG:SCHEDULE_PROVIDER] Loaded ${_schedules.length} schedules into ScheduleProvider state.');
+      _schedules = fresh;
+      debugPrint('[RUNTIME_DEBUG:SCHEDULE_PROVIDER] Loaded ${_schedules.length} isolated schedules for $_currentSchoolId into ScheduleProvider state.');
     } catch (e) {
       _errorMessage = e.toString();
       debugPrint('[RUNTIME_DEBUG:SCHEDULE_PROVIDER] ERROR in loadAllSchedules: $e');

@@ -4,6 +4,7 @@ import '../models/journal_model.dart';
 import '../repositories/journal_repository.dart';
 import '../repositories/supabase_journal_repository.dart';
 import '../core/services/cache_service.dart';
+import '../core/utils/helper.dart';
 
 class JournalProvider with ChangeNotifier {
   final JournalRepository journalRepository;
@@ -22,7 +23,17 @@ class JournalProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   Future<void> loadAllJournals([String? schoolId]) async {
-    _currentSchoolId = schoolId ?? _currentSchoolId;
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId?.trim();
+    final isSchoolChanged = cleanSchoolId != null && cleanSchoolId.isNotEmpty && cleanSchoolId != _currentSchoolId;
+
+    if (isSchoolChanged) {
+      _journals = [];
+      _teacherJournals = [];
+      _errorMessage = null;
+      debugPrint('[RUNTIME_DEBUG:JOURNAL_PROVIDER] Switched school context from "$_currentSchoolId" to "$cleanSchoolId". In-memory journals purged.');
+    }
+
+    _currentSchoolId = cleanSchoolId ?? _currentSchoolId;
     _errorMessage = null;
 
     final sKey = _currentSchoolId ?? 'default';
@@ -48,9 +59,7 @@ class JournalProvider with ChangeNotifier {
 
     try {
       final fresh = await journalRepository.getAll(_currentSchoolId);
-      if (fresh.isNotEmpty || _journals.isEmpty) {
-        _journals = fresh;
-      }
+      _journals = fresh;
     } catch (e) {
       _errorMessage = e.toString();
     } finally {

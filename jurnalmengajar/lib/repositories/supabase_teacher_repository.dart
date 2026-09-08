@@ -13,31 +13,20 @@ class SupabaseTeacherRepository implements TeacherRepository {
 
   @override
   Future<List<TeacherModel>> getAll() async {
-    try {
-      final response = await _supabase
-          .from('users')
-          .select()
-          .order('full_name', ascending: true);
-
-      final List<TeacherModel> teachers = [];
-      for (final item in (response as List)) {
-        try {
-          if (item is Map<String, dynamic>) {
-            teachers.add(TeacherModel.fromJson(item));
-          } else if (item is Map) {
-            teachers.add(TeacherModel.fromJson(Map<String, dynamic>.from(item)));
-          }
-        } catch (_) {}
-      }
-      return teachers;
-    } catch (e) {
-      return [];
-    }
+    // Teachers are strictly tenant-scoped. Calling getAll() without a schoolId
+    // risks cross-tenant data leakage. Return empty list for safety; use getAllForSchool(schoolId) instead.
+    debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] getAll() called without tenant schoolId -> returning empty list for tenant isolation.');
+    return [];
   }
 
   @override
   Future<List<TeacherModel>> getAllForSchool(String schoolId) async {
-    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+    if (cleanSchoolId == null || cleanSchoolId.isEmpty) {
+      debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] getAllForSchool called with empty or invalid schoolId: "$schoolId" -> returning empty list for tenant safety.');
+      return <TeacherModel>[];
+    }
+
     final cacheKey = 'teachers_$cleanSchoolId';
 
     Future<List<TeacherModel>> loadFromCache() async {
@@ -57,158 +46,135 @@ class SupabaseTeacherRepository implements TeacherRepository {
         fallback: loadFromCache,
         networkTask: () async {
           debugPrint('================================================================');
-          debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Fetching teachers for schoolId: "$schoolId" from network...');
+          debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Fetching teachers for cleanSchoolId: "$cleanSchoolId" from network...');
 
           final Map<String, TeacherModel> teachersMap = {};
-          final Set<String> linkedUserIds = {};
+          final Set<String> activeLinkedUserIds = {};
+          final Set<String> scheduledTeacherIds = {};
 
-      if (schoolId.isNotEmpty) {
-        // 1. Fetch user IDs linked in user_schools for this school
-        try {
-          final userSchoolsRes = await _supabase
-              .from('user_schools')
-              .select('user_id, role, status')
-              .eq('school_id', schoolId);
+          // 1. Fetch only ACTIVE user memberships with TEACHER role for this specific school in user_schools
+          try {
+            final userSchoolsRes = await _supabase
+                .from('user_schools')
+                .select('user_id, role, status')
+                .eq('school_id', cleanSchoolId)
+                .eq('status', 'active')
+                .inFilter('role', ['guru', 'teacher']);
 
-          debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] user_schools query returned: ${(userSchoolsRes as List).length} rows');
-          for (final row in (userSchoolsRes as List)) {
-            final status = (row['status'] as String? ?? 'active').toLowerCase();
-            final uid = row['user_id']?.toString();
-            final role = row['role']?.toString();
-            debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] -> user_schools entry: user_id=$uid, role=$role, status=$status');
-            if (status != 'pending' && status != 'rejected') {
+            debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Active teacher memberships for $cleanSchoolId: ${(userSchoolsRes as List).length} rows');
+            for (final row in (userSchoolsRes as List)) {
+              final uid = row['user_id']?.toString();
               if (uid != null && uid.isNotEmpty) {
-                linkedUserIds.add(uid);
+                activeLinkedUserIds.add(uid);
               }
             }
+          } catch (err) {
+            debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] user_schools query error: $err');
           }
-        } catch (err) {
-          debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] user_schools error: $err');
-        }
 
-        // 2. Fetch user IDs linked in school_memberships
-        try {
-          final memRes = await _supabase
-              .from('school_memberships')
-              .select('user_id, role')
-              .eq('school_id', schoolId);
-
-          debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] school_memberships query returned: ${(memRes as List).length} rows');
-          for (final row in (memRes as List)) {
-            final uid = row['user_id']?.toString();
-            if (uid != null && uid.isNotEmpty) {
-              linkedUserIds.add(uid);
-            }
-          }
-        } catch (err) {
-          debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] school_memberships error: $err');
-        }
-      }
-
-      debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Total linked user IDs from memberships: ${linkedUserIds.length}');
-
-      // 3. Query all users from public.users table
-      try {
-        final res = await _supabase
-            .from('users')
-            .select()
-            .order('full_name', ascending: true);
-
-        debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] public.users query returned: ${(res as List).length} total users.');
-
-        for (final item in (res as List)) {
+          // 2. Fetch teachers who have active schedules in this school
           try {
-            final Map<String, dynamic> json = item is Map<String, dynamic>
-                ? item
-                : Map<String, dynamic>.from(item as Map);
+            final schedRes = await _supabase
+                .from('schedules')
+                .select('teacher_id')
+                .eq('school_id', cleanSchoolId);
 
-            final tId = json['id']?.toString() ?? '';
-            final userFullName = json['full_name']?.toString() ?? json['name']?.toString() ?? '';
-            final userRole = json['role']?.toString() ?? '';
-            
-            final isLinked = linkedUserIds.contains(tId);
-            final isSchoolMatch = schoolId.isEmpty ||
-                AppHelper.matchesSchool(json['school_id'], json['school_ids'], schoolId);
+            for (final row in (schedRes as List)) {
+              final tid = row['teacher_id']?.toString();
+              if (tid != null && tid.isNotEmpty) {
+                scheduledTeacherIds.add(tid);
+              }
+            }
+            debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Teachers with schedules in $cleanSchoolId: ${scheduledTeacherIds.length}');
+          } catch (err) {
+            debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] schedules query error: $err');
+          }
 
-            if (isLinked || isSchoolMatch || schoolId.isEmpty) {
-              teachersMap[tId] = TeacherModel.fromJson(json);
-              debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] -> MATCHED USER: id=$tId, name="$userFullName", role=$userRole, schoolId=$schoolId (isLinked=$isLinked, isSchoolMatch=$isSchoolMatch)');
+          // 3. Query users scoped strictly to cleanSchoolId and with TEACHER role only
+          try {
+            final Set<String> targetUserIds = {...activeLinkedUserIds, ...scheduledTeacherIds};
+
+            var usersQuery = _supabase
+                .from('users')
+                .select()
+                .inFilter('role', ['guru', 'teacher']);
+
+            if (targetUserIds.isNotEmpty) {
+              final idListFilter = targetUserIds.map((id) => '"$id"').join(',');
+              usersQuery = usersQuery.or('school_id.eq.$cleanSchoolId,school_ids.cs.{"$cleanSchoolId"},id.in.($idListFilter)');
+            } else {
+              usersQuery = usersQuery.or('school_id.eq.$cleanSchoolId,school_ids.cs.{"$cleanSchoolId"}');
+            }
+
+            final res = await usersQuery.order('full_name', ascending: true);
+            debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Scoped teacher users returned: ${(res as List).length} rows for $cleanSchoolId');
+
+            for (final item in (res as List)) {
+              try {
+                final Map<String, dynamic> json = item is Map<String, dynamic>
+                    ? item
+                    : Map<String, dynamic>.from(item as Map);
+
+                final tId = json['id']?.toString() ?? '';
+                if (tId.isEmpty) continue;
+
+                final userRole = (json['role']?.toString() ?? '').toLowerCase();
+                // STRICT ROLE FILTER: Admin, superadmin, school_admin, owner, staff MUST NEVER be in TeacherModel list!
+                if (userRole != 'guru' && userRole != 'teacher') {
+                  debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] -> REJECTED NON-TEACHER: id=$tId, name="${json['full_name']}", role=$userRole');
+                  continue;
+                }
+
+                // Strict Tenant Verification:
+                final isDirectMatch = AppHelper.matchesSchool(json['school_id'], json['school_ids'], cleanSchoolId);
+                final isActiveMember = activeLinkedUserIds.contains(tId);
+                final isScheduledTeacher = scheduledTeacherIds.contains(tId);
+
+                if (!isDirectMatch && !isActiveMember && !isScheduledTeacher) {
+                  debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] -> REJECTED FOREIGN USER: $tId, name=${json['full_name']} (does not belong to $cleanSchoolId)');
+                  continue;
+                }
+
+                teachersMap[tId] = TeacherModel.fromJson(json);
+                debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] -> ACCEPTED GURU/TEACHER: id=$tId, name="${json['full_name']}", role=$userRole for school $cleanSchoolId');
+              } catch (err) {
+                debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Error parsing user: $err');
+              }
             }
           } catch (err) {
-            debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Error parsing user: $err');
+            debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] scoped users query error: $err');
           }
-        }
-      } catch (err) {
-        debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] public.users error: $err');
-      }
 
-      // 4. Fallback: if userIds from memberships were not loaded yet, query specifically by ID
-      if (linkedUserIds.isNotEmpty) {
-        final missingIds = linkedUserIds.where((id) => !teachersMap.containsKey(id)).toList();
-        if (missingIds.isNotEmpty) {
-          debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Fetching missing linked users by ID: $missingIds');
-          try {
-            final missingRes = await _supabase
-                .from('users')
-                .select()
-                .inFilter('id', missingIds);
+          // 4. Ensure all teachers with schedules in this school are loaded (must also be guru/teacher)
+          final missingScheduledTeacherIds = scheduledTeacherIds.where((id) => !teachersMap.containsKey(id)).toList();
+          if (missingScheduledTeacherIds.isNotEmpty) {
+            try {
+              final extraRes = await _supabase
+                  .from('users')
+                  .select()
+                  .inFilter('role', ['guru', 'teacher'])
+                  .inFilter('id', missingScheduledTeacherIds);
 
-            for (final item in (missingRes as List)) {
-              try {
-                final Map<String, dynamic> json = item is Map<String, dynamic>
-                    ? item
-                    : Map<String, dynamic>.from(item as Map);
-                final t = TeacherModel.fromJson(json);
-                teachersMap[t.id] = t;
-              } catch (_) {}
-            }
-          } catch (_) {}
-        }
-      }
+              for (final item in (extraRes as List)) {
+                try {
+                  final Map<String, dynamic> json = item is Map<String, dynamic>
+                      ? item
+                      : Map<String, dynamic>.from(item as Map);
+                  final userRole = (json['role']?.toString() ?? '').toLowerCase();
+                  if (userRole != 'guru' && userRole != 'teacher') continue;
 
-      // 5. Ensure all teachers that have schedules in schedules table are also present
-      try {
-        final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
-        var schedQuery = _supabase.from('schedules').select('teacher_id');
-        if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
-          schedQuery = schedQuery.eq('school_id', cleanSchoolId);
-        }
-        final schedRes = await schedQuery;
-
-        final Set<String> scheduleTeacherIds = {};
-        for (final row in (schedRes as List)) {
-          final tid = row['teacher_id']?.toString();
-          if (tid != null && tid.isNotEmpty && !teachersMap.containsKey(tid)) {
-            scheduleTeacherIds.add(tid);
+                  final t = TeacherModel.fromJson(json);
+                  teachersMap[t.id] = t;
+                } catch (_) {}
+              }
+            } catch (_) {}
           }
-        }
-
-        if (scheduleTeacherIds.isNotEmpty) {
-          debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Fetching extra teachers from schedules: $scheduleTeacherIds');
-          try {
-            final extraRes = await _supabase
-                .from('users')
-                .select()
-                .inFilter('id', scheduleTeacherIds.toList());
-
-            for (final item in (extraRes as List)) {
-              try {
-                final Map<String, dynamic> json = item is Map<String, dynamic>
-                    ? item
-                    : Map<String, dynamic>.from(item as Map);
-                final t = TeacherModel.fromJson(json);
-                teachersMap[t.id] = t;
-              } catch (_) {}
-            }
-          } catch (_) {}
-        }
-      } catch (_) {}
 
           final teachers = teachersMap.values.toList();
           teachers.sort((a, b) => a.name.compareTo(b.name));
-          debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] FINAL TEACHER COUNT RETURNED: ${teachers.length}');
+          debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] FINAL ISOLATED TEACHERS FOR $cleanSchoolId: ${teachers.length}');
 
-          // Simpan ke cache lokal
+          // Save to local cache
           if (teachers.isNotEmpty) {
             CacheService().save(cacheKey, teachers.map((t) => t.toJson()).toList());
           }
@@ -218,7 +184,7 @@ class SupabaseTeacherRepository implements TeacherRepository {
         },
       );
     } catch (e) {
-      debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] ERROR in getAllForSchool, falling back to cache: $e');
+      debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Exception in getAllForSchool: $e');
       return await loadFromCache();
     }
   }

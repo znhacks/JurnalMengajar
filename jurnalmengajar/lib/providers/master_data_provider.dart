@@ -15,6 +15,7 @@ import '../models/student_model.dart';
 import '../repositories/student_repository.dart';
 import '../repositories/school_repository.dart';
 import '../core/services/cache_service.dart';
+import '../core/utils/helper.dart';
 
 class MasterDataProvider with ChangeNotifier {
   final PeriodRepository periodRepository;
@@ -68,11 +69,26 @@ class MasterDataProvider with ChangeNotifier {
   }
 
   Future<void> loadAllData([String? schoolId]) async {
-    _currentSchoolId = schoolId;
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId?.trim();
+    final isSchoolChanged = cleanSchoolId != null && cleanSchoolId.isNotEmpty && cleanSchoolId != _currentSchoolId;
+
+    if (isSchoolChanged) {
+      // ATOMIC TENANT PURGE: Clear previous school's in-memory data immediately
+      // so no stale data from School A bleeds into School B!
+      _periods = [];
+      _subjects = [];
+      _hours = [];
+      _classes = [];
+      _teachers = [];
+      _errorMessage = null;
+      debugPrint('[RUNTIME_DEBUG:MASTER_DATA] Switched school context from "$_currentSchoolId" to "$cleanSchoolId". In-memory state purged.');
+    }
+
+    _currentSchoolId = cleanSchoolId ?? _currentSchoolId;
     _errorMessage = null;
 
     // SWR Instant Cache Population: If lists are empty, render from disk cache immediately (0ms)
-    final sKey = schoolId ?? 'default';
+    final sKey = _currentSchoolId ?? 'default';
     if (_classes.isEmpty || _subjects.isEmpty || _teachers.isEmpty || _periods.isEmpty || _hours.isEmpty) {
       try {
         final cachedPeriods = await CacheService().loadList('periods_$sKey');
@@ -121,31 +137,28 @@ class MasterDataProvider with ChangeNotifier {
 
     try {
       final results = await Future.wait([
-        periodRepository.getAll(schoolId).catchError((err) {
+        periodRepository.getAll(_currentSchoolId).catchError((err) {
           debugPrint('[RUNTIME_DEBUG:MASTER_DATA] periods error: $err');
           return <PeriodModel>[];
         }),
-        subjectRepository.getAll(schoolId).catchError((err) {
+        subjectRepository.getAll(_currentSchoolId).catchError((err) {
           debugPrint('[RUNTIME_DEBUG:MASTER_DATA] subjects error: $err');
           return <SubjectModel>[];
         }),
-        hourRepository.getAll(schoolId).catchError((err) {
+        hourRepository.getAll(_currentSchoolId).catchError((err) {
           debugPrint('[RUNTIME_DEBUG:MASTER_DATA] hours error: $err');
           return <HourModel>[];
         }),
-        classRepository.getAll(schoolId).catchError((err) {
+        classRepository.getAll(_currentSchoolId).catchError((err) {
           debugPrint('[RUNTIME_DEBUG:MASTER_DATA] classes error: $err');
           return <ClassModel>[];
         }),
-        (schoolId != null && schoolId.isNotEmpty)
-            ? teacherRepository.getAllForSchool(schoolId).catchError((err) {
+        (_currentSchoolId != null && _currentSchoolId!.isNotEmpty)
+            ? teacherRepository.getAllForSchool(_currentSchoolId!).catchError((err) {
                 debugPrint('[RUNTIME_DEBUG:MASTER_DATA] teachers error: $err');
                 return <TeacherModel>[];
               })
-            : teacherRepository.getAll().catchError((err) {
-                debugPrint('[RUNTIME_DEBUG:MASTER_DATA] teachers error: $err');
-                return <TeacherModel>[];
-              }),
+            : Future.value(<TeacherModel>[]),
         if (schoolRepository != null && _schools.isEmpty)
           schoolRepository!.getAll().catchError((err) {
             debugPrint('[RUNTIME_DEBUG:MASTER_DATA] schools error: $err');
@@ -162,15 +175,15 @@ class MasterDataProvider with ChangeNotifier {
       final newTeachers = results[4] as List<TeacherModel>;
       final newSchools = results[5] as List<SchoolModel>;
 
-      // Don't overwrite existing populated cache if network returned empty due to weak signal
-      if (newPeriods.isNotEmpty || _periods.isEmpty) _periods = newPeriods;
-      if (newSubjects.isNotEmpty || _subjects.isEmpty) _subjects = newSubjects;
-      if (newHours.isNotEmpty || _hours.isEmpty) _hours = newHours;
-      if (newClasses.isNotEmpty || _classes.isEmpty) _classes = newClasses;
-      if (newTeachers.isNotEmpty || _teachers.isEmpty) _teachers = newTeachers;
+      // If switching school or if lists were empty, assign fresh data directly
+      _periods = newPeriods;
+      _subjects = newSubjects;
+      _hours = newHours;
+      _classes = newClasses;
+      _teachers = newTeachers;
       if (newSchools.isNotEmpty || _schools.isEmpty) _schools = newSchools;
 
-      debugPrint('[RUNTIME_DEBUG:MASTER_DATA] Loaded data counts -> Periods: ${_periods.length}, Subjects: ${_subjects.length}, Hours: ${_hours.length}, Classes: ${_classes.length}, Teachers: ${_teachers.length}, Schools: ${_schools.length}');
+      debugPrint('[RUNTIME_DEBUG:MASTER_DATA] Loaded isolated data for $_currentSchoolId -> Periods: ${_periods.length}, Subjects: ${_subjects.length}, Hours: ${_hours.length}, Classes: ${_classes.length}, Teachers: ${_teachers.length}');
     } catch (e) {
       _errorMessage = e.toString();
       debugPrint('[RUNTIME_DEBUG:MASTER_DATA] ERROR in loadAllData: $e');
@@ -483,7 +496,7 @@ class MasterDataProvider with ChangeNotifier {
       await teacherRepository.create(model);
       _teachers = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty)
           ? await teacherRepository.getAllForSchool(_currentSchoolId!)
-          : await teacherRepository.getAll();
+          : <TeacherModel>[];
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -501,7 +514,7 @@ class MasterDataProvider with ChangeNotifier {
       await teacherRepository.update(model);
       _teachers = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty)
           ? await teacherRepository.getAllForSchool(_currentSchoolId!)
-          : await teacherRepository.getAll();
+          : <TeacherModel>[];
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -519,7 +532,7 @@ class MasterDataProvider with ChangeNotifier {
       await teacherRepository.delete(id);
       _teachers = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty)
           ? await teacherRepository.getAllForSchool(_currentSchoolId!)
-          : await teacherRepository.getAll();
+          : <TeacherModel>[];
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -697,7 +710,7 @@ class MasterDataProvider with ChangeNotifier {
       }
       _teachers = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty)
           ? await teacherRepository.getAllForSchool(_currentSchoolId!)
-          : await teacherRepository.getAll();
+          : <TeacherModel>[];
       return true;
     } catch (e) {
       _errorMessage = e.toString();

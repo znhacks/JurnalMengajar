@@ -1397,6 +1397,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
 
                                     authProvider.switchActiveSchool(sId, sName, sRole);
                                     masterProvider.loadAllData(sId);
+                                    scheduleProvider.loadAllSchedules(sId);
+                                    journalProvider.loadAllJournals(sId);
                                   },
                                   borderRadius: BorderRadius.circular(12.r),
                                   child: Container(

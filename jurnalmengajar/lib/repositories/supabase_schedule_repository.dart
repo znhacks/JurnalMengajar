@@ -49,6 +49,8 @@ class SupabaseScheduleRepository implements ScheduleRepository {
           var query = _supabase.from(SupabaseConstants.tableSchedules).select();
           if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
             query = query.eq('school_id', cleanSchoolId);
+          } else {
+            debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] WARNING: ScheduleRepository.getAll called without cleanSchoolId! Scoping may rely solely on RLS.');
           }
           final response = await query.order(SupabaseConstants.fieldDate, ascending: true);
 
