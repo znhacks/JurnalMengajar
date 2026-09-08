@@ -256,7 +256,12 @@ class SupabaseAuthRepository implements AuthRepository {
           schoolId = matchedSchool['id'] as String;
           canonicalSchoolName = (matchedSchool['name'] as String?) ?? (user.schoolName ?? '');
         } else {
-          // App-level School Creation/Activation with JM-Panel code
+          // Scenario 2: Guru must join an existing school
+          if (user.role == 'pending_guru') {
+            throw Exception('Kode sekolah tidak ditemukan di sistem. Pastikan Anda memasukkan kode sekolah yang valid dari Admin Sekolah Anda.');
+          }
+
+          // Scenario 1: Admin creates (INSERT) a new school with the JM-Panel license code
           final upperCode = targetId.toUpperCase();
           final isEntPlan = upperCode.contains('ENTERPRISE');
           final isProPlan = upperCode.contains('PRO');
