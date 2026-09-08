@@ -158,7 +158,9 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                         return;
                       }
 
+                      final authProvider = Provider.of<AuthProvider>(context, listen: false);
                       final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+                      final activeSchoolId = authProvider.activeSchoolId ?? masterProvider.currentSchoolId;
                       bool success;
 
                       if (subject == null) {
@@ -166,11 +168,13 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                           id: '',
                           name: nameController.text.trim(),
                           isActive: isActive,
+                          schoolId: activeSchoolId,
                         ));
                       } else {
                         success = await masterProvider.updateSubject(subject.copyWith(
                           name: nameController.text.trim(),
                           isActive: isActive,
+                          schoolId: activeSchoolId ?? subject.schoolId,
                         ));
                       }
 

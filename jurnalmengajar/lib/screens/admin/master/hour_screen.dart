@@ -249,7 +249,9 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                         return;
                       }
 
+                      final authProvider = Provider.of<AuthProvider>(context, listen: false);
                       final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+                      final activeSchoolId = authProvider.activeSchoolId ?? masterProvider.currentSchoolId;
                       bool success;
 
                       if (hour == null) {
@@ -258,12 +260,14 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                           teachingHour: hNum,
                           startTime: startTimeStr,
                           endTime: endTimeStr,
+                          schoolId: activeSchoolId,
                         ));
                       } else {
                         success = await masterProvider.updateHour(hour.copyWith(
                           teachingHour: hNum,
                           startTime: startTimeStr,
                           endTime: endTimeStr,
+                          schoolId: activeSchoolId ?? hour.schoolId,
                         ));
                       }
 

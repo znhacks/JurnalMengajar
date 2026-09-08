@@ -228,7 +228,9 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                             return;
                           }
 
+                          final authProvider = Provider.of<AuthProvider>(context, listen: false);
                           final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+                          final activeSchoolId = authProvider.activeSchoolId ?? masterProvider.currentSchoolId;
                           bool success;
 
                           if (period == null) {
@@ -236,11 +238,13 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                               id: '',
                               name: nameController.text.trim(),
                               isActive: isActive,
+                              schoolId: activeSchoolId,
                             ));
                           } else {
                             success = await masterProvider.updatePeriod(period.copyWith(
                               name: nameController.text.trim(),
                               isActive: isActive,
+                              schoolId: activeSchoolId ?? period.schoolId,
                             ));
                           }
 

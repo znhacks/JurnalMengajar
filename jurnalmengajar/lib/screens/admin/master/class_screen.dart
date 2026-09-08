@@ -197,6 +197,9 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                         return;
                       }
 
+                      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+                      final activeSchoolId = authProvider.activeSchoolId ?? masterProvider.currentSchoolId;
                       bool success;
 
                       if (classItem == null) {
@@ -206,6 +209,7 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                             periodId: selectedPeriodId!,
                             name: nameController.text.trim(),
                             studentCount: 0,
+                            schoolId: activeSchoolId,
                           ),
                         );
                       } else {
@@ -213,6 +217,7 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                           classItem.copyWith(
                             periodId: selectedPeriodId!,
                             name: nameController.text.trim(),
+                            schoolId: activeSchoolId ?? classItem.schoolId,
                           ),
                         );
                       }

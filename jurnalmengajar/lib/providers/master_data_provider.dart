@@ -104,11 +104,14 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
-          ? model.copyWith(schoolId: _currentSchoolId)
+      final effectiveSchoolId = (model.schoolId != null && model.schoolId!.isNotEmpty)
+          ? model.schoolId
+          : _currentSchoolId;
+      final finalModel = (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+          ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await periodRepository.create(finalModel);
-      _periods = await periodRepository.getAll(_currentSchoolId);
+      _periods = await periodRepository.getAll(_currentSchoolId ?? effectiveSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -123,11 +126,14 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
-          ? model.copyWith(schoolId: _currentSchoolId)
+      final effectiveSchoolId = (model.schoolId != null && model.schoolId!.isNotEmpty)
+          ? model.schoolId
+          : _currentSchoolId;
+      final finalModel = (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+          ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await periodRepository.update(finalModel);
-      _periods = await periodRepository.getAll(_currentSchoolId);
+      _periods = await periodRepository.getAll(_currentSchoolId ?? effectiveSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -159,11 +165,14 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
-          ? model.copyWith(schoolId: _currentSchoolId)
+      final effectiveSchoolId = (model.schoolId != null && model.schoolId!.isNotEmpty)
+          ? model.schoolId
+          : _currentSchoolId;
+      final finalModel = (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+          ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await subjectRepository.create(finalModel);
-      _subjects = await subjectRepository.getAll(_currentSchoolId);
+      _subjects = await subjectRepository.getAll(_currentSchoolId ?? effectiveSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -178,11 +187,14 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
-          ? model.copyWith(schoolId: _currentSchoolId)
+      final effectiveSchoolId = (model.schoolId != null && model.schoolId!.isNotEmpty)
+          ? model.schoolId
+          : _currentSchoolId;
+      final finalModel = (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+          ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await subjectRepository.update(finalModel);
-      _subjects = await subjectRepository.getAll(_currentSchoolId);
+      _subjects = await subjectRepository.getAll(_currentSchoolId ?? effectiveSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -214,11 +226,14 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
-          ? model.copyWith(schoolId: _currentSchoolId)
+      final effectiveSchoolId = (model.schoolId != null && model.schoolId!.isNotEmpty)
+          ? model.schoolId
+          : _currentSchoolId;
+      final finalModel = (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+          ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await hourRepository.create(finalModel);
-      _hours = await hourRepository.getAll(_currentSchoolId);
+      _hours = await hourRepository.getAll(_currentSchoolId ?? effectiveSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -233,11 +248,14 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
-          ? model.copyWith(schoolId: _currentSchoolId)
+      final effectiveSchoolId = (model.schoolId != null && model.schoolId!.isNotEmpty)
+          ? model.schoolId
+          : _currentSchoolId;
+      final finalModel = (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+          ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await hourRepository.update(finalModel);
-      _hours = await hourRepository.getAll(_currentSchoolId);
+      _hours = await hourRepository.getAll(_currentSchoolId ?? effectiveSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -269,11 +287,14 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
-          ? model.copyWith(schoolId: _currentSchoolId)
+      final effectiveSchoolId = (model.schoolId != null && model.schoolId!.isNotEmpty)
+          ? model.schoolId
+          : _currentSchoolId;
+      final finalModel = (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+          ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await classRepository.create(finalModel);
-      _classes = await classRepository.getAll(_currentSchoolId);
+      _classes = await classRepository.getAll(_currentSchoolId ?? effectiveSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -288,11 +309,14 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
-          ? model.copyWith(schoolId: _currentSchoolId)
+      final effectiveSchoolId = (model.schoolId != null && model.schoolId!.isNotEmpty)
+          ? model.schoolId
+          : _currentSchoolId;
+      final finalModel = (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+          ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await classRepository.update(finalModel);
-      _classes = await classRepository.getAll(_currentSchoolId);
+      _classes = await classRepository.getAll(_currentSchoolId ?? effectiveSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();

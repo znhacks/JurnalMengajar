@@ -1,22 +1,12 @@
 -- ====================================================================
--- SUPABASE ROW LEVEL SECURITY (RLS) & SYNC SETUP
--- Jurnal Mengajar Database Security hardening
+-- SKRIP PERBAIKAN: ROW LEVEL SECURITY (RLS) UNTUK PERIODS & MASTER DATA
+-- ====================================================================
+-- Jalankan seluruh query di bawah ini pada SQL Editor di Dashboard Supabase Anda
+-- untuk mengatasi error:
+-- "PostgrestException: new row violates row-level security policy for table 'periods' (code: 42501)"
 -- ====================================================================
 
--- 1. ENABLE ROW LEVEL SECURITY (RLS) ON ALL TABLES
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.periods ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.subjects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.lesson_hours ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.classes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.schedules ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.journals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.warning_letters ENABLE ROW LEVEL SECURITY;
-
--- 2. HELPER FUNCTION TO CHECK IF A USER IS AN ADMIN
--- Defined with SECURITY DEFINER to avoid infinite recursion when querying public.users
+-- 1. PERBAIKAN HELPER FUNCTION is_admin() AGAR MENDUKUNG SEMUA FORMAT ROLE ADMIN
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean AS $$
 BEGIN
@@ -33,27 +23,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 3. RLS POLICIES FOR: public.users
-DROP POLICY IF EXISTS "Allow select users for authenticated users" ON public.users;
-DROP POLICY IF EXISTS "Allow insert users for owners" ON public.users;
-DROP POLICY IF EXISTS "Allow update users for owners and admin" ON public.users;
-DROP POLICY IF EXISTS "Allow delete users for owners and admin" ON public.users;
+-- 2. PERBAIKAN RLS UNTUK TABEL: public.periods
+ALTER TABLE public.periods ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow select users for authenticated users" 
-  ON public.users FOR SELECT TO authenticated USING (true);
-
-CREATE POLICY "Allow insert users for owners" 
-  ON public.users FOR INSERT TO authenticated WITH CHECK (auth.uid() = id);
-
-CREATE POLICY "Allow update users for owners and admin" 
-  ON public.users FOR UPDATE TO authenticated 
-  USING (auth.uid() = id OR public.is_admin()) 
-  WITH CHECK (auth.uid() = id OR public.is_admin());
-
-CREATE POLICY "Allow delete users for owners and admin" 
-  ON public.users FOR DELETE TO authenticated USING (auth.uid() = id OR public.is_admin());
-
--- 4. RLS POLICIES FOR: public.periods
 DROP POLICY IF EXISTS "Allow select periods for authenticated users" ON public.periods;
 DROP POLICY IF EXISTS "Allow write periods for admin" ON public.periods;
 DROP POLICY IF EXISTS "Allow insert periods for authenticated users" ON public.periods;
@@ -72,7 +44,9 @@ CREATE POLICY "Allow update periods for authenticated users"
 CREATE POLICY "Allow delete periods for authenticated users" 
   ON public.periods FOR DELETE TO authenticated USING (true);
 
--- 5. RLS POLICIES FOR: public.subjects
+-- 3. PERBAIKAN RLS UNTUK TABEL: public.subjects
+ALTER TABLE public.subjects ENABLE ROW LEVEL SECURITY;
+
 DROP POLICY IF EXISTS "Allow select subjects for authenticated users" ON public.subjects;
 DROP POLICY IF EXISTS "Allow write subjects for admin" ON public.subjects;
 DROP POLICY IF EXISTS "Allow insert subjects for authenticated users" ON public.subjects;
@@ -91,7 +65,9 @@ CREATE POLICY "Allow update subjects for authenticated users"
 CREATE POLICY "Allow delete subjects for authenticated users" 
   ON public.subjects FOR DELETE TO authenticated USING (true);
 
--- 6. RLS POLICIES FOR: public.lesson_hours
+-- 4. PERBAIKAN RLS UNTUK TABEL: public.lesson_hours
+ALTER TABLE public.lesson_hours ENABLE ROW LEVEL SECURITY;
+
 DROP POLICY IF EXISTS "Allow select lesson_hours for authenticated users" ON public.lesson_hours;
 DROP POLICY IF EXISTS "Allow write lesson_hours for admin" ON public.lesson_hours;
 DROP POLICY IF EXISTS "Allow insert lesson_hours for authenticated users" ON public.lesson_hours;
@@ -110,7 +86,9 @@ CREATE POLICY "Allow update lesson_hours for authenticated users"
 CREATE POLICY "Allow delete lesson_hours for authenticated users" 
   ON public.lesson_hours FOR DELETE TO authenticated USING (true);
 
--- 7. RLS POLICIES FOR: public.classes
+-- 5. PERBAIKAN RLS UNTUK TABEL: public.classes
+ALTER TABLE public.classes ENABLE ROW LEVEL SECURITY;
+
 DROP POLICY IF EXISTS "Allow select classes for authenticated users" ON public.classes;
 DROP POLICY IF EXISTS "Allow write classes for admin" ON public.classes;
 DROP POLICY IF EXISTS "Allow insert classes for authenticated users" ON public.classes;
@@ -129,7 +107,9 @@ CREATE POLICY "Allow update classes for authenticated users"
 CREATE POLICY "Allow delete classes for authenticated users" 
   ON public.classes FOR DELETE TO authenticated USING (true);
 
--- 8. RLS POLICIES FOR: public.students
+-- 6. PERBAIKAN RLS UNTUK TABEL: public.students
+ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
+
 DROP POLICY IF EXISTS "Allow select students for authenticated users" ON public.students;
 DROP POLICY IF EXISTS "Allow write students for admin" ON public.students;
 DROP POLICY IF EXISTS "Allow insert students for authenticated users" ON public.students;
@@ -148,7 +128,9 @@ CREATE POLICY "Allow update students for authenticated users"
 CREATE POLICY "Allow delete students for authenticated users" 
   ON public.students FOR DELETE TO authenticated USING (true);
 
--- 9. RLS POLICIES FOR: public.schedules
+-- 7. PERBAIKAN RLS UNTUK TABEL: public.schedules
+ALTER TABLE public.schedules ENABLE ROW LEVEL SECURITY;
+
 DROP POLICY IF EXISTS "Allow select schedules for owner and admin" ON public.schedules;
 DROP POLICY IF EXISTS "Allow write schedules for admin" ON public.schedules;
 DROP POLICY IF EXISTS "Allow select schedules for authenticated users" ON public.schedules;
@@ -168,30 +150,9 @@ CREATE POLICY "Allow update schedules for authenticated users"
 CREATE POLICY "Allow delete schedules for authenticated users" 
   ON public.schedules FOR DELETE TO authenticated USING (true);
 
--- 10. RLS POLICIES FOR: public.journals
-DROP POLICY IF EXISTS "Allow select journals for owner and admin" ON public.journals;
-DROP POLICY IF EXISTS "Allow insert journals for owner and admin" ON public.journals;
-DROP POLICY IF EXISTS "Allow update journals for owner and admin" ON public.journals;
-DROP POLICY IF EXISTS "Allow delete journals for owner and admin" ON public.journals;
+-- 8. PERBAIKAN RLS UNTUK TABEL: public.settings
+ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow select journals for owner and admin" 
-  ON public.journals FOR SELECT TO authenticated 
-  USING (teacher_id = auth.uid() OR public.is_admin());
-
-CREATE POLICY "Allow insert journals for owner and admin" 
-  ON public.journals FOR INSERT TO authenticated 
-  WITH CHECK (teacher_id = auth.uid() OR public.is_admin());
-
-CREATE POLICY "Allow update journals for owner and admin" 
-  ON public.journals FOR UPDATE TO authenticated 
-  USING (teacher_id = auth.uid() OR public.is_admin()) 
-  WITH CHECK (teacher_id = auth.uid() OR public.is_admin());
-
-CREATE POLICY "Allow delete journals for owner and admin" 
-  ON public.journals FOR DELETE TO authenticated 
-  USING (teacher_id = auth.uid() OR public.is_admin());
-
--- 11. RLS POLICIES FOR: public.settings
 DROP POLICY IF EXISTS "Allow select settings for authenticated users" ON public.settings;
 DROP POLICY IF EXISTS "Allow write settings for admin" ON public.settings;
 DROP POLICY IF EXISTS "Allow insert settings for authenticated users" ON public.settings;
@@ -209,71 +170,3 @@ CREATE POLICY "Allow update settings for authenticated users"
 
 CREATE POLICY "Allow delete settings for authenticated users" 
   ON public.settings FOR DELETE TO authenticated USING (true);
-
--- 12. RLS POLICIES FOR: public.warning_letters
-DROP POLICY IF EXISTS "Allow select warning_letters for owner and admin" ON public.warning_letters;
-DROP POLICY IF EXISTS "Allow insert warning_letters for admin" ON public.warning_letters;
-DROP POLICY IF EXISTS "Allow update warning_letters for owner and admin" ON public.warning_letters;
-DROP POLICY IF EXISTS "Allow delete warning_letters for admin" ON public.warning_letters;
-
-CREATE POLICY "Allow select warning_letters for owner and admin" 
-  ON public.warning_letters FOR SELECT TO authenticated 
-  USING (teacher_id = auth.uid() OR public.is_admin());
-
-CREATE POLICY "Allow insert warning_letters for admin" 
-  ON public.warning_letters FOR INSERT TO authenticated 
-  WITH CHECK (public.is_admin());
-
-CREATE POLICY "Allow update warning_letters for owner and admin" 
-  ON public.warning_letters FOR UPDATE TO authenticated 
-  USING (teacher_id = auth.uid() OR public.is_admin()) 
-  WITH CHECK (teacher_id = auth.uid() OR public.is_admin());
-
-CREATE POLICY "Allow delete warning_letters for admin" 
-  ON public.warning_letters FOR DELETE TO authenticated 
-  USING (public.is_admin());
-
--- ====================================================================
--- TRIGGERS TO AUTOMATICALLY SYNC AUTH.USERS TO PUBLIC.USERS
--- ====================================================================
-
--- Function to handle auto-creation of a public.users record when a new user signs up in auth.users
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO public.users (id, email, full_name, role, phone, position, address, photo_url)
-  VALUES (
-    new.id,
-    new.email,
-    COALESCE(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
-    COALESCE(new.raw_user_meta_data->>'role', 'pending_guru'),
-    new.raw_user_meta_data->>'phone_number',
-    new.raw_user_meta_data->>'position',
-    new.raw_user_meta_data->>'address',
-    new.raw_user_meta_data->>'photo_url'
-  )
-  ON CONFLICT (id) DO NOTHING;
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Trigger to run handle_new_user on insert to auth.users
-CREATE OR REPLACE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
-
--- Function to handle auto-update of public.users.email when auth.users.email changes
-CREATE OR REPLACE FUNCTION public.handle_update_user()
-RETURNS trigger AS $$
-BEGIN
-  UPDATE public.users
-  SET email = new.email
-  WHERE id = new.id;
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Trigger to run handle_update_user on email update in auth.users
-CREATE OR REPLACE TRIGGER on_auth_user_updated
-  AFTER UPDATE OF email ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_update_user();

@@ -221,14 +221,14 @@ class _SchoolExpiredScreenState extends State<SchoolExpiredScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Icon(
-                                  Icons.error_outline_rounded,
+                                  Icons.info_outline_rounded,
                                   color: const Color(0xFFEF4444),
                                   size: 20.r,
                                 ),
                                 SizedBox(width: 8.w),
                                 Expanded(
                                   child: Text(
-                                    'Tidak terdapat sekolah dengan kode ini, mungkin berlangganan pada jmpanel.vercel.app telah expired/school dihapus',
+                                    'Akses sekolah Anda sedang dinonaktifkan atau masa langganan telah berakhir. Silakan masukkan Kode Aktivasi / Paket baru dari JM-Panel untuk mengaktifkan kembali sekolah.',
                                     style: TextStyle(
                                       fontSize: 12.sp,
                                       color: const Color(0xFF991B1B),
@@ -241,7 +241,7 @@ class _SchoolExpiredScreenState extends State<SchoolExpiredScreen> {
                           ),
                           SizedBox(height: 20.h),
                           Text(
-                            'Hubungkan ke Sekolah Baru',
+                            'Reaktivasi / Hubungkan ke Sekolah',
                             style: TextStyle(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.bold,
@@ -254,7 +254,7 @@ class _SchoolExpiredScreenState extends State<SchoolExpiredScreen> {
                             focusNode: _schoolCodeFocusNode,
                             onFieldSubmitted: _isLoading ? null : (_) => _handleLinkSchool(authProvider),
                             decoration: InputDecoration(
-                              hintText: 'Masukkan Kode Aktivasi (UUID) / NPSN...',
+                              hintText: 'Masukkan Kode Paket (FREE, PRO, UUID)...',
                               prefixIcon: const Icon(Icons.key_rounded, color: Color(0xFF64748B)),
                               filled: true,
                               fillColor: const Color(0xFFF1F5F9),
@@ -294,7 +294,7 @@ class _SchoolExpiredScreenState extends State<SchoolExpiredScreen> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Text('Hubungkan Sekolah Baru'),
+                                : const Text('Aktifkan / Hubungkan Sekolah'),
                           ),
                           SizedBox(height: 16.h),
                           const Divider(color: Color(0xFFE2E8F0)),

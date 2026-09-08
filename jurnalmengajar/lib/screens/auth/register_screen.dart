@@ -29,8 +29,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _schoolCodeController = TextEditingController();
+  final _schoolNameController = TextEditingController();
 
   final _schoolCodeFocusNode = FocusNode();
+  final _schoolNameFocusNode = FocusNode();
   final _fullNameFocusNode = FocusNode();
   final _phoneNumberFocusNode = FocusNode();
   final _addressFocusNode = FocusNode();
@@ -43,6 +45,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirmPassword = true;
   String _registerType = 'guru'; // 'guru' or 'admin'
   final List<String> _selectedSchools = [];
+  String? _resolvedSchoolId;
+  String? _detectedPlan;
 
   @override
   void initState() {
@@ -62,8 +66,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _schoolCodeController.dispose();
+    _schoolNameController.dispose();
 
     _schoolCodeFocusNode.dispose();
+    _schoolNameFocusNode.dispose();
     _fullNameFocusNode.dispose();
     _phoneNumberFocusNode.dispose();
     _addressFocusNode.dispose();
@@ -160,10 +166,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
-      if (_selectedSchools.isEmpty) {
+      final isTeacherRegister = _registerType == 'guru';
+      final assignedRole = isTeacherRegister ? 'pending_guru' : 'admin';
+
+      if (isTeacherRegister && _selectedSchools.isEmpty) {
         AppHelper.showSnackBar(
           context,
-          'Silakan pilih minimal 1 sekolah.',
+          'Silakan verifikasi kode sekolah tempat Anda mengajar terlebih dahulu.',
+          isError: true,
+        );
+        return;
+      }
+
+      if (!isTeacherRegister && _schoolNameController.text.trim().isEmpty) {
+        AppHelper.showSnackBar(
+          context,
+          'Silakan masukkan nama sekolah yang dikelola.',
           isError: true,
         );
         return;
@@ -178,8 +196,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return;
       }
 
-      final isTeacherRegister = _registerType == 'guru';
-      final assignedRole = isTeacherRegister ? 'pending_guru' : 'admin';
+      final schoolName = isTeacherRegister
+          ? _selectedSchools.join(', ')
+          : _schoolNameController.text.trim();
+      final schoolId = _resolvedSchoolId ?? _schoolCodeController.text.trim();
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final success = await authProvider.register(
@@ -189,11 +209,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         phoneNumber: _phoneNumberController.text.trim(),
         position: isTeacherRegister
             ? _positionController.text.trim()
-            : 'Admin Sekolah (${_schoolCodeController.text.trim().toUpperCase()})',
+            : 'Admin Sekolah ($schoolName)',
         address: _addressController.text.trim(),
         role: assignedRole,
         photoUrl: null,
-        schoolName: _selectedSchools.join(', '),
+        schoolName: schoolName,
+        schoolId: schoolId,
       );
 
       if (success && mounted) {
@@ -206,7 +227,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           if (mounted) {
             AppHelper.showSnackBar(
               context,
-              'Registrasi Admin Sekolah Berhasil! Selamat datang.',
+              'Registrasi Admin Sekolah Berhasil! Selamat datang di $schoolName.',
             );
             context.go('/admin/dashboard');
           }
@@ -220,7 +241,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           builder: (dialogContext) => AlertDialog(
             title: const Text('Registrasi Guru Berhasil'),
             content: Text(
-              'Akun Guru Anda telah berhasil didaftarkan.\n\nHarap tunggu persetujuan dan verifikasi dari Admin Sekolah tempat Anda mengajar (${_selectedSchools.join(', ')}) sebelum dapat masuk.',
+              'Akun Guru Anda telah berhasil didaftarkan.\n\nHarap tunggu persetujuan dan verifikasi dari Admin Sekolah tempat Anda mengajar ($schoolName) sebelum dapat masuk.',
             ),
             actions: [
               TextButton(
@@ -539,140 +560,293 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               SizedBox(height: 24.h),
 
-                              // Sekolah Tempat Mengajar / Mengelola (Wajib) - Kolom bertanda kunci untuk Kode Aktivasi UUID
-                              _buildFieldLabel(_registerType == 'guru' ? 'SEKOLAH TEMPAT MENGAJAR (KODE AKTIVASI UUID)' : 'SEKOLAH YANG DIKELOLA (KODE AKTIVASI UUID)'),
-                              TextFormField(
-                                controller: _schoolCodeController,
-                                focusNode: _schoolCodeFocusNode,
-                                style: TextStyle(
-                                  fontSize: kIsWeb ? 14.5 : 15.sp,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                              // Sekolah Tempat Mengajar / Mengelola (Wajib)
+                              if (_registerType == 'admin') ...[
+                                _buildFieldLabel('NAMA SEKOLAH YANG DIKELOLA'),
+                                _buildTextField(
+                                  controller: _schoolNameController,
+                                  focusNode: _schoolNameFocusNode,
+                                  nextFocusNode: _schoolCodeFocusNode,
+                                  hintText: 'Contoh: SMK Negeri 11 Malang',
+                                  icon: Icons.domain_rounded,
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Nama sekolah tidak boleh kosong';
+                                    }
+                                    return null;
+                                  },
                                 ),
-                                decoration: InputDecoration(
-                                  hintText: 'Masukkan Kode Aktivasi (UUID)...',
-                                  hintStyle: TextStyle(
-                                    color: Theme.of(context).brightness == Brightness.dark
-                                        ? const Color(0xFF64748B)
-                                        : Colors.grey[400],
-                                    fontSize: kIsWeb ? 14 : 14.5.sp,
-                                    fontWeight: FontWeight.normal,
+                                SizedBox(height: 16.h),
+                                _buildFieldLabel('KODE PAKET / AKTIVASI DARI JM-PANEL'),
+                                TextFormField(
+                                  controller: _schoolCodeController,
+                                  focusNode: _schoolCodeFocusNode,
+                                  style: TextStyle(
+                                    fontSize: kIsWeb ? 14.5 : 15.sp,
+                                    color: Theme.of(context).colorScheme.onSurface,
                                   ),
-                                  prefixIcon: Icon(
-                                    Icons.key_rounded,
-                                    color: Theme.of(context).brightness == Brightness.dark
-                                        ? const Color(0xFF60A5FA)
-                                        : const Color.fromARGB(255, 37, 99, 235),
-                                  ),
-                                  suffixIcon: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (_schoolCodeController.text.isNotEmpty || _selectedSchools.isNotEmpty)
-                                        IconButton(
-                                          icon: const Icon(Icons.clear_rounded, color: Colors.grey),
-                                          onPressed: () {
-                                            setState(() {
-                                              _schoolCodeController.clear();
-                                              _selectedSchools.clear();
-                                            });
-                                          },
-                                        ),
-                                      IconButton(
-                                        icon: Icon(
-                                          Icons.check_circle,
-                                          color: Theme.of(context).brightness == Brightness.dark
-                                              ? const Color(0xFF60A5FA)
-                                              : const Color.fromARGB(255, 37, 99, 235),
-                                        ),
-                                        onPressed: () {
-                                          _resolveSchoolCode(_schoolCodeController.text.trim(), masterProvider);
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                  filled: true,
-                                  fillColor: Theme.of(context).brightness == Brightness.dark
-                                      ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                      : const Color(0xFFEFF6FF).withValues(alpha: 0.5),
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 14.w,
-                                    vertical: kIsWeb ? 10 : 12.h,
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16.r),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16.r),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16.r),
-                                    borderSide: BorderSide(
+                                  decoration: InputDecoration(
+                                    hintText: 'Contoh: FREE, PRO, atau Kode Voucher...',
+                                    hintStyle: TextStyle(
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                          ? const Color(0xFF64748B)
+                                          : Colors.grey[400],
+                                      fontSize: kIsWeb ? 14 : 14.5.sp,
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                    prefixIcon: Icon(
+                                      Icons.key_rounded,
                                       color: Theme.of(context).brightness == Brightness.dark
                                           ? const Color(0xFF60A5FA)
                                           : const Color.fromARGB(255, 37, 99, 235),
-                                      width: 2,
+                                    ),
+                                    suffixIcon: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (_schoolCodeController.text.isNotEmpty || _selectedSchools.isNotEmpty)
+                                          IconButton(
+                                            icon: const Icon(Icons.clear_rounded, color: Colors.grey),
+                                            onPressed: () {
+                                              setState(() {
+                                                _schoolCodeController.clear();
+                                                _selectedSchools.clear();
+                                                _detectedPlan = null;
+                                              });
+                                            },
+                                          ),
+                                        IconButton(
+                                          icon: Icon(
+                                            Icons.check_circle,
+                                            color: Theme.of(context).brightness == Brightness.dark
+                                                ? const Color(0xFF60A5FA)
+                                                : const Color.fromARGB(255, 37, 99, 235),
+                                          ),
+                                          onPressed: () {
+                                            _resolveSchoolCode(_schoolCodeController.text.trim(), masterProvider);
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    filled: true,
+                                    fillColor: Theme.of(context).brightness == Brightness.dark
+                                        ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                        : const Color(0xFFEFF6FF).withValues(alpha: 0.5),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 14.w,
+                                      vertical: kIsWeb ? 10 : 12.h,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      borderSide: BorderSide(
+                                        color: Theme.of(context).brightness == Brightness.dark
+                                            ? const Color(0xFF60A5FA)
+                                            : const Color.fromARGB(255, 37, 99, 235),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    errorBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFFEF4444),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    focusedErrorBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFFEF4444),
+                                        width: 2,
+                                      ),
                                     ),
                                   ),
-                                  errorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16.r),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFFEF4444),
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  focusedErrorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16.r),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFFEF4444),
-                                      width: 2,
-                                    ),
-                                  ),
+                                  onChanged: (val) {
+                                    if (_detectedPlan != null) {
+                                      setState(() {
+                                        _detectedPlan = null;
+                                      });
+                                    }
+                                  },
+                                  onFieldSubmitted: (val) {
+                                    _resolveSchoolCode(val.trim(), masterProvider, showSnackBar: true);
+                                    FocusScope.of(context).requestFocus(_fullNameFocusNode);
+                                  },
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Kode aktivasi / paket tidak boleh kosong';
+                                    }
+                                    return null;
+                                  },
                                 ),
-                                onChanged: (val) {
-                                   if (_selectedSchools.isNotEmpty) {
-                                     setState(() {
-                                       _selectedSchools.clear();
-                                     });
-                                   }
-                                },
-                                onFieldSubmitted: (val) {
-                                  _resolveSchoolCode(val.trim(), masterProvider, showSnackBar: true);
-                                  FocusScope.of(context).requestFocus(_fullNameFocusNode);
-                                },
-                                validator: (value) {
-                                  if (_selectedSchools.isEmpty) {
-                                    return 'Tekan tombol centang biru untuk verifikasi Kode Aktivasi Sekolah';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              if (_selectedSchools.isNotEmpty) ...[
-                                SizedBox(height: 8.h),
-                                Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF0FDF4),
-                                    borderRadius: BorderRadius.circular(12.r),
-                                    border: Border.all(color: const Color(0xFF86EFAC)),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.check_circle_rounded, color: Color(0xFF166534), size: 18),
-                                      SizedBox(width: 8.w),
-                                      Expanded(
-                                        child: Text(
-                                          'Terverifikasi: ${_selectedSchools.join(', ')}',
-                                          style: TextStyle(
-                                            fontSize: 12.sp,
-                                            fontWeight: FontWeight.bold,
-                                            color: const Color(0xFF166534),
+                                if (_detectedPlan != null || _selectedSchools.isNotEmpty) ...[
+                                  SizedBox(height: 8.h),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF0FDF4),
+                                      borderRadius: BorderRadius.circular(12.r),
+                                      border: Border.all(color: const Color(0xFF86EFAC)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.check_circle_rounded, color: Color(0xFF166534), size: 18),
+                                        SizedBox(width: 8.w),
+                                        Expanded(
+                                          child: Text(
+                                            'Paket Terverifikasi: ${_detectedPlan ?? 'AKTIF'}',
+                                            style: TextStyle(
+                                              fontSize: 12.sp,
+                                              fontWeight: FontWeight.bold,
+                                              color: const Color(0xFF166534),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
+                                ],
+                              ] else ...[
+                                _buildFieldLabel('SEKOLAH TEMPAT MENGAJAR (KODE SEKOLAH / UUID)'),
+                                TextFormField(
+                                  controller: _schoolCodeController,
+                                  focusNode: _schoolCodeFocusNode,
+                                  style: TextStyle(
+                                    fontSize: kIsWeb ? 14.5 : 15.sp,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: 'Masukkan Kode Sekolah tempat mengajar...',
+                                    hintStyle: TextStyle(
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                          ? const Color(0xFF64748B)
+                                          : Colors.grey[400],
+                                      fontSize: kIsWeb ? 14 : 14.5.sp,
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                    prefixIcon: Icon(
+                                      Icons.key_rounded,
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                          ? const Color(0xFF60A5FA)
+                                          : const Color.fromARGB(255, 37, 99, 235),
+                                    ),
+                                    suffixIcon: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (_schoolCodeController.text.isNotEmpty || _selectedSchools.isNotEmpty)
+                                          IconButton(
+                                            icon: const Icon(Icons.clear_rounded, color: Colors.grey),
+                                            onPressed: () {
+                                              setState(() {
+                                                _schoolCodeController.clear();
+                                                _selectedSchools.clear();
+                                              });
+                                            },
+                                          ),
+                                        IconButton(
+                                          icon: Icon(
+                                            Icons.check_circle,
+                                            color: Theme.of(context).brightness == Brightness.dark
+                                                ? const Color(0xFF60A5FA)
+                                                : const Color.fromARGB(255, 37, 99, 235),
+                                          ),
+                                          onPressed: () {
+                                            _resolveSchoolCode(_schoolCodeController.text.trim(), masterProvider);
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    filled: true,
+                                    fillColor: Theme.of(context).brightness == Brightness.dark
+                                        ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                        : const Color(0xFFEFF6FF).withValues(alpha: 0.5),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 14.w,
+                                      vertical: kIsWeb ? 10 : 12.h,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      borderSide: BorderSide(
+                                        color: Theme.of(context).brightness == Brightness.dark
+                                            ? const Color(0xFF60A5FA)
+                                            : const Color.fromARGB(255, 37, 99, 235),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    errorBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFFEF4444),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    focusedErrorBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFFEF4444),
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                  onChanged: (val) {
+                                    if (_selectedSchools.isNotEmpty) {
+                                      setState(() {
+                                        _selectedSchools.clear();
+                                      });
+                                    }
+                                  },
+                                  onFieldSubmitted: (val) {
+                                    _resolveSchoolCode(val.trim(), masterProvider, showSnackBar: true);
+                                    FocusScope.of(context).requestFocus(_fullNameFocusNode);
+                                  },
+                                  validator: (value) {
+                                    if (_selectedSchools.isEmpty) {
+                                      return 'Tekan tombol centang biru untuk verifikasi Kode Sekolah';
+                                    }
+                                    return null;
+                                  },
                                 ),
+                                if (_selectedSchools.isNotEmpty) ...[
+                                  SizedBox(height: 8.h),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF0FDF4),
+                                      borderRadius: BorderRadius.circular(12.r),
+                                      border: Border.all(color: const Color(0xFF86EFAC)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.check_circle_rounded, color: Color(0xFF166534), size: 18),
+                                        SizedBox(width: 8.w),
+                                        Expanded(
+                                          child: Text(
+                                            'Terverifikasi: ${_selectedSchools.join(', ')}',
+                                            style: TextStyle(
+                                              fontSize: 12.sp,
+                                              fontWeight: FontWeight.bold,
+                                              color: const Color(0xFF166534),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ],
                               SizedBox(height: 16.h),
 
@@ -1095,6 +1269,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         if (remoteMatched.isInactive) {
           setState(() {
             _selectedSchools.clear();
+            _resolvedSchoolId = null;
+            _detectedPlan = null;
           });
           if (showSnackBar && mounted) {
             AppHelper.showSnackBar(context, 'Aktivasi sekolah sedang dinonaktifkan oleh administrator.', isError: true);
@@ -1102,19 +1278,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
           return;
         }
 
-        setState(() {
-          _selectedSchools.clear();
-          _selectedSchools.add(remoteMatched.name);
-        });
-        if (showSnackBar && mounted) {
-          AppHelper.showSnackBar(context, 'Sekolah ditemukan: ${remoteMatched.name}');
+        if (_registerType == 'admin') {
+          if (_schoolNameController.text.trim().isEmpty && remoteMatched.name.isNotEmpty && remoteMatched.name != 'Sekolah') {
+            _schoolNameController.text = remoteMatched.name;
+          }
+          final effectiveSchoolName = _schoolNameController.text.trim().isNotEmpty 
+              ? _schoolNameController.text.trim() 
+              : (remoteMatched.name.isNotEmpty ? remoteMatched.name : 'Sekolah');
+          setState(() {
+            _selectedSchools.clear();
+            _selectedSchools.add(effectiveSchoolName);
+            _resolvedSchoolId = remoteMatched.id.isNotEmpty ? remoteMatched.id : null;
+            _detectedPlan = '${remoteMatched.plan.toUpperCase()} PLAN (${remoteMatched.maxTeachers} Guru)';
+          });
+          if (showSnackBar && mounted) {
+            AppHelper.showSnackBar(context, 'Kode terverifikasi! Paket: ${remoteMatched.plan.toUpperCase()}');
+          }
+          return;
+        } else {
+          // Guru
+          final schoolName = remoteMatched.name.isNotEmpty ? remoteMatched.name : 'Sekolah';
+          setState(() {
+            _selectedSchools.clear();
+            _selectedSchools.add(schoolName);
+            _resolvedSchoolId = remoteMatched.id;
+            _detectedPlan = null;
+          });
+          if (showSnackBar && mounted) {
+            AppHelper.showSnackBar(context, 'Sekolah ditemukan: $schoolName');
+          }
+          return;
         }
-        return;
       }
     } catch (e) {
       if (e.toString().contains('dinonaktifkan')) {
         setState(() {
           _selectedSchools.clear();
+          _resolvedSchoolId = null;
+          _detectedPlan = null;
         });
         if (showSnackBar && mounted) {
           AppHelper.showSnackBar(context, 'Aktivasi sekolah sedang dinonaktifkan oleh administrator.', isError: true);
@@ -1148,6 +1349,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (matchedSchool != null && matchedSchool.isInactive) {
       setState(() {
         _selectedSchools.clear();
+        _resolvedSchoolId = null;
+        _detectedPlan = null;
       });
       if (showSnackBar && mounted) {
         AppHelper.showSnackBar(context, 'Aktivasi sekolah sedang dinonaktifkan oleh administrator.', isError: true);
@@ -1155,21 +1358,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    if (foundName != null && foundName.isNotEmpty) {
-      final validSchoolName = foundName;
+    if (_registerType == 'admin') {
+      final isPro = searchCode.contains('PRO');
+      final isEnt = searchCode.contains('ENTERPRISE');
+      final planName = isEnt ? 'ENTERPRISE PLAN (999 Guru)' : (isPro ? 'PRO PLAN (50 Guru)' : 'FREE PLAN (30 Guru)');
+      
+      final schoolName = foundName ?? (_schoolNameController.text.trim().isNotEmpty ? _schoolNameController.text.trim() : 'Sekolah');
+      if (foundName != null && _schoolNameController.text.trim().isEmpty) {
+        _schoolNameController.text = foundName;
+      }
+
       setState(() {
         _selectedSchools.clear();
-        _selectedSchools.add(validSchoolName);
+        _selectedSchools.add(schoolName);
+        _resolvedSchoolId = matchedSchool?.id;
+        _detectedPlan = planName;
       });
       if (showSnackBar && mounted) {
-        AppHelper.showSnackBar(context, 'Sekolah ditemukan: $validSchoolName');
+        AppHelper.showSnackBar(context, 'Kode aktivasi diterima: $planName');
       }
     } else {
-      setState(() {
-        _selectedSchools.clear();
-      });
-      if (showSnackBar && mounted) {
-        AppHelper.showSnackBar(context, 'Tidak terdapat sekolah dengan kode ini, mungkin berlangganan pada jmpanel.vercel.app telah expired/school dihapus', isError: true);
+      if (foundName != null && foundName.isNotEmpty) {
+        final validSchoolName = foundName;
+        setState(() {
+          _selectedSchools.clear();
+          _selectedSchools.add(validSchoolName);
+          _resolvedSchoolId = matchedSchool?.id;
+          _detectedPlan = null;
+        });
+        if (showSnackBar && mounted) {
+          AppHelper.showSnackBar(context, 'Sekolah ditemukan: $validSchoolName');
+        }
+      } else {
+        setState(() {
+          _selectedSchools.clear();
+          _resolvedSchoolId = null;
+          _detectedPlan = null;
+        });
+        if (showSnackBar && mounted) {
+          AppHelper.showSnackBar(context, 'Kode sekolah tidak ditemukan. Silakan minta kode sekolah dari Admin Sekolah Anda.', isError: true);
+        }
       }
     }
   }

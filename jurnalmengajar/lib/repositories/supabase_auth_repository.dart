@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../models/user_model.dart';
 import 'auth_repository.dart';
 import '../core/utils/image_compressor.dart';
@@ -154,32 +155,138 @@ class SupabaseAuthRepository implements AuthRepository {
         }
       }
 
-      // Check if school exists in schools table first
-      String schoolId = '';
-      String canonicalSchoolName = '';
-      if (user.schoolName != null && user.schoolName!.isNotEmpty) {
-        final schoolsRes = await _supabase.from('schools').select('id, name, code, npsn');
+      // Check if school exists in schools table, tenants table, or invitations
+      String schoolId = user.schoolId ?? '';
+      String canonicalSchoolName = user.schoolName ?? '';
+
+      final targetName = (user.schoolName ?? '').toUpperCase().trim();
+      final targetId = (user.schoolId ?? '').trim();
+
+      if (targetName.isNotEmpty || targetId.isNotEmpty) {
         Map<String, dynamic>? matchedSchool;
-        final target = user.schoolName!.toUpperCase().trim();
 
-        for (final s in (schoolsRes as List)) {
-          final sName = ((s['name'] as String?) ?? '').toUpperCase().trim();
-          final sCode = ((s['code'] as String?) ?? '').toUpperCase().trim();
-          final sNpsn = ((s['npsn'] as String?) ?? '').toUpperCase().trim();
+        // 1. Check schools table
+        try {
+          final schoolsRes = await _supabase.from('schools').select('id, name, code, npsn, status');
+          for (final s in (schoolsRes as List)) {
+            final sId = ((s['id'] as String?) ?? '').trim();
+            final sName = ((s['name'] as String?) ?? '').toUpperCase().trim();
+            final sCode = ((s['code'] as String?) ?? '').toUpperCase().trim();
+            final sNpsn = ((s['npsn'] as String?) ?? '').toUpperCase().trim();
 
-          if ((sCode.isNotEmpty && target == sCode) ||
-              (sNpsn.isNotEmpty && target == sNpsn) ||
-              (sName.isNotEmpty && target == sName)) {
-            matchedSchool = Map<String, dynamic>.from(s);
-            break;
+            if ((targetId.isNotEmpty && sId == targetId) ||
+                (sCode.isNotEmpty && (targetName == sCode || targetId.toUpperCase() == sCode)) ||
+                (sNpsn.isNotEmpty && targetName == sNpsn) ||
+                (sName.isNotEmpty && targetName == sName)) {
+              matchedSchool = Map<String, dynamic>.from(s);
+              break;
+            }
+          }
+        } catch (e) {
+          debugPrint('Note: Error searching schools during register: $e');
+        }
+
+        // 2. If not found, check tenants table (from JM-panel)
+        if (matchedSchool == null) {
+          try {
+            Map<String, dynamic>? tenantRes;
+            if (targetId.isNotEmpty) {
+              tenantRes = await _supabase
+                  .from('tenants')
+                  .select('id, name, school_code, status')
+                  .eq('id', targetId)
+                  .maybeSingle();
+            }
+            if (tenantRes == null && targetName.isNotEmpty) {
+              tenantRes = await _supabase
+                  .from('tenants')
+                  .select('id, name, school_code, status')
+                  .or('school_code.ilike.%$targetName%,name.ilike.%$targetName%')
+                  .maybeSingle();
+            }
+
+            if (tenantRes != null) {
+              final tenantId = tenantRes['id'] as String;
+              final tenantName = tenantRes['name'] as String? ?? user.schoolName ?? 'Sekolah';
+              final tenantStatus = (tenantRes['status'] as String? ?? 'active').toLowerCase();
+              final tenantCode = tenantRes['school_code'] as String? ?? tenantId;
+
+              if (tenantStatus == 'inactive') {
+                throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator.');
+              }
+
+              // Auto-sync into schools table
+              try {
+                await _supabase.from('schools').upsert({
+                  'id': tenantId,
+                  'name': tenantName,
+                  'code': tenantCode,
+                  'status': tenantStatus,
+                }, onConflict: 'id');
+              } catch (_) {}
+
+              matchedSchool = {
+                'id': tenantId,
+                'name': tenantName,
+                'code': tenantCode,
+                'status': tenantStatus,
+              };
+            }
+          } catch (e) {
+            if (e.toString().contains('dinonaktifkan')) rethrow;
+            debugPrint('Note: Error searching tenants during register: $e');
           }
         }
 
-        if (matchedSchool == null) {
-          throw Exception('Tidak terdapat sekolah dengan kode ini, mungkin berlangganan pada jmpanel.vercel.app telah expired/school dihapus');
-        } else {
+        // 3. If not found, check school_invitations table
+        if (matchedSchool == null && targetId.isNotEmpty) {
+          try {
+            final inviteRes = await _supabase
+                .from('school_invitations')
+                .select('*, schools(*)')
+                .ilike('code', targetId)
+                .maybeSingle();
+            if (inviteRes != null && inviteRes['schools'] != null) {
+              matchedSchool = Map<String, dynamic>.from(inviteRes['schools'] as Map);
+            }
+          } catch (_) {}
+        }
+
+        if (matchedSchool != null) {
           schoolId = matchedSchool['id'] as String;
-          canonicalSchoolName = (matchedSchool['name'] as String?) ?? user.schoolName!;
+          canonicalSchoolName = (matchedSchool['name'] as String?) ?? (user.schoolName ?? '');
+        } else {
+          // App-level School Creation/Activation with JM-Panel code
+          final upperCode = targetId.toUpperCase();
+          final isEntPlan = upperCode.contains('ENTERPRISE');
+          final isProPlan = upperCode.contains('PRO');
+          final detectedPlan = isEntPlan ? 'enterprise' : (isProPlan ? 'pro' : 'free');
+          final maxTeachers = isEntPlan ? 999 : (isProPlan ? 50 : 30);
+
+          // Check if targetId is already a valid UUID, otherwise generate one
+          final uuidPattern = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+          if (targetId.isNotEmpty && uuidPattern.hasMatch(targetId)) {
+            schoolId = targetId;
+          } else {
+            schoolId = const Uuid().v4();
+          }
+
+          canonicalSchoolName = (user.schoolName != null && user.schoolName!.trim().isNotEmpty)
+              ? user.schoolName!.trim()
+              : (targetName.isNotEmpty ? targetName : 'Sekolah');
+
+          try {
+            await _supabase.from('schools').upsert({
+              'id': schoolId,
+              'name': canonicalSchoolName,
+              'code': targetId.isNotEmpty ? targetId.toUpperCase() : schoolId,
+              'status': 'active',
+              'subscription_plan': detectedPlan,
+              'max_teachers': maxTeachers,
+            }, onConflict: 'id');
+          } catch (schoolErr) {
+            debugPrint('Note: Upserting school during register: $schoolErr');
+          }
         }
       }
 
@@ -227,7 +334,7 @@ class SupabaseAuthRepository implements AuthRepository {
         debugPrint('Note: Upserting public.users during registration skipped due to RLS: $upsertErr');
       }
 
-      // 4. Connect user to school in user_schools table
+      // 4. Connect user to school in user_schools table & school_memberships
       if (schoolId.isNotEmpty) {
         try {
           // Update users table with resolved school_id and canonical school_name
@@ -241,7 +348,17 @@ class SupabaseAuthRepository implements AuthRepository {
             'user_id': userId,
             'school_id': schoolId,
             'role': user.role,
+            'status': user.role == 'pending_guru' ? 'pending' : 'active',
           }, onConflict: 'user_id, school_id');
+
+          // Multi-tenant membership table
+          try {
+            await _supabase.from('school_memberships').upsert({
+              'user_id': userId,
+              'school_id': schoolId,
+              'role': user.role == 'pending_guru' ? 'guru' : user.role,
+            }, onConflict: 'user_id, school_id');
+          } catch (_) {}
         } catch (schoolRelErr) {
           debugPrint('Error inserting user_schools during registration: $schoolRelErr');
         }
@@ -249,7 +366,7 @@ class SupabaseAuthRepository implements AuthRepository {
     } catch (e) {
       if (e.toString().contains('Pendaftaran Anda sedang menunggu') || 
           e.toString().contains('Email ini sudah terdaftar') ||
-          e.toString().contains('jmpanel.vercel.app')) {
+          e.toString().contains('dinonaktifkan')) {
         rethrow;
       }
       throw Exception('Registrasi gagal: $e');

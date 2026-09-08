@@ -77,11 +77,73 @@ class AuthProvider with ChangeNotifier {
     }
     try {
       final supabase = Supabase.instance.client;
-      final res = await supabase
+      var res = await supabase
           .from('schools')
           .select()
           .eq('id', _activeSchoolId!)
           .maybeSingle();
+
+      if (res == null) {
+        try {
+          final tenantRes = await supabase
+              .from('tenants')
+              .select('id, name, school_code, status')
+              .eq('id', _activeSchoolId!)
+              .maybeSingle();
+          if (tenantRes != null) {
+            final tenantName = tenantRes['name'] as String? ?? 'Sekolah';
+            final tenantStatus = (tenantRes['status'] as String? ?? 'active').toLowerCase();
+            final tenantCode = tenantRes['school_code'] as String? ?? _activeSchoolId!;
+            try {
+              await supabase.from('schools').upsert({
+                'id': _activeSchoolId!,
+                'name': tenantName,
+                'code': tenantCode,
+                'status': tenantStatus,
+              }, onConflict: 'id');
+            } catch (_) {}
+
+            res = await supabase
+                .from('schools')
+                .select()
+                .eq('id', _activeSchoolId!)
+                .maybeSingle();
+
+            res ??= {
+              'id': _activeSchoolId!,
+              'name': tenantName,
+              'code': tenantCode,
+              'status': tenantStatus,
+            };
+          }
+        } catch (_) {}
+      }
+
+      // Self-heal from user metadata if school record is missing
+      if (res == null && _activeSchoolId != null) {
+        final fallbackName = _activeSchoolName.isNotEmpty 
+            ? _activeSchoolName 
+            : (_currentUser?.schoolName ?? 'Sekolah');
+        try {
+          await supabase.from('schools').upsert({
+            'id': _activeSchoolId!,
+            'name': fallbackName,
+            'code': _activeSchoolId!,
+            'status': 'active',
+            'subscription_plan': 'free',
+            'max_teachers': 30,
+          }, onConflict: 'id');
+          res = {
+            'id': _activeSchoolId!,
+            'name': fallbackName,
+            'code': _activeSchoolId!,
+            'status': 'active',
+            'subscription_plan': 'free',
+            'max_teachers': 30,
+          };
+        } catch (_) {}
+      }
+
       if (res != null) {
         var schoolModel = SchoolModel.fromJson(res);
 
@@ -120,15 +182,14 @@ class AuthProvider with ChangeNotifier {
           _isSchoolExpired = true;
           notifyListeners();
           throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator.');
+        } else {
+          _isSchoolExpired = false;
         }
       } else {
         _activeSchool = null;
-        if (!isExclusiveAdmin) {
-          throw Exception('Tidak terdapat sekolah dengan kode ini, mungkin berlangganan pada jmpanel.vercel.app telah expired/school dihapus');
-        }
       }
     } catch (e) {
-      if (e.toString().contains('jmpanel.vercel.app') || e.toString().contains('dinonaktifkan')) {
+      if (e.toString().contains('dinonaktifkan')) {
         rethrow;
       }
       debugPrint('Error fetching active school details: $e');
@@ -171,7 +232,7 @@ class AuthProvider with ChangeNotifier {
     try {
       await fetchActiveSchoolDetails();
     } catch (e) {
-      if (e.toString().contains('jmpanel.vercel.app') || e.toString().contains('dinonaktifkan')) {
+      if (e.toString().contains('dinonaktifkan')) {
         _isSchoolExpired = true;
         notifyListeners();
         return;
@@ -237,12 +298,36 @@ class AuthProvider with ChangeNotifier {
 
           if (tenantRes != null) {
             final tenantId = tenantRes['id'] as String;
+            final tenantName = tenantRes['name'] as String? ?? 'Sekolah';
+            final tenantStatus = (tenantRes['status'] as String? ?? 'active').toLowerCase();
+            final tenantCode = tenantRes['school_code'] as String? ?? cleanCode;
+
+            if (tenantStatus == 'inactive') {
+              throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).');
+            }
+
+            try {
+              await supabase.from('schools').upsert({
+                'id': tenantId,
+                'name': tenantName,
+                'code': tenantCode,
+                'status': tenantStatus,
+              }, onConflict: 'id');
+            } catch (_) {}
+
             res = await supabase
                 .from('schools')
                 .select()
                 .or('id.eq.$tenantId,code.ilike.$cleanCode')
                 .eq('status', 'active')
                 .maybeSingle();
+
+            res ??= {
+              'id': tenantId,
+              'name': tenantName,
+              'code': tenantCode,
+              'status': tenantStatus,
+            };
           }
         }
       }
@@ -345,6 +430,33 @@ class AuthProvider with ChangeNotifier {
                 .ilike('name', _currentUser!.schoolName!.trim())
                 .maybeSingle();
           }
+          if (schoolData == null && _currentUser!.schoolId != null && _currentUser!.schoolId!.isNotEmpty) {
+            try {
+              final tenantData = await supabase
+                  .from('tenants')
+                  .select('id, name, school_code')
+                  .eq('id', _currentUser!.schoolId!)
+                  .maybeSingle();
+              if (tenantData != null) {
+                final tId = tenantData['id'] as String;
+                final tName = tenantData['name'] as String? ?? 'Sekolah';
+                final tCode = tenantData['school_code'] as String? ?? tId;
+                try {
+                  await supabase.from('schools').upsert({
+                    'id': tId,
+                    'name': tName,
+                    'code': tCode,
+                    'status': 'active',
+                  }, onConflict: 'id');
+                } catch (_) {}
+                schoolData = {
+                  'id': tId,
+                  'name': tName,
+                  'code': tCode,
+                };
+              }
+            } catch (_) {}
+          }
           if (schoolData != null) {
             final sId = schoolData['id'] as String;
             final sName = schoolData['name'] as String;
@@ -411,13 +523,11 @@ class AuthProvider with ChangeNotifier {
         }
         await fetchActiveSchoolDetails();
       } else {
-        if (!isExclusiveAdmin) {
-          throw Exception('Tidak terdapat sekolah dengan kode ini, mungkin berlangganan pada jmpanel.vercel.app telah expired/school dihapus');
-        }
+        _activeSchool = null;
       }
       notifyListeners();
     } catch (e) {
-      if (e.toString().contains('jmpanel.vercel.app')) {
+      if (e.toString().contains('dinonaktifkan')) {
         rethrow;
       }
       debugPrint('Error loading user memberships: $e');
@@ -455,7 +565,7 @@ class AuthProvider with ChangeNotifier {
       }
     } catch (e) {
       _errorMessage = _cleanErrorMessage(e);
-      if (_errorMessage != null && _errorMessage!.contains('jmpanel.vercel.app')) {
+      if (_errorMessage != null && _errorMessage!.contains('dinonaktifkan')) {
         _isSchoolExpired = true;
       }
     } finally {
@@ -488,7 +598,7 @@ class AuthProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _errorMessage = _cleanErrorMessage(e);
-      if (_errorMessage != null && _errorMessage!.contains('jmpanel.vercel.app')) {
+      if (_errorMessage != null && _errorMessage!.contains('dinonaktifkan')) {
         _isSchoolExpired = true;
         _isLoading = false;
         notifyListeners();
@@ -531,6 +641,7 @@ class AuthProvider with ChangeNotifier {
     String role = 'guru',
     String? photoUrl,
     String? schoolName,
+    String? schoolId,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -546,6 +657,7 @@ class AuthProvider with ChangeNotifier {
         address: address,
         photoUrl: photoUrl,
         schoolName: schoolName,
+        schoolId: schoolId,
       );
       await authRepository.register(user, password);
       _isLoading = false;
