@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/subject_model.dart';
+import '../core/utils/helper.dart';
 import 'subject_repository.dart';
 
 const _uuid = Uuid();
@@ -13,10 +14,12 @@ class SupabaseSubjectRepository implements SubjectRepository {
   @override
   Future<List<SubjectModel>> getAll([String? schoolId]) async {
     try {
-      final response = await _supabase
-          .from('subjects')
-          .select()
-          .order('name', ascending: true);
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+      var query = _supabase.from('subjects').select();
+      if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+        query = query.eq('school_id', cleanSchoolId);
+      }
+      final response = await query.order('name', ascending: true);
 
       final List<SubjectModel> list = [];
       for (final item in (response as List)) {

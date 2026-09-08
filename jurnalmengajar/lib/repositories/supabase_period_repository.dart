@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/period_model.dart';
+import '../core/utils/helper.dart';
 import 'period_repository.dart';
 
 const _uuid = Uuid();
@@ -13,10 +14,12 @@ class SupabasePeriodRepository implements PeriodRepository {
   @override
   Future<List<PeriodModel>> getAll([String? schoolId]) async {
     try {
-      final response = await _supabase
-          .from('periods')
-          .select()
-          .order('name', ascending: true);
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+      var query = _supabase.from('periods').select();
+      if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+        query = query.eq('school_id', cleanSchoolId);
+      }
+      final response = await query.order('name', ascending: true);
 
       final List<PeriodModel> list = [];
       for (final item in (response as List)) {

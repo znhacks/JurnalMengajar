@@ -149,9 +149,12 @@ class SupabaseTeacherRepository implements TeacherRepository {
 
       // 5. Ensure all teachers that have schedules in schedules table are also present
       try {
-        final schedRes = await _supabase
-            .from('schedules')
-            .select('teacher_id');
+        final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+        var schedQuery = _supabase.from('schedules').select('teacher_id');
+        if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+          schedQuery = schedQuery.eq('school_id', cleanSchoolId);
+        }
+        final schedRes = await schedQuery;
 
         final Set<String> scheduleTeacherIds = {};
         for (final row in (schedRes as List)) {

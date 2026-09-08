@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/class_model.dart';
+import '../core/utils/helper.dart';
 import 'class_repository.dart';
 
 const _uuid = Uuid();
@@ -13,10 +14,12 @@ class SupabaseClassRepository implements ClassRepository {
   @override
   Future<List<ClassModel>> getAll([String? schoolId]) async {
     try {
-      final response = await _supabase
-          .from('classes')
-          .select()
-          .order('name', ascending: true);
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+      var query = _supabase.from('classes').select();
+      if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+        query = query.eq('school_id', cleanSchoolId);
+      }
+      final response = await query.order('name', ascending: true);
 
       final List<ClassModel> list = [];
       for (final item in (response as List)) {

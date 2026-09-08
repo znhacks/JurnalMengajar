@@ -65,7 +65,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
   }
 
   void _selectAll(List<UserModel> users, AuthProvider authProvider) {
-    final selectableUsers = users.where((u) => u.email.toLowerCase() != 'smkn11malang@jurnal.com' && u.id != authProvider.currentUser?.id).toList();
+    final selectableUsers = users.where((u) => u.role != 'superadmin' && u.id != authProvider.currentUser?.id).toList();
     setState(() {
       if (_selectedIds.length == selectableUsers.length) {
         _selectedIds.clear();
@@ -159,11 +159,11 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
     final newRole = makeAdmin ? 'admin' : 'guru';
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
-    // Safety check: Cannot demote the main admin account or current logged-in user
-    if (!makeAdmin && user.email.toLowerCase() == 'admin@jurnal.com') {
+    // Safety check: Cannot demote superadmin account or current logged-in user
+    if (!makeAdmin && user.role.toLowerCase() == 'superadmin') {
       AppHelper.showSnackBar(
         context, 
-        'Akun admin utama (admin@jurnal.com) tidak bisa diturunkan menjadi guru.', 
+        'Akun superadmin tidak bisa diturunkan menjadi guru.', 
         isError: true
       );
       return;
@@ -385,8 +385,8 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
       separatorBuilder: (context, index) => SizedBox(height: 8.h),
       itemBuilder: (context, index) {
         final user = users[index];
-        final isAdmin = user.role == 'admin';
-        final isSuperAdmin = user.email.toLowerCase() == 'admin@jurnal.com';
+        final isAdmin = user.role == 'admin' || user.role == 'superadmin';
+        final isSuperAdmin = user.role.toLowerCase() == 'superadmin';
         final isCurrentUser = user.id == authProvider.currentUser?.id;
         final isSelectable = !isSuperAdmin && !isCurrentUser && !isAdmin;
         final isSelected = _selectedIds.contains(user.id);
@@ -624,7 +624,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
     final authProvider = context.watch<AuthProvider>();
 
     final currentUserSchool = authProvider.currentUser?.schoolName ?? '';
-    final isSuperAdminUser = authProvider.currentUser?.email.toLowerCase() == 'admin@jurnal.com';
+    final isSuperAdminUser = authProvider.currentUser?.role.toLowerCase() == 'superadmin';
 
     final activeUsers = _filteredUsers.where((u) => u.role == 'guru' || u.role == 'admin').toList();
 

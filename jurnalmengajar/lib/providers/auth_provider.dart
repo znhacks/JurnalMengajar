@@ -64,12 +64,12 @@ class AuthProvider with ChangeNotifier {
   String get activeRole => _activeRole;
   SchoolModel? get activeSchool => _activeSchool;
 
+  bool get hasMultipleSchools => _userMemberships.length > 1;
+
   bool get isExclusiveAdmin {
     if (_currentUser == null) return false;
-    final emailLower = _currentUser!.email.toLowerCase().trim();
-    return emailLower == 'admin@jurnal.com' ||
-           emailLower == 'smkn11malang@jurnal.com' ||
-           _currentUser!.role == 'superadmin';
+    // Account without multiple memberships doesn't need school switcher
+    return _userMemberships.length <= 1;
   }
 
   Future<void> fetchActiveSchoolDetails() async {

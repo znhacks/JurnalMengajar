@@ -24,10 +24,12 @@ class SupabaseScheduleRepository implements ScheduleRepository {
       debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Current Auth User: id=$currentAuthUid, email=$currentAuthEmail');
       debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Parameter schoolId: "$schoolId"');
 
-      final response = await _supabase
-          .from(SupabaseConstants.tableSchedules)
-          .select()
-          .order(SupabaseConstants.fieldDate, ascending: true);
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+      var query = _supabase.from(SupabaseConstants.tableSchedules).select();
+      if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+        query = query.eq('school_id', cleanSchoolId);
+      }
+      final response = await query.order(SupabaseConstants.fieldDate, ascending: true);
 
       final List rawList = response as List;
       debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Raw Database Response: ${rawList.length} rows returned.');

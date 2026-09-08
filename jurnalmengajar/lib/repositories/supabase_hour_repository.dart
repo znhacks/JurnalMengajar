@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/hour_model.dart';
+import '../core/utils/helper.dart';
 import 'hour_repository.dart';
 
 const _uuid = Uuid();
@@ -13,10 +14,12 @@ class SupabaseHourRepository implements HourRepository {
   @override
   Future<List<HourModel>> getAll([String? schoolId]) async {
     try {
-      final response = await _supabase
-          .from('lesson_hours')
-          .select()
-          .order('teaching_hour', ascending: true);
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+      var query = _supabase.from('lesson_hours').select();
+      if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+        query = query.eq('school_id', cleanSchoolId);
+      }
+      final response = await query.order('teaching_hour', ascending: true);
 
       final List<HourModel> list = [];
       for (final item in (response as List)) {
