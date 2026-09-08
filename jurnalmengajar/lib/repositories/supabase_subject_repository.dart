@@ -13,15 +13,22 @@ class SupabaseSubjectRepository implements SubjectRepository {
   @override
   Future<List<SubjectModel>> getAll([String? schoolId]) async {
     try {
-      var query = _supabase.from('subjects').select();
-      if (schoolId != null && schoolId.isNotEmpty) {
-        query = query.eq('school_id', schoolId);
-      }
-      final response = await query.order('name', ascending: true);
+      final response = await _supabase
+          .from('subjects')
+          .select()
+          .order('name', ascending: true);
 
-      return (response as List)
-          .map((json) => SubjectModel.fromJson(json))
-          .toList();
+      final List<SubjectModel> list = [];
+      for (final item in (response as List)) {
+        try {
+          if (item is Map<String, dynamic>) {
+            list.add(SubjectModel.fromJson(item));
+          } else if (item is Map) {
+            list.add(SubjectModel.fromJson(Map<String, dynamic>.from(item)));
+          }
+        } catch (_) {}
+      }
+      return list;
     } catch (e) {
       return [];
     }

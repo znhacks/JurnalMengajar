@@ -5,6 +5,8 @@ import '../models/journal_model.dart';
 import 'journal_repository.dart';
 import '../core/constants/supabase_constants.dart';
 import '../core/utils/image_compressor.dart';
+import '../core/utils/helper.dart';
+
 
 const _uuid = Uuid();
 
@@ -16,20 +18,43 @@ class SupabaseJournalRepository implements JournalRepository {
   @override
   Future<List<JournalModel>> getAll([String? schoolId]) async {
     try {
-      var query = _supabase
+      final response = await _supabase
           .from(SupabaseConstants.tableJournals)
           .select()
-          .eq('is_soft_deleted', false);
+          .eq('is_soft_deleted', false)
+          .order(SupabaseConstants.fieldDate, ascending: false);
 
-      if (schoolId != null && schoolId.isNotEmpty) {
-        query = query.eq('school_id', schoolId);
+      final List<JournalModel> journals = [];
+      for (final item in (response as List)) {
+        try {
+          if (item is Map<String, dynamic>) {
+            journals.add(JournalModel.fromJson(item));
+          } else if (item is Map) {
+            journals.add(JournalModel.fromJson(Map<String, dynamic>.from(item)));
+          }
+        } catch (_) {}
       }
 
-      final response = await query.order(SupabaseConstants.fieldDate, ascending: false);
+      // Background self-heal: Ensure all journals have the active school_id if missing
+      if (schoolId != null && schoolId.isNotEmpty) {
+        final backfillIds = journals
+            .where((j) => j.schoolId == null || j.schoolId!.isEmpty)
+            .map((j) => j.id)
+            .toList();
 
-      return (response as List)
-          .map((json) => JournalModel.fromJson(json))
-          .toList();
+        if (backfillIds.isNotEmpty) {
+          try {
+            _supabase
+                .from(SupabaseConstants.tableJournals)
+                .update({'school_id': schoolId})
+                .inFilter('id', backfillIds)
+                .then((_) {})
+                .catchError((_) {});
+          } catch (_) {}
+        }
+      }
+
+      return journals;
     } catch (e) {
       throw Exception('Gagal memuat jurnal: $e');
     }
@@ -45,9 +70,18 @@ class SupabaseJournalRepository implements JournalRepository {
           .eq('is_soft_deleted', false)
           .order(SupabaseConstants.fieldDate, ascending: false);
 
-      return (response as List)
-          .map((json) => JournalModel.fromJson(json))
-          .toList();
+      final List<JournalModel> journals = [];
+      for (final item in (response as List)) {
+        try {
+          if (item is Map<String, dynamic>) {
+            journals.add(JournalModel.fromJson(item));
+          } else if (item is Map) {
+            journals.add(JournalModel.fromJson(Map<String, dynamic>.from(item)));
+          }
+        } catch (_) {}
+      }
+
+      return journals;
     } catch (e) {
       throw Exception('Gagal memuat jurnal guru: $e');
     }
@@ -89,6 +123,43 @@ class SupabaseJournalRepository implements JournalRepository {
       if ((payload['id'] as String?)?.isEmpty ?? true) {
         payload['id'] = _uuid.v4();
       }
+
+      // Auto-resolve school_id if missing
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(payload['school_id']);
+      if (cleanSchoolId == null || cleanSchoolId.isEmpty) {
+        if (model.scheduleId.isNotEmpty) {
+          try {
+            final sched = await _supabase
+                .from(SupabaseConstants.tableSchedules)
+                .select('school_id')
+                .eq('id', model.scheduleId)
+                .maybeSingle();
+            if (sched != null && sched['school_id'] != null) {
+              payload['school_id'] = AppHelper.parseSingleCleanSchoolId(sched['school_id']);
+            }
+          } catch (_) {}
+        }
+        final cleanAfterSched = AppHelper.parseSingleCleanSchoolId(payload['school_id']);
+        if (cleanAfterSched == null || cleanAfterSched.isEmpty) {
+          final currentUid = _supabase.auth.currentUser?.id ?? model.teacherId;
+          if (currentUid.isNotEmpty) {
+            try {
+              final userRes = await _supabase
+                  .from('users')
+                  .select('school_id')
+                  .eq('id', currentUid)
+                  .maybeSingle();
+              if (userRes != null && userRes['school_id'] != null) {
+                payload['school_id'] = AppHelper.parseSingleCleanSchoolId(userRes['school_id']);
+              }
+            } catch (_) {}
+          }
+        } else {
+          payload['school_id'] = cleanAfterSched;
+        }
+      } else {
+        payload['school_id'] = cleanSchoolId;
+      }
       
       await _supabase
           .from(SupabaseConstants.tableJournals)
@@ -115,6 +186,25 @@ class SupabaseJournalRepository implements JournalRepository {
       final payload = model.toJson();
       // Remove attachment from payload (will be handled separately)
       payload.remove('attachment');
+
+      // Preserve or resolve school_id if missing
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(payload['school_id']);
+      if (cleanSchoolId == null || cleanSchoolId.isEmpty) {
+        if (model.scheduleId.isNotEmpty) {
+          try {
+            final sched = await _supabase
+                .from(SupabaseConstants.tableSchedules)
+                .select('school_id')
+                .eq('id', model.scheduleId)
+                .maybeSingle();
+            if (sched != null && sched['school_id'] != null) {
+              payload['school_id'] = AppHelper.parseSingleCleanSchoolId(sched['school_id']);
+            }
+          } catch (_) {}
+        }
+      } else {
+        payload['school_id'] = cleanSchoolId;
+      }
       
       await _supabase
           .from(SupabaseConstants.tableJournals)

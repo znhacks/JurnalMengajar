@@ -1,3 +1,5 @@
+import '../core/utils/helper.dart';
+
 class WarningLetterModel {
   final String id;
   final String teacherId;
@@ -18,18 +20,25 @@ class WarningLetterModel {
   });
 
   factory WarningLetterModel.fromJson(Map<String, dynamic> json) {
+    DateTime parsedIssuedAt = DateTime.now();
+    final rawIssued = json['issued_at'] ?? json['issuedAt'];
+    if (rawIssued is String) {
+      parsedIssuedAt = DateTime.tryParse(rawIssued)?.toLocal() ?? DateTime.now();
+    } else if (rawIssued is DateTime) {
+      parsedIssuedAt = rawIssued.toLocal();
+    }
+
     return WarningLetterModel(
-      id: json['id'] as String,
-      teacherId: json['teacher_id'] as String? ?? json['teacherId'] as String,
-      scheduleId: json['schedule_id'] as String? ?? json['scheduleId'] as String,
-      issuedAt: json['issued_at'] is String
-          ? DateTime.parse(json['issued_at'] as String).toLocal()
-          : (json['issued_at'] as DateTime).toLocal(),
-      reason: json['reason'] as String,
-      status: json['status'] as String? ?? 'unread',
-      schoolId: json['school_id'] as String?,
+      id: json['id']?.toString() ?? '',
+      teacherId: json['teacher_id']?.toString() ?? json['teacherId']?.toString() ?? '',
+      scheduleId: json['schedule_id']?.toString() ?? json['scheduleId']?.toString() ?? '',
+      issuedAt: parsedIssuedAt,
+      reason: json['reason']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'unread',
+      schoolId: AppHelper.parseSingleCleanSchoolId(json['school_id']),
     );
   }
+
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{

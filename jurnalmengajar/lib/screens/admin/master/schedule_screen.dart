@@ -38,11 +38,18 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
     final journalProvider = Provider.of<JournalProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
+    debugPrint('================================================================');
+    debugPrint('[RUNTIME_DEBUG:MASTER_SCHEDULE] _refreshData initiated.');
+    debugPrint('[RUNTIME_DEBUG:MASTER_SCHEDULE] Auth: user=${authProvider.currentUser?.email}, role=${authProvider.activeRole}, schoolId=${authProvider.activeSchoolId}, schoolName="${authProvider.activeSchoolName}"');
+
     await Future.wait([
       masterProvider.loadAllData(authProvider.activeSchoolId),
       scheduleProvider.loadAllSchedules(authProvider.activeSchoolId),
       journalProvider.loadAllJournals(authProvider.activeSchoolId),
     ]);
+
+    debugPrint('[RUNTIME_DEBUG:MASTER_SCHEDULE] _refreshData complete -> Master Teachers: ${masterProvider.teachers.length}, Schedules: ${scheduleProvider.schedules.length}');
+    debugPrint('================================================================');
   }
 
   String getWeekdayName(int weekday) {
@@ -58,7 +65,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
     }
   }
 
-  void _showFormDialog({GroupedMasterSchedule? groupedSchedule}) {
+  void _showFormDialog({GroupedMasterSchedule? groupedSchedule, String? initialTeacherId}) {
     final noteController = TextEditingController(text: groupedSchedule?.note ?? '');
     DateTime startDate = groupedSchedule?.startDate ?? DateTime.now();
     bool isRoutine = groupedSchedule != null
@@ -69,10 +76,11 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
     bool isActive = groupedSchedule?.isActive ?? true;
 
     final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
     // Default Dropdown Values
     String? selectedPeriodId = groupedSchedule?.periodId ?? masterProvider.activePeriod?.id ?? (masterProvider.periods.isNotEmpty ? masterProvider.periods.first.id : null);
-    String? selectedTeacherId = groupedSchedule?.teacherId ?? (masterProvider.teachers.isNotEmpty ? masterProvider.teachers.first.id : null);
+    String? selectedTeacherId = groupedSchedule?.teacherId ?? initialTeacherId ?? (masterProvider.teachers.isNotEmpty ? masterProvider.teachers.first.id : null);
     String? selectedClassId = groupedSchedule?.classId ?? (masterProvider.classes.isNotEmpty ? masterProvider.classes.first.id : null);
     String? selectedSubjectId = groupedSchedule?.subjectId ?? (masterProvider.subjects.isNotEmpty ? masterProvider.subjects.first.id : null);
     
@@ -655,6 +663,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                   teacherId: selectedTeacherId!,
                                   note: noteController.text.trim().isEmpty ? null : noteController.text.trim(),
                                   isActive: isActive,
+                                  schoolId: authProvider.activeSchoolId,
                                 ),
                               );
                             }
@@ -739,6 +748,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                               teacherId: selectedTeacherId!,
                               note: noteController.text.trim().isEmpty ? null : noteController.text.trim(),
                               isActive: isActive,
+                              schoolId: authProvider.activeSchoolId,
                             );
                             final res = await scheduleProvider.updateSchedule(updatedSched, masterProvider.teachers);
                             if (!res) allSuccess = false;
@@ -777,6 +787,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                     teacherId: selectedTeacherId!,
                                     note: noteController.text.trim().isEmpty ? null : noteController.text.trim(),
                                     isActive: isActive,
+                                    schoolId: authProvider.activeSchoolId,
                                   ),
                                 );
                               }
@@ -914,56 +925,70 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
   Widget build(BuildContext context) {
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
-    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
-    final validSubjectIds = masterProvider.subjects.map((s) => s.id).toSet();
-    final schoolTeacherIds = masterProvider.teachers.map((t) => t.id).toSet();
 
-    final validSchedules = scheduleProvider.schedules.where((s) {
-      final matchClass = validClassIds.contains(s.classId);
-      final matchSubject = validSubjectIds.contains(s.subjectId);
-      final matchTeacher = schoolTeacherIds.isEmpty || schoolTeacherIds.contains(s.teacherId);
-      return matchClass && matchSubject && matchTeacher;
-    }).toList();
-
+    final validSchedules = scheduleProvider.schedules;
     final allGroupedSchedules = groupMasterSchedules(validSchedules);
 
+    debugPrint('[RUNTIME_DEBUG:MASTER_SCHEDULE] build() called -> Total Schedules: ${validSchedules.length}, Grouped: ${allGroupedSchedules.length}, Master Teachers: ${masterProvider.teachers.length}');
+
+    // Map all grouped schedules by Teacher ID
+    final Map<String, List<GroupedMasterSchedule>> teacherGroupedMap = {};
+    for (final sched in allGroupedSchedules) {
+      teacherGroupedMap.putIfAbsent(sched.teacherId, () => []).add(sched);
+    }
+
+    // Build unified set of all teacher IDs to display (from masterProvider.teachers + scheduled teachers)
+    final Set<String> allAvailableTeacherIds = {};
+    for (final t in masterProvider.teachers) {
+      if (t.id.isNotEmpty) allAvailableTeacherIds.add(t.id);
+    }
+    for (final s in validSchedules) {
+      if (s.teacherId.isNotEmpty) allAvailableTeacherIds.add(s.teacherId);
+    }
+
     // Filter by search query
-    final filteredGroupedSchedules = allGroupedSchedules.where((sched) {
+    final List<String> visibleTeacherIds = allAvailableTeacherIds.where((teacherId) {
       if (_searchQuery.trim().isEmpty) return true;
       final query = _searchQuery.trim().toLowerCase();
 
       final teacher = masterProvider.teachers.firstWhere(
-        (t) => t.id == sched.teacherId,
-        orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
+        (t) => t.id == teacherId,
+        orElse: () => TeacherModel(id: teacherId, name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''),
       );
-      final cls = masterProvider.classes.firstWhere(
-        (c) => c.id == sched.classId,
-        orElse: () => ClassModel(id: '', name: '', periodId: '', studentCount: 0),
-      );
-      final subject = masterProvider.subjects.firstWhere(
-        (s) => s.id == sched.subjectId,
-        orElse: () => SubjectModel(id: '', name: '', isActive: false),
-      );
-      final dayNames = sched.weekdays.map(getWeekdayName).join(' ').toLowerCase();
 
-      return teacher.name.toLowerCase().contains(query) ||
-          cls.name.toLowerCase().contains(query) ||
-          subject.name.toLowerCase().contains(query) ||
-          dayNames.contains(query) ||
-          (sched.note != null && sched.note!.toLowerCase().contains(query));
+      // Match teacher name / position
+      if (teacher.name.toLowerCase().contains(query) || teacher.position.toLowerCase().contains(query)) {
+        return true;
+      }
+
+      // Match any of their schedules
+      final schedules = teacherGroupedMap[teacherId] ?? [];
+      for (final sched in schedules) {
+        final cls = masterProvider.classes.firstWhere(
+          (c) => c.id == sched.classId,
+          orElse: () => ClassModel(id: '', name: '', periodId: '', studentCount: 0),
+        );
+        final subject = masterProvider.subjects.firstWhere(
+          (s) => s.id == sched.subjectId,
+          orElse: () => SubjectModel(id: '', name: '', isActive: false),
+        );
+        final dayNames = sched.weekdays.map(getWeekdayName).join(' ').toLowerCase();
+
+        if (cls.name.toLowerCase().contains(query) ||
+            subject.name.toLowerCase().contains(query) ||
+            dayNames.contains(query) ||
+            (sched.note != null && sched.note!.toLowerCase().contains(query))) {
+          return true;
+        }
+      }
+
+      return false;
     }).toList();
 
-    // Map filtered schedules by Teacher ID
-    final Map<String, List<GroupedMasterSchedule>> teacherGroupedMap = {};
-    for (final sched in filteredGroupedSchedules) {
-      teacherGroupedMap.putIfAbsent(sched.teacherId, () => []).add(sched);
-    }
-
-    final teacherIds = teacherGroupedMap.keys.toList();
     // Sort teachers alphabetically by name
-    teacherIds.sort((a, b) {
-      final tA = masterProvider.teachers.firstWhere((t) => t.id == a, orElse: () => TeacherModel(id: '', name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''));
-      final tB = masterProvider.teachers.firstWhere((t) => t.id == b, orElse: () => TeacherModel(id: '', name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''));
+    visibleTeacherIds.sort((a, b) {
+      final tA = masterProvider.teachers.firstWhere((t) => t.id == a, orElse: () => TeacherModel(id: a, name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''));
+      final tB = masterProvider.teachers.firstWhere((t) => t.id == b, orElse: () => TeacherModel(id: b, name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''));
       return tA.name.compareTo(tB.name);
     });
 
@@ -1055,24 +1080,24 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
 
                   // ─── Content Section ──────────────────────────────────────
                   Expanded(
-                    child: teacherIds.isEmpty
+                    child: visibleTeacherIds.isEmpty
                         ? const AppEmptyWidget(
                             title: 'Tidak Ada Jadwal Mengajar',
-                            subtitle: 'Belum ada data jadwal mengajar atau hasil pencarian tidak ditemukan.',
+                            subtitle: 'Belum ada data guru atau jadwal mengajar yang cocok dengan pencarian.',
                             icon: Icons.calendar_today_rounded,
                           )
                         : ListView.separated(
                             padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 80.h),
-                            itemCount: teacherIds.length,
+                            itemCount: visibleTeacherIds.length,
                             separatorBuilder: (context, _) => SizedBox(height: 12.h),
                             itemBuilder: (context, index) {
-                              final teacherId = teacherIds[index];
-                              final teacherSchedules = teacherGroupedMap[teacherId]!;
+                              final teacherId = visibleTeacherIds[index];
+                              final teacherSchedules = teacherGroupedMap[teacherId] ?? [];
 
                               final teacher = masterProvider.teachers.firstWhere(
                                 (t) => t.id == teacherId,
                                 orElse: () => TeacherModel(
-                                  id: '',
+                                  id: teacherId,
                                   name: 'Guru--',
                                   position: '',
                                   address: '',
@@ -1102,7 +1127,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                     dividerColor: Colors.transparent,
                                   ),
                                   child: ExpansionTile(
-                                    initiallyExpanded: true,
+                                    initiallyExpanded: teacherSchedules.isNotEmpty,
                                     tilePadding: EdgeInsets.symmetric(
                                       horizontal: 14.w,
                                       vertical: 6.h,
@@ -1164,14 +1189,18 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                         vertical: 4.h,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: isDark
-                                            ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
-                                            : const Color(0xFFEFF6FF),
+                                        color: teacherSchedules.isNotEmpty
+                                            ? (isDark
+                                                ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
+                                                : const Color(0xFFEFF6FF))
+                                            : (isDark
+                                                ? const Color(0xFF334155).withValues(alpha: 0.35)
+                                                : const Color(0xFFF1F5F9)),
                                         borderRadius: BorderRadius.circular(20.r),
                                         border: Border.all(
-                                          color: isDark
-                                              ? const Color(0xFF1E40AF)
-                                              : const Color(0xFFDBEAFE),
+                                          color: teacherSchedules.isNotEmpty
+                                              ? (isDark ? const Color(0xFF1E40AF) : const Color(0xFFDBEAFE))
+                                              : (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
                                         ),
                                       ),
                                       child: Text(
@@ -1179,302 +1208,365 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 10.5.sp,
                                           fontWeight: FontWeight.w700,
-                                          color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB),
+                                          color: teacherSchedules.isNotEmpty
+                                              ? (isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB))
+                                              : Theme.of(context).colorScheme.onSurfaceVariant,
                                         ),
                                       ),
                                     ),
-                                    children: teacherSchedules.map((sched) {
-                                      final cls = masterProvider.classes.firstWhere(
-                                        (c) => c.id == sched.classId,
-                                        orElse: () => ClassModel(
-                                          id: '',
-                                          name: 'Kelas--',
-                                          periodId: '',
-                                          studentCount: 0,
-                                        ),
-                                      );
-
-                                      final subject = masterProvider.subjects.firstWhere(
-                                        (s) => s.id == sched.subjectId,
-                                        orElse: () => SubjectModel(
-                                          id: '',
-                                          name: 'Mapel--',
-                                          isActive: false,
-                                        ),
-                                      );
-
-                                      return Padding(
-                                        padding: EdgeInsets.only(top: 8.h),
-                                        child: Dismissible(
-                                          key: Key(sched.scheduleIds.first),
-                                          direction: DismissDirection.endToStart,
-                                          background: Container(
-                                            alignment: Alignment.centerRight,
-                                            padding: EdgeInsets.only(right: 16.w),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFE11D48),
-                                              borderRadius: BorderRadius.circular(14.r),
-                                            ),
-                                            child: const Icon(
-                                              Icons.delete_rounded,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                          onDismissed: (_) =>
-                                              _handleDelete(sched.scheduleIds),
-                                          confirmDismiss: (_) async {
-                                            return await showDialog<bool>(
-                                              context: context,
-                                              builder: (context) => AlertDialog(
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(16.r),
-                                                ),
-                                                title: const Text('Hapus Jadwal'),
-                                                content: const Text(
-                                                  'Apakah Anda yakin ingin menghapus jadwal mengajar ini?',
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(context, false),
-                                                    child: const Text('Batal'),
+                                    children: teacherSchedules.isEmpty
+                                        ? [
+                                            Padding(
+                                              padding: EdgeInsets.symmetric(vertical: 8.h),
+                                              child: Container(
+                                                padding: EdgeInsets.all(12.w),
+                                                decoration: BoxDecoration(
+                                                  color: isDark
+                                                      ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                                      : const Color(0xFFF8FAFC),
+                                                  borderRadius: BorderRadius.circular(14.r),
+                                                  border: Border.all(
+                                                    color: isDark
+                                                        ? const Color(0xFF334155)
+                                                        : const Color(0xFFE2E8F0),
                                                   ),
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(context, true),
-                                                    child: const Text(
-                                                      'Hapus',
-                                                      style: TextStyle(
-                                                        color: Color(0xFFE11D48),
-                                                        fontWeight: FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                          child: Container(
-                                            padding: EdgeInsets.all(12.w),
-                                            decoration: BoxDecoration(
-                                              color: isDark
-                                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                                  : const Color(0xFFF8FAFC),
-                                              borderRadius: BorderRadius.circular(14.r),
-                                              border: Border.all(
-                                                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                                              ),
-                                            ),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.spaceBetween,
+                                                ),
+                                                child: Row(
                                                   children: [
+                                                    Icon(
+                                                      Icons.event_busy_rounded,
+                                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                      size: 20.sp,
+                                                    ),
+                                                    SizedBox(width: 10.w),
                                                     Expanded(
                                                       child: Text(
-                                                        '${cls.name} • Jam Ke-${AppHelper.formatTeachingHours(sched.teachingHours)}',
+                                                        'Belum ada jadwal mengajar',
                                                         style: GoogleFonts.hankenGrotesk(
-                                                          fontSize: 13.sp,
-                                                          fontWeight: FontWeight.w800,
-                                                          color: Theme.of(context).colorScheme.onSurface,
+                                                          fontSize: 12.sp,
+                                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                          fontStyle: FontStyle.italic,
                                                         ),
                                                       ),
                                                     ),
-                                                    Row(
-                                                      mainAxisSize: MainAxisSize.min,
-                                                      children: [
-                                                        IconButton(
-                                                          icon: const Icon(
-                                                            Icons.edit_rounded,
-                                                            color: Color(0xFF2563EB),
-                                                            size: 18,
-                                                          ),
-                                                          onPressed: () =>
-                                                              _showFormDialog(
-                                                            groupedSchedule: sched,
-                                                          ),
-                                                          constraints:
-                                                              const BoxConstraints(
-                                                            minWidth: 24,
-                                                            minHeight: 24,
-                                                          ),
-                                                          padding: EdgeInsets.zero,
-                                                          visualDensity:
-                                                              VisualDensity.compact,
+                                                    SizedBox(width: 8.w),
+                                                    ElevatedButton.icon(
+                                                      onPressed: () => _showFormDialog(
+                                                        initialTeacherId: teacherId,
+                                                      ),
+                                                      icon: const Icon(Icons.add_rounded, size: 16),
+                                                      label: const Text('Buat Jadwal'),
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor: const Color(0xFF2563EB),
+                                                        foregroundColor: Colors.white,
+                                                        padding: EdgeInsets.symmetric(
+                                                          horizontal: 10.w,
+                                                          vertical: 6.h,
                                                         ),
-                                                        SizedBox(width: 8.w),
-                                                        IconButton(
-                                                          icon: const Icon(
-                                                            Icons.delete_outline_rounded,
-                                                            color: Color(0xFFE11D48),
-                                                            size: 18,
-                                                          ),
-                                                          onPressed: () async {
-                                                            final confirm =
-                                                                await showDialog<bool>(
-                                                              context: context,
-                                                              builder: (context) =>
-                                                                  AlertDialog(
-                                                                shape: RoundedRectangleBorder(
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                    16.r,
-                                                                  ),
-                                                                ),
-                                                                title: const Text(
-                                                                  'Hapus Jadwal',
-                                                                ),
-                                                                content: const Text(
-                                                                  'Apakah Anda yakin ingin menghapus jadwal mengajar ini?',
-                                                                ),
-                                                                actions: [
-                                                                  TextButton(
-                                                                    onPressed: () =>
-                                                                        Navigator.pop(
-                                                                      context,
-                                                                      false,
-                                                                    ),
-                                                                    child: const Text(
-                                                                      'Batal',
-                                                                    ),
-                                                                  ),
-                                                                  TextButton(
-                                                                    onPressed: () =>
-                                                                        Navigator.pop(
-                                                                      context,
-                                                                      true,
-                                                                    ),
-                                                                    child: const Text(
-                                                                      'Hapus',
-                                                                      style: TextStyle(
-                                                                        color: Color(
-                                                                          0xFFE11D48,
-                                                                        ),
-                                                                        fontWeight:
-                                                                            FontWeight.bold,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            );
-                                                            if (confirm == true) {
-                                                              _handleDelete(
-                                                                sched.scheduleIds,
-                                                              );
-                                                            }
-                                                          },
-                                                          constraints:
-                                                              const BoxConstraints(
-                                                            minWidth: 24,
-                                                            minHeight: 24,
-                                                          ),
-                                                          padding: EdgeInsets.zero,
-                                                          visualDensity:
-                                                              VisualDensity.compact,
+                                                        visualDensity: VisualDensity.compact,
+                                                        textStyle: GoogleFonts.hankenGrotesk(
+                                                          fontSize: 11.sp,
+                                                          fontWeight: FontWeight.bold,
                                                         ),
-                                                      ],
+                                                      ),
                                                     ),
                                                   ],
                                                 ),
-                                                SizedBox(height: 2.h),
-                                                Text(
-                                                  'Mata Pelajaran: ${subject.name}',
-                                                  style: GoogleFonts.hankenGrotesk(
-                                                    fontSize: 11.5.sp,
-                                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                                    fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ]
+                                        : teacherSchedules.map((sched) {
+                                            final cls = masterProvider.classes.firstWhere(
+                                              (c) => c.id == sched.classId,
+                                              orElse: () => ClassModel(
+                                                id: '',
+                                                name: 'Kelas--',
+                                                periodId: '',
+                                                studentCount: 0,
+                                              ),
+                                            );
+
+                                            final subject = masterProvider.subjects.firstWhere(
+                                              (s) => s.id == sched.subjectId,
+                                              orElse: () => SubjectModel(
+                                                id: '',
+                                                name: 'Mapel--',
+                                                isActive: false,
+                                              ),
+                                            );
+
+                                            return Padding(
+                                              padding: EdgeInsets.only(top: 8.h),
+                                              child: Dismissible(
+                                                key: Key(sched.scheduleIds.first),
+                                                direction: DismissDirection.endToStart,
+                                                background: Container(
+                                                  alignment: Alignment.centerRight,
+                                                  padding: EdgeInsets.only(right: 16.w),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFE11D48),
+                                                    borderRadius: BorderRadius.circular(14.r),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.delete_rounded,
+                                                    color: Colors.white,
                                                   ),
                                                 ),
-                                                if (sched.note != null &&
-                                                    sched.note!.isNotEmpty) ...[
-                                                  SizedBox(height: 2.h),
-                                                  Text(
-                                                    'Catatan: ${sched.note}',
-                                                    style: GoogleFonts.hankenGrotesk(
-                                                      fontSize: 11.sp,
-                                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                                      fontStyle: FontStyle.italic,
-                                                    ),
-                                                  ),
-                                                ],
-                                                Divider(
-                                                  height: 12,
-                                                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                                                ),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.spaceBetween,
-                                                  children: [
-                                                    Expanded(
-                                                      child: Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment.start,
-                                                        children: [
-                                                          Text(
-                                                            'Hari: ${sched.weekdays.map(getWeekdayName).join(', ')}',
-                                                            style:
-                                                                GoogleFonts.hankenGrotesk(
-                                                              fontSize: 11.sp,
-                                                              color: Theme.of(context).colorScheme.onSurface,
-                                                              fontWeight:
-                                                                  FontWeight.w700,
+                                                onDismissed: (_) =>
+                                                    _handleDelete(sched.scheduleIds),
+                                                confirmDismiss: (_) async {
+                                                  return await showDialog<bool>(
+                                                    context: context,
+                                                    builder: (context) => AlertDialog(
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(16.r),
+                                                      ),
+                                                      title: const Text('Hapus Jadwal'),
+                                                      content: const Text(
+                                                        'Apakah Anda yakin ingin menghapus jadwal mengajar ini?',
+                                                      ),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.pop(context, false),
+                                                          child: const Text('Batal'),
+                                                        ),
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.pop(context, true),
+                                                          child: const Text(
+                                                            'Hapus',
+                                                            style: TextStyle(
+                                                              color: Color(0xFFE11D48),
+                                                              fontWeight: FontWeight.bold,
                                                             ),
                                                           ),
-                                                          SizedBox(height: 1.h),
-                                                          Text(
-                                                            '${AppHelper.formatDateShort(sched.startDate)} s/d ${AppHelper.formatDateShort(sched.endDate)}',
-                                                            style:
-                                                                GoogleFonts.hankenGrotesk(
-                                                              fontSize: 10.5.sp,
-                                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                },
+                                                child: Container(
+                                                  padding: EdgeInsets.all(12.w),
+                                                  decoration: BoxDecoration(
+                                                    color: isDark
+                                                        ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                                        : const Color(0xFFF8FAFC),
+                                                    borderRadius: BorderRadius.circular(14.r),
+                                                    border: Border.all(
+                                                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                                    ),
+                                                  ),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment.start,
+                                                    children: [
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment.spaceBetween,
+                                                        children: [
+                                                          Expanded(
+                                                            child: Text(
+                                                              '${cls.name} • Jam Ke-${AppHelper.formatTeachingHours(sched.teachingHours)}',
+                                                              style: GoogleFonts.hankenGrotesk(
+                                                                fontSize: 13.sp,
+                                                                fontWeight: FontWeight.w800,
+                                                                color: Theme.of(context).colorScheme.onSurface,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Row(
+                                                            mainAxisSize: MainAxisSize.min,
+                                                            children: [
+                                                              IconButton(
+                                                                icon: const Icon(
+                                                                  Icons.edit_rounded,
+                                                                  color: Color(0xFF2563EB),
+                                                                  size: 18,
+                                                                ),
+                                                                onPressed: () =>
+                                                                    _showFormDialog(
+                                                                  groupedSchedule: sched,
+                                                                ),
+                                                                constraints:
+                                                                    const BoxConstraints(
+                                                                  minWidth: 24,
+                                                                  minHeight: 24,
+                                                                ),
+                                                                padding: EdgeInsets.zero,
+                                                                visualDensity:
+                                                                    VisualDensity.compact,
+                                                              ),
+                                                              SizedBox(width: 8.w),
+                                                              IconButton(
+                                                                icon: const Icon(
+                                                                  Icons.delete_outline_rounded,
+                                                                  color: Color(0xFFE11D48),
+                                                                  size: 18,
+                                                                ),
+                                                                onPressed: () async {
+                                                                  final confirm =
+                                                                      await showDialog<bool>(
+                                                                    context: context,
+                                                                    builder: (context) =>
+                                                                        AlertDialog(
+                                                                      shape: RoundedRectangleBorder(
+                                                                        borderRadius:
+                                                                            BorderRadius.circular(
+                                                                          16.r,
+                                                                        ),
+                                                                      ),
+                                                                      title: const Text(
+                                                                        'Hapus Jadwal',
+                                                                      ),
+                                                                      content: const Text(
+                                                                        'Apakah Anda yakin ingin menghapus jadwal mengajar ini?',
+                                                                      ),
+                                                                      actions: [
+                                                                        TextButton(
+                                                                          onPressed: () =>
+                                                                              Navigator.pop(
+                                                                            context,
+                                                                            false,
+                                                                          ),
+                                                                          child: const Text(
+                                                                            'Batal',
+                                                                          ),
+                                                                        ),
+                                                                        TextButton(
+                                                                          onPressed: () =>
+                                                                              Navigator.pop(
+                                                                            context,
+                                                                            true,
+                                                                          ),
+                                                                          child: const Text(
+                                                                            'Hapus',
+                                                                            style: TextStyle(
+                                                                              color: Color(
+                                                                                0xFFE11D48,
+                                                                              ),
+                                                                              fontWeight:
+                                                                                  FontWeight.bold,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  );
+                                                                  if (confirm == true) {
+                                                                    _handleDelete(
+                                                                      sched.scheduleIds,
+                                                                    );
+                                                                  }
+                                                                },
+                                                                constraints:
+                                                                    const BoxConstraints(
+                                                                  minWidth: 24,
+                                                                  minHeight: 24,
+                                                                ),
+                                                                padding: EdgeInsets.zero,
+                                                                visualDensity:
+                                                                    VisualDensity.compact,
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      SizedBox(height: 2.h),
+                                                      Text(
+                                                        'Mata Pelajaran: ${subject.name}',
+                                                        style: GoogleFonts.hankenGrotesk(
+                                                          fontSize: 11.5.sp,
+                                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                          fontWeight: FontWeight.w600,
+                                                        ),
+                                                      ),
+                                                      if (sched.note != null &&
+                                                          sched.note!.isNotEmpty) ...[
+                                                        SizedBox(height: 2.h),
+                                                        Text(
+                                                          'Catatan: ${sched.note}',
+                                                          style: GoogleFonts.hankenGrotesk(
+                                                            fontSize: 11.sp,
+                                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                            fontStyle: FontStyle.italic,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                      Divider(
+                                                        height: 12,
+                                                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                                      ),
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment.spaceBetween,
+                                                        children: [
+                                                          Expanded(
+                                                            child: Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment.start,
+                                                              children: [
+                                                                Text(
+                                                                  'Hari: ${sched.weekdays.map(getWeekdayName).join(', ')}',
+                                                                  style:
+                                                                      GoogleFonts.hankenGrotesk(
+                                                                    fontSize: 11.sp,
+                                                                    color: Theme.of(context).colorScheme.onSurface,
+                                                                    fontWeight:
+                                                                        FontWeight.w700,
+                                                                  ),
+                                                                ),
+                                                                SizedBox(height: 1.h),
+                                                                Text(
+                                                                  '${AppHelper.formatDateShort(sched.startDate)} s/d ${AppHelper.formatDateShort(sched.endDate)}',
+                                                                  style:
+                                                                      GoogleFonts.hankenGrotesk(
+                                                                    fontSize: 10.5.sp,
+                                                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                          Container(
+                                                            padding: EdgeInsets.symmetric(
+                                                              horizontal: 8.w,
+                                                              vertical: 2.h,
+                                                            ),
+                                                            decoration: BoxDecoration(
+                                                              color: sched.isActive
+                                                                  ? (isDark ? const Color(0xFF064E3B).withValues(alpha: 0.35) : const Color(0xFFECFDF5))
+                                                                  : (isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.35) : const Color(0xFFFFE4E6)),
+                                                              borderRadius:
+                                                                  BorderRadius.circular(20.r),
+                                                              border: Border.all(
+                                                                color: sched.isActive
+                                                                    ? (isDark ? const Color(0xFF059669) : const Color(0xFFA7F3D0))
+                                                                    : (isDark ? const Color(0xFFE11D48) : const Color(0xFFFECDD3)),
+                                                              ),
+                                                            ),
+                                                            child: Text(
+                                                              sched.isActive
+                                                                  ? 'Aktif'
+                                                                  : 'Nonaktif',
+                                                              style: GoogleFonts.hankenGrotesk(
+                                                                fontSize: 10.sp,
+                                                                fontWeight: FontWeight.w800,
+                                                                color: sched.isActive
+                                                                    ? (isDark ? const Color(0xFF34D399) : const Color(0xFF059669))
+                                                                    : (isDark ? const Color(0xFFF87171) : const Color(0xFFE11D48)),
+                                                              ),
                                                             ),
                                                           ),
                                                         ],
                                                       ),
-                                                    ),
-                                                    Container(
-                                                      padding: EdgeInsets.symmetric(
-                                                        horizontal: 8.w,
-                                                        vertical: 2.h,
-                                                      ),
-                                                      decoration: BoxDecoration(
-                                                        color: sched.isActive
-                                                            ? (isDark ? const Color(0xFF064E3B).withValues(alpha: 0.35) : const Color(0xFFECFDF5))
-                                                            : (isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.35) : const Color(0xFFFFE4E6)),
-                                                        borderRadius:
-                                                            BorderRadius.circular(20.r),
-                                                        border: Border.all(
-                                                          color: sched.isActive
-                                                              ? (isDark ? const Color(0xFF059669) : const Color(0xFFA7F3D0))
-                                                              : (isDark ? const Color(0xFFE11D48) : const Color(0xFFFECDD3)),
-                                                        ),
-                                                      ),
-                                                      child: Text(
-                                                        sched.isActive
-                                                            ? 'Aktif'
-                                                            : 'Nonaktif',
-                                                        style: GoogleFonts.hankenGrotesk(
-                                                          fontSize: 10.sp,
-                                                          fontWeight: FontWeight.w800,
-                                                          color: sched.isActive
-                                                              ? (isDark ? const Color(0xFF34D399) : const Color(0xFF059669))
-                                                              : (isDark ? const Color(0xFFF87171) : const Color(0xFFE11D48)),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
+                                                    ],
+                                                  ),
                                                 ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
+                                              ),
+                                            );
+                                          }).toList(),
                                   ),
                                 ),
                               );

@@ -1,3 +1,5 @@
+import '../core/utils/helper.dart';
+
 class PeriodModel {
   final String id;
   final String name;
@@ -12,13 +14,22 @@ class PeriodModel {
   });
 
   factory PeriodModel.fromJson(Map<String, dynamic> json) {
+    bool active = true;
+    final rawActive = json['is_active'] ?? json['isActive'];
+    if (rawActive is bool) {
+      active = rawActive;
+    } else if (rawActive != null) {
+      active = rawActive.toString().toLowerCase() == 'true' || rawActive == 1 || rawActive.toString() == '1';
+    }
+
     return PeriodModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      isActive: json['is_active'] as bool? ?? json['isActive'] as bool? ?? true,
-      schoolId: json['school_id'] as String?,
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      isActive: active,
+      schoolId: AppHelper.parseSingleCleanSchoolId(json['school_id']),
     );
   }
+
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{

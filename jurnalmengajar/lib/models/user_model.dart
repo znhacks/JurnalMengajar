@@ -1,3 +1,5 @@
+import '../core/utils/helper.dart';
+
 class UserModel {
   final String id;
   final String email;
@@ -26,36 +28,39 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    List<String> parsedSchoolIds = [];
-    String? rawSchoolId = json['school_id']?.toString().trim();
-    if (json['school_ids'] != null) {
-      if (json['school_ids'] is List) {
-        parsedSchoolIds = (json['school_ids'] as List).map((e) => e.toString().trim()).toList();
-      } else if (json['school_ids'] is String) {
-        parsedSchoolIds = (json['school_ids'] as String).split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-      }
-    } else if (rawSchoolId != null && rawSchoolId.isNotEmpty) {
-      if (rawSchoolId.contains(',')) {
-        parsedSchoolIds = rawSchoolId.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-      } else {
-        parsedSchoolIds = [rawSchoolId];
-      }
+    final parsedFromSchoolId = AppHelper.parseAndCleanSchoolIds(json['school_id']);
+    final parsedFromSchoolIds = AppHelper.parseAndCleanSchoolIds(json['school_ids']);
+    final allSchoolIds = <String>{...parsedFromSchoolId, ...parsedFromSchoolIds}.toList();
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(json['school_id']) ??
+        (allSchoolIds.isNotEmpty ? allSchoolIds.first : null);
+
+    String fullName = '';
+    final rawFullName = json['full_name']?.toString().trim();
+    final rawName = json['fullName']?.toString().trim() ?? json['name']?.toString().trim();
+    if (rawFullName != null && rawFullName.isNotEmpty) {
+      fullName = rawFullName;
+    } else if (rawName != null && rawName.isNotEmpty) {
+      fullName = rawName;
+    } else {
+      final rawEmail = json['email']?.toString().trim();
+      fullName = (rawEmail != null && rawEmail.isNotEmpty) ? rawEmail : 'Pengguna';
     }
 
     return UserModel(
-      id: json['id'] as String,
-      email: json['email'] as String,
-      fullName: json['full_name'] as String? ?? json['fullName'] as String,
-      role: json['role'] as String,
-      photoUrl: json['photo_url'] as String? ?? json['photoUrl'] as String?,
-      phoneNumber: json['phone'] as String? ?? json['phoneNumber'] as String?,
-      position: json['position'] as String?,
-      address: json['address'] as String?,
-      schoolName: json['school_name'] as String? ?? json['schoolName'] as String?,
-      schoolId: rawSchoolId,
-      schoolIds: parsedSchoolIds,
+      id: json['id']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      fullName: fullName,
+      role: json['role']?.toString() ?? 'guru',
+      photoUrl: json['photo_url']?.toString() ?? json['photoUrl']?.toString(),
+      phoneNumber: json['phone']?.toString() ?? json['phoneNumber']?.toString() ?? json['phone_number']?.toString(),
+      position: json['position']?.toString(),
+      address: json['address']?.toString(),
+      schoolName: json['school_name']?.toString() ?? json['schoolName']?.toString(),
+      schoolId: cleanSchoolId,
+      schoolIds: allSchoolIds,
     );
   }
+
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{

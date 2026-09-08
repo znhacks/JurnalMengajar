@@ -111,17 +111,12 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
   }
 
   bool _hasTeacherScheduleOnDay(List<ScheduleModel> schedules, DateTime day) {
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
-    final validSubjectIds = masterProvider.subjects.map((sb) => sb.id).toSet();
     return schedules.any(
       (s) =>
           s.isActive &&
           s.date.year == day.year &&
           s.date.month == day.month &&
-          s.date.day == day.day &&
-          validClassIds.contains(s.classId) &&
-          validSubjectIds.contains(s.subjectId),
+          s.date.day == day.day,
     );
   }
 
@@ -593,11 +588,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
-                    final validSubjectIds = masterProvider.subjects.map((sb) => sb.id).toSet();
-                    final filteredSchedules = scheduleProvider.teacherSchedulesForSelectedDate.where((s) {
-                      return validClassIds.contains(s.classId) && validSubjectIds.contains(s.subjectId);
-                    }).toList();
+                    final filteredSchedules = scheduleProvider.teacherSchedulesForSelectedDate;
 
                     if (filteredSchedules.isEmpty) {
                       return _buildEmptyState();

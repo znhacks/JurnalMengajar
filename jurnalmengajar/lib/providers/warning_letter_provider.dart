@@ -177,6 +177,7 @@ class WarningLetterProvider with ChangeNotifier {
                 issuedAt: DateTime.now(),
                 reason: reason,
                 status: 'unread',
+                schoolId: masterProvider.currentSchoolId,
               );
 
               try {

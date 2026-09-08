@@ -531,15 +531,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       59,
     );
 
-    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
-    final validSubjectIds = masterProvider.subjects.map((s) => s.id).toSet();
-
     return allTeacherJournals.where((j) {
-      // Filter by active school (only journals whose class & subject belong to this school)
-      if (!validClassIds.contains(j.classId) || !validSubjectIds.contains(j.subjectId)) {
-        return false;
-      }
-
       // Date Range Filter
       if (j.date.isBefore(startOfDay) || j.date.isAfter(endOfDay)) {
         return false;

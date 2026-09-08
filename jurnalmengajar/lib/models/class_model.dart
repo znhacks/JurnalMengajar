@@ -1,3 +1,5 @@
+import '../core/utils/helper.dart';
+
 class ClassModel {
   final String id;
   final String periodId;
@@ -14,14 +16,23 @@ class ClassModel {
   });
 
   factory ClassModel.fromJson(Map<String, dynamic> json) {
+    int count = 0;
+    final rawCount = json['student_count'] ?? json['studentCount'];
+    if (rawCount is int) {
+      count = rawCount;
+    } else if (rawCount != null) {
+      count = int.tryParse(rawCount.toString()) ?? 0;
+    }
+
     return ClassModel(
-      id: json['id'] as String,
-      periodId: json['period_id'] as String? ?? json['periodId'] as String,
-      name: json['name'] as String,
-      studentCount: json['student_count'] as int? ?? json['studentCount'] as int,
-      schoolId: json['school_id'] as String?,
+      id: json['id']?.toString() ?? '',
+      periodId: json['period_id']?.toString() ?? json['periodId']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      studentCount: count,
+      schoolId: AppHelper.parseSingleCleanSchoolId(json['school_id']),
     );
   }
+
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{

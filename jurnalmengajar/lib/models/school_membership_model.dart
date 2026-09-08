@@ -1,3 +1,5 @@
+import '../core/utils/helper.dart';
+
 class SchoolMembershipModel {
   final String id;
   final String userId;
@@ -17,19 +19,21 @@ class SchoolMembershipModel {
 
   factory SchoolMembershipModel.fromJson(Map<String, dynamic> json) {
     final schoolData = json['schools'] as Map<String, dynamic>?;
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(json['school_id']) ?? '';
     return SchoolMembershipModel(
-      id: json['id'] as String? ?? '',
-      userId: json['user_id'] as String? ?? '',
-      schoolId: json['school_id'] as String? ?? '',
+      id: json['id']?.toString() ?? '',
+      userId: json['user_id']?.toString() ?? '',
+      schoolId: cleanSchoolId,
       schoolName: schoolData != null
-          ? (schoolData['name'] as String? ?? 'Sekolah')
-          : (json['school_name'] as String? ?? 'Sekolah'),
-      role: json['role'] as String? ?? 'guru',
+          ? (schoolData['name']?.toString() ?? 'Sekolah')
+          : (json['school_name']?.toString() ?? 'Sekolah'),
+      role: json['role']?.toString() ?? 'guru',
       joinedAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'] as String)
+          ? DateTime.tryParse(json['created_at'].toString())
           : null,
     );
   }
+
 
   Map<String, dynamic> toJson() {
     return {

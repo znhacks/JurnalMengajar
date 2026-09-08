@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 import '../models/user_model.dart';
 import 'auth_repository.dart';
 import '../core/utils/image_compressor.dart';
+import '../core/utils/helper.dart';
+
 
 class SupabaseAuthRepository implements AuthRepository {
   final SupabaseClient _supabase;
@@ -161,23 +163,26 @@ class SupabaseAuthRepository implements AuthRepository {
 
       final targetName = (user.schoolName ?? '').toUpperCase().trim();
       final targetId = (user.schoolId ?? '').trim();
+      final cleanTargetName = targetName.replaceAll(RegExp(r'[^A-Z0-9]'), '');
 
       if (targetName.isNotEmpty || targetId.isNotEmpty) {
         Map<String, dynamic>? matchedSchool;
 
-        // 1. Check schools table
+        // 1. Check schools table with comprehensive matching
         try {
-          final schoolsRes = await _supabase.from('schools').select('id, name, code, npsn, status');
+          final schoolsRes = await _supabase.from('schools').select('id, name, code, npsn, status, subscription_plan, max_teachers');
           for (final s in (schoolsRes as List)) {
             final sId = ((s['id'] as String?) ?? '').trim();
             final sName = ((s['name'] as String?) ?? '').toUpperCase().trim();
             final sCode = ((s['code'] as String?) ?? '').toUpperCase().trim();
             final sNpsn = ((s['npsn'] as String?) ?? '').toUpperCase().trim();
+            final cleanSName = sName.replaceAll(RegExp(r'[^A-Z0-9]'), '');
 
-            if ((targetId.isNotEmpty && sId == targetId) ||
+            if ((targetId.isNotEmpty && sId.toLowerCase() == targetId.toLowerCase()) ||
                 (sCode.isNotEmpty && (targetName == sCode || targetId.toUpperCase() == sCode)) ||
-                (sNpsn.isNotEmpty && targetName == sNpsn) ||
-                (sName.isNotEmpty && targetName == sName)) {
+                (sNpsn.isNotEmpty && (targetName == sNpsn || targetId.toUpperCase() == sNpsn)) ||
+                (sName.isNotEmpty && (targetName == sName || (cleanTargetName.isNotEmpty && cleanSName == cleanTargetName))) ||
+                (targetName.length >= 5 && (sName.contains(targetName) || targetName.contains(sName)))) {
               matchedSchool = Map<String, dynamic>.from(s);
               break;
             }
@@ -255,6 +260,21 @@ class SupabaseAuthRepository implements AuthRepository {
         if (matchedSchool != null) {
           schoolId = matchedSchool['id'] as String;
           canonicalSchoolName = (matchedSchool['name'] as String?) ?? (user.schoolName ?? '');
+
+          // If Admin is registering with a new JM-Panel plan code for an existing school, upgrade the plan
+          if (user.role == 'admin' && targetId.isNotEmpty) {
+            final upperCode = targetId.toUpperCase();
+            if (upperCode.contains('ENTERPRISE') || upperCode.contains('PRO')) {
+              final isEnt = upperCode.contains('ENTERPRISE');
+              try {
+                await _supabase.from('schools').update({
+                  'subscription_plan': isEnt ? 'enterprise' : 'pro',
+                  'max_teachers': isEnt ? 999 : 50,
+                  'status': 'active',
+                }).eq('id', schoolId);
+              } catch (_) {}
+            }
+          }
         } else {
           // Scenario 2: Guru must join an existing school
           if (user.role == 'pending_guru') {
@@ -462,81 +482,88 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<List<UserModel>> getAllUsersForSchool(String schoolId) async {
     try {
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
+
       // 1. Fetch school info to get school name
       String schoolName = '';
       try {
         final schoolRes = await _supabase
             .from('schools')
             .select('name')
-            .eq('id', schoolId)
+            .eq('id', cleanSchoolId)
             .maybeSingle();
         if (schoolRes != null) {
           schoolName = (schoolRes['name'] as String? ?? '').trim();
         }
       } catch (_) {}
 
-      // 2. Fetch user IDs linked in user_schools
-      Set<String> userIds = {};
+      // 2. Fetch user IDs linked in user_schools and school_memberships
+      final Set<String> userIds = {};
       try {
         final userSchoolsRes = await _supabase
             .from('user_schools')
             .select('user_id')
-            .eq('school_id', schoolId);
+            .eq('school_id', cleanSchoolId);
 
-        userIds = (userSchoolsRes as List)
-            .map((row) => row['user_id'] as String)
-            .toSet();
+        for (final row in (userSchoolsRes as List)) {
+          final uid = row['user_id']?.toString();
+          if (uid != null && uid.isNotEmpty) userIds.add(uid);
+        }
       } catch (_) {}
 
-      // 3. Query users safely without PostgREST string syntax errors
+      try {
+        final memRes = await _supabase
+            .from('school_memberships')
+            .select('user_id')
+            .eq('school_id', cleanSchoolId);
+
+        for (final row in (memRes as List)) {
+          final uid = row['user_id']?.toString();
+          if (uid != null && uid.isNotEmpty) userIds.add(uid);
+        }
+      } catch (_) {}
+
+      // 3. Query all users and match
       final Map<String, UserModel> usersMap = {};
 
-      // Query A: users matching school_id
       try {
-        final res1 = await _supabase
+        final allUsersRes = await _supabase
             .from('users')
             .select()
-            .eq('school_id', schoolId)
             .order('full_name', ascending: true);
-        for (final json in (res1 as List)) {
-          final u = UserModel.fromJson(json);
-          usersMap[u.id] = u;
+
+        for (final item in (allUsersRes as List)) {
+          try {
+            final json = Map<String, dynamic>.from(item as Map);
+            final uId = json['id']?.toString() ?? '';
+            final isLinked = userIds.contains(uId);
+            final isSchoolMatch = cleanSchoolId.isEmpty ||
+                AppHelper.matchesSchool(json['school_id'], json['school_ids'], cleanSchoolId) ||
+                (schoolName.isNotEmpty && (json['school_name']?.toString().toLowerCase() == schoolName.toLowerCase()));
+
+            if (isLinked || isSchoolMatch || cleanSchoolId.isEmpty) {
+              usersMap[uId] = UserModel.fromJson(json);
+            }
+          } catch (_) {}
         }
       } catch (e) {
-        debugPrint('Note: querying users by school_id: $e');
+        debugPrint('Note: querying users in getAllUsersForSchool: $e');
       }
 
-      // Query B: users matching userIds from user_schools
+      // Fallback: If any linked user IDs are not in usersMap yet, fetch by IDs
       if (userIds.isNotEmpty) {
-        try {
-          final res2 = await _supabase
-              .from('users')
-              .select()
-              .inFilter('id', userIds.toList())
-              .order('full_name', ascending: true);
-          for (final json in (res2 as List)) {
-            final u = UserModel.fromJson(json);
-            usersMap[u.id] = u;
-          }
-        } catch (e) {
-          debugPrint('Note: querying users by userIds: $e');
-        }
-      }
-
-      // Query C: users matching school_name if available
-      if (schoolName.isNotEmpty) {
-        try {
-          final res3 = await _supabase
-              .from('users')
-              .select()
-              .eq('school_name', schoolName)
-              .order('full_name', ascending: true);
-          for (final json in (res3 as List)) {
-            final u = UserModel.fromJson(json);
-            usersMap[u.id] = u;
-          }
-        } catch (e) {
-          debugPrint('Note: querying users by school_name: $e');
+        final missingIds = userIds.where((id) => !usersMap.containsKey(id)).toList();
+        if (missingIds.isNotEmpty) {
+          try {
+            final res2 = await _supabase
+                .from('users')
+                .select()
+                .inFilter('id', missingIds);
+            for (final json in (res2 as List)) {
+              final u = UserModel.fromJson(Map<String, dynamic>.from(json as Map));
+              usersMap[u.id] = u;
+            }
+          } catch (_) {}
         }
       }
 

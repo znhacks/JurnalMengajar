@@ -173,23 +173,26 @@ DROP POLICY IF EXISTS "Allow select journals for owner and admin" ON public.jour
 DROP POLICY IF EXISTS "Allow insert journals for owner and admin" ON public.journals;
 DROP POLICY IF EXISTS "Allow update journals for owner and admin" ON public.journals;
 DROP POLICY IF EXISTS "Allow delete journals for owner and admin" ON public.journals;
+DROP POLICY IF EXISTS "Allow select journals for authenticated users" ON public.journals;
+DROP POLICY IF EXISTS "Allow insert journals for authenticated users" ON public.journals;
+DROP POLICY IF EXISTS "Allow update journals for authenticated users" ON public.journals;
+DROP POLICY IF EXISTS "Allow delete journals for authenticated users" ON public.journals;
 
-CREATE POLICY "Allow select journals for owner and admin" 
-  ON public.journals FOR SELECT TO authenticated 
-  USING (teacher_id = auth.uid() OR public.is_admin());
+CREATE POLICY "Allow select journals for authenticated users" 
+  ON public.journals FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY "Allow insert journals for owner and admin" 
+CREATE POLICY "Allow insert journals for authenticated users" 
   ON public.journals FOR INSERT TO authenticated 
-  WITH CHECK (teacher_id = auth.uid() OR public.is_admin());
+  WITH CHECK (true);
 
-CREATE POLICY "Allow update journals for owner and admin" 
+CREATE POLICY "Allow update journals for authenticated users" 
   ON public.journals FOR UPDATE TO authenticated 
-  USING (teacher_id = auth.uid() OR public.is_admin()) 
-  WITH CHECK (teacher_id = auth.uid() OR public.is_admin());
+  USING (true) 
+  WITH CHECK (true);
 
-CREATE POLICY "Allow delete journals for owner and admin" 
+CREATE POLICY "Allow delete journals for authenticated users" 
   ON public.journals FOR DELETE TO authenticated 
-  USING (teacher_id = auth.uid() OR public.is_admin());
+  USING (true);
 
 -- 11. RLS POLICIES FOR: public.settings
 DROP POLICY IF EXISTS "Allow select settings for authenticated users" ON public.settings;
@@ -215,23 +218,27 @@ DROP POLICY IF EXISTS "Allow select warning_letters for owner and admin" ON publ
 DROP POLICY IF EXISTS "Allow insert warning_letters for admin" ON public.warning_letters;
 DROP POLICY IF EXISTS "Allow update warning_letters for owner and admin" ON public.warning_letters;
 DROP POLICY IF EXISTS "Allow delete warning_letters for admin" ON public.warning_letters;
+DROP POLICY IF EXISTS "Allow select warning_letters for authenticated users" ON public.warning_letters;
+DROP POLICY IF EXISTS "Allow insert warning_letters for authenticated users" ON public.warning_letters;
+DROP POLICY IF EXISTS "Allow update warning_letters for authenticated users" ON public.warning_letters;
+DROP POLICY IF EXISTS "Allow delete warning_letters for authenticated users" ON public.warning_letters;
 
-CREATE POLICY "Allow select warning_letters for owner and admin" 
+CREATE POLICY "Allow select warning_letters for authenticated users" 
   ON public.warning_letters FOR SELECT TO authenticated 
-  USING (teacher_id = auth.uid() OR public.is_admin());
+  USING (true);
 
-CREATE POLICY "Allow insert warning_letters for admin" 
+CREATE POLICY "Allow insert warning_letters for authenticated users" 
   ON public.warning_letters FOR INSERT TO authenticated 
-  WITH CHECK (public.is_admin());
+  WITH CHECK (true);
 
-CREATE POLICY "Allow update warning_letters for owner and admin" 
+CREATE POLICY "Allow update warning_letters for authenticated users" 
   ON public.warning_letters FOR UPDATE TO authenticated 
-  USING (teacher_id = auth.uid() OR public.is_admin()) 
-  WITH CHECK (teacher_id = auth.uid() OR public.is_admin());
+  USING (true) 
+  WITH CHECK (true);
 
-CREATE POLICY "Allow delete warning_letters for admin" 
+CREATE POLICY "Allow delete warning_letters for authenticated users" 
   ON public.warning_letters FOR DELETE TO authenticated 
-  USING (public.is_admin());
+  USING (true);
 
 -- ====================================================================
 -- TRIGGERS TO AUTOMATICALLY SYNC AUTH.USERS TO PUBLIC.USERS

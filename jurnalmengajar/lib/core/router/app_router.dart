@@ -133,23 +133,27 @@ class AppRouter {
         final user = authProvider.currentUser;
         if (user == null) return '/login';
 
+        final effectiveRole = authProvider.activeRole.isNotEmpty
+            ? authProvider.activeRole
+            : user.role;
+
         if (isAuthRoute && !isRecoveryMode) {
-          if (user.role == 'admin') {
+          if (effectiveRole == 'admin') {
             return '/admin/dashboard';
           } else {
             return '/guru/dashboard';
           }
         }
 
-        if (user.role != 'admin' && user.role != 'guru') {
+        if (effectiveRole != 'admin' && effectiveRole != 'guru') {
           return '/login';
         }
 
-        if (state.matchedLocation.startsWith('/admin') && user.role != 'admin') {
+        if (state.matchedLocation.startsWith('/admin') && effectiveRole != 'admin') {
           return '/guru/dashboard';
         }
 
-        if (state.matchedLocation.startsWith('/guru') && user.role != 'guru') {
+        if (state.matchedLocation.startsWith('/guru') && effectiveRole != 'guru') {
           return '/admin/dashboard';
         }
 

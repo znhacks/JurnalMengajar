@@ -1,3 +1,5 @@
+import '../core/utils/helper.dart';
+
 class UserSchoolModel {
   final String id;
   final String userId;
@@ -25,25 +27,28 @@ class UserSchoolModel {
     String? logo;
 
     if (json['schools'] != null && json['schools'] is Map) {
-      final sMap = json['schools'] as Map<String, dynamic>;
-      name = sMap['name'] as String? ?? 'Sekolah';
-      code = sMap['code'] as String?;
-      logo = sMap['logo_url'] as String? ?? sMap['logoUrl'] as String?;
+      final sMap = json['schools'] as Map;
+      name = sMap['name']?.toString() ?? 'Sekolah';
+      code = sMap['code']?.toString();
+      logo = sMap['logo_url']?.toString() ?? sMap['logoUrl']?.toString();
     } else if (json['school_name'] != null) {
-      name = json['school_name'] as String;
+      name = json['school_name']?.toString() ?? 'Sekolah';
     }
 
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(json['school_id']) ?? '';
+
     return UserSchoolModel(
-      id: json['id'] as String? ?? '',
-      userId: json['user_id'] as String? ?? '',
-      schoolId: json['school_id'] as String? ?? '',
-      role: json['role'] as String? ?? 'guru',
+      id: json['id']?.toString() ?? '',
+      userId: json['user_id']?.toString() ?? '',
+      schoolId: cleanSchoolId,
+      role: json['role']?.toString() ?? 'guru',
       schoolName: name,
       schoolCode: code,
-      status: json['status'] as String? ?? 'active',
-      logoUrl: logo ?? json['logo_url'] as String? ?? json['logoUrl'] as String?,
+      status: json['status']?.toString() ?? 'active',
+      logoUrl: logo ?? json['logo_url']?.toString() ?? json['logoUrl']?.toString(),
     );
   }
+
 
   Map<String, dynamic> toJson() {
     return {

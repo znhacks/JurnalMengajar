@@ -1,3 +1,5 @@
+import '../core/utils/helper.dart';
+
 class ScheduleModel {
   final String id;
   final String periodId;
@@ -24,19 +26,47 @@ class ScheduleModel {
   });
 
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
+    DateTime parsedDate = DateTime.now();
+    final rawDate = json['date'];
+    if (rawDate is String) {
+      parsedDate = DateTime.tryParse(rawDate) ?? DateTime.now();
+    } else if (rawDate is DateTime) {
+      parsedDate = rawDate;
+    }
+
+    int teachingHour = 1;
+    final rawHour = json['teaching_hour'] ?? json['teachingHour'];
+    if (rawHour is int) {
+      teachingHour = rawHour;
+    } else if (rawHour != null) {
+      teachingHour = int.tryParse(rawHour.toString()) ?? 1;
+    }
+
+    bool isActive = true;
+    final rawActive = json['is_active'] ?? json['isActive'];
+    if (rawActive is bool) {
+      isActive = rawActive;
+    } else if (rawActive is int) {
+      isActive = rawActive == 1;
+    } else if (rawActive != null) {
+      final strActive = rawActive.toString().trim().toLowerCase();
+      isActive = strActive == 'true' || strActive == '1';
+    }
+
     return ScheduleModel(
-      id: json['id'] as String,
-      periodId: json['period_id'] as String? ?? json['periodId'] as String,
-      date: json['date'] is String ? DateTime.parse(json['date'] as String) : json['date'] as DateTime,
-      teachingHour: json['teaching_hour'] as int? ?? json['teachingHour'] as int,
-      classId: json['class_id'] as String? ?? json['classId'] as String,
-      subjectId: json['subject_id'] as String? ?? json['subjectId'] as String,
-      teacherId: json['teacher_id'] as String? ?? json['teacherId'] as String,
-      note: json['note'] as String?,
-      isActive: json['is_active'] as bool? ?? json['isActive'] as bool? ?? true,
-      schoolId: json['school_id'] as String?,
+      id: json['id']?.toString() ?? '',
+      periodId: json['period_id']?.toString() ?? json['periodId']?.toString() ?? '',
+      date: parsedDate,
+      teachingHour: teachingHour,
+      classId: json['class_id']?.toString() ?? json['classId']?.toString() ?? '',
+      subjectId: json['subject_id']?.toString() ?? json['subjectId']?.toString() ?? '',
+      teacherId: json['teacher_id']?.toString() ?? json['teacherId']?.toString() ?? '',
+      note: json['note']?.toString(),
+      isActive: isActive,
+      schoolId: AppHelper.parseSingleCleanSchoolId(json['school_id']),
     );
   }
+
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{

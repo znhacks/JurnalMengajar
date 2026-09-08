@@ -207,18 +207,13 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     MasterDataProvider masterProvider,
   ) {
     final today = DateTime.now();
-    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
-    final validSubjectIds = masterProvider.subjects.map((sb) => sb.id).toSet();
-
     final activeSchedulesToday = scheduleProvider.cachedTeacherSchedules.where((
       s,
     ) {
       return s.isActive &&
           s.date.year == today.year &&
           s.date.month == today.month &&
-          s.date.day == today.day &&
-          validClassIds.contains(s.classId) &&
-          validSubjectIds.contains(s.subjectId);
+          s.date.day == today.day;
     }).toList();
 
     if (activeSchedulesToday.isEmpty) return;
@@ -441,17 +436,12 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     );
 
     final today = DateTime.now();
-    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
-    final validSubjectIds = masterProvider.subjects.map((sb) => sb.id).toSet();
-
     final activeSchedulesThisMonth = scheduleProvider.cachedTeacherSchedules
         .where((s) {
           if (!s.isActive) return false;
           if (s.date.year != today.year || s.date.month != today.month) {
             return false;
           }
-          if (!validClassIds.contains(s.classId)) return false;
-          if (!validSubjectIds.contains(s.subjectId)) return false;
           return true;
         })
         .toList();
@@ -1200,15 +1190,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       );
     }
 
-    final validClassIds = master.classes.map((c) => c.id).toSet();
-    final validSubjectIds = master.subjects.map((sb) => sb.id).toSet();
-
-    var rawList = scheduleProvider.teacherSchedulesForSelectedDate;
-    var list = rawList.where((s) {
-      if (!validClassIds.contains(s.classId)) return false;
-      if (!validSubjectIds.contains(s.subjectId)) return false;
-      return true;
-    }).toList();
+    var list = scheduleProvider.teacherSchedulesForSelectedDate;
 
     // ── EMPTY STATE ──────────────────────────────────────────────────────────
     if (list.isEmpty) {
@@ -1550,13 +1532,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     JournalProvider journalProvider,
     MasterDataProvider masterProvider,
   ) {
-    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
-    final validSubjectIds = masterProvider.subjects.map((s) => s.id).toSet();
-
-    var journals = journalProvider.teacherJournals.where((j) {
-      return validClassIds.contains(j.classId) &&
-          validSubjectIds.contains(j.subjectId);
-    }).toList();
+    var journals = journalProvider.teacherJournals;
 
     if (_searchQuery.isNotEmpty) {
       journals = journals.where((j) {

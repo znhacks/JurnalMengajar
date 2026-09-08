@@ -1,3 +1,5 @@
+import '../core/utils/helper.dart';
+
 class HourModel {
   final String id;
   final int teachingHour; // e.g. 1, 2, 3...
@@ -14,14 +16,23 @@ class HourModel {
   });
 
   factory HourModel.fromJson(Map<String, dynamic> json) {
+    int teachingHour = 1;
+    final rawHour = json['teaching_hour'] ?? json['teachingHour'];
+    if (rawHour is int) {
+      teachingHour = rawHour;
+    } else if (rawHour != null) {
+      teachingHour = int.tryParse(rawHour.toString()) ?? 1;
+    }
+
     return HourModel(
-      id: json['id'] as String,
-      teachingHour: json['teaching_hour'] as int? ?? json['teachingHour'] as int,
-      startTime: json['start_time'] as String? ?? json['startTime'] as String,
-      endTime: json['end_time'] as String? ?? json['endTime'] as String,
-      schoolId: json['school_id'] as String?,
+      id: json['id']?.toString() ?? '',
+      teachingHour: teachingHour,
+      startTime: json['start_time']?.toString() ?? json['startTime']?.toString() ?? '07:00',
+      endTime: json['end_time']?.toString() ?? json['endTime']?.toString() ?? '07:45',
+      schoolId: AppHelper.parseSingleCleanSchoolId(json['school_id']),
     );
   }
+
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{

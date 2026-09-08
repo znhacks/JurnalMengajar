@@ -142,21 +142,12 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
 
-    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
-    final validSubjectIds = masterProvider.subjects.map((s) => s.id).toSet();
-
-    final allJournals = journalProvider.journals.where((j) {
-      return validClassIds.contains(j.classId) && validSubjectIds.contains(j.subjectId);
-    }).toList();
+    final allJournals = journalProvider.journals;
     final pendingJournals = allJournals.where((j) => j.status == 'pending').toList();
-    final verifiedJournals = allJournals.where((j) => j.status == 'verified').toList();
+    final verifiedJournals = allJournals.where((j) => j.status == 'verified' || j.status == 'approved').toList();
 
     // Get unfilled schedules
-    final activeSchedules = scheduleProvider.schedules.where((s) {
-      return s.isActive &&
-          validClassIds.contains(s.classId) &&
-          validSubjectIds.contains(s.subjectId);
-    }).toList();
+    final activeSchedules = scheduleProvider.schedules.where((s) => s.isActive).toList();
     final groupedDailySchedules = groupDailySchedules(activeSchedules);
     
     final now = DateTime.now();

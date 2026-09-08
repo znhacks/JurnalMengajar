@@ -30,11 +30,14 @@ class ScheduleProvider with ChangeNotifier {
     _currentSchoolId = schoolId ?? _currentSchoolId;
     _isLoading = true;
     _errorMessage = null;
+    debugPrint('[RUNTIME_DEBUG:SCHEDULE_PROVIDER] loadAllSchedules initiated with schoolId: "$_currentSchoolId"');
     notifyListeners();
     try {
       _schedules = await scheduleRepository.getAll(_currentSchoolId);
+      debugPrint('[RUNTIME_DEBUG:SCHEDULE_PROVIDER] Loaded ${_schedules.length} schedules into ScheduleProvider state.');
     } catch (e) {
       _errorMessage = e.toString();
+      debugPrint('[RUNTIME_DEBUG:SCHEDULE_PROVIDER] ERROR in loadAllSchedules: $e');
     } finally {
       _isLoading = false;
       notifyListeners();

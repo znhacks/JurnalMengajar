@@ -67,4 +67,74 @@ class AppHelper {
     }
     return sorted.join(', ');
   }
+
+  /// Safely extracts and cleans a list of unique school IDs from any input
+  /// (dynamic List, JSON stringified array '["..."]', Postgres array '{...}', comma string '..., ...', or single UUID string).
+  static List<String> parseAndCleanSchoolIds(dynamic rawInput) {
+    if (rawInput == null) return [];
+    final List<String> result = [];
+
+    void addClean(String s) {
+      final cleaned = s
+          .replaceAll('[', '')
+          .replaceAll(']', '')
+          .replaceAll('{', '')
+          .replaceAll('}', '')
+          .replaceAll('"', '')
+          .replaceAll("'", '')
+          .replaceAll(r'\', '')
+          .trim();
+      if (cleaned.isNotEmpty && !result.contains(cleaned)) {
+        result.add(cleaned);
+      }
+    }
+
+    if (rawInput is List) {
+      for (final item in rawInput) {
+        if (item != null) {
+          if (item is List) {
+            result.addAll(parseAndCleanSchoolIds(item));
+          } else {
+            final str = item.toString();
+            if (str.contains(',')) {
+              for (final part in str.split(',')) {
+                addClean(part);
+              }
+            } else {
+              addClean(str);
+            }
+          }
+        }
+      }
+    } else if (rawInput is String) {
+      final str = rawInput.trim();
+      if (str.isNotEmpty) {
+        final parts = str.split(',');
+        for (final part in parts) {
+          addClean(part);
+        }
+      }
+    }
+
+    return result.toSet().toList();
+  }
+
+  /// Safely extracts a single canonical clean school ID (UUID string) from any input.
+  static String? parseSingleCleanSchoolId(dynamic rawInput) {
+    if (rawInput == null) return null;
+    final ids = parseAndCleanSchoolIds(rawInput);
+    return ids.isNotEmpty ? ids.first : null;
+  }
+
+  /// Checks if a given targetSchoolId matches any school IDs in userSchoolId or userSchoolIds.
+  static bool matchesSchool(dynamic userSchoolIdInput, dynamic userSchoolIdsInput, String targetSchoolId) {
+    if (targetSchoolId.isEmpty) return true;
+    final cleanTarget = parseSingleCleanSchoolId(targetSchoolId) ?? targetSchoolId.trim();
+    final allIds = <String>{
+      ...parseAndCleanSchoolIds(userSchoolIdInput),
+      ...parseAndCleanSchoolIds(userSchoolIdsInput),
+    };
+    return allIds.contains(cleanTarget);
+  }
 }
+

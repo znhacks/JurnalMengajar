@@ -6,6 +6,8 @@ import '../models/user_school_model.dart';
 import '../models/school_model.dart';
 import '../repositories/auth_repository.dart';
 import '../services/fcm_service.dart';
+import '../core/utils/helper.dart';
+
 
 class AuthProvider with ChangeNotifier {
   static const String _kActiveSchoolIdKey = 'active_school_id';
@@ -198,11 +200,13 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> switchActiveSchool(String schoolId, String schoolName, String role) async {
-    _activeSchoolId = schoolId;
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
+    _activeSchoolId = cleanSchoolId;
     _activeSchoolName = schoolName;
     _activeRole = role;
     if (_currentUser != null) {
       _currentUser = _currentUser!.copyWith(
+        schoolId: cleanSchoolId,
         schoolName: schoolName,
         role: role,
       );
@@ -210,7 +214,10 @@ class AuthProvider with ChangeNotifier {
 
     // Immediately populate basic activeSchool from userMemberships so UI has full context instantly
     try {
-      final m = _userMemberships.firstWhere((element) => element.schoolId == schoolId);
+      final m = _userMemberships.firstWhere(
+        (element) => element.schoolId == cleanSchoolId && element.role.toLowerCase() == role.toLowerCase(),
+        orElse: () => _userMemberships.firstWhere((element) => element.schoolId == cleanSchoolId),
+      );
       _activeSchool = SchoolModel(
         id: m.schoolId,
         name: m.schoolName,
@@ -223,7 +230,7 @@ class AuthProvider with ChangeNotifier {
     
     // Persist active school & role locally in background
     SharedPreferences.getInstance().then((prefs) {
-      prefs.setString(_kActiveSchoolIdKey, schoolId);
+      prefs.setString(_kActiveSchoolIdKey, cleanSchoolId);
       prefs.setString(_kActiveRoleKey, role);
     }).catchError((e) {
       debugPrint('Error saving active school to SharedPreferences: $e');
@@ -397,30 +404,104 @@ class AuthProvider with ChangeNotifier {
     if (_currentUser == null) return;
     try {
       final supabase = Supabase.instance.client;
-      final res = await supabase
-          .from('user_schools')
-          .select('*, schools(id, name, code, logo_url, npsn, status)')
-          .eq('user_id', _currentUser!.id);
+      final Map<String, UserSchoolModel> membershipMap = {};
 
-      final loadedMemberships = (res as List)
-          .where((item) => item['schools'] != null)
-          .map((item) {
-        final m = Map<String, dynamic>.from(item);
-        m['role'] = item['role'] ?? _currentUser!.role;
-        return UserSchoolModel.fromJson(m);
-      }).toList();
+      // 1. Fetch from user_schools
+      try {
+        final res = await supabase
+            .from('user_schools')
+            .select('*, schools(id, name, code, logo_url, npsn, status)')
+            .eq('user_id', _currentUser!.id);
 
-      _userMemberships = loadedMemberships;
+        for (final item in (res as List)) {
+          final m = Map<String, dynamic>.from(item as Map);
+          m['role'] = item['role'] ?? _currentUser!.role;
+
+          if (m['schools'] == null && m['school_id'] != null) {
+            final sId = AppHelper.parseSingleCleanSchoolId(m['school_id']);
+            if (sId != null && sId.isNotEmpty) {
+              try {
+                final sRes = await supabase
+                    .from('schools')
+                    .select('id, name, code, logo_url, status')
+                    .eq('id', sId)
+                    .maybeSingle();
+                if (sRes != null) {
+                  m['schools'] = sRes;
+                }
+              } catch (_) {}
+            }
+          }
+
+          final parsed = UserSchoolModel.fromJson(m);
+          if (parsed.schoolId.isNotEmpty) {
+            final key = '${parsed.schoolId}_${parsed.role.toLowerCase()}';
+            membershipMap[key] = parsed;
+          }
+        }
+      } catch (err) {
+        debugPrint('Error loading user_schools in memberships: $err');
+      }
+
+      // 2. Fetch from school_memberships
+      try {
+        final memRes = await supabase
+            .from('school_memberships')
+            .select('*, schools(id, name, code, logo_url, npsn, status)')
+            .eq('user_id', _currentUser!.id);
+
+        for (final item in (memRes as List)) {
+          final m = Map<String, dynamic>.from(item as Map);
+          final parsed = UserSchoolModel.fromJson(m);
+          if (parsed.schoolId.isNotEmpty) {
+            final key = '${parsed.schoolId}_${parsed.role.toLowerCase()}';
+            if (!membershipMap.containsKey(key)) {
+              membershipMap[key] = parsed;
+            }
+          }
+        }
+      } catch (_) {}
+
+      // 3. Check for any schools listed in _currentUser.schoolIds
+      for (final sId in _currentUser!.schoolIds) {
+        final cleanId = AppHelper.parseSingleCleanSchoolId(sId);
+        if (cleanId != null && cleanId.isNotEmpty) {
+          final key = '${cleanId}_${_currentUser!.role.toLowerCase()}';
+          if (!membershipMap.containsKey(key)) {
+            try {
+              final sRes = await supabase
+                  .from('schools')
+                  .select('id, name, code, logo_url, status')
+                  .eq('id', cleanId)
+                  .maybeSingle();
+              if (sRes != null) {
+                membershipMap[key] = UserSchoolModel(
+                  id: 'us_$cleanId',
+                  userId: _currentUser!.id,
+                  schoolId: cleanId,
+                  role: _currentUser!.role,
+                  schoolName: sRes['name']?.toString() ?? 'Sekolah',
+                  schoolCode: sRes['code']?.toString(),
+                  logoUrl: sRes['logo_url']?.toString(),
+                );
+              }
+            } catch (_) {}
+          }
+        }
+      }
+
+      _userMemberships = membershipMap.values.toList();
 
       if (_userMemberships.isEmpty && _currentUser != null) {
         // Self-heal: If user has schoolId or schoolName in profile, look up school and link
         try {
           Map<String, dynamic>? schoolData;
-          if (_currentUser!.schoolId != null && _currentUser!.schoolId!.isNotEmpty) {
+          final cleanUserSchoolId = AppHelper.parseSingleCleanSchoolId(_currentUser!.schoolId);
+          if (cleanUserSchoolId != null && cleanUserSchoolId.isNotEmpty) {
             schoolData = await supabase
                 .from('schools')
                 .select('id, name, code, logo_url')
-                .eq('id', _currentUser!.schoolId!)
+                .eq('id', cleanUserSchoolId)
                 .maybeSingle();
           }
           if (schoolData == null && _currentUser!.schoolName != null && _currentUser!.schoolName!.isNotEmpty) {
@@ -429,33 +510,6 @@ class AuthProvider with ChangeNotifier {
                 .select('id, name, code, logo_url')
                 .ilike('name', _currentUser!.schoolName!.trim())
                 .maybeSingle();
-          }
-          if (schoolData == null && _currentUser!.schoolId != null && _currentUser!.schoolId!.isNotEmpty) {
-            try {
-              final tenantData = await supabase
-                  .from('tenants')
-                  .select('id, name, school_code')
-                  .eq('id', _currentUser!.schoolId!)
-                  .maybeSingle();
-              if (tenantData != null) {
-                final tId = tenantData['id'] as String;
-                final tName = tenantData['name'] as String? ?? 'Sekolah';
-                final tCode = tenantData['school_code'] as String? ?? tId;
-                try {
-                  await supabase.from('schools').upsert({
-                    'id': tId,
-                    'name': tName,
-                    'code': tCode,
-                    'status': 'active',
-                  }, onConflict: 'id');
-                } catch (_) {}
-                schoolData = {
-                  'id': tId,
-                  'name': tName,
-                  'code': tCode,
-                };
-              }
-            } catch (_) {}
           }
           if (schoolData != null) {
             final sId = schoolData['id'] as String;
@@ -491,14 +545,15 @@ class AuthProvider with ChangeNotifier {
       if (_userMemberships.isNotEmpty) {
         // Load saved preference if available
         final prefs = await SharedPreferences.getInstance();
-        final savedSchoolId = prefs.getString(_kActiveSchoolIdKey);
+        final rawSavedSchoolId = prefs.getString(_kActiveSchoolIdKey);
+        final savedSchoolId = AppHelper.parseSingleCleanSchoolId(rawSavedSchoolId);
         final savedRole = prefs.getString(_kActiveRoleKey);
 
         UserSchoolModel? activeMember;
         if (savedSchoolId != null && savedSchoolId.isNotEmpty) {
           try {
             activeMember = _userMemberships.firstWhere(
-              (m) => m.schoolId == savedSchoolId && (savedRole == null || m.role == savedRole),
+              (m) => m.schoolId == savedSchoolId && (savedRole == null || m.role.toLowerCase() == savedRole.toLowerCase()),
             );
           } catch (_) {
             activeMember = _userMemberships.firstWhere(
@@ -507,10 +562,18 @@ class AuthProvider with ChangeNotifier {
             );
           }
         } else {
-          activeMember = _userMemberships.first;
+          final hasAdminRole = _currentUser?.role.toLowerCase() == 'admin' || _currentUser?.role.toLowerCase() == 'superadmin';
+          if (hasAdminRole || _userMemberships.any((m) => m.role.toLowerCase() == 'admin')) {
+            activeMember = _userMemberships.firstWhere(
+              (m) => m.role.toLowerCase() == 'admin' || m.role.toLowerCase() == 'superadmin',
+              orElse: () => _userMemberships.first,
+            );
+          } else {
+            activeMember = _userMemberships.first;
+          }
         }
 
-        _activeSchoolId = activeMember.schoolId;
+        _activeSchoolId = AppHelper.parseSingleCleanSchoolId(activeMember.schoolId) ?? activeMember.schoolId;
         _activeRole = activeMember.role;
         _activeSchoolName = activeMember.schoolName;
 

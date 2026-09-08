@@ -1,4 +1,6 @@
+import '../core/utils/helper.dart';
 import 'journal_attachment_model.dart';
+
 
 class JournalModel {
   final String id;
@@ -44,47 +46,105 @@ class JournalModel {
   });
 
   factory JournalModel.fromJson(Map<String, dynamic> json) {
-    final attachmentUrl = json['attachment_url'] as String? ?? json['attachmentUrl'] as String?;
+    final attachmentUrl = json['attachment_url']?.toString() ?? json['attachmentUrl']?.toString();
     
     JournalAttachmentModel? attachment;
-    if (json['attachment'] != null) {
-      attachment = JournalAttachmentModel.fromJson(
-          json['attachment'] as Map<String, dynamic>);
+    if (json['attachment'] != null && json['attachment'] is Map) {
+      try {
+        attachment = JournalAttachmentModel.fromJson(
+            Map<String, dynamic>.from(json['attachment'] as Map));
+      } catch (_) {}
     } else if (attachmentUrl != null && attachmentUrl.isNotEmpty) {
-      final firstUrl = attachmentUrl.split(',').first.trim();
-      final uri = Uri.parse(firstUrl);
-      final fileName = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : 'attachment';
-      final fileType = fileName.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image';
-      attachment = JournalAttachmentModel(
-        id: 'ja_remote',
-        filePath: firstUrl,
-        fileType: fileType,
-        fileName: fileName,
-      );
+      try {
+        final firstUrl = attachmentUrl.split(',').first.trim();
+        final uri = Uri.parse(firstUrl);
+        final fileName = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : 'attachment';
+        final fileType = fileName.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image';
+        attachment = JournalAttachmentModel(
+          id: 'ja_remote',
+          filePath: firstUrl,
+          fileType: fileType,
+          fileName: fileName,
+        );
+      } catch (_) {}
+    }
+
+    DateTime parsedDate = DateTime.now();
+    final rawDate = json['date'];
+    if (rawDate is String) {
+      parsedDate = DateTime.tryParse(rawDate) ?? DateTime.now();
+    } else if (rawDate is DateTime) {
+      parsedDate = rawDate;
+    }
+
+    int teachingHour = 1;
+    final rawHour = json['teaching_hour'] ?? json['teachingHour'];
+    if (rawHour is int) {
+      teachingHour = rawHour;
+    } else if (rawHour != null) {
+      teachingHour = int.tryParse(rawHour.toString()) ?? 1;
+    }
+
+    int sickCount = 0;
+    final rawSick = json['sick_count'] ?? json['sickCount'];
+    if (rawSick is int) {
+      sickCount = rawSick;
+    } else if (rawSick != null) {
+      sickCount = int.tryParse(rawSick.toString()) ?? 0;
+    }
+
+    int permissionCount = 0;
+    final rawPerm = json['permission_count'] ?? json['permissionCount'];
+    if (rawPerm is int) {
+      permissionCount = rawPerm;
+    } else if (rawPerm != null) {
+      permissionCount = int.tryParse(rawPerm.toString()) ?? 0;
+    }
+
+    int alphaCount = 0;
+    final rawAlpha = json['alpha_count'] ?? json['alphaCount'];
+    if (rawAlpha is int) {
+      alphaCount = rawAlpha;
+    } else if (rawAlpha != null) {
+      alphaCount = int.tryParse(rawAlpha.toString()) ?? 0;
+    }
+
+    bool isSoftDeleted = false;
+    final rawSoftDel = json['is_soft_deleted'] ?? json['isSoftDeleted'];
+    if (rawSoftDel is bool) {
+      isSoftDeleted = rawSoftDel;
+    } else if (rawSoftDel != null) {
+      isSoftDeleted = rawSoftDel.toString().toLowerCase() == 'true' || rawSoftDel == 1;
+    }
+
+    DateTime? deletedAt;
+    final rawDelAt = json['deleted_at'] ?? json['deletedAt'];
+    if (rawDelAt is String) {
+      deletedAt = DateTime.tryParse(rawDelAt);
+    } else if (rawDelAt is DateTime) {
+      deletedAt = rawDelAt;
     }
 
     return JournalModel(
-      id: json['id'] as String,
-      scheduleId: json['schedule_id'] as String? ?? json['scheduleId'] as String,
-      date: json['date'] is String ? DateTime.parse(json['date'] as String) : json['date'] as DateTime,
-      teachingHour: json['teaching_hour'] as int? ?? json['teachingHour'] as int,
-      classId: json['class_id'] as String? ?? json['classId'] as String,
-      subjectId: json['subject_id'] as String? ?? json['subjectId'] as String,
-      teacherId: json['teacher_id'] as String? ?? json['teacherId'] as String,
-      material: json['material'] as String,
-      sickCount: json['sick_count'] as int? ?? json['sickCount'] as int? ?? 0,
-      permissionCount: json['permission_count'] as int? ?? json['permissionCount'] as int? ?? 0,
-      alphaCount: json['alpha_count'] as int? ?? json['alphaCount'] as int? ?? 0,
-      note: json['note'] as String?,
+      id: json['id']?.toString() ?? '',
+      scheduleId: json['schedule_id']?.toString() ?? json['scheduleId']?.toString() ?? '',
+      date: parsedDate,
+      teachingHour: teachingHour,
+      classId: json['class_id']?.toString() ?? json['classId']?.toString() ?? '',
+      subjectId: json['subject_id']?.toString() ?? json['subjectId']?.toString() ?? '',
+      teacherId: json['teacher_id']?.toString() ?? json['teacherId']?.toString() ?? '',
+      material: json['material']?.toString() ?? '',
+      sickCount: sickCount,
+      permissionCount: permissionCount,
+      alphaCount: alphaCount,
+      note: json['note']?.toString(),
       attachment: attachment,
-      status: json['status'] as String,
+      status: json['status']?.toString() ?? 'pending',
       attachmentUrl: attachmentUrl,
-      rejectionNote: json['rejection_note'] as String? ?? json['rejectionNote'] as String?,
-      isSoftDeleted: json['is_soft_deleted'] as bool? ?? json['isSoftDeleted'] as bool? ?? false,
-      deletedAt: json['deleted_at'] != null
-          ? DateTime.tryParse(json['deleted_at'] as String)
-          : null,
-      schoolId: json['school_id'] as String?,
+      rejectionNote: json['rejection_note']?.toString() ?? json['rejectionNote']?.toString(),
+      isSoftDeleted: isSoftDeleted,
+      deletedAt: deletedAt,
+      schoolId: AppHelper.parseSingleCleanSchoolId(json['school_id']),
     );
   }
 

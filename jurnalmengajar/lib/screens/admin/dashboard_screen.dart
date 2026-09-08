@@ -99,12 +99,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final schoolId = authProvider.activeSchoolId ?? 'a1111111-1111-1111-1111-111111111111';
 
+    debugPrint('----------------------------------------------------------------');
+    debugPrint('[RUNTIME_DEBUG:ADMIN_DASHBOARD] _refreshData called.');
+    debugPrint('[RUNTIME_DEBUG:ADMIN_DASHBOARD] Auth State: user=${authProvider.currentUser?.email}, role=${authProvider.activeRole}, schoolId=$schoolId, schoolName="${authProvider.activeSchoolName}"');
+
     await Future.wait([
       masterProvider.loadAllData(authProvider.activeSchoolId),
       scheduleProvider.loadAllSchedules(authProvider.activeSchoolId),
       journalProvider.loadAllJournals(authProvider.activeSchoolId),
       Provider.of<HolidayProvider>(context, listen: false).loadHolidays(schoolId),
     ]);
+
+    debugPrint('[RUNTIME_DEBUG:ADMIN_DASHBOARD] Data Refresh Finished.');
+    debugPrint('[RUNTIME_DEBUG:ADMIN_DASHBOARD] masterProvider.teachers: ${masterProvider.teachers.length}');
+    debugPrint('[RUNTIME_DEBUG:ADMIN_DASHBOARD] scheduleProvider.schedules: ${scheduleProvider.schedules.length}');
+    debugPrint('----------------------------------------------------------------');
 
     // Run Warning Letters Check & Issue if late
     if (mounted) {
@@ -136,24 +145,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
     final journalProvider = context.watch<JournalProvider>();
+    final schoolSchedules = scheduleProvider.schedules;
+    final schoolJournals = journalProvider.journals;
 
-    final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
-    final validSubjectIds = masterProvider.subjects.map((s) => s.id).toSet();
-    final schoolTeacherIds = masterProvider.teachers.map((t) => t.id).toSet();
-
-    final schoolSchedules = scheduleProvider.schedules.where((s) {
-      final matchClass = validClassIds.contains(s.classId);
-      final matchSubject = validSubjectIds.contains(s.subjectId);
-      final matchTeacher = schoolTeacherIds.isEmpty || schoolTeacherIds.contains(s.teacherId);
-      return matchClass && matchSubject && matchTeacher;
-    }).toList();
-
-    final schoolJournals = journalProvider.journals.where((j) {
-      final matchClass = validClassIds.contains(j.classId);
-      final matchSubject = validSubjectIds.contains(j.subjectId);
-      final matchTeacher = schoolTeacherIds.isEmpty || schoolTeacherIds.contains(j.teacherId);
-      return matchClass && matchSubject && matchTeacher;
-    }).toList();
+    debugPrint('[RUNTIME_DEBUG:ADMIN_DASHBOARD] build() triggered. SelectedTeacherId: $_selectedTeacherId, TotalSchedules: ${schoolSchedules.length}, TotalTeachers: ${masterProvider.teachers.length}');
 
     final filteredJournals = _selectedTeacherId == null
         ? schoolJournals
@@ -361,7 +356,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         FadeSlideIn(
                           delay: const Duration(milliseconds: 50),
                           child: _buildCalendarCard(
-                            scheduleProvider.schedules,
+                            schoolSchedules,
                             hasHighlightBefore,
                             hasHighlightAfter,
                           ),

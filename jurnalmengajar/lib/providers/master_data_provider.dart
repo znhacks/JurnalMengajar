@@ -70,18 +70,40 @@ class MasterDataProvider with ChangeNotifier {
     _currentSchoolId = schoolId;
     _isLoading = true;
     _errorMessage = null;
+    debugPrint('[RUNTIME_DEBUG:MASTER_DATA] loadAllData initiated with schoolId: "$schoolId"');
     notifyListeners();
     try {
       final results = await Future.wait([
-        periodRepository.getAll(schoolId).catchError((_) => <PeriodModel>[]),
-        subjectRepository.getAll(schoolId).catchError((_) => <SubjectModel>[]),
-        hourRepository.getAll(schoolId).catchError((_) => <HourModel>[]),
-        classRepository.getAll(schoolId).catchError((_) => <ClassModel>[]),
+        periodRepository.getAll(schoolId).catchError((err) {
+          debugPrint('[RUNTIME_DEBUG:MASTER_DATA] periods error: $err');
+          return <PeriodModel>[];
+        }),
+        subjectRepository.getAll(schoolId).catchError((err) {
+          debugPrint('[RUNTIME_DEBUG:MASTER_DATA] subjects error: $err');
+          return <SubjectModel>[];
+        }),
+        hourRepository.getAll(schoolId).catchError((err) {
+          debugPrint('[RUNTIME_DEBUG:MASTER_DATA] hours error: $err');
+          return <HourModel>[];
+        }),
+        classRepository.getAll(schoolId).catchError((err) {
+          debugPrint('[RUNTIME_DEBUG:MASTER_DATA] classes error: $err');
+          return <ClassModel>[];
+        }),
         (schoolId != null && schoolId.isNotEmpty)
-            ? teacherRepository.getAllForSchool(schoolId).catchError((_) => <TeacherModel>[])
-            : teacherRepository.getAll().catchError((_) => <TeacherModel>[]),
+            ? teacherRepository.getAllForSchool(schoolId).catchError((err) {
+                debugPrint('[RUNTIME_DEBUG:MASTER_DATA] teachers error: $err');
+                return <TeacherModel>[];
+              })
+            : teacherRepository.getAll().catchError((err) {
+                debugPrint('[RUNTIME_DEBUG:MASTER_DATA] teachers error: $err');
+                return <TeacherModel>[];
+              }),
         if (schoolRepository != null && _schools.isEmpty)
-          schoolRepository!.getAll().catchError((_) => <SchoolModel>[])
+          schoolRepository!.getAll().catchError((err) {
+            debugPrint('[RUNTIME_DEBUG:MASTER_DATA] schools error: $err');
+            return <SchoolModel>[];
+          })
         else
           Future.value(_schools),
       ]);
@@ -91,8 +113,11 @@ class MasterDataProvider with ChangeNotifier {
       _classes = results[3] as List<ClassModel>;
       _teachers = results[4] as List<TeacherModel>;
       _schools = results[5] as List<SchoolModel>;
+
+      debugPrint('[RUNTIME_DEBUG:MASTER_DATA] Loaded data counts -> Periods: ${_periods.length}, Subjects: ${_subjects.length}, Hours: ${_hours.length}, Classes: ${_classes.length}, Teachers: ${_teachers.length}, Schools: ${_schools.length}');
     } catch (e) {
       _errorMessage = e.toString();
+      debugPrint('[RUNTIME_DEBUG:MASTER_DATA] ERROR in loadAllData: $e');
     } finally {
       _isLoading = false;
       notifyListeners();

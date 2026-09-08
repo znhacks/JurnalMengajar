@@ -18,14 +18,35 @@ class TeacherModel {
   });
 
   factory TeacherModel.fromJson(Map<String, dynamic> json) {
+    String name = '';
+    final rawFullName = json['full_name']?.toString().trim();
+    final rawName = json['name']?.toString().trim();
+    if (rawFullName != null && rawFullName.isNotEmpty) {
+      name = rawFullName;
+    } else if (rawName != null && rawName.isNotEmpty) {
+      name = rawName;
+    } else {
+      final rawEmail = json['email']?.toString().trim();
+      name = (rawEmail != null && rawEmail.isNotEmpty) ? rawEmail : 'Guru';
+    }
+
+    String position = 'Guru Bidang Studi';
+    final rawPos = json['position']?.toString().trim();
+    if (rawPos != null && rawPos.isNotEmpty) {
+      position = rawPos;
+    }
+
     return TeacherModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      position: json['position'] as String,
-      address: json['address'] as String,
-      phoneNumber: json['phoneNumber'] as String,
-      email: json['email'] as String,
-      photoUrl: json['photoUrl'] as String?,
+      id: json['id']?.toString() ?? '',
+      name: name,
+      position: position,
+      address: json['address']?.toString() ?? '',
+      phoneNumber: json['phoneNumber']?.toString() ??
+          json['phone']?.toString() ??
+          json['phone_number']?.toString() ??
+          '',
+      email: json['email']?.toString() ?? '',
+      photoUrl: json['photoUrl']?.toString() ?? json['photo_url']?.toString(),
     );
   }
 
@@ -61,3 +82,4 @@ class TeacherModel {
     );
   }
 }
+

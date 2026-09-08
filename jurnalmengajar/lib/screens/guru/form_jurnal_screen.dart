@@ -413,6 +413,10 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           context,
           listen: false,
         );
+        final authProvider = Provider.of<AuthProvider>(
+          context,
+          listen: false,
+        );
         _formKey.currentState!.save();
 
         // Build first attachment model (for legacy compat)
@@ -453,6 +457,8 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           combinedNote = generalNote.isEmpty ? null : generalNote;
         }
 
+        final effectiveSchoolId = authProvider.activeSchoolId ?? schedule.schoolId ?? _existingJournal?.schoolId;
+
         if (_isEditing) {
           final updatedJournal = JournalModel(
             id: _existingJournal!.id,
@@ -473,6 +479,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 ? _existingImageUrls.join(',')
                 : null,
             rejectionNote: null, // Clear rejection note when revised!
+            schoolId: effectiveSchoolId,
           );
 
           final success = await journalProvider.updateJournal(
@@ -545,6 +552,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             note: combinedNote,
             attachment: attachment,
             status: 'pending',
+            schoolId: effectiveSchoolId,
           );
 
           final success = await journalProvider.createJournal(

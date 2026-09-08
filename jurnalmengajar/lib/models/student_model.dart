@@ -1,3 +1,5 @@
+import '../core/utils/helper.dart';
+
 class StudentModel {
   final String id;
   final String classId;
@@ -19,15 +21,16 @@ class StudentModel {
 
   factory StudentModel.fromJson(Map<String, dynamic> json) {
     return StudentModel(
-      id: json['id'] as String,
-      classId: json['class_id'] as String? ?? json['classId'] as String,
-      name: json['name'] as String,
-      nis: json['nis'] as String?,
-      gender: json['gender'] as String?,
-      parentPhoneNumber: json['parent_phone_number'] as String? ?? json['parent_phone'] as String? ?? json['parentPhoneNumber'] as String?,
-      schoolId: json['school_id'] as String?,
+      id: json['id']?.toString() ?? '',
+      classId: json['class_id']?.toString() ?? json['classId']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      nis: json['nis']?.toString(),
+      gender: json['gender']?.toString(),
+      parentPhoneNumber: json['parent_phone_number']?.toString() ?? json['parent_phone']?.toString() ?? json['parentPhoneNumber']?.toString(),
+      schoolId: AppHelper.parseSingleCleanSchoolId(json['school_id']),
     );
   }
+
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{

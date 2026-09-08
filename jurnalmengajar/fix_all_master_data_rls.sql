@@ -155,7 +155,67 @@ CREATE POLICY "Allow insert user_schools for all" ON public.user_schools FOR INS
 CREATE POLICY "Allow update user_schools for all" ON public.user_schools FOR UPDATE TO public USING (true) WITH CHECK (true);
 CREATE POLICY "Allow delete user_schools for all" ON public.user_schools FOR DELETE TO public USING (true);
 
--- 12. TABEL: public.tenants & public.subscriptions (JM-PANEL INTEGRATION)
+-- 12. TABEL: public.journals (JURNAL MENGAJAR GURU & ADMIN)
+ALTER TABLE public.journals ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow select journals for owner and admin" ON public.journals;
+DROP POLICY IF EXISTS "Allow insert journals for owner and admin" ON public.journals;
+DROP POLICY IF EXISTS "Allow update journals for owner and admin" ON public.journals;
+DROP POLICY IF EXISTS "Allow delete journals for owner and admin" ON public.journals;
+DROP POLICY IF EXISTS "Allow select journals for authenticated users" ON public.journals;
+DROP POLICY IF EXISTS "Allow insert journals for authenticated users" ON public.journals;
+DROP POLICY IF EXISTS "Allow update journals for authenticated users" ON public.journals;
+DROP POLICY IF EXISTS "Allow delete journals for authenticated users" ON public.journals;
+
+CREATE POLICY "Allow select journals for authenticated users" ON public.journals FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Allow insert journals for authenticated users" ON public.journals FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Allow update journals for authenticated users" ON public.journals FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow delete journals for authenticated users" ON public.journals FOR DELETE TO authenticated USING (true);
+
+-- 13. TABEL: public.warning_letters (SURAT PERINGATAN KETERLAMBATAN)
+ALTER TABLE public.warning_letters ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow select warning_letters for authenticated users" ON public.warning_letters;
+DROP POLICY IF EXISTS "Allow insert warning_letters for authenticated users" ON public.warning_letters;
+DROP POLICY IF EXISTS "Allow update warning_letters for authenticated users" ON public.warning_letters;
+DROP POLICY IF EXISTS "Allow delete warning_letters for authenticated users" ON public.warning_letters;
+
+CREATE POLICY "Allow select warning_letters for authenticated users" ON public.warning_letters FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Allow insert warning_letters for authenticated users" ON public.warning_letters FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Allow update warning_letters for authenticated users" ON public.warning_letters FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow delete warning_letters for authenticated users" ON public.warning_letters FOR DELETE TO authenticated USING (true);
+
+-- 14. TABEL: public.school_memberships (MULTI-TENANT ROLE MEMBERSHIPS)
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'school_memberships') THEN
+    ALTER TABLE public.school_memberships ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS "Allow select school_memberships for all" ON public.school_memberships;
+    DROP POLICY IF EXISTS "Allow insert school_memberships for all" ON public.school_memberships;
+    DROP POLICY IF EXISTS "Allow update school_memberships for all" ON public.school_memberships;
+    DROP POLICY IF EXISTS "Allow delete school_memberships for all" ON public.school_memberships;
+
+    CREATE POLICY "Allow select school_memberships for all" ON public.school_memberships FOR SELECT TO public USING (true);
+    CREATE POLICY "Allow insert school_memberships for all" ON public.school_memberships FOR INSERT TO public WITH CHECK (true);
+    CREATE POLICY "Allow update school_memberships for all" ON public.school_memberships FOR UPDATE TO public USING (true) WITH CHECK (true);
+    CREATE POLICY "Allow delete school_memberships for all" ON public.school_memberships FOR DELETE TO public USING (true);
+  END IF;
+END $$;
+
+-- 15. TABEL: public.users (PROFIL PENGGUNA)
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow select users for authenticated users" ON public.users;
+DROP POLICY IF EXISTS "Allow insert users for owners" ON public.users;
+DROP POLICY IF EXISTS "Allow update users for owners and admin" ON public.users;
+DROP POLICY IF EXISTS "Allow delete users for owners and admin" ON public.users;
+DROP POLICY IF EXISTS "Allow select users for all" ON public.users;
+DROP POLICY IF EXISTS "Allow insert users for all" ON public.users;
+DROP POLICY IF EXISTS "Allow update users for all" ON public.users;
+
+CREATE POLICY "Allow select users for all" ON public.users FOR SELECT TO public USING (true);
+CREATE POLICY "Allow insert users for all" ON public.users FOR INSERT TO public WITH CHECK (true);
+CREATE POLICY "Allow update users for all" ON public.users FOR UPDATE TO public USING (true) WITH CHECK (true);
+CREATE POLICY "Allow delete users for authenticated users" ON public.users FOR DELETE TO authenticated USING (true);
+
+-- 16. TABEL: public.tenants & public.subscriptions (JM-PANEL INTEGRATION)
 DO $$
 BEGIN
   IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'tenants') THEN
@@ -168,5 +228,33 @@ BEGIN
     ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
     DROP POLICY IF EXISTS "Allow select subscriptions for all" ON public.subscriptions;
     CREATE POLICY "Allow select subscriptions for all" ON public.subscriptions FOR SELECT TO public USING (true);
+  END IF;
+END $$;
+
+-- 17. SINKRONISASI & BACKFILL DATA LEGACY (Mengisi school_id yang kosong agar saling terhubung)
+DO $$
+DECLARE
+  first_school_id uuid;
+BEGIN
+  SELECT id INTO first_school_id FROM public.schools ORDER BY created_at ASC LIMIT 1;
+  IF first_school_id IS NOT NULL THEN
+    -- Backfill classes
+    UPDATE public.classes SET school_id = first_school_id WHERE school_id IS NULL;
+    -- Backfill subjects
+    UPDATE public.subjects SET school_id = first_school_id WHERE school_id IS NULL;
+    -- Backfill lesson_hours
+    UPDATE public.lesson_hours SET school_id = first_school_id WHERE school_id IS NULL;
+    -- Backfill periods
+    UPDATE public.periods SET school_id = first_school_id WHERE school_id IS NULL;
+    -- Backfill students
+    UPDATE public.students SET school_id = first_school_id WHERE school_id IS NULL;
+    -- Backfill schedules
+    UPDATE public.schedules SET school_id = first_school_id WHERE school_id IS NULL;
+    -- Backfill journals
+    UPDATE public.journals SET school_id = first_school_id WHERE school_id IS NULL;
+    -- Backfill warning_letters
+    UPDATE public.warning_letters SET school_id = first_school_id WHERE school_id IS NULL;
+    -- Backfill school_holidays
+    UPDATE public.school_holidays SET school_id = first_school_id WHERE school_id IS NULL;
   END IF;
 END $$;

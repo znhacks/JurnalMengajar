@@ -8,9 +8,17 @@ class SettingsModel {
   });
 
   factory SettingsModel.fromJson(Map<String, dynamic> json) {
+    int maxDays = 3;
+    final rawDays = json['max_journal_input_days'] ?? json['maxJournalInputDays'];
+    if (rawDays is int) {
+      maxDays = rawDays;
+    } else if (rawDays != null) {
+      maxDays = int.tryParse(rawDays.toString()) ?? 3;
+    }
+
     return SettingsModel(
-      id: json['id'] as String,
-      maxJournalInputDays: json['max_journal_input_days'] as int? ?? json['maxJournalInputDays'] as int,
+      id: json['id']?.toString() ?? '',
+      maxJournalInputDays: maxDays,
     );
   }
 

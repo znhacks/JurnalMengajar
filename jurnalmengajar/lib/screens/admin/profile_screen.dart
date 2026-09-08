@@ -699,16 +699,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
               // Quick Stats Section (New Hub Widget)
               Builder(
                 builder: (context) {
-                  final validClassIds = masterProvider.classes.map((c) => c.id).toSet();
-                  final validSubjectIds = masterProvider.subjects.map((s) => s.id).toSet();
-                  final schoolTeacherIds = masterProvider.teachers.map((t) => t.id).toSet();
-
-                  final pendingCount = journalProvider.journals.where((j) {
-                    final matchClass = validClassIds.contains(j.classId);
-                    final matchSubject = validSubjectIds.contains(j.subjectId);
-                    final matchTeacher = schoolTeacherIds.isEmpty || schoolTeacherIds.contains(j.teacherId);
-                    return j.status == 'pending' && matchClass && matchSubject && matchTeacher;
-                  }).length;
+                  final pendingCount = journalProvider.journals.where((j) => j.status == 'pending').length;
 
                   return Row(
                     children: [

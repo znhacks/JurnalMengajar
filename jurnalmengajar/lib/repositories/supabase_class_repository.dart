@@ -13,15 +13,22 @@ class SupabaseClassRepository implements ClassRepository {
   @override
   Future<List<ClassModel>> getAll([String? schoolId]) async {
     try {
-      var query = _supabase.from('classes').select();
-      if (schoolId != null && schoolId.isNotEmpty) {
-        query = query.eq('school_id', schoolId);
-      }
-      final response = await query.order('name', ascending: true);
+      final response = await _supabase
+          .from('classes')
+          .select()
+          .order('name', ascending: true);
 
-      return (response as List)
-          .map((json) => ClassModel.fromJson(json))
-          .toList();
+      final List<ClassModel> list = [];
+      for (final item in (response as List)) {
+        try {
+          if (item is Map<String, dynamic>) {
+            list.add(ClassModel.fromJson(item));
+          } else if (item is Map) {
+            list.add(ClassModel.fromJson(Map<String, dynamic>.from(item)));
+          }
+        } catch (_) {}
+      }
+      return list;
     } catch (e) {
       return [];
     }

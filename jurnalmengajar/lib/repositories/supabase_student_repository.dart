@@ -19,9 +19,17 @@ class SupabaseStudentRepository implements StudentRepository {
           .eq('class_id', classId)
           .order('name', ascending: true);
 
-      return (response as List)
-          .map((json) => StudentModel.fromJson(json))
-          .toList();
+      final List<StudentModel> list = [];
+      for (final item in (response as List)) {
+        try {
+          if (item is Map<String, dynamic>) {
+            list.add(StudentModel.fromJson(item));
+          } else if (item is Map) {
+            list.add(StudentModel.fromJson(Map<String, dynamic>.from(item)));
+          }
+        } catch (_) {}
+      }
+      return list;
     } catch (e) {
       throw Exception('Gagal memuat siswa: $e');
     }
