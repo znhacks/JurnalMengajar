@@ -2,8 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/teacher_model.dart';
 import '../core/utils/helper.dart';
+import '../core/services/cache_service.dart';
+import '../core/utils/network_resilience.dart';
 import 'teacher_repository.dart';
-
 
 class SupabaseTeacherRepository implements TeacherRepository {
   final SupabaseClient _supabase;
@@ -36,12 +37,30 @@ class SupabaseTeacherRepository implements TeacherRepository {
 
   @override
   Future<List<TeacherModel>> getAllForSchool(String schoolId) async {
-    try {
-      debugPrint('================================================================');
-      debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Fetching teachers for schoolId: "$schoolId"...');
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
+    final cacheKey = 'teachers_$cleanSchoolId';
 
-      final Map<String, TeacherModel> teachersMap = {};
-      final Set<String> linkedUserIds = {};
+    Future<List<TeacherModel>> loadFromCache() async {
+      try {
+        final cached = await CacheService().loadList(cacheKey);
+        if (cached != null && cached.isNotEmpty) {
+          debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Loaded ${cached.length} teachers from cache for schoolId: $cleanSchoolId');
+          return cached.map((e) => TeacherModel.fromJson(e)).toList();
+        }
+      } catch (_) {}
+      return <TeacherModel>[];
+    }
+
+    try {
+      return await NetworkResilience.execute<List<TeacherModel>>(
+        operationName: 'TeacherRepository.getAllForSchool',
+        fallback: loadFromCache,
+        networkTask: () async {
+          debugPrint('================================================================');
+          debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Fetching teachers for schoolId: "$schoolId" from network...');
+
+          final Map<String, TeacherModel> teachersMap = {};
+          final Set<String> linkedUserIds = {};
 
       if (schoolId.isNotEmpty) {
         // 1. Fetch user IDs linked in user_schools for this school
@@ -185,17 +204,22 @@ class SupabaseTeacherRepository implements TeacherRepository {
         }
       } catch (_) {}
 
-      final teachers = teachersMap.values.toList();
-      teachers.sort((a, b) => a.name.compareTo(b.name));
-      debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] FINAL TEACHER COUNT RETURNED: ${teachers.length}');
-      for (final t in teachers) {
-        debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] -> Teacher: id=${t.id}, name="${t.name}", position="${t.position}", email="${t.email}"');
-      }
-      debugPrint('================================================================');
-      return teachers;
+          final teachers = teachersMap.values.toList();
+          teachers.sort((a, b) => a.name.compareTo(b.name));
+          debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] FINAL TEACHER COUNT RETURNED: ${teachers.length}');
+
+          // Simpan ke cache lokal
+          if (teachers.isNotEmpty) {
+            CacheService().save(cacheKey, teachers.map((t) => t.toJson()).toList());
+          }
+
+          debugPrint('================================================================');
+          return teachers;
+        },
+      );
     } catch (e) {
-      debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] ERROR in getAllForSchool: $e');
-      return [];
+      debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] ERROR in getAllForSchool, falling back to cache: $e');
+      return await loadFromCache();
     }
   }
 

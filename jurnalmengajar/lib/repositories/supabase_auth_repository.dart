@@ -5,6 +5,8 @@ import '../models/user_model.dart';
 import 'auth_repository.dart';
 import '../core/utils/image_compressor.dart';
 import '../core/utils/helper.dart';
+import '../core/services/cache_service.dart';
+import '../core/utils/network_resilience.dart';
 
 
 class SupabaseAuthRepository implements AuthRepository {
@@ -20,57 +22,83 @@ class SupabaseAuthRepository implements AuthRepository {
 
       final userId = session.user.id;
 
-      // Try fetching existing profile first
-      var response = await _supabase
-          .from('users')
-          .select()
-          .eq('id', userId)
-          .maybeSingle();
+      return await NetworkResilience.execute<UserModel?>(
+        operationName: 'getCurrentUser',
+        networkTask: () async {
+          var response = await _supabase
+              .from('users')
+              .select()
+              .eq('id', userId)
+              .maybeSingle();
 
-      if (response == null) {
-        // No profile yet — create one (Google OAuth first-time login).
-        // Use upsert with ignoreDuplicates so that even if two concurrent
-        // calls race here, only one insert wins and no exception is thrown.
-        final email = session.user.email ?? '';
-        final fullName =
-            session.user.userMetadata?['full_name'] as String? ??
-            session.user.userMetadata?['name'] as String? ??
-            email.split('@')[0];
-        final photoUrl = session.user.userMetadata?['avatar_url'] as String?;
-        final phone =
-            session.user.phone ??
-            session.user.userMetadata?['phone'] as String?;
+          if (response == null) {
+            final email = session.user.email ?? '';
+            final fullName =
+                session.user.userMetadata?['full_name'] as String? ??
+                session.user.userMetadata?['name'] as String? ??
+                email.split('@')[0];
+            final photoUrl = session.user.userMetadata?['avatar_url'] as String?;
+            final phone =
+                session.user.phone ??
+                session.user.userMetadata?['phone'] as String?;
 
-        final newUser = UserModel(
-          id: userId,
-          email: email,
-          fullName: fullName,
-          role: 'pending_guru', // All Google sign-ins default to pending_guru
-          photoUrl: photoUrl,
-          phoneNumber: phone,
-        );
+            final newUser = UserModel(
+              id: userId,
+              email: email,
+              fullName: fullName,
+              role: 'pending_guru',
+              photoUrl: photoUrl,
+              phoneNumber: phone,
+            );
 
-        await _supabase
-            .from('users')
-            .upsert(newUser.toJson(), onConflict: 'id', ignoreDuplicates: true);
+            await _supabase
+                .from('users')
+                .upsert(newUser.toJson(), onConflict: 'id', ignoreDuplicates: true);
 
-        // Always fetch the stored record — in case another concurrent call
-        // already inserted (and possibly with different data).
-        response = await _supabase
-            .from('users')
-            .select()
-            .eq('id', userId)
-            .maybeSingle();
+            response = await _supabase
+                .from('users')
+                .select()
+                .eq('id', userId)
+                .maybeSingle();
 
-        // If still null for some reason, return the locally-built model
-        if (response == null) return newUser;
-      }
+            if (response == null) {
+              await CacheService().save('user_profile_$userId', newUser.toJson());
+              return newUser;
+            }
+          }
 
-      return UserModel.fromJson(response);
+          final user = UserModel.fromJson(response);
+          await CacheService().save('user_profile_$userId', user.toJson());
+          return user;
+        },
+        fallback: () async {
+          final cached = await CacheService().loadMap('user_profile_$userId');
+          if (cached != null) {
+            debugPrint('[SupabaseAuthRepository] Loaded currentUser from cache for user: $userId');
+            return UserModel.fromJson(cached);
+          }
+          final email = session.user.email ?? '';
+          final fullName = session.user.userMetadata?['full_name'] as String? ??
+              session.user.userMetadata?['name'] as String? ??
+              email.split('@')[0];
+          return UserModel(
+            id: userId,
+            email: email,
+            fullName: fullName,
+            role: 'guru',
+          );
+        },
+        timeout: NetworkResilience.defaultQueryTimeout,
+      );
     } catch (e) {
-      // Log but do not rethrow — returning null causes login screen to show.
-      // We swallow so _initialized is still set to true and the router can decide.
       debugPrint('Error getting current user: $e');
+      final session = _supabase.auth.currentSession;
+      if (session != null) {
+        final cached = await CacheService().loadMap('user_profile_${session.user.id}');
+        if (cached != null) {
+          return UserModel.fromJson(cached);
+        }
+      }
       return null;
     }
   }
@@ -92,7 +120,9 @@ class SupabaseAuthRepository implements AuthRepository {
           .eq('id', userId)
           .single();
 
-      return UserModel.fromJson(userResponse);
+      final user = UserModel.fromJson(userResponse);
+      await CacheService().save('user_profile_$userId', user.toJson());
+      return user;
     } on AuthException catch (e) {
       throw Exception(e.message);
     } catch (e) {
@@ -457,7 +487,9 @@ class SupabaseAuthRepository implements AuthRepository {
           .eq('id', user.id)
           .single();
 
-      return UserModel.fromJson(response);
+      final updated = UserModel.fromJson(response);
+      await CacheService().save('user_profile_${user.id}', updated.toJson());
+      return updated;
     } catch (e) {
       throw Exception('Gagal memperbarui profil: $e');
     }

@@ -2,6 +2,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/period_model.dart';
 import '../core/utils/helper.dart';
+import '../core/services/cache_service.dart';
+import '../core/utils/network_resilience.dart';
 import 'period_repository.dart';
 
 const _uuid = Uuid();
@@ -13,27 +15,48 @@ class SupabasePeriodRepository implements PeriodRepository {
 
   @override
   Future<List<PeriodModel>> getAll([String? schoolId]) async {
-    try {
-      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
-      var query = _supabase.from('periods').select();
-      if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
-        query = query.eq('school_id', cleanSchoolId);
-      }
-      final response = await query.order('name', ascending: true);
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+    final cacheKey = 'periods_${cleanSchoolId ?? "all"}';
 
-      final List<PeriodModel> list = [];
-      for (final item in (response as List)) {
-        try {
-          if (item is Map<String, dynamic>) {
-            list.add(PeriodModel.fromJson(item));
-          } else if (item is Map) {
-            list.add(PeriodModel.fromJson(Map<String, dynamic>.from(item)));
+    Future<List<PeriodModel>> loadFromCache() async {
+      try {
+        final cached = await CacheService().loadList(cacheKey);
+        if (cached != null && cached.isNotEmpty) {
+          return cached.map((e) => PeriodModel.fromJson(e)).toList();
+        }
+      } catch (_) {}
+      return <PeriodModel>[];
+    }
+
+    try {
+      return await NetworkResilience.execute<List<PeriodModel>>(
+        operationName: 'PeriodRepository.getAll',
+        fallback: loadFromCache,
+        networkTask: () async {
+          var query = _supabase.from('periods').select();
+          if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+            query = query.eq('school_id', cleanSchoolId);
           }
-        } catch (_) {}
-      }
-      return list;
+          final response = await query.order('name', ascending: true);
+
+          final List<PeriodModel> list = [];
+          final List<Map<String, dynamic>> cacheable = [];
+          for (final item in (response as List)) {
+            try {
+              final map = item is Map<String, dynamic> ? item : Map<String, dynamic>.from(item as Map);
+              list.add(PeriodModel.fromJson(map));
+              cacheable.add(map);
+            } catch (_) {}
+          }
+
+          if (cacheable.isNotEmpty) {
+            CacheService().save(cacheKey, cacheable);
+          }
+          return list;
+        },
+      );
     } catch (e) {
-      return [];
+      return await loadFromCache();
     }
   }
 

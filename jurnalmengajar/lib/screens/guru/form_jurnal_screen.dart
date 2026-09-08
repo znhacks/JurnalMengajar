@@ -19,6 +19,7 @@ import '../../models/hour_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/utils/helper.dart';
 import '../../services/nobox_wa_service.dart';
+import '../../core/services/cache_service.dart';
 
 class FormJurnalScreen extends StatefulWidget {
   final String scheduleId;
@@ -65,6 +66,12 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
   void initState() {
     super.initState();
     _selectedScheduleId = widget.scheduleId.isNotEmpty ? widget.scheduleId : null;
+
+    _materialController.addListener(_autoSaveDraft);
+    _noteController.addListener(_autoSaveDraft);
+    _sickNamesController.addListener(_autoSaveDraft);
+    _permissionNamesController.addListener(_autoSaveDraft);
+    _alphaNamesController.addListener(_autoSaveDraft);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final scheduleProvider = Provider.of<ScheduleProvider>(
@@ -287,18 +294,64 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             }
           });
         } else {
-          setState(() {
-            for (final s in masterProvider.students) {
-              _studentAttendance[s.id] = 'H';
-            }
-          });
+          // Restore saved draft if user previously typed on weak signal
+          final draft = await CacheService().loadMap('draft_journal_$activeId');
+          if (draft != null && mounted) {
+            setState(() {
+              _materialController.text = draft['material']?.toString() ?? '';
+              _noteController.text = draft['note']?.toString() ?? '';
+              _sickNamesController.text = draft['sickNames']?.toString() ?? '';
+              _permissionNamesController.text = draft['permissionNames']?.toString() ?? '';
+              _alphaNamesController.text = draft['alphaNames']?.toString() ?? '';
+              _sickCount = draft['sickCount'] as int? ?? 0;
+              _permissionCount = draft['permissionCount'] as int? ?? 0;
+              _alphaCount = draft['alphaCount'] as int? ?? 0;
+              if (draft['studentAttendance'] != null && draft['studentAttendance'] is Map) {
+                final rawAtt = draft['studentAttendance'] as Map;
+                rawAtt.forEach((k, v) {
+                  _studentAttendance[k.toString()] = v.toString();
+                });
+              }
+              for (final s in masterProvider.students) {
+                _studentAttendance.putIfAbsent(s.id, () => 'H');
+              }
+            });
+          } else {
+            setState(() {
+              for (final s in masterProvider.students) {
+                _studentAttendance[s.id] = 'H';
+              }
+            });
+          }
         }
       }
     });
   }
 
+  void _autoSaveDraft() {
+    final activeId = _selectedScheduleId ?? widget.scheduleId;
+    if (activeId.isEmpty || _isEditing) return;
+
+    CacheService().save('draft_journal_$activeId', {
+      'material': _materialController.text,
+      'note': _noteController.text,
+      'sickNames': _sickNamesController.text,
+      'permissionNames': _permissionNamesController.text,
+      'alphaNames': _alphaNamesController.text,
+      'sickCount': _sickCount,
+      'permissionCount': _permissionCount,
+      'alphaCount': _alphaCount,
+      'studentAttendance': _studentAttendance,
+    });
+  }
+
   @override
   void dispose() {
+    _materialController.removeListener(_autoSaveDraft);
+    _noteController.removeListener(_autoSaveDraft);
+    _sickNamesController.removeListener(_autoSaveDraft);
+    _permissionNamesController.removeListener(_autoSaveDraft);
+    _alphaNamesController.removeListener(_autoSaveDraft);
     _materialController.dispose();
     _noteController.dispose();
     _sickNamesController.dispose();
@@ -604,6 +657,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 'Jurnal berhasil dikirim untuk verifikasi!',
               );
             }
+            CacheService().remove('draft_journal_${schedule.id}');
             context.pop();
           } else if (mounted) {
             AppHelper.showSnackBar(

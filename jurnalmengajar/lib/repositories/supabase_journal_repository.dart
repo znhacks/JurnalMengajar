@@ -6,7 +6,8 @@ import 'journal_repository.dart';
 import '../core/constants/supabase_constants.dart';
 import '../core/utils/image_compressor.dart';
 import '../core/utils/helper.dart';
-
+import '../core/services/cache_service.dart';
+import '../core/utils/network_resilience.dart';
 
 const _uuid = Uuid();
 
@@ -17,77 +18,97 @@ class SupabaseJournalRepository implements JournalRepository {
 
   @override
   Future<List<JournalModel>> getAll([String? schoolId]) async {
-    try {
-      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
-      var query = _supabase
-          .from(SupabaseConstants.tableJournals)
-          .select()
-          .eq('is_soft_deleted', false);
-      if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
-        query = query.eq('school_id', cleanSchoolId);
-      }
-      final response = await query.order(SupabaseConstants.fieldDate, ascending: false);
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+    final cacheKey = 'journals_${cleanSchoolId ?? "all"}';
 
-      final List<JournalModel> journals = [];
-      for (final item in (response as List)) {
-        try {
-          if (item is Map<String, dynamic>) {
-            journals.add(JournalModel.fromJson(item));
-          } else if (item is Map) {
-            journals.add(JournalModel.fromJson(Map<String, dynamic>.from(item)));
-          }
-        } catch (_) {}
-      }
-
-      // Background self-heal: Ensure all journals have the active school_id if missing
-      if (schoolId != null && schoolId.isNotEmpty) {
-        final backfillIds = journals
-            .where((j) => j.schoolId == null || j.schoolId!.isEmpty)
-            .map((j) => j.id)
-            .toList();
-
-        if (backfillIds.isNotEmpty) {
-          try {
-            _supabase
-                .from(SupabaseConstants.tableJournals)
-                .update({'school_id': schoolId})
-                .inFilter('id', backfillIds)
-                .then((_) {})
-                .catchError((_) {});
-          } catch (_) {}
+    Future<List<JournalModel>> loadFromCache() async {
+      try {
+        final cached = await CacheService().loadList(cacheKey);
+        if (cached != null && cached.isNotEmpty) {
+          debugPrint('[RUNTIME_DEBUG:JOURNAL_REPO] Loaded ${cached.length} journals from cache.');
+          return cached.map((item) => JournalModel.fromJson(item)).toList();
         }
-      }
+      } catch (_) {}
+      return <JournalModel>[];
+    }
 
-      return journals;
+    try {
+      return await NetworkResilience.execute<List<JournalModel>>(
+        operationName: 'JournalRepository.getAll',
+        fallback: loadFromCache,
+        networkTask: () async {
+          var query = _supabase
+              .from(SupabaseConstants.tableJournals)
+              .select()
+              .eq('is_soft_deleted', false);
+          if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+            query = query.eq('school_id', cleanSchoolId);
+          }
+          final response = await query.order(SupabaseConstants.fieldDate, ascending: false);
+
+          final List<JournalModel> journals = [];
+          final List<Map<String, dynamic>> cacheable = [];
+          for (final item in (response as List)) {
+            try {
+              final map = item is Map<String, dynamic> ? item : Map<String, dynamic>.from(item as Map);
+              journals.add(JournalModel.fromJson(map));
+              cacheable.add(map);
+            } catch (_) {}
+          }
+
+          CacheService().save(cacheKey, cacheable);
+          return journals;
+        },
+      );
     } catch (e) {
-      throw Exception('Gagal memuat jurnal: $e');
+      debugPrint('[RUNTIME_DEBUG:JOURNAL_REPO] Weak signal fallback for getAll journals: $e');
+      return await loadFromCache();
     }
   }
 
   @override
   Future<List<JournalModel>> getJournalsForTeacher(String teacherId) async {
+    final cacheKey = 'teacher_journals_$teacherId';
+
+    Future<List<JournalModel>> loadFromCache() async {
+      try {
+        final cached = await CacheService().loadList(cacheKey);
+        if (cached != null && cached.isNotEmpty) {
+          return cached.map((item) => JournalModel.fromJson(item)).toList();
+        }
+      } catch (_) {}
+      return <JournalModel>[];
+    }
+
     try {
-      final response = await _supabase
-          .from(SupabaseConstants.tableJournals)
-          .select()
-          .eq(SupabaseConstants.fieldTeacherId, teacherId)
-          .eq('is_soft_deleted', false)
-          .order(SupabaseConstants.fieldDate, ascending: false);
+      return await NetworkResilience.execute<List<JournalModel>>(
+        operationName: 'JournalRepository.getJournalsForTeacher',
+        fallback: loadFromCache,
+        networkTask: () async {
+          final response = await _supabase
+              .from(SupabaseConstants.tableJournals)
+              .select()
+              .eq(SupabaseConstants.fieldTeacherId, teacherId)
+              .eq('is_soft_deleted', false)
+              .order(SupabaseConstants.fieldDate, ascending: false);
 
-      final List<JournalModel> journals = [];
-      for (final item in (response as List)) {
-        try {
-          if (item is Map<String, dynamic>) {
-            journals.add(JournalModel.fromJson(item));
-          } else if (item is Map) {
-            journals.add(JournalModel.fromJson(Map<String, dynamic>.from(item)));
+          final List<JournalModel> journals = [];
+          final List<Map<String, dynamic>> cacheable = [];
+          for (final item in (response as List)) {
+            try {
+              final map = item is Map<String, dynamic> ? item : Map<String, dynamic>.from(item as Map);
+              journals.add(JournalModel.fromJson(map));
+              cacheable.add(map);
+            } catch (_) {}
           }
-        } catch (_) {}
-      }
 
-      return journals;
+          CacheService().save(cacheKey, cacheable);
+          return journals;
+        },
+      );
     } catch (e) {
-      throw Exception('Gagal memuat jurnal guru: $e');
+      debugPrint('[RUNTIME_DEBUG:JOURNAL_REPO] Weak signal fallback for teacher journals: $e');
+      return await loadFromCache();
     }
   }
 

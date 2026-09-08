@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import '../models/journal_model.dart';
 import '../repositories/journal_repository.dart';
 import '../repositories/supabase_journal_repository.dart';
+import '../core/services/cache_service.dart';
 
 class JournalProvider with ChangeNotifier {
   final JournalRepository journalRepository;
@@ -22,11 +23,34 @@ class JournalProvider with ChangeNotifier {
 
   Future<void> loadAllJournals([String? schoolId]) async {
     _currentSchoolId = schoolId ?? _currentSchoolId;
-    _isLoading = true;
     _errorMessage = null;
-    notifyListeners();
+
+    final sKey = _currentSchoolId ?? 'default';
+    if (_journals.isEmpty) {
+      try {
+        final cached = await CacheService().loadList('journals_$sKey');
+        if (cached != null && cached.isNotEmpty && _journals.isEmpty) {
+          _journals = cached.map((j) => JournalModel.fromJson(j)).toList();
+          _isLoading = false;
+          notifyListeners();
+        } else {
+          _isLoading = true;
+          notifyListeners();
+        }
+      } catch (_) {
+        _isLoading = true;
+        notifyListeners();
+      }
+    } else {
+      _isLoading = true;
+      notifyListeners();
+    }
+
     try {
-      _journals = await journalRepository.getAll(_currentSchoolId);
+      final fresh = await journalRepository.getAll(_currentSchoolId);
+      if (fresh.isNotEmpty || _journals.isEmpty) {
+        _journals = fresh;
+      }
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -36,11 +60,32 @@ class JournalProvider with ChangeNotifier {
   }
 
   Future<void> loadTeacherJournals(String teacherId) async {
-    _isLoading = true;
     _errorMessage = null;
-    notifyListeners();
+    if (_teacherJournals.isEmpty) {
+      try {
+        final cached = await CacheService().loadList('journals_teacher_$teacherId');
+        if (cached != null && cached.isNotEmpty && _teacherJournals.isEmpty) {
+          _teacherJournals = cached.map((j) => JournalModel.fromJson(j)).toList();
+          _isLoading = false;
+          notifyListeners();
+        } else {
+          _isLoading = true;
+          notifyListeners();
+        }
+      } catch (_) {
+        _isLoading = true;
+        notifyListeners();
+      }
+    } else {
+      _isLoading = true;
+      notifyListeners();
+    }
+
     try {
-      _teacherJournals = await journalRepository.getJournalsForTeacher(teacherId);
+      final fresh = await journalRepository.getJournalsForTeacher(teacherId);
+      if (fresh.isNotEmpty || _teacherJournals.isEmpty) {
+        _teacherJournals = fresh;
+      }
     } catch (e) {
       _errorMessage = e.toString();
     } finally {

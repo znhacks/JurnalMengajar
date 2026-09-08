@@ -7,6 +7,8 @@ import '../models/school_model.dart';
 import '../repositories/auth_repository.dart';
 import '../services/fcm_service.dart';
 import '../core/utils/helper.dart';
+import '../core/services/cache_service.dart';
+import '../core/utils/network_resilience.dart';
 
 
 class AuthProvider with ChangeNotifier {
@@ -77,13 +79,27 @@ class AuthProvider with ChangeNotifier {
       _activeSchool = null;
       return;
     }
+
+    // SWR: Load from local cache immediately (0ms) so header/branding renders instantly
+    if (_activeSchool == null) {
+      try {
+        final cached = await CacheService().loadMap('active_school_$_activeSchoolId');
+        if (cached != null) {
+          _activeSchool = SchoolModel.fromJson(cached);
+          _activeSchoolName = _activeSchool!.name;
+          notifyListeners();
+        }
+      } catch (_) {}
+    }
+
     try {
       final supabase = Supabase.instance.client;
       var res = await supabase
           .from('schools')
           .select()
           .eq('id', _activeSchoolId!)
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(NetworkResilience.defaultQueryTimeout);
 
       if (res == null) {
         try {
@@ -91,7 +107,8 @@ class AuthProvider with ChangeNotifier {
               .from('tenants')
               .select('id, name, school_code, status')
               .eq('id', _activeSchoolId!)
-              .maybeSingle();
+              .maybeSingle()
+              .timeout(NetworkResilience.defaultQueryTimeout);
           if (tenantRes != null) {
             final tenantName = tenantRes['name'] as String? ?? 'Sekolah';
             final tenantStatus = (tenantRes['status'] as String? ?? 'active').toLowerCase();
@@ -109,7 +126,8 @@ class AuthProvider with ChangeNotifier {
                 .from('schools')
                 .select()
                 .eq('id', _activeSchoolId!)
-                .maybeSingle();
+                .maybeSingle()
+                .timeout(NetworkResilience.defaultQueryTimeout);
 
             res ??= {
               'id': _activeSchoolId!,
@@ -157,12 +175,12 @@ class AuthProvider with ChangeNotifier {
                 .from('users')
                 .select('id, photo_url, role')
                 .eq('school_id', _activeSchoolId!)
-                .eq('role', 'admin');
+                .eq('role', 'admin')
+                .timeout(NetworkResilience.defaultQueryTimeout);
 
             for (final u in (adminUsers as List)) {
               if (u['photo_url'] != null && (u['photo_url'] as String).trim().isNotEmpty) {
                 resolvedLogo = (u['photo_url'] as String).trim();
-                // Simpan otomatis ke tabel schools agar sinkron di semua tempat
                 await supabase.from('schools').update({
                   'logo_url': resolvedLogo,
                 }).eq('id', _activeSchoolId!);
@@ -180,6 +198,9 @@ class AuthProvider with ChangeNotifier {
 
         _activeSchool = schoolModel;
         _activeSchoolName = _activeSchool!.name;
+        // Persist to local cache for instant 0ms offline display
+        await CacheService().save('active_school_$_activeSchoolId', _activeSchool!.toJson());
+
         if (_activeSchool!.isInactive) {
           _isSchoolExpired = true;
           notifyListeners();
@@ -187,15 +208,25 @@ class AuthProvider with ChangeNotifier {
         } else {
           _isSchoolExpired = false;
         }
-      } else {
-        _activeSchool = null;
+      } else if (_activeSchool == null) {
+        final cached = await CacheService().loadMap('active_school_$_activeSchoolId');
+        if (cached != null) {
+          _activeSchool = SchoolModel.fromJson(cached);
+          _activeSchoolName = _activeSchool!.name;
+        }
       }
     } catch (e) {
       if (e.toString().contains('dinonaktifkan')) {
         rethrow;
       }
       debugPrint('Error fetching active school details: $e');
-      _activeSchool = null;
+      if (_activeSchool == null) {
+        final cached = await CacheService().loadMap('active_school_$_activeSchoolId');
+        if (cached != null) {
+          _activeSchool = SchoolModel.fromJson(cached);
+          _activeSchoolName = _activeSchool!.name;
+        }
+      }
     }
   }
 
@@ -400,8 +431,70 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<void> _applyActiveMembershipFromPreferences() async {
+    if (_userMemberships.isEmpty) {
+      _activeSchool = null;
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final rawSavedSchoolId = prefs.getString(_kActiveSchoolIdKey);
+    final savedSchoolId = AppHelper.parseSingleCleanSchoolId(rawSavedSchoolId);
+    final savedRole = prefs.getString(_kActiveRoleKey);
+
+    UserSchoolModel? activeMember;
+    if (savedSchoolId != null && savedSchoolId.isNotEmpty) {
+      try {
+        activeMember = _userMemberships.firstWhere(
+          (m) => m.schoolId == savedSchoolId && (savedRole == null || m.role.toLowerCase() == savedRole.toLowerCase()),
+        );
+      } catch (_) {
+        activeMember = _userMemberships.firstWhere(
+          (m) => m.schoolId == savedSchoolId,
+          orElse: () => _userMemberships.first,
+        );
+      }
+    } else {
+      final hasAdminRole = _currentUser?.role.toLowerCase() == 'admin' || _currentUser?.role.toLowerCase() == 'superadmin';
+      if (hasAdminRole || _userMemberships.any((m) => m.role.toLowerCase() == 'admin')) {
+        activeMember = _userMemberships.firstWhere(
+          (m) => m.role.toLowerCase() == 'admin' || m.role.toLowerCase() == 'superadmin',
+          orElse: () => _userMemberships.first,
+        );
+      } else {
+        activeMember = _userMemberships.first;
+      }
+    }
+
+    _activeSchoolId = AppHelper.parseSingleCleanSchoolId(activeMember.schoolId) ?? activeMember.schoolId;
+    _activeRole = activeMember.role;
+    _activeSchoolName = activeMember.schoolName;
+
+    if (_currentUser != null) {
+      _currentUser = _currentUser!.copyWith(
+        schoolId: _activeSchoolId,
+        schoolName: _activeSchoolName,
+        role: _activeRole,
+      );
+    }
+    await fetchActiveSchoolDetails();
+  }
+
   Future<void> loadUserMemberships() async {
     if (_currentUser == null) return;
+
+    // SWR: Load memberships immediately from cache (0ms) so app is interactive instantly
+    if (_userMemberships.isEmpty) {
+      try {
+        final cached = await CacheService().loadList('user_memberships_${_currentUser!.id}');
+        if (cached != null && cached.isNotEmpty) {
+          _userMemberships = cached.map((m) => UserSchoolModel.fromJson(m)).toList();
+          await _applyActiveMembershipFromPreferences();
+          notifyListeners();
+        }
+      } catch (_) {}
+    }
+
     try {
       final supabase = Supabase.instance.client;
       final Map<String, UserSchoolModel> membershipMap = {};
@@ -411,7 +504,8 @@ class AuthProvider with ChangeNotifier {
         final res = await supabase
             .from('user_schools')
             .select('*, schools(id, name, code, logo_url, npsn, status)')
-            .eq('user_id', _currentUser!.id);
+            .eq('user_id', _currentUser!.id)
+            .timeout(NetworkResilience.defaultQueryTimeout);
 
         for (final item in (res as List)) {
           final m = Map<String, dynamic>.from(item as Map);
@@ -425,7 +519,8 @@ class AuthProvider with ChangeNotifier {
                     .from('schools')
                     .select('id, name, code, logo_url, status')
                     .eq('id', sId)
-                    .maybeSingle();
+                    .maybeSingle()
+                    .timeout(NetworkResilience.defaultQueryTimeout);
                 if (sRes != null) {
                   m['schools'] = sRes;
                 }
@@ -448,7 +543,8 @@ class AuthProvider with ChangeNotifier {
         final memRes = await supabase
             .from('school_memberships')
             .select('*, schools(id, name, code, logo_url, npsn, status)')
-            .eq('user_id', _currentUser!.id);
+            .eq('user_id', _currentUser!.id)
+            .timeout(NetworkResilience.defaultQueryTimeout);
 
         for (final item in (memRes as List)) {
           final m = Map<String, dynamic>.from(item as Map);
@@ -473,7 +569,8 @@ class AuthProvider with ChangeNotifier {
                   .from('schools')
                   .select('id, name, code, logo_url, status')
                   .eq('id', cleanId)
-                  .maybeSingle();
+                  .maybeSingle()
+                  .timeout(NetworkResilience.defaultQueryTimeout);
               if (sRes != null) {
                 membershipMap[key] = UserSchoolModel(
                   id: 'us_$cleanId',
@@ -502,14 +599,16 @@ class AuthProvider with ChangeNotifier {
                 .from('schools')
                 .select('id, name, code, logo_url')
                 .eq('id', cleanUserSchoolId)
-                .maybeSingle();
+                .maybeSingle()
+                .timeout(NetworkResilience.defaultQueryTimeout);
           }
           if (schoolData == null && _currentUser!.schoolName != null && _currentUser!.schoolName!.isNotEmpty) {
             schoolData = await supabase
                 .from('schools')
                 .select('id, name, code, logo_url')
                 .ilike('name', _currentUser!.schoolName!.trim())
-                .maybeSingle();
+                .maybeSingle()
+                .timeout(NetworkResilience.defaultQueryTimeout);
           }
           if (schoolData != null) {
             final sId = schoolData['id'] as String;
@@ -543,48 +642,12 @@ class AuthProvider with ChangeNotifier {
       }
 
       if (_userMemberships.isNotEmpty) {
-        // Load saved preference if available
-        final prefs = await SharedPreferences.getInstance();
-        final rawSavedSchoolId = prefs.getString(_kActiveSchoolIdKey);
-        final savedSchoolId = AppHelper.parseSingleCleanSchoolId(rawSavedSchoolId);
-        final savedRole = prefs.getString(_kActiveRoleKey);
-
-        UserSchoolModel? activeMember;
-        if (savedSchoolId != null && savedSchoolId.isNotEmpty) {
-          try {
-            activeMember = _userMemberships.firstWhere(
-              (m) => m.schoolId == savedSchoolId && (savedRole == null || m.role.toLowerCase() == savedRole.toLowerCase()),
-            );
-          } catch (_) {
-            activeMember = _userMemberships.firstWhere(
-              (m) => m.schoolId == savedSchoolId,
-              orElse: () => _userMemberships.first,
-            );
-          }
-        } else {
-          final hasAdminRole = _currentUser?.role.toLowerCase() == 'admin' || _currentUser?.role.toLowerCase() == 'superadmin';
-          if (hasAdminRole || _userMemberships.any((m) => m.role.toLowerCase() == 'admin')) {
-            activeMember = _userMemberships.firstWhere(
-              (m) => m.role.toLowerCase() == 'admin' || m.role.toLowerCase() == 'superadmin',
-              orElse: () => _userMemberships.first,
-            );
-          } else {
-            activeMember = _userMemberships.first;
-          }
-        }
-
-        _activeSchoolId = AppHelper.parseSingleCleanSchoolId(activeMember.schoolId) ?? activeMember.schoolId;
-        _activeRole = activeMember.role;
-        _activeSchoolName = activeMember.schoolName;
-
-        if (_currentUser != null) {
-          _currentUser = _currentUser!.copyWith(
-            schoolId: _activeSchoolId,
-            schoolName: _activeSchoolName,
-            role: _activeRole,
-          );
-        }
-        await fetchActiveSchoolDetails();
+        // Persist to local cache for instant 0ms offline display
+        await CacheService().save(
+          'user_memberships_${_currentUser!.id}',
+          _userMemberships.map((m) => m.toJson()).toList(),
+        );
+        await _applyActiveMembershipFromPreferences();
       } else {
         _activeSchool = null;
       }
@@ -594,7 +657,13 @@ class AuthProvider with ChangeNotifier {
         rethrow;
       }
       debugPrint('Error loading user memberships: $e');
-      _userMemberships = [];
+      if (_userMemberships.isEmpty) {
+        final cached = await CacheService().loadList('user_memberships_${_currentUser!.id}');
+        if (cached != null && cached.isNotEmpty) {
+          _userMemberships = cached.map((m) => UserSchoolModel.fromJson(m)).toList();
+          await _applyActiveMembershipFromPreferences();
+        }
+      }
     }
   }
 

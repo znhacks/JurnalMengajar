@@ -5,7 +5,8 @@ import '../models/schedule_model.dart';
 import 'schedule_repository.dart';
 import '../core/constants/supabase_constants.dart';
 import '../core/utils/helper.dart';
-
+import '../core/services/cache_service.dart';
+import '../core/utils/network_resilience.dart';
 
 const _uuid = Uuid();
 
@@ -16,119 +17,125 @@ class SupabaseScheduleRepository implements ScheduleRepository {
 
   @override
   Future<List<ScheduleModel>> getAll([String? schoolId]) async {
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+    final cacheKey = 'schedules_${cleanSchoolId ?? "all"}';
+
+    // Fallback loader dari local cache jika offline / sinyal lemah
+    Future<List<ScheduleModel>> loadFromCache() async {
+      try {
+        final cachedList = await CacheService().loadList(cacheKey);
+        if (cachedList != null && cachedList.isNotEmpty) {
+          debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Loaded ${cachedList.length} schedules from local cache.');
+          return cachedList.map((item) => ScheduleModel.fromJson(item)).toList();
+        }
+      } catch (err) {
+        debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Cache read error: $err');
+      }
+      return <ScheduleModel>[];
+    }
+
     try {
-      final currentAuthUid = _supabase.auth.currentUser?.id;
-      final currentAuthEmail = _supabase.auth.currentUser?.email;
-      debugPrint('================================================================');
-      debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Fetching ALL schedules...');
-      debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Current Auth User: id=$currentAuthUid, email=$currentAuthEmail');
-      debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Parameter schoolId: "$schoolId"');
+      return await NetworkResilience.execute<List<ScheduleModel>>(
+        operationName: 'ScheduleRepository.getAll',
+        fallback: loadFromCache,
+        networkTask: () async {
+          final currentAuthUid = _supabase.auth.currentUser?.id;
+          final currentAuthEmail = _supabase.auth.currentUser?.email;
+          debugPrint('================================================================');
+          debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Fetching ALL schedules from network...');
+          debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Current Auth User: id=$currentAuthUid, email=$currentAuthEmail');
+          debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Parameter schoolId: "$schoolId"');
 
-      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
-      var query = _supabase.from(SupabaseConstants.tableSchedules).select();
-      if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
-        query = query.eq('school_id', cleanSchoolId);
-      }
-      final response = await query.order(SupabaseConstants.fieldDate, ascending: true);
-
-      final List rawList = response as List;
-      debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Raw Database Response: ${rawList.length} rows returned.');
-
-      final List<ScheduleModel> schedules = [];
-      int parseErrors = 0;
-      for (final item in rawList) {
-        try {
-          if (item is Map<String, dynamic>) {
-            schedules.add(ScheduleModel.fromJson(item));
-          } else if (item is Map) {
-            schedules.add(ScheduleModel.fromJson(Map<String, dynamic>.from(item)));
+          var query = _supabase.from(SupabaseConstants.tableSchedules).select();
+          if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+            query = query.eq('school_id', cleanSchoolId);
           }
-        } catch (err) {
-          parseErrors++;
-          debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Parse Error on row: $item -> $err');
-        }
-      }
+          final response = await query.order(SupabaseConstants.fieldDate, ascending: true);
 
-      debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Parsed Schedules: ${schedules.length} successfully parsed ($parseErrors parse errors).');
-      
-      // Breakdown by teacher and school
-      final Map<String, int> countByTeacher = {};
-      final Map<String, int> countBySchool = {};
-      for (final s in schedules) {
-        final tKey = s.teacherId.isNotEmpty ? s.teacherId : '(empty teacherId)';
-        countByTeacher[tKey] = (countByTeacher[tKey] ?? 0) + 1;
+          final List rawList = response as List;
+          debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Raw Database Response: ${rawList.length} rows returned.');
 
-        final sKey = (s.schoolId != null && s.schoolId!.isNotEmpty) ? s.schoolId! : '(null/empty schoolId)';
-        countBySchool[sKey] = (countBySchool[sKey] ?? 0) + 1;
-      }
+          final List<ScheduleModel> schedules = [];
+          final List<Map<String, dynamic>> cacheableList = [];
+          for (final item in rawList) {
+            try {
+              final map = item is Map<String, dynamic> ? item : Map<String, dynamic>.from(item as Map);
+              schedules.add(ScheduleModel.fromJson(map));
+              cacheableList.add(map);
+            } catch (_) {}
+          }
 
-      debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Schedules by Teacher ID: $countByTeacher');
-      debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Schedules by School ID: $countBySchool');
-      if (schedules.isNotEmpty) {
-        final sample = schedules.first;
-        debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Sample Schedule: id=${sample.id}, teacherId=${sample.teacherId}, classId=${sample.classId}, subjectId=${sample.subjectId}, date=${sample.date}, schoolId=${sample.schoolId}, isActive=${sample.isActive}');
-      }
-      debugPrint('================================================================');
+          // Simpan ke cache lokal secara async agar selalu tersedia saat sinyal lemah
+          CacheService().save(cacheKey, cacheableList);
 
-      // Background self-heal: Ensure all schedules have the active school_id if missing
-      if (schoolId != null && schoolId.isNotEmpty) {
-        final backfillIds = schedules
-            .where((s) => s.schoolId == null || s.schoolId!.isEmpty)
-            .map((s) => s.id)
-            .toList();
-
-        if (backfillIds.isNotEmpty) {
-          debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Self-healing ${backfillIds.length} schedules with school_id=$schoolId');
-          try {
-            _supabase
-                .from(SupabaseConstants.tableSchedules)
-                .update({'school_id': schoolId})
-                .inFilter('id', backfillIds)
-                .then((_) {})
-                .catchError((_) {});
-          } catch (_) {}
-        }
-      }
-
-      return schedules;
+          return schedules;
+        },
+      );
     } catch (e) {
-      debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] ERROR in getAll: $e');
-      throw Exception('Gagal memuat jadwal mengajar: $e');
+      debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Network error in getAll, falling back to cache: $e');
+      return await loadFromCache();
     }
   }
 
   @override
   Future<List<ScheduleModel>> getSchedulesForTeacher(String teacherId, {DateTime? date}) async {
+    final cacheKey = 'teacher_schedules_$teacherId';
+
+    Future<List<ScheduleModel>> loadFromCache() async {
+      try {
+        final cached = await CacheService().loadList(cacheKey);
+        if (cached != null && cached.isNotEmpty) {
+          final allSchedules = cached.map((e) => ScheduleModel.fromJson(e)).toList();
+          if (date == null) return allSchedules;
+          return allSchedules.where((s) =>
+              s.date.year == date.year &&
+              s.date.month == date.month &&
+              s.date.day == date.day).toList();
+        }
+      } catch (_) {}
+      return <ScheduleModel>[];
+    }
+
     try {
-      var query = _supabase
-          .from(SupabaseConstants.tableSchedules)
-          .select()
-          .eq(SupabaseConstants.fieldTeacherId, teacherId);
+      return await NetworkResilience.execute<List<ScheduleModel>>(
+        operationName: 'ScheduleRepository.getSchedulesForTeacher',
+        fallback: loadFromCache,
+        networkTask: () async {
+          var query = _supabase
+              .from(SupabaseConstants.tableSchedules)
+              .select()
+              .eq(SupabaseConstants.fieldTeacherId, teacherId);
 
-      if (date != null) {
-        final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-        final nextDateStr = '${date.add(const Duration(days: 1)).year}-${date.add(const Duration(days: 1)).month.toString().padLeft(2, '0')}-${date.add(const Duration(days: 1)).day.toString().padLeft(2, '0')}';
-        query = query
-            .gte(SupabaseConstants.fieldDate, dateStr)
-            .lt(SupabaseConstants.fieldDate, nextDateStr);
-      }
-
-      final response = await query.order(SupabaseConstants.fieldDate, ascending: true);
-
-      final List<ScheduleModel> schedules = [];
-      for (final item in (response as List)) {
-        try {
-          if (item is Map<String, dynamic>) {
-            schedules.add(ScheduleModel.fromJson(item));
-          } else if (item is Map) {
-            schedules.add(ScheduleModel.fromJson(Map<String, dynamic>.from(item)));
+          if (date != null) {
+            final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+            final nextDateStr = '${date.add(const Duration(days: 1)).year}-${date.add(const Duration(days: 1)).month.toString().padLeft(2, '0')}-${date.add(const Duration(days: 1)).day.toString().padLeft(2, '0')}';
+            query = query
+                .gte(SupabaseConstants.fieldDate, dateStr)
+                .lt(SupabaseConstants.fieldDate, nextDateStr);
           }
-        } catch (_) {}
-      }
 
-      return schedules;
+          final response = await query.order(SupabaseConstants.fieldDate, ascending: true);
+
+          final List<ScheduleModel> schedules = [];
+          final List<Map<String, dynamic>> cacheable = [];
+          for (final item in (response as List)) {
+            try {
+              final map = item is Map<String, dynamic> ? item : Map<String, dynamic>.from(item as Map);
+              schedules.add(ScheduleModel.fromJson(map));
+              cacheable.add(map);
+            } catch (_) {}
+          }
+
+          if (date == null && cacheable.isNotEmpty) {
+            CacheService().save(cacheKey, cacheable);
+          }
+
+          return schedules;
+        },
+      );
     } catch (e) {
-      throw Exception('Gagal memuat jadwal guru: $e');
+      debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Weak signal fallback for teacher schedules: $e');
+      return await loadFromCache();
     }
   }
 

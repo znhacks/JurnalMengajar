@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/schedule_model.dart';
 import '../repositories/schedule_repository.dart';
+import '../core/services/cache_service.dart';
 
 class ScheduleProvider with ChangeNotifier {
   final ScheduleRepository scheduleRepository;
@@ -28,12 +29,35 @@ class ScheduleProvider with ChangeNotifier {
 
   Future<void> loadAllSchedules([String? schoolId]) async {
     _currentSchoolId = schoolId ?? _currentSchoolId;
-    _isLoading = true;
     _errorMessage = null;
-    debugPrint('[RUNTIME_DEBUG:SCHEDULE_PROVIDER] loadAllSchedules initiated with schoolId: "$_currentSchoolId"');
-    notifyListeners();
+
+    // SWR Instant Cache Population: If _schedules is empty, show cached data immediately (0ms)
+    final sKey = _currentSchoolId ?? 'default';
+    if (_schedules.isEmpty) {
+      try {
+        final cached = await CacheService().loadList('schedules_$sKey');
+        if (cached != null && cached.isNotEmpty && _schedules.isEmpty) {
+          _schedules = cached.map((s) => ScheduleModel.fromJson(s)).toList();
+          _isLoading = false;
+          notifyListeners();
+        } else {
+          _isLoading = true;
+          notifyListeners();
+        }
+      } catch (_) {
+        _isLoading = true;
+        notifyListeners();
+      }
+    } else {
+      _isLoading = true;
+      notifyListeners();
+    }
+
     try {
-      _schedules = await scheduleRepository.getAll(_currentSchoolId);
+      final fresh = await scheduleRepository.getAll(_currentSchoolId);
+      if (fresh.isNotEmpty || _schedules.isEmpty) {
+        _schedules = fresh;
+      }
       debugPrint('[RUNTIME_DEBUG:SCHEDULE_PROVIDER] Loaded ${_schedules.length} schedules into ScheduleProvider state.');
     } catch (e) {
       _errorMessage = e.toString();
@@ -45,13 +69,33 @@ class ScheduleProvider with ChangeNotifier {
   }
 
   Future<void> loadTeacherSchedules(String teacherId, DateTime date, {bool forceRefresh = false}) async {
+    // SWR Instant Cache Population for teacher schedules
+    if (_cachedTeacherSchedules.isEmpty || _cachedTeacherId != teacherId) {
+      try {
+        final cached = await CacheService().loadList('schedules_teacher_$teacherId');
+        if (cached != null && cached.isNotEmpty) {
+          _cachedTeacherSchedules = cached.map((s) => ScheduleModel.fromJson(s)).toList();
+          _cachedTeacherId = teacherId;
+          _teacherSchedulesForSelectedDate = _cachedTeacherSchedules.where((s) {
+            return s.date.year == date.year &&
+                s.date.month == date.month &&
+                s.date.day == date.day;
+          }).toList();
+          notifyListeners();
+        }
+      } catch (_) {}
+    }
+
     if (forceRefresh || _cachedTeacherId != teacherId || _cachedTeacherSchedules.isEmpty) {
-      _isLoading = true;
+      _isLoading = _cachedTeacherSchedules.isEmpty;
       _errorMessage = null;
       notifyListeners();
       try {
-        _cachedTeacherSchedules = await scheduleRepository.getSchedulesForTeacher(teacherId);
-        _cachedTeacherId = teacherId;
+        final fresh = await scheduleRepository.getSchedulesForTeacher(teacherId);
+        if (fresh.isNotEmpty || _cachedTeacherSchedules.isEmpty) {
+          _cachedTeacherSchedules = fresh;
+          _cachedTeacherId = teacherId;
+        }
       } catch (e) {
         _errorMessage = e.toString();
         _isLoading = false;

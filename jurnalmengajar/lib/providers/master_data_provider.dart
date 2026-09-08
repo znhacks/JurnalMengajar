@@ -14,6 +14,7 @@ import '../repositories/teacher_repository.dart';
 import '../models/student_model.dart';
 import '../repositories/student_repository.dart';
 import '../repositories/school_repository.dart';
+import '../core/services/cache_service.dart';
 
 class MasterDataProvider with ChangeNotifier {
   final PeriodRepository periodRepository;
@@ -68,10 +69,56 @@ class MasterDataProvider with ChangeNotifier {
 
   Future<void> loadAllData([String? schoolId]) async {
     _currentSchoolId = schoolId;
-    _isLoading = true;
     _errorMessage = null;
-    debugPrint('[RUNTIME_DEBUG:MASTER_DATA] loadAllData initiated with schoolId: "$schoolId"');
-    notifyListeners();
+
+    // SWR Instant Cache Population: If lists are empty, render from disk cache immediately (0ms)
+    final sKey = schoolId ?? 'default';
+    if (_classes.isEmpty || _subjects.isEmpty || _teachers.isEmpty || _periods.isEmpty || _hours.isEmpty) {
+      try {
+        final cachedPeriods = await CacheService().loadList('periods_$sKey');
+        final cachedSubjects = await CacheService().loadList('subjects_$sKey');
+        final cachedHours = await CacheService().loadList('hours_$sKey');
+        final cachedClasses = await CacheService().loadList('classes_$sKey');
+        final cachedTeachers = await CacheService().loadList('teachers_$sKey');
+
+        bool hasAnyCache = false;
+        if (cachedPeriods != null && cachedPeriods.isNotEmpty && _periods.isEmpty) {
+          _periods = cachedPeriods.map((p) => PeriodModel.fromJson(p)).toList();
+          hasAnyCache = true;
+        }
+        if (cachedSubjects != null && cachedSubjects.isNotEmpty && _subjects.isEmpty) {
+          _subjects = cachedSubjects.map((s) => SubjectModel.fromJson(s)).toList();
+          hasAnyCache = true;
+        }
+        if (cachedHours != null && cachedHours.isNotEmpty && _hours.isEmpty) {
+          _hours = cachedHours.map((h) => HourModel.fromJson(h)).toList();
+          hasAnyCache = true;
+        }
+        if (cachedClasses != null && cachedClasses.isNotEmpty && _classes.isEmpty) {
+          _classes = cachedClasses.map((c) => ClassModel.fromJson(c)).toList();
+          hasAnyCache = true;
+        }
+        if (cachedTeachers != null && cachedTeachers.isNotEmpty && _teachers.isEmpty) {
+          _teachers = cachedTeachers.map((t) => TeacherModel.fromJson(t)).toList();
+          hasAnyCache = true;
+        }
+
+        if (hasAnyCache) {
+          _isLoading = false;
+          notifyListeners();
+        } else {
+          _isLoading = true;
+          notifyListeners();
+        }
+      } catch (_) {
+        _isLoading = true;
+        notifyListeners();
+      }
+    } else {
+      _isLoading = true;
+      notifyListeners();
+    }
+
     try {
       final results = await Future.wait([
         periodRepository.getAll(schoolId).catchError((err) {
@@ -107,12 +154,21 @@ class MasterDataProvider with ChangeNotifier {
         else
           Future.value(_schools),
       ]);
-      _periods = results[0] as List<PeriodModel>;
-      _subjects = results[1] as List<SubjectModel>;
-      _hours = results[2] as List<HourModel>;
-      _classes = results[3] as List<ClassModel>;
-      _teachers = results[4] as List<TeacherModel>;
-      _schools = results[5] as List<SchoolModel>;
+
+      final newPeriods = results[0] as List<PeriodModel>;
+      final newSubjects = results[1] as List<SubjectModel>;
+      final newHours = results[2] as List<HourModel>;
+      final newClasses = results[3] as List<ClassModel>;
+      final newTeachers = results[4] as List<TeacherModel>;
+      final newSchools = results[5] as List<SchoolModel>;
+
+      // Don't overwrite existing populated cache if network returned empty due to weak signal
+      if (newPeriods.isNotEmpty || _periods.isEmpty) _periods = newPeriods;
+      if (newSubjects.isNotEmpty || _subjects.isEmpty) _subjects = newSubjects;
+      if (newHours.isNotEmpty || _hours.isEmpty) _hours = newHours;
+      if (newClasses.isNotEmpty || _classes.isEmpty) _classes = newClasses;
+      if (newTeachers.isNotEmpty || _teachers.isEmpty) _teachers = newTeachers;
+      if (newSchools.isNotEmpty || _schools.isEmpty) _schools = newSchools;
 
       debugPrint('[RUNTIME_DEBUG:MASTER_DATA] Loaded data counts -> Periods: ${_periods.length}, Subjects: ${_subjects.length}, Hours: ${_hours.length}, Classes: ${_classes.length}, Teachers: ${_teachers.length}, Schools: ${_schools.length}');
     } catch (e) {
