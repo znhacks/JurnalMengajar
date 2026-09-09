@@ -189,5 +189,102 @@ void main() {
       expect(authProvider.activeRole, 'guru');
       expect(authProvider.currentUser?.role, 'guru');
     });
+
+    test('UserModel status and approval getters work correctly', () {
+      final activeGuru = UserModel(
+        id: 'g1',
+        email: 'guru1@smkn11.com',
+        fullName: 'Guru Aktif',
+        role: 'guru',
+        status: 'active',
+        schoolId: '00000000-0000-0000-0000-000000000001',
+      );
+      expect(activeGuru.isActive, isTrue);
+      expect(activeGuru.isPending, isFalse);
+
+      final pendingGuru = UserModel(
+        id: 'g2',
+        email: 'pending@smkn11.com',
+        fullName: 'Guru Menunggu',
+        role: 'pending_guru',
+        status: 'pending',
+        schoolId: '00000000-0000-0000-0000-000000000001',
+      );
+      expect(pendingGuru.isActive, isFalse);
+      expect(pendingGuru.isPending, isTrue);
+
+      final inactiveUser = UserModel(
+        id: 'g3',
+        email: 'inactive@smkn11.com',
+        fullName: 'Guru Inaktif',
+        role: 'guru',
+        status: 'inactive',
+        schoolId: '00000000-0000-0000-0000-000000000001',
+      );
+      expect(inactiveUser.isActive, isFalse);
+      expect(inactiveUser.isPending, isFalse);
+    });
+
+    test('Master User filtering isolates active users vs pending registrations', () {
+      final users = [
+        UserModel(
+          id: 'u1',
+          email: 'admin@jurnal.com',
+          fullName: 'Admin SMKN 11 Malang',
+          role: 'admin',
+          status: 'active',
+          schoolId: '00000000-0000-0000-0000-000000000001',
+        ),
+        UserModel(
+          id: 'u2',
+          email: 'guru@jurnal.com',
+          fullName: 'Heru Sudjatmiko (Admin Cadangan)',
+          role: 'admin',
+          membershipRole: 'admin',
+          status: 'active',
+          schoolId: '00000000-0000-0000-0000-000000000001',
+        ),
+        UserModel(
+          id: 'u3',
+          email: 'jasmine@jurnal.com',
+          fullName: 'Jasmine (Guru Aktif)',
+          role: 'guru',
+          status: 'active',
+          schoolId: '00000000-0000-0000-0000-000000000001',
+        ),
+        UserModel(
+          id: 'u4',
+          email: 'calon@jurnal.com',
+          fullName: 'Calon Guru (Pending)',
+          role: 'pending_guru',
+          status: 'pending',
+          schoolId: '00000000-0000-0000-0000-000000000001',
+        ),
+      ];
+
+      // Filter for "Pengguna Aktif"
+      final activeUsers = users.where((u) {
+        if (u.isPending || u.status == 'pending' || u.role.toLowerCase() == 'pending_guru') return false;
+        if (u.status != null && u.status != 'active') return false;
+        final r = u.role.toLowerCase();
+        return r == 'guru' || r == 'admin' || r == 'superadmin' || r == 'teacher';
+      }).toList();
+
+      expect(activeUsers.length, 3);
+      expect(activeUsers.map((u) => u.id), containsAll(['u1', 'u2', 'u3']));
+      expect(activeUsers.any((u) => u.id == 'u4'), isFalse);
+
+      // Filter for "Guru Mendaftar"
+      final pendingUsers = users.where((u) {
+        return u.isPending || u.role.toLowerCase() == 'pending_guru' || u.status == 'pending';
+      }).toList();
+
+      expect(pendingUsers.length, 1);
+      expect(pendingUsers.first.id, 'u4');
+
+      // Search for foreign admin in active school dataset returns 0 results
+      final searchResults = users.where((u) => u.email.contains('adminsmkn100')).toList();
+      expect(searchResults.isEmpty, isTrue);
+    });
   });
 }

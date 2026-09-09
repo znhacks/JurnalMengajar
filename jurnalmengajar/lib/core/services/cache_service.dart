@@ -114,6 +114,18 @@ class CacheService {
     } catch (_) {}
   }
 
+  /// Hapus seluruh cache yang diawali prefix tertentu
+  Future<void> purgePrefix(String prefix) async {
+    try {
+      _memoryCache.removeWhere((k, _) => k.startsWith(prefix));
+      final prefs = await _getPrefs();
+      final keys = prefs.getKeys().where((k) => k.startsWith('cache_$prefix') || k.startsWith(prefix));
+      for (final k in keys) {
+        await prefs.remove(k);
+      }
+    } catch (_) {}
+  }
+
   /// Hapus seluruh cache yang berkaitan dengan sekolah tertentu
   Future<void> clearSchoolCache(String schoolId) async {
     try {

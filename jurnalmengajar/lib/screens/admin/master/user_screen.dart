@@ -24,6 +24,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
+  String? _lastSchoolId;
 
   @override
   void initState() {
@@ -32,6 +33,23 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
       _fetchUsers();
     });
     _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authProvider = Provider.of<AuthProvider>(context, listen: true);
+    final currentSchoolId = authProvider.activeSchoolId;
+    if (_lastSchoolId != null && _lastSchoolId != currentSchoolId) {
+      _lastSchoolId = currentSchoolId;
+      _allUsers = [];
+      _filteredUsers = [];
+      _selectedIds.clear();
+      _isSelectionMode = false;
+      _fetchUsers();
+    } else {
+      _lastSchoolId = currentSchoolId;
+    }
   }
 
   @override
@@ -159,11 +177,11 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
     final newRole = makeAdmin ? 'admin' : 'guru';
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
-    // Safety check: Cannot demote superadmin account or current logged-in user
-    if (!makeAdmin && user.role.toLowerCase() == 'superadmin') {
+    // Safety check: Cannot demote Admin Asli, superadmin, or current logged-in user
+    if (!makeAdmin && (user.role.toLowerCase() == 'superadmin' || user.email.toLowerCase() == 'admin@jurnal.com')) {
       AppHelper.showSnackBar(
         context, 
-        'Akun superadmin tidak bisa diturunkan menjadi guru.', 
+        'Akun Administrator Utama dilindungi sistem dan tidak bisa diturunkan menjadi guru.', 
         isError: true
       );
       return;
@@ -584,7 +602,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                             value: isAdmin,
                             activeThumbColor: const Color(0xFF4F46E5),
                             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            onChanged: (isSuperAdmin || isCurrentUser)
+                            onChanged: (isSuperAdmin || isCurrentUser || user.email.toLowerCase() == 'admin@jurnal.com')
                                 ? null
                                 : (val) => _handleRoleToggle(user, val),
                           ),
@@ -623,25 +641,24 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
 
-    final currentUserSchool = authProvider.currentUser?.schoolName ?? '';
     final isSuperAdminUser = authProvider.currentUser?.role.toLowerCase() == 'superadmin';
 
-    final activeUsers = _filteredUsers.where((u) => u.role == 'guru' || u.role == 'admin').toList();
+    final activeUsers = _filteredUsers.where((u) {
+      // Guru yang belum disetujui (pending) DILARANG masuk Pengguna Aktif!
+      if (u.isPending || u.status == 'pending' || u.role.toLowerCase() == 'pending_guru') return false;
+      if (u.status != null && u.status != 'active') return false;
+      final r = u.role.toLowerCase();
+      return r == 'guru' || r == 'admin' || r == 'superadmin' || r == 'teacher';
+    }).toList();
 
     // Filtering pending users:
     // Superadmin sees all pending (guru & admin), Admin Sekolah only sees pending guru for their own school.
     final pendingUsers = _filteredUsers.where((u) {
-      if (u.role == 'pending_guru') {
-        if (isSuperAdminUser) return true;
-        if (currentUserSchool.isEmpty) return true;
-        final uSchools = (u.schoolName ?? '').split(',').map((s) => s.trim().toLowerCase()).toList();
-        return uSchools.any((s) => s.contains(currentUserSchool.toLowerCase()) || currentUserSchool.toLowerCase().contains(s));
-      }
-      if (u.role == 'pending_admin') {
-        // Only Superadmin can accept/activate pending_admin via school code verification
+      final isPending = u.isPending || u.role.toLowerCase() == 'pending_guru' || u.status == 'pending';
+      if (u.role.toLowerCase() == 'pending_admin') {
         return isSuperAdminUser;
       }
-      return false;
+      return isPending;
     }).toList();
 
     return DefaultTabController(

@@ -12,6 +12,18 @@ class UserModel {
   final String? schoolName; // e.g. 'SMKN 11 Malang'
   final String? schoolId;
   final List<String> schoolIds;
+  final String? status; // 'active' | 'pending' | 'inactive' | 'requested_exit'
+  final String? membershipRole; // role assigned within active school membership
+
+  bool get isPending =>
+      (status != null && status!.toLowerCase() == 'pending') ||
+      role.toLowerCase() == 'pending_guru';
+
+  bool get isActive =>
+      !isPending &&
+      (status == null || status!.toLowerCase() == 'active') &&
+      role.toLowerCase() != 'pending_guru' &&
+      role.toLowerCase() != 'pending_admin';
 
   UserModel({
     required this.id,
@@ -25,6 +37,8 @@ class UserModel {
     this.schoolName,
     this.schoolId,
     this.schoolIds = const [],
+    this.status,
+    this.membershipRole,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -58,6 +72,8 @@ class UserModel {
       schoolName: json['school_name']?.toString() ?? json['schoolName']?.toString(),
       schoolId: cleanSchoolId,
       schoolIds: allSchoolIds,
+      status: json['status']?.toString() ?? json['membership_status']?.toString(),
+      membershipRole: json['membership_role']?.toString() ?? json['membershipRole']?.toString(),
     );
   }
 
@@ -78,6 +94,12 @@ class UserModel {
     if (schoolId != null && schoolId!.isNotEmpty) {
       map['school_id'] = schoolId;
     }
+    if (status != null && status!.isNotEmpty) {
+      map['status'] = status;
+    }
+    if (membershipRole != null && membershipRole!.isNotEmpty) {
+      map['membership_role'] = membershipRole;
+    }
     return map;
   }
 
@@ -93,6 +115,8 @@ class UserModel {
     String? schoolName,
     String? schoolId,
     List<String>? schoolIds,
+    String? status,
+    String? membershipRole,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -106,6 +130,8 @@ class UserModel {
       schoolName: schoolName ?? this.schoolName,
       schoolId: schoolId ?? this.schoolId,
       schoolIds: schoolIds ?? this.schoolIds,
+      status: status ?? this.status,
+      membershipRole: membershipRole ?? this.membershipRole,
     );
   }
 }

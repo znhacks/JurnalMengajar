@@ -515,6 +515,7 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<List<UserModel>> getAllUsersForSchool(String schoolId) async {
     try {
       final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
+      if (cleanSchoolId.isEmpty) return [];
 
       // 1. Fetch school info to get school name
       String schoolName = '';
@@ -529,77 +530,89 @@ class SupabaseAuthRepository implements AuthRepository {
         }
       } catch (_) {}
 
-      // 2. Fetch user IDs linked in user_schools and school_memberships
-      final Set<String> userIds = {};
+      // 2. Fetch memberships for this school ONLY with valid status (active, pending, requested_exit)
+      // Any row with status = 'inactive' or 'rejected' is strictly excluded at DB level!
+      final Map<String, Map<String, dynamic>> membershipByUser = {};
       try {
         final userSchoolsRes = await _supabase
             .from('user_schools')
-            .select('user_id')
-            .eq('school_id', cleanSchoolId);
+            .select('id, user_id, school_id, role, status')
+            .eq('school_id', cleanSchoolId)
+            .inFilter('status', ['active', 'pending', 'requested_exit']);
 
         for (final row in (userSchoolsRes as List)) {
-          final uid = row['user_id']?.toString();
-          if (uid != null && uid.isNotEmpty) userIds.add(uid);
+          final m = Map<String, dynamic>.from(row as Map);
+          final uid = m['user_id']?.toString();
+          if (uid != null && uid.isNotEmpty) {
+            membershipByUser[uid] = m;
+          }
         }
-      } catch (_) {}
+      } catch (err) {
+        debugPrint('Error fetching user_schools in getAllUsersForSchool: $err');
+      }
 
+      // Also find users whose primary school_id in users is cleanSchoolId (e.g. initial Admin)
+      final Set<String> targetUserIds = Set<String>.from(membershipByUser.keys);
       try {
-        final memRes = await _supabase
-            .from('school_memberships')
-            .select('user_id')
+        final primaryUsersRes = await _supabase
+            .from('users')
+            .select('id')
             .eq('school_id', cleanSchoolId);
 
-        for (final row in (memRes as List)) {
-          final uid = row['user_id']?.toString();
-          if (uid != null && uid.isNotEmpty) userIds.add(uid);
+        for (final row in (primaryUsersRes as List)) {
+          final uid = row['id']?.toString();
+          if (uid != null && uid.isNotEmpty) {
+            targetUserIds.add(uid);
+          }
         }
       } catch (_) {}
 
-      // 3. Query all users and match
-      final Map<String, UserModel> usersMap = {};
+      if (targetUserIds.isEmpty) return [];
 
-      try {
-        final allUsersRes = await _supabase
-            .from('users')
-            .select()
-            .order('full_name', ascending: true);
+      // 3. Query users strictly scoped to targetUserIds (NO global SELECT all users!)
+      final usersRes = await _supabase
+          .from('users')
+          .select()
+          .inFilter('id', targetUserIds.toList())
+          .order('full_name', ascending: true);
 
-        for (final item in (allUsersRes as List)) {
-          try {
-            final json = Map<String, dynamic>.from(item as Map);
-            final uId = json['id']?.toString() ?? '';
-            final isLinked = userIds.contains(uId);
-            final isSchoolMatch = cleanSchoolId.isEmpty ||
-                AppHelper.matchesSchool(json['school_id'], json['school_ids'], cleanSchoolId) ||
-                (schoolName.isNotEmpty && (json['school_name']?.toString().toLowerCase() == schoolName.toLowerCase()));
+      final List<UserModel> result = [];
 
-            if (isLinked || isSchoolMatch || cleanSchoolId.isEmpty) {
-              usersMap[uId] = UserModel.fromJson(json);
-            }
-          } catch (_) {}
-        }
-      } catch (e) {
-        debugPrint('Note: querying users in getAllUsersForSchool: $e');
+      for (final item in (usersRes as List)) {
+        try {
+          final json = Map<String, dynamic>.from(item as Map);
+          final uid = json['id']?.toString() ?? '';
+          final membership = membershipByUser[uid];
+
+          // Determine membership role and status
+          final String? membershipRole = membership?['role']?.toString();
+          final String membershipStatus = (membership?['status']?.toString() ?? 'active').toLowerCase();
+
+          // Effective role in this school context:
+          // If membership has specific role (e.g. 'admin' for Admin Cadangan, or 'guru'), use it!
+          final baseRole = json['role']?.toString().toLowerCase() ?? 'guru';
+          final effectiveRole = (membershipRole != null && membershipRole.isNotEmpty)
+              ? membershipRole
+              : baseRole;
+
+          // Double check status: if baseRole is pending_guru or membership status is pending, mark as pending
+          final effectiveStatus = (effectiveRole == 'pending_guru' || baseRole == 'pending_guru' || membershipStatus == 'pending')
+              ? 'pending'
+              : membershipStatus;
+
+          final userModel = UserModel.fromJson({
+            ...json,
+            'role': effectiveRole,
+            'status': effectiveStatus,
+            'membership_role': membershipRole,
+            'school_id': cleanSchoolId,
+            'school_name': schoolName.isNotEmpty ? schoolName : json['school_name'],
+          });
+
+          result.add(userModel);
+        } catch (_) {}
       }
 
-      // Fallback: If any linked user IDs are not in usersMap yet, fetch by IDs
-      if (userIds.isNotEmpty) {
-        final missingIds = userIds.where((id) => !usersMap.containsKey(id)).toList();
-        if (missingIds.isNotEmpty) {
-          try {
-            final res2 = await _supabase
-                .from('users')
-                .select()
-                .inFilter('id', missingIds);
-            for (final json in (res2 as List)) {
-              final u = UserModel.fromJson(Map<String, dynamic>.from(json as Map));
-              usersMap[u.id] = u;
-            }
-          } catch (_) {}
-        }
-      }
-
-      final result = usersMap.values.toList();
       result.sort((a, b) => a.fullName.compareTo(b.fullName));
       return result;
     } catch (e) {
@@ -611,21 +624,65 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> updateUserRole(String userId, String role, [String? schoolId]) async {
     try {
-      await _supabase.from('users').update({'role': role}).eq('id', userId);
-      try {
-        if (schoolId != null && schoolId.isNotEmpty) {
-          await _supabase
-              .from('user_schools')
-              .update({'role': role})
-              .eq('user_id', userId)
-              .eq('school_id', schoolId);
-        } else {
-          await _supabase
-              .from('user_schools')
-              .update({'role': role})
-              .eq('user_id', userId);
+      final cleanSchoolId = (schoolId != null && schoolId.isNotEmpty)
+          ? (AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim())
+          : null;
+
+      // If making teacher active ('guru'), ensure membership status is set to 'active'
+      final isApproval = role.toLowerCase() == 'guru';
+
+      if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+        // Multi-tenant safe: update/upsert user_schools for this specific school
+        final updatePayload = <String, dynamic>{
+          'role': role,
+        };
+        if (isApproval) {
+          updatePayload['status'] = 'active';
         }
-      } catch (_) {}
+
+        final existing = await _supabase
+            .from('user_schools')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('school_id', cleanSchoolId)
+            .maybeSingle();
+
+        if (existing != null) {
+          await _supabase
+              .from('user_schools')
+              .update(updatePayload)
+              .eq('user_id', userId)
+              .eq('school_id', cleanSchoolId);
+        } else {
+          await _supabase.from('user_schools').insert({
+            'user_id': userId,
+            'school_id': cleanSchoolId,
+            'role': role,
+            'status': 'active',
+          });
+        }
+      }
+
+      // Also update base user if user is assigned to this school or if approving pending user
+      final userRes = await _supabase
+          .from('users')
+          .select('role, school_id')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (userRes != null) {
+        final currentRole = userRes['role']?.toString().toLowerCase();
+        // If user was pending, or user belongs to this school, update base user role
+        if (currentRole == 'pending_guru' || 
+            cleanSchoolId == null || 
+            userRes['school_id'] == cleanSchoolId) {
+          final userUpdate = <String, dynamic>{'role': role};
+          if (cleanSchoolId != null && (userRes['school_id'] == null || (userRes['school_id'] as String).isEmpty)) {
+            userUpdate['school_id'] = cleanSchoolId;
+          }
+          await _supabase.from('users').update(userUpdate).eq('id', userId);
+        }
+      }
     } catch (e) {
       throw Exception('Gagal memperbarui peran pengguna: $e');
     }

@@ -1059,10 +1059,14 @@ class AuthProvider with ChangeNotifier {
     try {
       final targetSchoolId = schoolId ?? _activeSchoolId;
       await authRepository.updateUserRole(userId, role, targetSchoolId);
-      // If the modified user is current user, update local profile as well
-      if (_currentUser != null && _currentUser!.id == userId) {
+      // If the modified user is current user and not Admin Asli, update local profile as well
+      if (_currentUser != null && _currentUser!.id == userId && !isAdminAsli) {
         _currentUser = _currentUser!.copyWith(role: role);
       }
+      try {
+        await CacheService().purgePrefix('teachers_');
+        await CacheService().purgePrefix('user_');
+      } catch (_) {}
       _isLoading = false;
       notifyListeners();
       return true;
