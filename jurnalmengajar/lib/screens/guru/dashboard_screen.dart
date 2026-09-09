@@ -22,6 +22,7 @@ import '../../providers/warning_letter_provider.dart';
 import '../../widgets/animated_widgets.dart';
 import '../../widgets/role_badge.dart';
 import '../../widgets/school_switcher_modal.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class GuruDashboardScreen extends StatefulWidget {
   const GuruDashboardScreen({super.key});
@@ -436,9 +437,30 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     );
 
     final today = DateTime.now();
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ?? authProvider.activeSchoolId?.trim();
+
+    final scheduledDateKeys = <String>{};
+    for (final s in scheduleProvider.cachedTeacherSchedules) {
+      if (!s.isActive) continue;
+      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+        final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+        if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+          continue;
+        }
+      }
+      final key = '${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}';
+      scheduledDateKeys.add(key);
+    }
+
     final activeSchedulesThisMonth = scheduleProvider.cachedTeacherSchedules
         .where((s) {
           if (!s.isActive) return false;
+          if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+            final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+            if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+              return false;
+            }
+          }
           if (s.date.year != today.year || s.date.month != today.month) {
             return false;
           }
@@ -491,7 +513,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       // ── 2. KARTU KALENDER (Atas) ────────────────────────────
                       FadeSlideIn(
                         delay: const Duration(milliseconds: 80),
-                        child: _buildCalendarCard(),
+                        child: _buildCalendarCard(
+                          scheduledDateKeys,
+                          teacher,
+                          scheduleProvider,
+                        ),
                       ),
 
                       SizedBox(height: 16.h),
@@ -966,7 +992,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   }
 
   // ─── 4. KARTU KALENDER ─────────────────────────────────────────────────────
-  Widget _buildCalendarCard() {
+  Widget _buildCalendarCard(
+    Set<String> scheduledDateKeys,
+    TeacherModel teacher,
+    ScheduleProvider scheduleProvider,
+  ) {
     final monthYearStr = DateFormat('MMMM yyyy', 'id_ID').format(_focusedDay);
 
     // Calculate current week days starting from Monday of the focused day's week
@@ -976,6 +1006,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     final weekDays = List.generate(7, (i) => monday.add(Duration(days: i)));
 
     final dayNames = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       width: double.infinity,
@@ -1019,12 +1050,35 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 ),
               ),
 
-              Text(
-                monthYearStr,
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w800,
-                  color: Theme.of(context).colorScheme.onSurface,
+              InkWell(
+                onTap: () => _showMonthCalendarDialog(
+                  context,
+                  scheduleProvider,
+                  teacher,
+                  scheduledDateKeys,
+                ),
+                borderRadius: BorderRadius.circular(10.r),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        monthYearStr,
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w800,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      SizedBox(width: 5.w),
+                      Icon(
+                        Icons.calendar_month_rounded,
+                        size: 16.sp,
+                        color: const Color(0xFF4F7CFF),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -1086,6 +1140,113 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   date.month == _selectedDay.month &&
                   date.day == _selectedDay.day;
               final isSunday = date.weekday == DateTime.sunday;
+              final dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+              final hasSchedule = scheduledDateKeys.contains(dateKey);
+
+              BoxDecoration circleDecoration;
+              Color textColor;
+              FontWeight fontWeight;
+              Widget bottomIndicator;
+
+              if (isSelected && hasSchedule) {
+                // 1. SELECTED DATE WITH SCHEDULE
+                // Prominent blue gradient with crisp yellow border/outline
+                circleDecoration = BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF4F7CFF), Color(0xFF8B7CFF)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(0xFFF59E0B),
+                    width: 2.2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4F7CFF).withValues(alpha: 0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                );
+                textColor = Theme.of(context).colorScheme.surface;
+                fontWeight = FontWeight.w800;
+                bottomIndicator = Container(
+                  width: 14.w,
+                  height: 3.h,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF59E0B),
+                    borderRadius: BorderRadius.circular(2.r),
+                  ),
+                );
+              } else if (isSelected) {
+                // 2. SELECTED DATE WITHOUT SCHEDULE
+                circleDecoration = BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF4F7CFF), Color(0xFF8B7CFF)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4F7CFF).withValues(alpha: 0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                );
+                textColor = Theme.of(context).colorScheme.surface;
+                fontWeight = FontWeight.w800;
+                bottomIndicator = Container(
+                  width: 14.w,
+                  height: 3.h,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4F7CFF),
+                    borderRadius: BorderRadius.circular(2.r),
+                  ),
+                );
+              } else if (hasSchedule) {
+                // 3. DATE WITH TEACHING SCHEDULE (TARGET SCREENSHOT 2)
+                // Yellow circle / outline around the date number
+                circleDecoration = BoxDecoration(
+                  color: const Color(0xFFFEF3C7).withValues(alpha: isDark ? 0.22 : 0.45),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(0xFFF59E0B),
+                    width: 1.8,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                );
+                textColor = isSunday
+                    ? const Color(0xFFEF4444)
+                    : (isDark ? const Color(0xFFFDE047) : const Color(0xFFD97706));
+                fontWeight = FontWeight.w700;
+                bottomIndicator = SizedBox(height: 3.h);
+              } else {
+                // 4. NORMAL DATE
+                circleDecoration = const BoxDecoration(
+                  color: Colors.transparent,
+                  shape: BoxShape.circle,
+                );
+                textColor = isSunday
+                    ? const Color(0xFFEF4444)
+                    : Theme.of(context).colorScheme.onSurface;
+                fontWeight = FontWeight.w600;
+                bottomIndicator = SizedBox(height: 3.h);
+              }
 
               return InkWell(
                 onTap: () => _onDateSelected(date),
@@ -1095,62 +1256,214 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     Container(
                       width: 38.w,
                       height: 38.w,
-                      decoration: BoxDecoration(
-                        gradient: isSelected
-                            ? const LinearGradient(
-                                colors: [Color(0xFF4F7CFF), Color(0xFF8B7CFF)],
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                              )
-                            : null,
-                        color: isSelected ? null : Colors.transparent,
-                        shape: BoxShape.circle,
-                        boxShadow: isSelected
-                            ? [
-                                BoxShadow(
-                                  color: const Color(
-                                    0xFF4F7CFF,
-                                  ).withValues(alpha: 0.35),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ]
-                            : null,
-                      ),
+                      decoration: circleDecoration,
                       child: Center(
                         child: Text(
                           '${date.day}',
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 13.sp,
-                            fontWeight: isSelected
-                                ? FontWeight.w800
-                                : FontWeight.w600,
-                            color: isSelected
-                                ? Theme.of(context).colorScheme.surface
-                                : (isSunday
-                                    ? const Color(0xFFEF4444)
-                                    : Theme.of(context).colorScheme.onSurface),
+                            fontWeight: fontWeight,
+                            color: textColor,
                           ),
                         ),
                       ),
                     ),
                     SizedBox(height: 4.h),
-                    Container(
-                      width: 14.w,
-                      height: 3.h,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? const Color(0xFF4F7CFF)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(2.r),
-                      ),
-                    ),
+                    bottomIndicator,
                   ],
                 ),
               );
             }).toList(),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showMonthCalendarDialog(
+    BuildContext context,
+    ScheduleProvider scheduleProvider,
+    TeacherModel teacher,
+    Set<String> scheduledDateKeys,
+  ) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        DateTime focused = _focusedDay;
+        DateTime selected = _selectedDay;
+        return StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            return Dialog(
+              insetPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(16.w),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Pilih Tanggal Mengajar',
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w800,
+                            color: Theme.of(dialogCtx).colorScheme.onSurface,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () => Navigator.pop(dialogCtx),
+                          constraints: const BoxConstraints(),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+                    TableCalendar(
+                      locale: 'id_ID',
+                      daysOfWeekHeight: 30.h,
+                      rowHeight: 44.h,
+                      firstDay: DateTime.now().subtract(const Duration(days: 365)),
+                      lastDay: DateTime.now().add(const Duration(days: 365)),
+                      focusedDay: focused,
+                      calendarFormat: CalendarFormat.month,
+                      startingDayOfWeek: StartingDayOfWeek.monday,
+                      headerStyle: HeaderStyle(
+                        formatButtonVisible: false,
+                        titleCentered: true,
+                        titleTextStyle: GoogleFonts.hankenGrotesk(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w800,
+                          color: Theme.of(dialogCtx).colorScheme.onSurface,
+                        ),
+                      ),
+                      selectedDayPredicate: (day) => isSameDay(selected, day),
+                      onDaySelected: (selDay, focDay) {
+                        setDialogState(() {
+                          selected = selDay;
+                          focused = focDay;
+                        });
+                        _onDateSelected(selDay);
+                        Navigator.pop(dialogCtx);
+                      },
+                      onPageChanged: (focDay) {
+                        setDialogState(() {
+                          focused = focDay;
+                        });
+                        setState(() {
+                          _focusedDay = focDay;
+                        });
+                      },
+                      calendarBuilders: CalendarBuilders(
+                        defaultBuilder: (ctx, day, focDay) {
+                          return _buildMonthCell(
+                            day,
+                            isSelected: false,
+                            isToday: false,
+                            isOutside: false,
+                            scheduledDateKeys: scheduledDateKeys,
+                          );
+                        },
+                        outsideBuilder: (ctx, day, focDay) {
+                          return _buildMonthCell(
+                            day,
+                            isSelected: false,
+                            isToday: false,
+                            isOutside: true,
+                            scheduledDateKeys: scheduledDateKeys,
+                          );
+                        },
+                        todayBuilder: (ctx, day, focDay) {
+                          final isSel = isSameDay(selected, day);
+                          return _buildMonthCell(
+                            day,
+                            isSelected: isSel,
+                            isToday: true,
+                            isOutside: false,
+                            scheduledDateKeys: scheduledDateKeys,
+                          );
+                        },
+                        selectedBuilder: (ctx, day, focDay) {
+                          return _buildMonthCell(
+                            day,
+                            isSelected: true,
+                            isToday: isSameDay(DateTime.now(), day),
+                            isOutside: false,
+                            scheduledDateKeys: scheduledDateKeys,
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildMonthCell(
+    DateTime day, {
+    required bool isSelected,
+    required bool isToday,
+    required bool isOutside,
+    required Set<String> scheduledDateKeys,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dateKey = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+    final hasSchedule = scheduledDateKeys.contains(dateKey);
+    final isSunday = day.weekday == DateTime.sunday;
+
+    Color bgColor = Colors.transparent;
+    Color textColor = isOutside
+        ? (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
+        : (isSunday ? const Color(0xFFEF4444) : Theme.of(context).colorScheme.onSurface);
+    FontWeight fontWeight = FontWeight.w500;
+    BoxBorder? border;
+
+    if (isSelected && hasSchedule) {
+      bgColor = const Color(0xFF4F7CFF);
+      textColor = Colors.white;
+      fontWeight = FontWeight.w800;
+      border = Border.all(color: const Color(0xFFF59E0B), width: 2.0);
+    } else if (isSelected) {
+      bgColor = const Color(0xFF4F7CFF);
+      textColor = Colors.white;
+      fontWeight = FontWeight.w800;
+    } else if (hasSchedule) {
+      bgColor = const Color(0xFFFEF3C7).withValues(alpha: isDark ? 0.22 : 0.45);
+      textColor = isOutside
+          ? (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
+          : (isDark ? const Color(0xFFFDE047) : const Color(0xFFD97706));
+      fontWeight = FontWeight.w700;
+      border = Border.all(color: const Color(0xFFF59E0B), width: 1.5);
+    } else if (isToday) {
+      bgColor = const Color(0xFF4F7CFF).withValues(alpha: isDark ? 0.25 : 0.15);
+      textColor = isDark ? const Color(0xFF93C5FD) : const Color(0xFF4F7CFF);
+      fontWeight = FontWeight.w700;
+    }
+
+    return Container(
+      margin: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: bgColor,
+        shape: BoxShape.circle,
+        border: border,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '${day.day}',
+        style: GoogleFonts.hankenGrotesk(
+          fontSize: 12.sp,
+          fontWeight: fontWeight,
+          color: textColor,
+        ),
       ),
     );
   }

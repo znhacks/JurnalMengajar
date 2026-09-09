@@ -554,22 +554,37 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   // ─── Calendar Card ─────────────────────────────────────────────────────────
 
   bool _hasTeacherScheduleOnDay(List<ScheduleModel> schedules, DateTime day) {
+    final activeSchoolId = Provider.of<AuthProvider>(context, listen: false).activeSchoolId;
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(activeSchoolId) ?? activeSchoolId?.trim();
     if (_selectedTeacherId == null) {
       return schedules.any(
-        (s) =>
-            s.isActive &&
-            s.date.year == day.year &&
-            s.date.month == day.month &&
-            s.date.day == day.day,
+        (s) {
+          if (!s.isActive) return false;
+          if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+            final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+            if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+              return false;
+            }
+          }
+          return s.date.year == day.year &&
+              s.date.month == day.month &&
+              s.date.day == day.day;
+        },
       );
     }
     return schedules.any(
-      (s) =>
-          s.isActive &&
-          s.teacherId == _selectedTeacherId &&
-          s.date.year == day.year &&
-          s.date.month == day.month &&
-          s.date.day == day.day,
+      (s) {
+        if (!s.isActive || s.teacherId != _selectedTeacherId) return false;
+        if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+          final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+          if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+            return false;
+          }
+        }
+        return s.date.year == day.year &&
+            s.date.month == day.month &&
+            s.date.day == day.day;
+      },
     );
   }
 
@@ -619,8 +634,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,
-        border: hasSchedule && !isSelected
-            ? Border.all(color: const Color(0xFFF59E0B), width: 1.5)
+        border: hasSchedule
+            ? Border.all(
+                color: const Color(0xFFF59E0B),
+                width: isSelected ? 2.0 : 1.5,
+              )
             : null,
       ),
       alignment: Alignment.center,

@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jurnalmengajar/core/services/cache_service.dart';
 import 'package:jurnalmengajar/models/user_model.dart';
 import 'package:jurnalmengajar/models/user_school_model.dart';
+import 'package:jurnalmengajar/models/schedule_model.dart';
+import 'package:jurnalmengajar/core/utils/helper.dart';
 import 'package:jurnalmengajar/providers/auth_provider.dart';
 import 'package:jurnalmengajar/repositories/auth_repository.dart';
 
@@ -285,6 +287,107 @@ void main() {
       // Search for foreign admin in active school dataset returns 0 results
       final searchResults = users.where((u) => u.email.contains('adminsmkn100')).toList();
       expect(searchResults.isEmpty, isTrue);
+    });
+
+    test('Calendar schedule indicators identify dates accurately with multi-tenant isolation', () {
+      final schoolA = '00000000-0000-0000-0000-000000000001';
+      final schoolB = '99999999-9999-9999-9999-999999999999';
+
+      final List<ScheduleModel> mockSchedules = [
+        // Active schedule on 2026-09-10 in School A (has time component 08:30)
+        ScheduleModel(
+          id: 's1',
+          periodId: 'p1',
+          teacherId: 't1',
+          subjectId: 'sub1',
+          classId: 'c1',
+          teachingHour: 1,
+          date: DateTime(2026, 9, 10, 8, 30),
+          schoolId: schoolA,
+          isActive: true,
+        ),
+        // Second schedule on 2026-09-10 in School A (hour 2)
+        ScheduleModel(
+          id: 's2',
+          periodId: 'p1',
+          teacherId: 't1',
+          subjectId: 'sub2',
+          classId: 'c1',
+          teachingHour: 2,
+          date: DateTime(2026, 9, 10, 9, 15),
+          schoolId: schoolA,
+          isActive: true,
+        ),
+        // Schedule on 2026-09-15 in School B
+        ScheduleModel(
+          id: 's3',
+          periodId: 'p1',
+          teacherId: 't1',
+          subjectId: 'sub1',
+          classId: 'c2',
+          teachingHour: 3,
+          date: DateTime(2026, 9, 15, 10, 0),
+          schoolId: schoolB,
+          isActive: true,
+        ),
+        // Inactive schedule on 2026-09-20 in School A
+        ScheduleModel(
+          id: 's4',
+          periodId: 'p1',
+          teacherId: 't1',
+          subjectId: 'sub1',
+          classId: 'c1',
+          teachingHour: 1,
+          date: DateTime(2026, 9, 20, 7, 30),
+          schoolId: schoolA,
+          isActive: false,
+        ),
+      ];
+
+      // Helper simulating calendar scheduledDateKeys calculation for School A
+      Set<String> getScheduledDates(List<ScheduleModel> schedules, String activeSchoolId) {
+        final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(activeSchoolId) ?? activeSchoolId.trim();
+        final keys = <String>{};
+        for (final s in schedules) {
+          if (!s.isActive) continue;
+          if (cleanActiveSchoolId.isNotEmpty) {
+            final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+            if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+              continue;
+            }
+          }
+          final key = '${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}';
+          keys.add(key);
+        }
+        return keys;
+      }
+
+      // Context 1: School A is active
+      final scheduledDatesSchoolA = getScheduledDates(mockSchedules, schoolA);
+
+      // Date with no schedule (e.g. 2026-09-09) -> false (normal)
+      expect(scheduledDatesSchoolA.contains('2026-09-09'), isFalse);
+
+      // Date with schedules (2026-09-10) -> true (yellow indicator)
+      expect(scheduledDatesSchoolA.contains('2026-09-10'), isTrue);
+
+      // Multiple schedules on same day still result in exactly 1 entry
+      expect(scheduledDatesSchoolA.where((k) => k == '2026-09-10').length, 1);
+
+      // Date with schedule in School B (2026-09-15) must NOT appear in School A
+      expect(scheduledDatesSchoolA.contains('2026-09-15'), isFalse);
+
+      // Inactive schedule (2026-09-20) must NOT appear
+      expect(scheduledDatesSchoolA.contains('2026-09-20'), isFalse);
+
+      // Context 2: School B is active
+      final scheduledDatesSchoolB = getScheduledDates(mockSchedules, schoolB);
+
+      // 2026-09-10 from School A must NOT appear in School B
+      expect(scheduledDatesSchoolB.contains('2026-09-10'), isFalse);
+
+      // 2026-09-15 from School B appears in School B
+      expect(scheduledDatesSchoolB.contains('2026-09-15'), isTrue);
     });
   });
 }
