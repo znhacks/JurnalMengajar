@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/warning_letter_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -242,10 +243,13 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                         backgroundColor: unreadCount > 0
                                             ? (isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.35) : const Color(0xFFFEE2E2))
                                             : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
-                                        backgroundImage: teacher.photoUrl != null && teacher.photoUrl!.isNotEmpty
-                                            ? NetworkImage(teacher.photoUrl!)
+                                        backgroundImage: teacher.photoUrl != null && teacher.photoUrl!.startsWith('http')
+                                            ? CachedNetworkImageProvider(teacher.photoUrl!)
                                             : null,
-                                        child: teacher.photoUrl == null || teacher.photoUrl!.isEmpty
+                                        onBackgroundImageError: (exception, stackTrace) {
+                                          debugPrint('Error loading teacher avatar in warning letters: $exception');
+                                        },
+                                        child: teacher.photoUrl == null || !teacher.photoUrl!.startsWith('http')
                                             ? Icon(
                                                 Icons.warning_amber_rounded,
                                                 color: unreadCount > 0

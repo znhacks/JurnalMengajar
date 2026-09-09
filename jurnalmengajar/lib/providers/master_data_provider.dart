@@ -512,9 +512,12 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await teacherRepository.update(model);
-      _teachers = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty)
-          ? await teacherRepository.getAllForSchool(_currentSchoolId!)
-          : <TeacherModel>[];
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
+      if (_currentSchoolId != null && _currentSchoolId!.isNotEmpty) {
+        await CacheService().remove('teachers_$_currentSchoolId');
+        _teachers = await teacherRepository.getAllForSchool(_currentSchoolId!);
+      }
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -530,9 +533,12 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await teacherRepository.delete(id);
-      _teachers = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty)
-          ? await teacherRepository.getAllForSchool(_currentSchoolId!)
-          : <TeacherModel>[];
+      if (_currentSchoolId != null && _currentSchoolId!.isNotEmpty) {
+        await CacheService().remove('teachers_$_currentSchoolId');
+        _teachers = await teacherRepository.getAllForSchool(_currentSchoolId!);
+      } else {
+        _teachers = <TeacherModel>[];
+      }
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -544,7 +550,9 @@ class MasterDataProvider with ChangeNotifier {
   }
 
   void updateTeacherFromUser(UserModel user) {
-    final index = _teachers.indexWhere((t) => t.email.toLowerCase() == user.email.toLowerCase());
+    final index = _teachers.indexWhere((t) =>
+        t.id == user.id ||
+        (user.email.isNotEmpty && t.email.toLowerCase() == user.email.toLowerCase()));
     if (index != -1) {
       _teachers[index] = _teachers[index].copyWith(
         name: user.fullName,
@@ -553,6 +561,9 @@ class MasterDataProvider with ChangeNotifier {
         phoneNumber: user.phoneNumber ?? _teachers[index].phoneNumber,
         photoUrl: user.photoUrl,
       );
+      if (_currentSchoolId != null && _currentSchoolId!.isNotEmpty) {
+        CacheService().remove('teachers_$_currentSchoolId');
+      }
       notifyListeners();
     }
   }

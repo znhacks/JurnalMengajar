@@ -721,26 +721,37 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(50.r),
-                    child:
-                        teacher.photoUrl != null &&
-                            teacher.photoUrl!.startsWith('http')
-                        ? Image.network(
-                            teacher.photoUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(
+                    child: Builder(
+                      builder: (context) {
+                        final authUser = context.watch<AuthProvider>().currentUser;
+                        final displayPhoto = (authUser?.photoUrl != null &&
+                                authUser!.photoUrl!.startsWith('http'))
+                            ? authUser.photoUrl
+                            : (teacher.photoUrl != null &&
+                                    teacher.photoUrl!.startsWith('http')
+                                ? teacher.photoUrl
+                                : null);
+
+                        return displayPhoto != null
+                            ? Image.network(
+                                displayPhoto,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(
+                                      Icons.face_rounded,
+                                      color: Color(0xFF4F7CFF),
+                                      size: 26,
+                                    ),
+                              )
+                            : const Center(
+                                child: Icon(
                                   Icons.face_rounded,
                                   color: Color(0xFF4F7CFF),
                                   size: 26,
                                 ),
-                          )
-                        : const Center(
-                            child: Icon(
-                              Icons.face_rounded,
-                              color: Color(0xFF4F7CFF),
-                              size: 26,
-                            ),
-                          ),
+                              );
+                      },
+                    ),
                   ),
                 ),
               ),

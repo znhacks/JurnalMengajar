@@ -94,6 +94,11 @@ class UserModel {
     if (schoolId != null && schoolId!.isNotEmpty) {
       map['school_id'] = schoolId;
     }
+    return map;
+  }
+
+  Map<String, dynamic> toCacheJson() {
+    final map = toJson();
     if (status != null && status!.isNotEmpty) {
       map['status'] = status;
     }
@@ -102,6 +107,7 @@ class UserModel {
     }
     return map;
   }
+
 
   UserModel copyWith({
     String? id,

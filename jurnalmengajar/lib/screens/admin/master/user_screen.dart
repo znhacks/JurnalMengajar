@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../models/user_model.dart';
 import '../../../widgets/admin_drawer.dart';
@@ -412,6 +413,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
         final isDark = Theme.of(context).brightness == Brightness.dark;
 
         return InkWell(
+          key: ValueKey('user_tile_${user.id}'),
           onTap: (_isSelectionMode && isSelectable)
               ? () => _toggleSelectItem(user.id)
               : null,
@@ -464,11 +466,15 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     CircleAvatar(
+                      key: ValueKey('user_avatar_${user.id}_${user.photoUrl}'),
                       radius: 24.r,
                       backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
                       backgroundImage: user.photoUrl != null && user.photoUrl!.startsWith('http')
-                          ? NetworkImage(user.photoUrl!)
+                          ? CachedNetworkImageProvider(user.photoUrl!)
                           : null,
+                      onBackgroundImageError: (exception, stackTrace) {
+                        debugPrint('Error loading avatar for ${user.id}: $exception');
+                      },
                       child: user.photoUrl == null || !user.photoUrl!.startsWith('http')
                           ? Icon(Icons.person_outline, size: 24.r, color: Colors.grey[400])
                           : null,
@@ -868,10 +874,13 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                               backgroundColor: isDark
                                   ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
                                   : const Color(0xFFEFF6FF),
-                              backgroundImage: photoUrl != null && photoUrl.isNotEmpty
-                                  ? NetworkImage(photoUrl)
+                              backgroundImage: photoUrl != null && photoUrl.startsWith('http')
+                                  ? CachedNetworkImageProvider(photoUrl)
                                   : null,
-                              child: photoUrl == null || photoUrl.isEmpty
+                              onBackgroundImageError: (exception, stackTrace) {
+                                debugPrint('Error loading sheet avatar: $exception');
+                              },
+                              child: photoUrl == null || !photoUrl.startsWith('http')
                                   ? Text(
                                       name.isNotEmpty ? name[0].toUpperCase() : 'G',
                                       style: TextStyle(

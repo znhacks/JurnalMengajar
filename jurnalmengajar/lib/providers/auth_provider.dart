@@ -1020,6 +1020,11 @@ class AuthProvider with ChangeNotifier {
         }
       }
 
+      // Evict Flutter memory image cache to guarantee instant refresh of avatars
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
+      await CacheService().purgePrefix('teachers_');
+
       await loadUserMemberships();
       _isLoading = false;
       notifyListeners();

@@ -186,7 +186,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                           ? CachedNetworkImageProvider(user.photoUrl!)
                                           : null)
                                       as ImageProvider?,
-                            child: tempImageBytes == null && user.photoUrl == null
+                            child: tempImageBytes == null &&
+                                    (user.photoUrl == null ||
+                                        !user.photoUrl!.startsWith('http'))
                                 ? Icon(
                                     Icons.person,
                                     size: 48.r,

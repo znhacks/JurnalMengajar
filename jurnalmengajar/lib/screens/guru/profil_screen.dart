@@ -336,13 +336,15 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                           : null)
                                       as ImageProvider?,
                             child:
-                                tempImageBytes == null && user.photoUrl == null
-                                ? Icon(
-                                    Icons.person,
-                                    size: 48.r,
-                                    color: Colors.grey[400],
-                                  )
-                                : null,
+                                tempImageBytes == null &&
+                                        (user.photoUrl == null ||
+                                            !user.photoUrl!.startsWith('http'))
+                                    ? Icon(
+                                        Icons.person,
+                                        size: 48.r,
+                                        color: Colors.grey[400],
+                                      )
+                                    : null,
                           ),
                         ),
                         Positioned(
@@ -1113,50 +1115,56 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     Stack(
                       alignment: Alignment.center,
                       children: [
-                        GestureDetector(
-                          onTap:
-                              currentUser.photoUrl != null &&
-                                  currentUser.photoUrl!.startsWith('http')
-                              ? () {
-                                  FullScreenImageViewer.show(
-                                    context,
-                                    currentUser.photoUrl!,
-                                    'guru_profile_avatar',
-                                  );
-                                }
-                              : null,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 2.5.r,
-                              ),
-                            ),
-                            child: Hero(
-                              tag: 'guru_profile_avatar',
-                              child: CircleAvatar(
-                                radius: 36.r,
-                                backgroundColor: Colors.white.withValues(
-                                  alpha: 0.2,
+                        Builder(
+                          builder: (context) {
+                            final displayUrl = (currentUser.photoUrl != null &&
+                                    currentUser.photoUrl!.startsWith('http'))
+                                ? currentUser.photoUrl
+                                : (teacher.photoUrl != null &&
+                                        teacher.photoUrl!.startsWith('http')
+                                    ? teacher.photoUrl
+                                    : null);
+
+                            return GestureDetector(
+                              onTap: displayUrl != null
+                                  ? () {
+                                      FullScreenImageViewer.show(
+                                        context,
+                                        displayUrl,
+                                        'guru_profile_avatar',
+                                      );
+                                    }
+                                  : null,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2.5.r,
+                                  ),
                                 ),
-                                backgroundImage: (teacher.photoUrl != null && teacher.photoUrl!.startsWith('http'))
-                                    ? CachedNetworkImageProvider(teacher.photoUrl!)
-                                    : (currentUser.photoUrl != null &&
-                                            currentUser.photoUrl!.startsWith('http')
-                                        ? CachedNetworkImageProvider(currentUser.photoUrl!)
-                                        : null) as ImageProvider?,
-                                child: (teacher.photoUrl == null || !teacher.photoUrl!.startsWith('http')) &&
-                                        (currentUser.photoUrl == null || !currentUser.photoUrl!.startsWith('http'))
-                                    ? const Icon(
-                                        Icons.person,
-                                        size: 36,
-                                        color: Colors.white,
-                                      )
-                                    : null,
+                                child: Hero(
+                                  tag: 'guru_profile_avatar',
+                                  child: CircleAvatar(
+                                    radius: 36.r,
+                                    backgroundColor: Colors.white.withValues(
+                                      alpha: 0.2,
+                                    ),
+                                    backgroundImage: displayUrl != null
+                                        ? CachedNetworkImageProvider(displayUrl)
+                                        : null,
+                                    child: displayUrl == null
+                                        ? const Icon(
+                                            Icons.person,
+                                            size: 36,
+                                            color: Colors.white,
+                                          )
+                                        : null,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
+                            );
+                          },
                         ),
                         Positioned(
                           bottom: 0,

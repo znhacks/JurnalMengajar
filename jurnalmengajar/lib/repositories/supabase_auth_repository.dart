@@ -478,7 +478,27 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<UserModel> updateProfile(UserModel user) async {
     try {
-      await _supabase.from('users').update(user.toJson()).eq('id', user.id);
+      final validPhotoUrl = (user.photoUrl != null && user.photoUrl!.startsWith('http'))
+          ? user.photoUrl
+          : null;
+
+      final Map<String, dynamic> updatePayload = {
+        'full_name': user.fullName,
+        'phone': user.phoneNumber,
+        'position': user.position,
+        'address': user.address,
+        'photo_url': validPhotoUrl,
+      };
+
+      if (user.schoolName != null && user.schoolName!.isNotEmpty) {
+        updatePayload['school_name'] = user.schoolName;
+      }
+
+      await _supabase.from('users').update(updatePayload).eq('id', user.id);
+
+      // Invalidate old caches
+      await CacheService().remove('user_profile_${user.id}');
+      await CacheService().purgePrefix('teachers_');
 
       // Get updated data
       final response = await _supabase
@@ -487,8 +507,11 @@ class SupabaseAuthRepository implements AuthRepository {
           .eq('id', user.id)
           .single();
 
-      final updated = UserModel.fromJson(response);
-      await CacheService().save('user_profile_${user.id}', updated.toJson());
+      final updated = UserModel.fromJson(response).copyWith(
+        status: user.status,
+        membershipRole: user.membershipRole,
+      );
+      await CacheService().save('user_profile_${user.id}', updated.toCacheJson());
       return updated;
     } catch (e) {
       throw Exception('Gagal memperbarui profil: $e');
@@ -739,7 +762,7 @@ class SupabaseAuthRepository implements AuthRepository {
           .uploadBinary(
             filePath,
             compressed.bytes,
-            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+            fileOptions: const FileOptions(cacheControl: '0', upsert: true),
           );
 
       final publicUrl = _supabase.storage

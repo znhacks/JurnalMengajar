@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 import '../../../providers/master_data_provider.dart';
@@ -252,8 +253,11 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                           backgroundImage: tempImageBytes != null
                               ? MemoryImage(tempImageBytes!)
                               : ((teacher?.photoUrl?.startsWith('http') ?? false)
-                                  ? NetworkImage(teacher!.photoUrl!)
-                                  : null),
+                                  ? CachedNetworkImageProvider(teacher!.photoUrl!)
+                                  : null) as ImageProvider?,
+                          onBackgroundImageError: (exception, stackTrace) {
+                            debugPrint('Error loading dialog teacher avatar: $exception');
+                          },
                           child: tempImageBytes == null && !(teacher?.photoUrl?.startsWith('http') ?? false)
                               ? Icon(Icons.person, size: 44.r, color: Colors.grey[400])
                               : null,
@@ -563,11 +567,15 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                       SizedBox(width: 4.w),
                     ],
                     CircleAvatar(
+                      key: ValueKey('teacher_avatar_${t.id}_${t.photoUrl}'),
                       radius: 20.r,
                       backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
                       backgroundImage: t.photoUrl != null && t.photoUrl!.startsWith('http')
-                          ? NetworkImage(t.photoUrl!)
+                          ? CachedNetworkImageProvider(t.photoUrl!)
                           : null,
+                      onBackgroundImageError: (exception, stackTrace) {
+                        debugPrint('Error loading teacher avatar for ${t.id}: $exception');
+                      },
                       child: t.photoUrl == null || !t.photoUrl!.startsWith('http')
                           ? Icon(Icons.person, size: 20.r, color: Colors.grey[400])
                           : null,
