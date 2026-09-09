@@ -90,17 +90,15 @@ class SupabaseTeacherRepository implements TeacherRepository {
             debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] schedules query error: $err');
           }
 
-          // 3. Query users scoped strictly to cleanSchoolId and with TEACHER role only
+          // 3. Query users scoped strictly to cleanSchoolId
           try {
             final Set<String> targetUserIds = {...activeLinkedUserIds, ...scheduledTeacherIds};
 
-            var usersQuery = _supabase
-                .from('users')
-                .select()
-                .inFilter('role', ['guru', 'teacher']);
+            var usersQuery = _supabase.from('users').select();
 
             if (targetUserIds.isNotEmpty) {
-              final idListFilter = targetUserIds.map((id) => '"$id"').join(',');
+              // PostgREST uuid in-filter MUST NOT contain double quotes: id.in.(uuid1,uuid2)
+              final idListFilter = targetUserIds.join(',');
               usersQuery = usersQuery.or('school_id.eq.$cleanSchoolId,school_ids.cs.{"$cleanSchoolId"},id.in.($idListFilter)');
             } else {
               usersQuery = usersQuery.or('school_id.eq.$cleanSchoolId,school_ids.cs.{"$cleanSchoolId"}');
@@ -119,19 +117,24 @@ class SupabaseTeacherRepository implements TeacherRepository {
                 if (tId.isEmpty) continue;
 
                 final userRole = (json['role']?.toString() ?? '').toLowerCase();
-                // STRICT ROLE FILTER: Admin, superadmin, school_admin, owner, staff MUST NEVER be in TeacherModel list!
-                if (userRole != 'guru' && userRole != 'teacher') {
-                  debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] -> REJECTED NON-TEACHER: id=$tId, name="${json['full_name']}", role=$userRole');
+                final isDirectMatch = AppHelper.matchesSchool(json['school_id'], json['school_ids'], cleanSchoolId);
+                final isActiveTeacherMember = activeLinkedUserIds.contains(tId);
+                final isScheduledTeacher = scheduledTeacherIds.contains(tId);
+
+                // STRICT TENANT ISOLATION: User must belong to this school via direct school_id, active user_schools, or schedule
+                if (!isDirectMatch && !isActiveTeacherMember && !isScheduledTeacher) {
+                  debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] -> REJECTED FOREIGN USER: $tId, name=${json['full_name']} (does not belong to $cleanSchoolId)');
                   continue;
                 }
 
-                // Strict Tenant Verification:
-                final isDirectMatch = AppHelper.matchesSchool(json['school_id'], json['school_ids'], cleanSchoolId);
-                final isActiveMember = activeLinkedUserIds.contains(tId);
-                final isScheduledTeacher = scheduledTeacherIds.contains(tId);
-
-                if (!isDirectMatch && !isActiveMember && !isScheduledTeacher) {
-                  debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] -> REJECTED FOREIGN USER: $tId, name=${json['full_name']} (does not belong to $cleanSchoolId)');
+                // STRICT ROLE FILTER: Dedicated pure admin (e.g. admin@jurnal.com) MUST NEVER appear as a teacher!
+                final isTeacherRole = userRole == 'guru' || userRole == 'teacher';
+                if (!isTeacherRole && !isActiveTeacherMember && !isScheduledTeacher) {
+                  debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] -> REJECTED NON-TEACHER: id=$tId, name="${json['full_name']}", role=$userRole');
+                  continue;
+                }
+                if (userRole == 'admin' && !isActiveTeacherMember && !isScheduledTeacher) {
+                  debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] -> REJECTED PURE ADMIN: id=$tId, name="${json['full_name']}"');
                   continue;
                 }
 
@@ -145,14 +148,13 @@ class SupabaseTeacherRepository implements TeacherRepository {
             debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] scoped users query error: $err');
           }
 
-          // 4. Ensure all teachers with schedules in this school are loaded (must also be guru/teacher)
+          // 4. Ensure all teachers with schedules in this school are loaded
           final missingScheduledTeacherIds = scheduledTeacherIds.where((id) => !teachersMap.containsKey(id)).toList();
           if (missingScheduledTeacherIds.isNotEmpty) {
             try {
               final extraRes = await _supabase
                   .from('users')
                   .select()
-                  .inFilter('role', ['guru', 'teacher'])
                   .inFilter('id', missingScheduledTeacherIds);
 
               for (final item in (extraRes as List)) {
@@ -161,7 +163,7 @@ class SupabaseTeacherRepository implements TeacherRepository {
                       ? item
                       : Map<String, dynamic>.from(item as Map);
                   final userRole = (json['role']?.toString() ?? '').toLowerCase();
-                  if (userRole != 'guru' && userRole != 'teacher') continue;
+                  if (userRole == 'admin' && !activeLinkedUserIds.contains(json['id'])) continue;
 
                   final t = TeacherModel.fromJson(json);
                   teachersMap[t.id] = t;

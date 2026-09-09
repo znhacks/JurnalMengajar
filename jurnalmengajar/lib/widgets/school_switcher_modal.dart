@@ -26,18 +26,32 @@ class SchoolSwitcherModal extends StatelessWidget {
     final userMemberships = authProvider.userMemberships;
     final activeSchoolId = authProvider.activeSchoolId;
     final activeRole = authProvider.activeRole;
+    final isAdminAsli = authProvider.isAdminAsli;
+    final isAdminCadangan = authProvider.isAdminCadangan;
 
     final List<SchoolRoleOption> options = [];
     final Set<String> seen = {};
 
     for (final m in userMemberships) {
-      final baseKey = '${m.schoolId}_${m.role.toLowerCase()}';
+      final mRole = m.role.toLowerCase();
+
+      // RULE 1: Admin Asli can NEVER see or select GURU context!
+      if (isAdminAsli && (mRole == 'guru' || mRole == 'teacher')) {
+        continue;
+      }
+
+      // RULE 2: Pure Guru (non-admin) can NEVER see or select ADMIN context!
+      if (!isAdminAsli && !isAdminCadangan && (mRole == 'admin' || mRole == 'superadmin')) {
+        continue;
+      }
+
+      final baseKey = '${m.schoolId}_$mRole';
       if (!seen.contains(baseKey)) {
         seen.add(baseKey);
         options.add(SchoolRoleOption(
           schoolId: m.schoolId,
           schoolName: m.schoolName,
-          role: m.role,
+          role: isAdminAsli ? 'admin' : m.role,
           logoUrl: m.logoUrl,
         ));
       }
