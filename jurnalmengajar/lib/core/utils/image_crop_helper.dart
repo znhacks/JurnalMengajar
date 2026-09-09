@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
@@ -51,34 +52,35 @@ class _ProfileCropScreen extends StatefulWidget {
 }
 
 class _ProfileCropScreenState extends State<_ProfileCropScreen> {
-  final TransformationController _transformController = TransformationController();
-
   img.Image? _decodedImage;
   Uint8List? _displayBytes;
   bool _isLoading = true;
   bool _isCropping = false;
   String? _errorMessage;
 
+  // Viewport & crop geometry
   double _circleDiameter = 280.0;
   Offset _cropCenter = Offset.zero;
-  double _baseScale = 1.0;
-  double _minScale = 0.2;
-  double _maxScale = 4.0;
-  double _sliderScale = 1.0;
+
+  // Scale and translation state (direct, deterministic coordinates)
+  double _scale = 1.0;
+  Offset _translation = Offset.zero;
+
+  // Scale bounds
+  double _minScale = 1.0;
+  double _maxScale = 3.0;
+
+  // Gesture tracking
+  double _gestureStartScale = 1.0;
+  Offset _gestureStartFocalPoint = Offset.zero;
+  Offset _gestureStartTranslation = Offset.zero;
+
   bool _isLayoutInitialized = false;
 
   @override
   void initState() {
     super.initState();
     _loadImage();
-    _transformController.addListener(_onTransformChanged);
-  }
-
-  @override
-  void dispose() {
-    _transformController.removeListener(_onTransformChanged);
-    _transformController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadImage() async {
@@ -113,24 +115,6 @@ class _ProfileCropScreenState extends State<_ProfileCropScreen> {
     }
   }
 
-  void _onTransformChanged() {
-    final currentScale = _transformController.value.getMaxScaleOnAxis();
-    if (_minScale < _maxScale && currentScale != _sliderScale) {
-      setState(() {
-        _sliderScale = currentScale.clamp(_minScale, _maxScale);
-      });
-    }
-  }
-
-  Matrix4 _matrixFromTransform(double tx, double ty, double scale) {
-    final m = Matrix4.identity();
-    m.storage[0] = scale;
-    m.storage[5] = scale;
-    m.storage[12] = tx;
-    m.storage[13] = ty;
-    return m;
-  }
-
   void _initTransform(BoxConstraints constraints) {
     if (_isLayoutInitialized || _decodedImage == null) return;
     _isLayoutInitialized = true;
@@ -138,27 +122,58 @@ class _ProfileCropScreenState extends State<_ProfileCropScreen> {
     final viewW = constraints.maxWidth;
     final viewH = constraints.maxHeight;
 
-    // Calculate comfortable crop circle diameter
-    _circleDiameter = math.min(viewW * 0.82, viewH * 0.58).clamp(200.0, 360.0);
-    _cropCenter = Offset(viewW / 2, viewH * 0.44);
+    // Center crop circle symmetrically within the viewport
+    _circleDiameter = math.min(viewW * 0.82, viewH * 0.82).clamp(200.0, 360.0);
+    _cropCenter = Offset(viewW / 2, viewH / 2);
 
     final imgW = _decodedImage!.width.toDouble();
     final imgH = _decodedImage!.height.toDouble();
 
-    // Scale image so it naturally covers the crop circle without over-zooming
+    // Scale image so it naturally and completely covers the crop circle
     final scaleX = _circleDiameter / imgW;
     final scaleY = _circleDiameter / imgH;
-    _baseScale = math.max(scaleX, scaleY);
+    _minScale = math.max(scaleX, scaleY);
+    _maxScale = _minScale * 3.0;
+    _scale = _minScale;
 
-    _minScale = _baseScale * 0.5;
-    _maxScale = _baseScale * 4.0;
-    _sliderScale = _baseScale;
+    // Initial position: center horizontally, center vertically with portrait face bias
+    final tx = _cropCenter.dx - (imgW * _scale) / 2;
+    double ty;
+    if (imgH > imgW * 1.15) {
+      // In portrait photos, people's heads/faces are placed in the upper half.
+      // Bias slightly upward so head/face is nicely centered in the circle.
+      final minTy = _cropCenter.dy + (_circleDiameter / 2) - (imgH * _scale);
+      final maxTy = _cropCenter.dy - (_circleDiameter / 2);
+      final centerTy = _cropCenter.dy - (imgH * _scale) / 2;
+      ty = (centerTy + (maxTy - centerTy) * 0.35).clamp(minTy, maxTy);
+    } else {
+      ty = _cropCenter.dy - (imgH * _scale) / 2;
+    }
 
-    // Center image over the crop circle
-    final tx = _cropCenter.dx - (imgW * _baseScale) / 2;
-    final ty = _cropCenter.dy - (imgH * _baseScale) / 2;
+    _translation = _clampTranslation(Offset(tx, ty), _scale);
+  }
 
-    _transformController.value = _matrixFromTransform(tx, ty, _baseScale);
+  Offset _clampTranslation(Offset t, double s) {
+    if (_decodedImage == null) return t;
+    final imgW = _decodedImage!.width.toDouble();
+    final imgH = _decodedImage!.height.toDouble();
+    final r = _circleDiameter / 2;
+
+    // Bounds ensuring the image completely covers the crop circle
+    final maxTx = _cropCenter.dx - r;
+    final minTx = _cropCenter.dx + r - (imgW * s);
+    final maxTy = _cropCenter.dy - r;
+    final minTy = _cropCenter.dy + r - (imgH * s);
+
+    final clampedX = minTx <= maxTx
+        ? t.dx.clamp(minTx, maxTx)
+        : _cropCenter.dx - (imgW * s) / 2;
+
+    final clampedY = minTy <= maxTy
+        ? t.dy.clamp(minTy, maxTy)
+        : _cropCenter.dy - (imgH * s) / 2;
+
+    return Offset(clampedX, clampedY);
   }
 
   void _resetTransform() {
@@ -166,32 +181,65 @@ class _ProfileCropScreenState extends State<_ProfileCropScreen> {
     final imgW = _decodedImage!.width.toDouble();
     final imgH = _decodedImage!.height.toDouble();
 
-    final tx = _cropCenter.dx - (imgW * _baseScale) / 2;
-    final ty = _cropCenter.dy - (imgH * _baseScale) / 2;
+    final tx = _cropCenter.dx - (imgW * _minScale) / 2;
+    double ty;
+    if (imgH > imgW * 1.15) {
+      final minTy = _cropCenter.dy + (_circleDiameter / 2) - (imgH * _minScale);
+      final maxTy = _cropCenter.dy - (_circleDiameter / 2);
+      final centerTy = _cropCenter.dy - (imgH * _minScale) / 2;
+      ty = (centerTy + (maxTy - centerTy) * 0.35).clamp(minTy, maxTy);
+    } else {
+      ty = _cropCenter.dy - (imgH * _minScale) / 2;
+    }
 
     setState(() {
-      _sliderScale = _baseScale;
-      _transformController.value = _matrixFromTransform(tx, ty, _baseScale);
+      _scale = _minScale;
+      _translation = _clampTranslation(Offset(tx, ty), _minScale);
     });
   }
 
   void _applyZoom(double targetScale) {
-    if (_decodedImage == null) return;
-    final currentMatrix = _transformController.value;
-    final currentScale = currentMatrix.getMaxScaleOnAxis();
-    if (currentScale == 0) return;
+    if (_decodedImage == null || _scale == 0) return;
+    final newScale = targetScale.clamp(_minScale, _maxScale);
+    if (newScale == _scale) return;
 
-    final scaleFactor = targetScale / currentScale;
-    final currentTx = currentMatrix.storage[12];
-    final currentTy = currentMatrix.storage[13];
+    final scaleFactor = newScale / _scale;
 
-    // Scale centered on the crop circle
-    final newTx = _cropCenter.dx - scaleFactor * (_cropCenter.dx - currentTx);
-    final newTy = _cropCenter.dy - scaleFactor * (_cropCenter.dy - currentTy);
+    // Scale centered on the crop circle focal point (_cropCenter)
+    // Ensures face stays locked at current position without jumping
+    final newTx = _cropCenter.dx - scaleFactor * (_cropCenter.dx - _translation.dx);
+    final newTy = _cropCenter.dy - scaleFactor * (_cropCenter.dy - _translation.dy);
 
     setState(() {
-      _sliderScale = targetScale.clamp(_minScale, _maxScale);
-      _transformController.value = _matrixFromTransform(newTx, newTy, targetScale);
+      _scale = newScale;
+      _translation = _clampTranslation(Offset(newTx, newTy), newScale);
+    });
+  }
+
+  void _onScaleStart(ScaleStartDetails details) {
+    _gestureStartScale = _scale;
+    _gestureStartFocalPoint = details.localFocalPoint;
+    _gestureStartTranslation = _translation;
+  }
+
+  void _onScaleUpdate(ScaleUpdateDetails details) {
+    if (_decodedImage == null || _gestureStartScale == 0) return;
+
+    // 1. Calculate new zoom scale
+    final newScale = (_gestureStartScale * details.scale).clamp(_minScale, _maxScale);
+    final scaleFactor = newScale / _gestureStartScale;
+
+    // 2. Focal point zoom + pan
+    final f = _gestureStartFocalPoint;
+    final panDelta = details.localFocalPoint - _gestureStartFocalPoint;
+    final rawTx = f.dx - scaleFactor * (f.dx - _gestureStartTranslation.dx) + panDelta.dx;
+    final rawTy = f.dy - scaleFactor * (f.dy - _gestureStartTranslation.dy) + panDelta.dy;
+
+    final clamped = _clampTranslation(Offset(rawTx, rawTy), newScale);
+
+    setState(() {
+      _scale = newScale;
+      _translation = clamped;
     });
   }
 
@@ -201,25 +249,29 @@ class _ProfileCropScreenState extends State<_ProfileCropScreen> {
     setState(() => _isCropping = true);
 
     try {
-      final matrix = _transformController.value;
-      final scale = matrix.getMaxScaleOnAxis();
-      final tx = matrix.storage[12];
-      final ty = matrix.storage[13];
-
       final cropRadius = _circleDiameter / 2;
       final leftScreen = _cropCenter.dx - cropRadius;
       final topScreen = _cropCenter.dy - cropRadius;
 
-      final srcX = (leftScreen - tx) / scale;
-      final srcY = (topScreen - ty) / scale;
-      final srcSize = _circleDiameter / scale;
+      // Map screen crop rect into source image coordinates
+      final srcX = (leftScreen - _translation.dx) / _scale;
+      final srcY = (topScreen - _translation.dy) / _scale;
+      final srcSize = _circleDiameter / _scale;
+
+      final imgW = _decodedImage!.width;
+      final imgH = _decodedImage!.height;
+
+      // Safe clamp inside original image boundaries
+      final clampedX = srcX.round().clamp(0, imgW - 1);
+      final clampedY = srcY.round().clamp(0, imgH - 1);
+      final clampedSize = srcSize.round().clamp(1, math.min(imgW - clampedX, imgH - clampedY));
 
       final croppedBytes = await compute(_cropAndEncodeTask, {
         'bytes': widget.imageBytes,
-        'x': srcX.round(),
-        'y': srcY.round(),
-        'width': srcSize.round(),
-        'height': srcSize.round(),
+        'x': clampedX,
+        'y': clampedY,
+        'width': clampedSize,
+        'height': clampedSize,
       });
 
       if (mounted) {
@@ -316,42 +368,60 @@ class _ProfileCropScreenState extends State<_ProfileCropScreen> {
                     ),
                   ),
                 )
-              : LayoutBuilder(
-                  builder: (context, constraints) {
-                    _initTransform(constraints);
-                    final imgW = _decodedImage!.width.toDouble();
-                    final imgH = _decodedImage!.height.toDouble();
+              : Column(
+                  children: [
+                    // ─── Interactive Crop Viewport ─────────────────────
+                    Expanded(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          _initTransform(constraints);
+                          final imgW = _decodedImage!.width.toDouble();
+                          final imgH = _decodedImage!.height.toDouble();
 
-                    return Column(
-                      children: [
-                        // ─── Interactive Crop Viewport ─────────────────────
-                        Expanded(
-                          child: Stack(
+                          return Stack(
                             fit: StackFit.expand,
                             children: [
-                              // 1. Pan/Zoom Layer
-                              InteractiveViewer(
-                                transformationController: _transformController,
-                                minScale: _minScale,
-                                maxScale: _maxScale,
-                                boundaryMargin: EdgeInsets.all(_circleDiameter * 2.0),
-                                constrained: false,
-                                child: SizedBox(
-                                  width: imgW,
-                                  height: imgH,
-                                  child: Image.memory(
-                                    _displayBytes!,
-                                    width: imgW,
-                                    height: imgH,
-                                    fit: BoxFit.fill,
-                                    filterQuality: FilterQuality.medium,
+                              // 1. Pan/Pinch Gesture Surface
+                              Listener(
+                                onPointerSignal: (pointerSignal) {
+                                  if (pointerSignal is PointerScrollEvent) {
+                                    final step = (_maxScale - _minScale) * 0.06;
+                                    final target = pointerSignal.scrollDelta.dy > 0
+                                        ? _scale - step
+                                        : _scale + step;
+                                    _applyZoom(target);
+                                  }
+                                },
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onScaleStart: _onScaleStart,
+                                  onScaleUpdate: _onScaleUpdate,
+                                  child: ClipRect(
+                                    child: Stack(
+                                      children: [
+                                        Positioned(
+                                          left: _translation.dx,
+                                          top: _translation.dy,
+                                          width: imgW * _scale,
+                                          height: imgH * _scale,
+                                          child: Image.memory(
+                                            _displayBytes!,
+                                            width: imgW * _scale,
+                                            height: imgH * _scale,
+                                            fit: BoxFit.fill,
+                                            filterQuality: FilterQuality.medium,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
 
-                              // 2. Circular Overlay Mask (Passes touches through)
+                              // 2. Circular Overlay Mask (Touches pass through to gesture layer)
                               IgnorePointer(
                                 child: CustomPaint(
+                                  size: Size(constraints.maxWidth, constraints.maxHeight),
                                   painter: _CircularCropOverlayPainter(
                                     center: _cropCenter,
                                     radius: _circleDiameter / 2,
@@ -359,85 +429,119 @@ class _ProfileCropScreenState extends State<_ProfileCropScreen> {
                                 ),
                               ),
                             ],
-                          ),
-                        ),
+                          );
+                        },
+                      ),
+                    ),
 
-                        // ─── Modern Controls Bar ───────────────────────────
-                        Container(
-                          padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 20.w),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF1E293B),
-                            border: Border(
-                              top: BorderSide(color: Color(0xFF334155), width: 1),
-                            ),
-                          ),
-                          child: SafeArea(
-                            top: false,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // Zoom Slider & Quick Buttons
-                                Row(
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.zoom_out, color: Colors.white70),
-                                      tooltip: 'Perkecil',
-                                      onPressed: () {
-                                        final target = (_sliderScale - (_maxScale - _minScale) * 0.1)
-                                            .clamp(_minScale, _maxScale);
-                                        _applyZoom(target);
-                                      },
+                    // ─── Modern Controls Bar ───────────────────────────
+                    Container(
+                      padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 18.w),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF1E293B),
+                        border: Border(
+                          top: BorderSide(color: Color(0xFF334155), width: 1),
+                        ),
+                      ),
+                      child: SafeArea(
+                        top: false,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Zoom Status Header
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 10.w),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Perbesaran',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w500,
                                     ),
-                                    Expanded(
-                                      child: SliderTheme(
-                                        data: SliderTheme.of(context).copyWith(
-                                          activeTrackColor: const Color(0xFF38BDF8),
-                                          inactiveTrackColor: const Color(0xFF334155),
-                                          thumbColor: const Color(0xFF38BDF8),
-                                          overlayColor: const Color(0xFF38BDF8).withValues(alpha: 0.2),
-                                          trackHeight: 3.h,
-                                          thumbShape: RoundSliderThumbShape(enabledThumbRadius: 7.r),
-                                        ),
-                                        child: Slider(
-                                          value: _sliderScale.clamp(_minScale, _maxScale),
-                                          min: _minScale,
-                                          max: _maxScale,
-                                          onChanged: (val) => _applyZoom(val),
-                                        ),
+                                  ),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF0F172A),
+                                      borderRadius: BorderRadius.circular(10.r),
+                                      border: Border.all(color: const Color(0xFF334155)),
+                                    ),
+                                    child: Text(
+                                      '${_minScale > 0 ? ((_scale / _minScale) * 100).round() : 100}%',
+                                      style: TextStyle(
+                                        color: const Color(0xFF38BDF8),
+                                        fontSize: 11.5.sp,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                    IconButton(
-                                      icon: const Icon(Icons.zoom_in, color: Colors.white70),
-                                      tooltip: 'Perbesar',
-                                      onPressed: () {
-                                        final target = (_sliderScale + (_maxScale - _minScale) * 0.1)
-                                            .clamp(_minScale, _maxScale);
-                                        _applyZoom(target);
-                                      },
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.crop_free, color: Colors.white70),
-                                      tooltip: 'Pusatkan',
-                                      onPressed: _resetTransform,
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 2.h),
-                                Text(
-                                  'Geser foto atau gunakan slider untuk menyesuaikan posisi wajah',
-                                  style: TextStyle(
-                                    color: Colors.white54,
-                                    fontSize: 11.5.sp,
                                   ),
-                                  textAlign: TextAlign.center,
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 6.h),
+
+                            // Zoom Slider & Control Buttons
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.zoom_out_rounded, color: Colors.white70),
+                                  tooltip: 'Perkecil',
+                                  onPressed: () {
+                                    final step = (_maxScale - _minScale) * 0.08;
+                                    _applyZoom(_scale - step);
+                                  },
+                                ),
+                                Expanded(
+                                  child: SliderTheme(
+                                    data: SliderTheme.of(context).copyWith(
+                                      activeTrackColor: const Color(0xFF38BDF8),
+                                      inactiveTrackColor: const Color(0xFF334155),
+                                      thumbColor: const Color(0xFF38BDF8),
+                                      overlayColor: const Color(0xFF38BDF8).withValues(alpha: 0.2),
+                                      trackHeight: 4.h,
+                                      thumbShape: RoundSliderThumbShape(enabledThumbRadius: 9.r),
+                                      overlayShape: RoundSliderOverlayShape(overlayRadius: 20.r),
+                                    ),
+                                    child: Slider(
+                                      value: _scale.clamp(_minScale, _maxScale),
+                                      min: _minScale,
+                                      max: _maxScale,
+                                      onChanged: (val) => _applyZoom(val),
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.zoom_in_rounded, color: Colors.white70),
+                                  tooltip: 'Perbesar',
+                                  onPressed: () {
+                                    final step = (_maxScale - _minScale) * 0.08;
+                                    _applyZoom(_scale + step);
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.restart_alt_rounded, color: Colors.white70),
+                                  tooltip: 'Pusatkan Posisi',
+                                  onPressed: _resetTransform,
                                 ),
                               ],
                             ),
-                          ),
+                            SizedBox(height: 4.h),
+                            Text(
+                              'Geser foto atau gunakan slider untuk menyesuaikan posisi wajah',
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 11.sp,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
-                      ],
-                    );
-                  },
+                      ),
+                    ),
+                  ],
                 ),
     );
   }

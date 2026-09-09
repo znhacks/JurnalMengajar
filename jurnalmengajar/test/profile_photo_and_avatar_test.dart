@@ -187,6 +187,80 @@ void main() {
       expect(sqW * baseScaleSq, closeTo(circleDiameter, 0.001));
       expect(sqH * baseScaleSq, closeTo(circleDiameter, 0.001));
     });
+
+    test('Zoom in and zoom out preserves face focal point without jumping to top-left or (0,0)', () {
+      final cropCenter = const Offset(200.0, 250.0);
+      const initialScale = 0.25;
+      const imgW = 1200.0;
+      const imgH = 1600.0;
+
+      // Initial position: center of face is placed at cropCenter (200, 250)
+      final initialTx = cropCenter.dx - (imgW * initialScale) / 2; // 200 - 150 = 50.0
+      final initialTy = cropCenter.dy - (imgH * initialScale) / 2; // 250 - 200 = 50.0
+
+      // Face location in source image coordinates:
+      final faceImgX = (cropCenter.dx - initialTx) / initialScale; // (200 - 50) / 0.25 = 600.0
+      final faceImgY = (cropCenter.dy - initialTy) / initialScale; // (250 - 50) / 0.25 = 800.0
+      expect(faceImgX, 600.0);
+      expect(faceImgY, 800.0);
+
+      // Step 1: User zooms in from 0.25 to 0.40 (1.6x zoom)
+      const zoomedScale = 0.40;
+      final scaleFactorIn = zoomedScale / initialScale;
+      final newTx = cropCenter.dx - scaleFactorIn * (cropCenter.dx - initialTx);
+      final newTy = cropCenter.dy - scaleFactorIn * (cropCenter.dy - initialTy);
+
+      // Verify face screen position after zoom in:
+      final faceScreenXZoomed = faceImgX * zoomedScale + newTx;
+      final faceScreenYZoomed = faceImgY * zoomedScale + newTy;
+      expect(faceScreenXZoomed, closeTo(cropCenter.dx, 0.0001));
+      expect(faceScreenYZoomed, closeTo(cropCenter.dy, 0.0001));
+
+      // Step 2: User zooms back out from 0.40 to 0.25
+      final scaleFactorOut = initialScale / zoomedScale;
+      final returnedTx = cropCenter.dx - scaleFactorOut * (cropCenter.dx - newTx);
+      final returnedTy = cropCenter.dy - scaleFactorOut * (cropCenter.dy - newTy);
+
+      // Verify face returns exactly to original position without shifting to top-left or (0,0):
+      expect(returnedTx, closeTo(initialTx, 0.0001));
+      expect(returnedTy, closeTo(initialTy, 0.0001));
+      expect(returnedTx, isNot(0.0));
+      expect(returnedTy, isNot(0.0));
+
+      final faceScreenXReturned = faceImgX * initialScale + returnedTx;
+      final faceScreenYReturned = faceImgY * initialScale + returnedTy;
+      expect(faceScreenXReturned, closeTo(cropCenter.dx, 0.0001));
+      expect(faceScreenYReturned, closeTo(cropCenter.dy, 0.0001));
+    });
+
+    test('Boundary clamping guarantees the crop circle is always 100% covered by the image', () {
+      const circleDiameter = 280.0;
+      const r = circleDiameter / 2; // 140.0
+      final cropCenter = const Offset(200.0, 300.0);
+      const imgW = 1920.0;
+      const imgH = 1080.0;
+      const scale = circleDiameter / imgH; // 0.259259...
+
+      // Extreme drag attempts:
+      // Try dragging way too far to the right (tx = +1000)
+      final maxTx = cropCenter.dx - r; // 60.0
+      final minTx = cropCenter.dx + r - (imgW * scale); // 200 + 140 - 497.77 = -157.77
+      final clampedTxRight = (1000.0).clamp(minTx, maxTx);
+      expect(clampedTxRight, maxTx);
+
+      // Try dragging way too far to the left (tx = -1000)
+      final clampedTxLeft = (-1000.0).clamp(minTx, maxTx);
+      expect(clampedTxLeft, minTx);
+
+      // Verify circle coverage:
+      // At clampedTxRight, left edge of image touches left edge of circle:
+      expect(clampedTxRight, cropCenter.dx - r);
+      expect(clampedTxRight + imgW * scale, greaterThan(cropCenter.dx + r));
+
+      // At clampedTxLeft, right edge of image touches right edge of circle:
+      expect(clampedTxLeft + imgW * scale, closeTo(cropCenter.dx + r, 0.001));
+      expect(clampedTxLeft, lessThan(cropCenter.dx - r));
+    });
   });
 }
 
