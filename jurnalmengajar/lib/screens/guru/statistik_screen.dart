@@ -575,8 +575,9 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
         color: bgColor,
         borderRadius: BorderRadius.circular(12.r),
       ),
-      padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 6.w),
+      padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 6.w),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             label,
@@ -586,22 +587,13 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
               color: textColor,
             ),
           ),
-          SizedBox(height: 2.h),
+          SizedBox(height: 4.h),
           Text(
             '$value',
             style: GoogleFonts.hankenGrotesk(
               fontSize: 16.sp,
               fontWeight: FontWeight.w800,
               color: textColor,
-            ),
-          ),
-          SizedBox(height: 1.h),
-          Text(
-            'Kasus',
-            style: GoogleFonts.hankenGrotesk(
-              fontSize: 9.sp,
-              color: textColor.withValues(alpha: 0.8),
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],
