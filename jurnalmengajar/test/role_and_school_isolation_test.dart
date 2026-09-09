@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jurnalmengajar/core/services/cache_service.dart';
@@ -7,6 +9,7 @@ import 'package:jurnalmengajar/models/schedule_model.dart';
 import 'package:jurnalmengajar/core/utils/helper.dart';
 import 'package:jurnalmengajar/providers/auth_provider.dart';
 import 'package:jurnalmengajar/repositories/auth_repository.dart';
+import 'package:jurnalmengajar/widgets/role_badge.dart';
 
 class FakeAuthRepo implements AuthRepository {
   UserModel? mockUser;
@@ -388,6 +391,78 @@ void main() {
 
       // 2026-09-15 from School B appears in School B
       expect(scheduledDatesSchoolB.contains('2026-09-15'), isTrue);
+    });
+
+    testWidgets('RoleBadge is theme-aware in Light and Dark mode for GURU and ADMIN', (tester) async {
+      // 1. Light Mode - GURU
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => MaterialApp(
+            theme: ThemeData.light(),
+            home: const Scaffold(body: RoleBadge(role: 'guru')),
+          ),
+        ),
+      );
+      expect(find.text('GURU'), findsOneWidget);
+      var container = tester.widget<Container>(find.descendant(of: find.byType(RoleBadge), matching: find.byType(Container)).first);
+      var decoration = container.decoration as BoxDecoration;
+      expect(decoration.color, const Color(0xFFF0FDF4));
+
+      // 2. Dark Mode - GURU
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => MaterialApp(
+            home: Theme(
+              data: ThemeData(brightness: Brightness.dark),
+              child: const Scaffold(body: RoleBadge(role: 'guru')),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('GURU'), findsOneWidget);
+      container = tester.widget<Container>(find.descendant(of: find.byType(RoleBadge), matching: find.byType(Container)).first);
+      decoration = container.decoration as BoxDecoration;
+      expect(decoration.color, isNot(equals(const Color(0xFFF0FDF4))));
+      expect(decoration.color, isNot(equals(Colors.white)));
+      expect(decoration.color, const Color(0xFF14532D).withValues(alpha: 0.35));
+
+      // 3. Light Mode - ADMIN
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => MaterialApp(
+            home: Theme(
+              data: ThemeData(brightness: Brightness.light),
+              child: const Scaffold(body: RoleBadge(role: 'admin')),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('ADMIN'), findsOneWidget);
+      container = tester.widget<Container>(find.descendant(of: find.byType(RoleBadge), matching: find.byType(Container)).first);
+      decoration = container.decoration as BoxDecoration;
+      expect(decoration.color, const Color(0xFFFEF2F2));
+
+      // 4. Dark Mode - ADMIN
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => MaterialApp(
+            home: Theme(
+              data: ThemeData(brightness: Brightness.dark),
+              child: const Scaffold(body: RoleBadge(role: 'admin')),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('ADMIN'), findsOneWidget);
+      container = tester.widget<Container>(find.descendant(of: find.byType(RoleBadge), matching: find.byType(Container)).first);
+      decoration = container.decoration as BoxDecoration;
+      expect(decoration.color, isNot(equals(const Color(0xFFFEF2F2))));
+      expect(decoration.color, isNot(equals(Colors.white)));
+      expect(decoration.color, const Color(0xFF7F1D1D).withValues(alpha: 0.35));
     });
   });
 }

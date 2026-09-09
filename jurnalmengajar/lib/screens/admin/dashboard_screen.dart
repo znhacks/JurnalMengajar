@@ -334,7 +334,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         actions: [
           Padding(
             padding: EdgeInsets.only(right: 14.w),
-            child: RoleBadge(role: authProvider.activeRole, fontSize: 10.sp),
+            child: RoleBadge(
+              role: authProvider.activeRole,
+              fontSize: 10.sp,
+              onTap: authProvider.isExclusiveAdmin
+                  ? null
+                  : () => SchoolSwitcherModal.show(context),
+            ),
           ),
         ],
       ),

@@ -842,6 +842,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
             builder: (ctx) {
               final auth = ctx.watch<AuthProvider>();
               final isAdminOnly = auth.isExclusiveAdmin;
+              final isDark = Theme.of(context).brightness == Brightness.dark;
 
               final switcherWidget = Container(
                 padding: EdgeInsets.symmetric(
@@ -851,7 +852,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(14.r),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: const Color(
@@ -912,7 +915,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     ),
                   ),
                   SizedBox(width: 8.w),
-                  RoleBadge(role: auth.activeRole),
+                  RoleBadge(
+                    role: auth.activeRole,
+                    onTap: () => SchoolSwitcherModal.show(ctx),
+                  ),
                 ],
               );
             },
