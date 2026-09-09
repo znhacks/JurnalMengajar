@@ -153,5 +153,40 @@ void main() {
       expect(masterProvider.teachers.first.photoUrl, 'https://example.com/new_budi.webp?t=999999');
       expect(masterProvider.teachers.first.name, 'Pak Budi M.Pd');
     });
+
+    test('Profile Cropper base scale calculation prevents over-zooming on landscape and portrait images', () {
+      final circleDiameter = 280.0;
+
+      // 1. Landscape 16:9 image (1920x1080)
+      const landscapeW = 1920.0;
+      const landscapeH = 1080.0;
+      final scaleLandX = circleDiameter / landscapeW; // 0.1458
+      final scaleLandY = circleDiameter / landscapeH; // 0.2592
+      final baseScaleLandscape = [scaleLandX, scaleLandY].reduce((a, b) => a > b ? a : b);
+
+      // In the buggy crop_your_image, scaleToCover was screenHeight / 1080 = 800 / 1080 = 0.7407 (over 285% magnification!)
+      // With our baseScale, the image height matches the circle diameter exactly:
+      expect(landscapeH * baseScaleLandscape, closeTo(circleDiameter, 0.001));
+      expect(landscapeW * baseScaleLandscape, greaterThanOrEqualTo(circleDiameter));
+
+      // 2. Portrait 3:4 image (1200x1600)
+      const portraitW = 1200.0;
+      const portraitH = 1600.0;
+      final scalePortX = circleDiameter / portraitW; // 0.2333
+      final scalePortY = circleDiameter / portraitH; // 0.1750
+      final baseScalePortrait = [scalePortX, scalePortY].reduce((a, b) => a > b ? a : b);
+
+      // Width matches circle diameter exactly without stretching or over-zooming:
+      expect(portraitW * baseScalePortrait, closeTo(circleDiameter, 0.001));
+      expect(portraitH * baseScalePortrait, greaterThanOrEqualTo(circleDiameter));
+
+      // 3. Square 1:1 image (1000x1000)
+      const sqW = 1000.0;
+      const sqH = 1000.0;
+      final baseScaleSq = circleDiameter / sqW;
+      expect(sqW * baseScaleSq, closeTo(circleDiameter, 0.001));
+      expect(sqH * baseScaleSq, closeTo(circleDiameter, 0.001));
+    });
   });
 }
+
