@@ -49,9 +49,17 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
     final masterProvider = context.watch<MasterDataProvider>();
     final isLoading = warningProvider.isLoading;
 
+    final authProvider = context.watch<AuthProvider>();
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId);
     final schoolTeacherIds = masterProvider.teachers.map((t) => t.id).toSet();
 
     final filteredWarnings = warningProvider.warningLetters.where((warning) {
+      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+        final wSchoolId = AppHelper.parseSingleCleanSchoolId(warning.schoolId);
+        if (wSchoolId != null && wSchoolId.isNotEmpty && wSchoolId != cleanActiveSchoolId) {
+          return false;
+        }
+      }
       if (!schoolTeacherIds.contains(warning.teacherId)) return false;
       final teacher = masterProvider.teachers.firstWhere(
         (t) => t.id == warning.teacherId,

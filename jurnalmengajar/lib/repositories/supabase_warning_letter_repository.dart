@@ -37,21 +37,37 @@ class SupabaseWarningLetterRepository implements WarningLetterRepository {
   }
 
   @override
-  Future<List<WarningLetterModel>> getByTeacherId(String teacherId) async {
+  Future<List<WarningLetterModel>> getByTeacherId(String teacherId, [String? schoolId]) async {
     try {
-      final response = await _supabase
+      var query = _supabase
           .from('warning_letters')
           .select()
-          .eq('teacher_id', teacherId)
-          .order('issued_at', ascending: false);
+          .eq('teacher_id', teacherId);
+
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+      if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+        query = query.eq('school_id', cleanSchoolId);
+      }
+
+      final response = await query.order('issued_at', ascending: false);
 
       final List<WarningLetterModel> list = [];
       for (final item in (response as List)) {
         try {
+          WarningLetterModel? model;
           if (item is Map<String, dynamic>) {
-            list.add(WarningLetterModel.fromJson(item));
+            model = WarningLetterModel.fromJson(item);
           } else if (item is Map) {
-            list.add(WarningLetterModel.fromJson(Map<String, dynamic>.from(item)));
+            model = WarningLetterModel.fromJson(Map<String, dynamic>.from(item));
+          }
+          if (model != null) {
+            if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+              final itemSchoolId = AppHelper.parseSingleCleanSchoolId(model.schoolId);
+              if (itemSchoolId != null && itemSchoolId.isNotEmpty && itemSchoolId != cleanSchoolId) {
+                continue; // Multi-layer defense: drop items belonging to other schools
+              }
+            }
+            list.add(model);
           }
         } catch (_) {}
       }
@@ -65,8 +81,24 @@ class SupabaseWarningLetterRepository implements WarningLetterRepository {
   Future<void> create(WarningLetterModel model) async {
     try {
       final payload = model.toJson();
-      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(payload['school_id']);
+      var cleanSchoolId = AppHelper.parseSingleCleanSchoolId(payload['school_id']);
       if (cleanSchoolId == null || cleanSchoolId.isEmpty) {
+        // 1. Resolve directly from schedule if available
+        if (model.scheduleId.isNotEmpty) {
+          try {
+            final schedRes = await _supabase
+                .from('schedules')
+                .select('school_id')
+                .eq('id', model.scheduleId)
+                .maybeSingle();
+            if (schedRes != null && schedRes['school_id'] != null) {
+              cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schedRes['school_id']);
+            }
+          } catch (_) {}
+        }
+      }
+      if (cleanSchoolId == null || cleanSchoolId.isEmpty) {
+        // 2. Fallback to user school_id
         final currentUid = _supabase.auth.currentUser?.id ?? model.teacherId;
         if (currentUid.isNotEmpty) {
           try {
@@ -76,11 +108,12 @@ class SupabaseWarningLetterRepository implements WarningLetterRepository {
                 .eq('id', currentUid)
                 .maybeSingle();
             if (userRes != null && userRes['school_id'] != null) {
-              payload['school_id'] = AppHelper.parseSingleCleanSchoolId(userRes['school_id']);
+              cleanSchoolId = AppHelper.parseSingleCleanSchoolId(userRes['school_id']);
             }
           } catch (_) {}
         }
-      } else {
+      }
+      if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
         payload['school_id'] = cleanSchoolId;
       }
 

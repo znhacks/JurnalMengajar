@@ -101,6 +101,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       context,
       listen: false,
     );
+    final warningProvider = Provider.of<WarningLetterProvider>(
+      context,
+      listen: false,
+    );
 
     final currentUser = authProvider.currentUser;
     if (currentUser != null) {
@@ -139,17 +143,13 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         if (!mounted) return;
         final maxDays = settingsProvider.settings?.maxJournalInputDays ?? 3;
 
-        final warningProvider = Provider.of<WarningLetterProvider>(
-          context,
-          listen: false,
-        );
         await warningProvider.checkAndIssueWarnings(
           schedules: scheduleProvider.cachedTeacherSchedules,
           journals: journalProvider.teacherJournals,
           maxDays: maxDays,
           masterProvider: masterProvider,
         );
-        await warningProvider.loadTeacherWarningLetters(teacher.id);
+        await warningProvider.loadTeacherWarningLetters(teacher.id, authProvider.activeSchoolId);
 
         if (!_hasCheckedReminder) {
           _hasCheckedReminder = true;
@@ -161,9 +161,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           );
         }
       } else {
-        // Clear old cached schedules and journals if user is not registered as teacher in this school
+        // Clear old cached schedules, journals, and warnings if user is not registered as teacher in this school
         scheduleProvider.clearTeacherSchedulesCache();
         journalProvider.clearTeacherJournalsCache();
+        warningProvider.clearCache();
       }
     }
   }

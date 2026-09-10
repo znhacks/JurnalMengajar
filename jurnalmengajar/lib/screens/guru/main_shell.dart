@@ -16,6 +16,7 @@ import '../../models/teacher_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/journal_provider.dart';
+import '../../core/utils/helper.dart';
 
 class GuruMainShell extends StatefulWidget {
   final int? initialIndex;
@@ -97,7 +98,7 @@ class GuruMainShellState extends State<GuruMainShell> {
     
     if (teacher.id.isNotEmpty) {
       await Future.wait([
-        warningProvider.loadTeacherWarningLetters(teacher.id),
+        warningProvider.loadTeacherWarningLetters(teacher.id, authProvider.activeSchoolId),
         scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
         journalProvider.loadTeacherJournals(teacher.id),
       ]);
@@ -218,7 +219,13 @@ class GuruMainShellState extends State<GuruMainShell> {
     }
 
     final warningProvider = context.watch<WarningLetterProvider>();
-    final unreadWarnings = warningProvider.warningLetters.where((w) => w.status == 'unread').length;
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId);
+    final unreadWarnings = warningProvider.warningLetters.where((w) {
+      if (w.status != 'unread') return false;
+      if (cleanActiveSchoolId == null || cleanActiveSchoolId.isEmpty) return true;
+      final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
+      return wSchoolId == null || wSchoolId.isEmpty || wSchoolId == cleanActiveSchoolId;
+    }).length;
 
     final mediaQuery = MediaQuery.of(context);
     final screenWidth = mediaQuery.size.width;

@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../providers/journal_provider.dart';
 import '../providers/master_data_provider.dart';
+import '../providers/warning_letter_provider.dart';
 import 'school_avatar.dart';
 
 class SchoolSwitcherModal extends StatelessWidget {
@@ -199,12 +200,15 @@ class SchoolSwitcherModal extends StatelessWidget {
                             Provider.of<JournalProvider>(context, listen: false);
                         final masterProvider =
                             Provider.of<MasterDataProvider>(context, listen: false);
+                        final warningProvider =
+                            Provider.of<WarningLetterProvider>(context, listen: false);
 
                         // Close modal immediately for snappy, instantaneous UX
                         Navigator.pop(context);
 
                         scheduleProvider.clearTeacherSchedulesCache();
                         journalProvider.clearTeacherJournalsCache();
+                        warningProvider.clearCache();
 
                         authProvider.switchActiveSchool(
                           item.schoolId,
@@ -216,6 +220,7 @@ class SchoolSwitcherModal extends StatelessWidget {
                         if (item.role.toLowerCase() == 'admin') {
                           scheduleProvider.loadAllSchedules(item.schoolId);
                           journalProvider.loadAllJournals(item.schoolId);
+                          warningProvider.loadAllWarningLetters(item.schoolId);
                         }
                       },
                       leading: SchoolAvatar(

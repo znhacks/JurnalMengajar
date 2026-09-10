@@ -15,38 +15,84 @@ class WarningLetterProvider with ChangeNotifier {
   List<WarningLetterModel> _warningLetters = [];
   bool _isLoading = false;
   String? _errorMessage;
+  String? _currentSchoolId;
+  int _loadSequence = 0;
 
   WarningLetterProvider({required this.warningLetterRepository});
 
   List<WarningLetterModel> get warningLetters => _warningLetters;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  String? get currentSchoolId => _currentSchoolId;
 
-  Future<void> loadAllWarningLetters([String? schoolId]) async {
-    _isLoading = true;
+  void clearCache() {
+    _loadSequence++;
+    _currentSchoolId = null;
+    _warningLetters = [];
+    _isLoading = false;
     _errorMessage = null;
     notifyListeners();
+  }
+
+  Future<void> loadAllWarningLetters([String? schoolId]) async {
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+    _currentSchoolId = cleanSchoolId;
+    final int sequence = ++_loadSequence;
+
+    _isLoading = true;
+    _errorMessage = null;
+    _warningLetters = [];
+    notifyListeners();
+
     try {
-      _warningLetters = await warningLetterRepository.getAll(schoolId);
+      final results = await warningLetterRepository.getAll(cleanSchoolId);
+      if (sequence != _loadSequence) return;
+      if (cleanSchoolId != null && cleanSchoolId != _currentSchoolId) return;
+
+      _warningLetters = results.where((w) {
+        if (cleanSchoolId == null || cleanSchoolId.isEmpty) return true;
+        final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
+        return wSchoolId == null || wSchoolId.isEmpty || wSchoolId == cleanSchoolId;
+      }).toList();
     } catch (e) {
+      if (sequence != _loadSequence) return;
       _errorMessage = e.toString();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (sequence == _loadSequence) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
-  Future<void> loadTeacherWarningLetters(String teacherId) async {
+  Future<void> loadTeacherWarningLetters(String teacherId, [String? schoolId]) async {
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+    _currentSchoolId = cleanSchoolId;
+    final int sequence = ++_loadSequence;
+
     _isLoading = true;
     _errorMessage = null;
+    _warningLetters = [];
     notifyListeners();
+
     try {
-      _warningLetters = await warningLetterRepository.getByTeacherId(teacherId);
+      final results = await warningLetterRepository.getByTeacherId(teacherId, cleanSchoolId);
+      if (sequence != _loadSequence) return;
+      if (cleanSchoolId != null && cleanSchoolId != _currentSchoolId) return;
+
+      _warningLetters = results.where((w) {
+        if (cleanSchoolId == null || cleanSchoolId.isEmpty) return true;
+        final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
+        return wSchoolId == null || wSchoolId.isEmpty || wSchoolId == cleanSchoolId;
+      }).toList();
     } catch (e) {
+      if (sequence != _loadSequence) return;
       _errorMessage = e.toString();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (sequence == _loadSequence) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -90,7 +136,9 @@ class WarningLetterProvider with ChangeNotifier {
 
       List<WarningLetterModel> existingWarnings = [];
       try {
-        existingWarnings = await warningLetterRepository.getByTeacherId(teacherId);
+        final currentSchoolId = AppHelper.parseSingleCleanSchoolId(masterProvider.currentSchoolId) ??
+            AppHelper.parseSingleCleanSchoolId(teacherSchedules.firstOrNull?.schoolId);
+        existingWarnings = await warningLetterRepository.getByTeacherId(teacherId, currentSchoolId);
       } catch (_) {
         // If error loading existing, continue with empty list
       }
@@ -170,6 +218,8 @@ class WarningLetterProvider with ChangeNotifier {
               }
             } else {
               final representativeGroup = missingJournalGroups.first;
+              final targetSchoolId = AppHelper.parseSingleCleanSchoolId(masterProvider.currentSchoolId) ??
+                  AppHelper.parseSingleCleanSchoolId(teacherSchedules.firstOrNull?.schoolId);
               final newWarning = WarningLetterModel(
                 id: '',
                 teacherId: representativeGroup.teacherId,
@@ -177,7 +227,7 @@ class WarningLetterProvider with ChangeNotifier {
                 issuedAt: DateTime.now(),
                 reason: reason,
                 status: 'unread',
-                schoolId: masterProvider.currentSchoolId,
+                schoolId: targetSchoolId,
               );
 
               try {

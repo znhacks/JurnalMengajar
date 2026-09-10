@@ -2,7 +2,7 @@ import '../models/warning_letter_model.dart';
 
 abstract class WarningLetterRepository {
   Future<List<WarningLetterModel>> getAll([String? schoolId]);
-  Future<List<WarningLetterModel>> getByTeacherId(String teacherId);
+  Future<List<WarningLetterModel>> getByTeacherId(String teacherId, [String? schoolId]);
   Future<void> create(WarningLetterModel model);
   Future<void> markAsRead(String id);
   Future<void> update(WarningLetterModel model);

@@ -61,7 +61,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
         );
         if (teacher.id.isNotEmpty) {
           await Future.wait([
-            warningProvider.loadTeacherWarningLetters(teacher.id),
+            warningProvider.loadTeacherWarningLetters(teacher.id, authProvider.activeSchoolId),
             Provider.of<ScheduleProvider>(context, listen: false)
                 .loadTeacherSchedules(teacher.id, DateTime.now()),
             Provider.of<JournalProvider>(context, listen: false)
@@ -1748,9 +1748,15 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
               SizedBox(height: 8.h),
               Consumer<WarningLetterProvider>(
                 builder: (context, warningProvider, child) {
-                  final unreadCount = warningProvider.warningLetters
-                      .where((w) => w.status == 'unread')
-                      .length;
+                  final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(
+                    Provider.of<AuthProvider>(context, listen: false).activeSchoolId,
+                  );
+                  final unreadCount = warningProvider.warningLetters.where((w) {
+                    if (w.status != 'unread') return false;
+                    if (cleanActiveSchoolId == null || cleanActiveSchoolId.isEmpty) return true;
+                    final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
+                    return wSchoolId == null || wSchoolId.isEmpty || wSchoolId == cleanActiveSchoolId;
+                  }).length;
 
                   return Row(
                     children: [

@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../providers/warning_letter_provider.dart';
 import '../providers/theme_provider.dart';
+import '../core/utils/helper.dart';
 import '../screens/guru/main_shell.dart';
 import 'role_badge.dart';
 import 'school_switcher_modal.dart';
@@ -95,11 +96,15 @@ class GuruDrawer extends StatelessWidget {
 
     final authProvider = context.watch<AuthProvider>();
     final currentUser = authProvider.currentUser;
-
     final warningProvider = context.watch<WarningLetterProvider>();
-    final unreadWarnings = warningProvider.warningLetters
-        .where((w) => w.status == 'unread')
-        .length;
+
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId);
+    final unreadWarnings = warningProvider.warningLetters.where((w) {
+      if (w.status != 'unread') return false;
+      if (cleanActiveSchoolId == null || cleanActiveSchoolId.isEmpty) return true;
+      final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
+      return wSchoolId == null || wSchoolId.isEmpty || wSchoolId == cleanActiveSchoolId;
+    }).length;
 
     final name = currentUser?.fullName ?? 'Guru Pengajar';
     final position = (currentUser?.position != null && currentUser!.position!.trim().isNotEmpty)
