@@ -334,7 +334,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
         _isLoading = true;
       });
 
-      final success = await authProvider.updateUserRole(user.id, 'guru');
+      final success = await authProvider.updateUserRole(user.id, 'guru', authProvider.activeSchoolId);
 
       if (!mounted) return;
 
@@ -360,13 +360,13 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Tolak Pendaftaran', style: TextStyle(color: Colors.red)),
-        content: Text('Apakah Anda yakin ingin menolak pendaftaran ${user.fullName}? Akun pendaftaran ini akan dihapus.'),
+        title: const Text('Tolak Permintaan', style: TextStyle(color: Colors.red)),
+        content: Text('Apakah Anda yakin ingin menolak permintaan bergabung ${user.fullName}?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Tolak & Hapus', style: TextStyle(color: Colors.red)),
+            child: const Text('Tolak Permintaan', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -377,17 +377,17 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
         _isLoading = true;
       });
 
-      final success = await authProvider.deleteAccount(user.id);
+      final success = await authProvider.rejectJoinRequest(user.id, authProvider.activeSchoolId);
       
       if (!mounted) return;
 
       if (success) {
-        AppHelper.showSnackBar(context, 'Pendaftaran ${user.fullName} berhasil ditolak.');
+        AppHelper.showSnackBar(context, 'Permintaan bergabung ${user.fullName} berhasil ditolak.');
         _fetchUsers();
       } else {
         AppHelper.showSnackBar(
           context, 
-          authProvider.errorMessage ?? 'Gagal menolak pendaftaran.', 
+          authProvider.errorMessage ?? 'Gagal menolak permintaan.', 
           isError: true
         );
         setState(() {
@@ -721,7 +721,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                   tabs: [
                     _buildTab('Pengguna Aktif', activeUsers.length, icon: Icons.people_outline),
                     _buildTab(
-                      'Guru Mendaftar',
+                      'Menunggu Persetujuan',
                       pendingUsers.length,
                       icon: Icons.person_add_outlined,
                       badgeColor: Colors.red,
@@ -819,7 +819,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                               pendingUsers.isEmpty
                                   ? const AppEmptyWidget(
                                       title: 'Tidak Ada Pendaftaran',
-                                      subtitle: 'Tidak ada guru baru yang sedang mendaftar.',
+                                      subtitle: 'Tidak ada guru yang sedang menunggu persetujuan.',
                                     )
                                   : _buildUserList(pendingUsers, authProvider, isPendingTab: true),
                               _buildExitRequestsList(authProvider),

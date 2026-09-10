@@ -20,4 +20,5 @@ abstract class AuthRepository {
   Future<List<Map<String, dynamic>>> getPendingExitRequests(String schoolId);
   Future<void> approveExitRequest(String membershipId);
   Future<void> rejectExitRequest(String membershipId);
+  Future<void> rejectJoinRequest(String userId, String schoolId);
 }

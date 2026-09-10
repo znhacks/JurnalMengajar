@@ -911,7 +911,10 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                 if (success) {
                                   messenger.showSnackBar(
                                     const SnackBar(
-                                      content: Text('Berhasil bergabung ke sekolah!'),
+                                      content: Text(
+                                        'Permintaan bergabung berhasil dikirim. Menunggu persetujuan dari Admin sekolah.',
+                                      ),
+                                      backgroundColor: Color(0xFF2563EB),
                                     ),
                                   );
                                   navigator.pop();
@@ -1374,6 +1377,21 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                     ));
                                   }
                                 }
+
+                                for (final m in authProvider.pendingMemberships) {
+                                  final baseKey = '${m.schoolId}_${m.role.toLowerCase()}';
+                                  if (!seen.contains(baseKey)) {
+                                    seen.add(baseKey);
+                                    list.add(SchoolRoleOption(
+                                      schoolId: m.schoolId,
+                                      schoolName: m.schoolName,
+                                      role: m.role,
+                                      membershipId: m.id,
+                                      status: 'pending',
+                                      logoUrl: m.logoUrl,
+                                    ));
+                                  }
+                                }
                                 return list;
                               }().map((item) {
                                 final sName = item.schoolName;
@@ -1381,11 +1399,19 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                 final sId = item.schoolId;
                                 final membershipId = item.membershipId;
                                 final status = item.status;
-                                final isActive = sId == authProvider.activeSchoolId &&
+                                final isPending = status == 'pending';
+                                final isActive = !isPending && sId == authProvider.activeSchoolId &&
                                     sRole.toLowerCase() == authProvider.activeRole.toLowerCase();
 
                                 return InkWell(
                                   onTap: () {
+                                    if (isPending) {
+                                      AppHelper.showSnackBar(
+                                        context,
+                                        'Permintaan bergabung ke $sName sedang menunggu persetujuan dari Admin sekolah.',
+                                      );
+                                      return;
+                                    }
                                     if (isActive) return;
                                     final messenger = ScaffoldMessenger.of(context);
                                     final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
@@ -1460,7 +1486,17 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                             ],
                                           ),
                                         ),
-                                        if (status == 'requested_exit')
+                                        if (isPending)
+                                          Chip(
+                                            label: const Text('Menunggu Persetujuan'),
+                                            backgroundColor: const Color(0xFFFEF3C7),
+                                            labelStyle: TextStyle(
+                                              fontSize: 10.sp,
+                                              color: const Color(0xFFD97706),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          )
+                                        else if (status == 'requested_exit')
                                           Column(
                                             crossAxisAlignment: CrossAxisAlignment.end,
                                             children: [

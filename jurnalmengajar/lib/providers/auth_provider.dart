@@ -53,6 +53,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   List<UserSchoolModel> _userMemberships = [];
+  List<UserSchoolModel> _pendingMemberships = [];
   String? _activeSchoolId;
   String _activeSchoolName = 'Sekolah';
   String _activeRole = 'guru';
@@ -68,6 +69,7 @@ class AuthProvider with ChangeNotifier {
   AuthRepository get authRepository => _authRepository;
 
   List<UserSchoolModel> get userMemberships => _userMemberships;
+  List<UserSchoolModel> get pendingMemberships => _pendingMemberships;
   String? get activeSchoolId => _activeSchoolId;
   String get activeSchoolName => _activeSchoolName;
   String get activeRole => _activeRole;
@@ -374,13 +376,23 @@ class AuthProvider with ChangeNotifier {
           }
         }
 
-        // 3. Fallback check by npsn or id
-        res = await supabase
-            .from('schools')
-            .select()
-            .or('npsn.ilike.$cleanCode,id.eq.$cleanCode')
-            .eq('status', 'active')
-            .maybeSingle();
+        // 3. Fallback check by npsn or id (only query id if cleanCode is a valid UUID!)
+        final isCleanCodeUuid = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$').hasMatch(cleanCode);
+        if (isCleanCodeUuid) {
+          res = await supabase
+              .from('schools')
+              .select()
+              .or('npsn.ilike.$cleanCode,id.eq.$cleanCode')
+              .eq('status', 'active')
+              .maybeSingle();
+        } else {
+          res = await supabase
+              .from('schools')
+              .select()
+              .ilike('npsn', cleanCode)
+              .eq('status', 'active')
+              .maybeSingle();
+        }
 
         // 4. Fallback check by tenant
         if (res == null) {
@@ -390,11 +402,13 @@ class AuthProvider with ChangeNotifier {
               .ilike('school_code', '%$cleanCode%')
               .maybeSingle();
 
-          tenantRes ??= await supabase
-              .from('tenants')
-              .select('id, name, school_code, status')
-              .eq('id', cleanCode)
-              .maybeSingle();
+          if (tenantRes == null && isCleanCodeUuid) {
+            tenantRes = await supabase
+                .from('tenants')
+                .select('id, name, school_code, status')
+                .eq('id', cleanCode)
+                .maybeSingle();
+          }
 
           if (tenantRes != null) {
             final tenantId = tenantRes['id'] as String;
@@ -415,12 +429,22 @@ class AuthProvider with ChangeNotifier {
               }, onConflict: 'id');
             } catch (_) {}
 
-            res = await supabase
-                .from('schools')
-                .select()
-                .or('id.eq.$tenantId,code.ilike.$cleanCode')
-                .eq('status', 'active')
-                .maybeSingle();
+            final isTenantUuid = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$').hasMatch(tenantId);
+            if (isTenantUuid) {
+              res = await supabase
+                  .from('schools')
+                  .select()
+                  .or('id.eq.$tenantId,code.ilike.$cleanCode')
+                  .eq('status', 'active')
+                  .maybeSingle();
+            } else {
+              res = await supabase
+                  .from('schools')
+                  .select()
+                  .ilike('code', cleanCode)
+                  .eq('status', 'active')
+                  .maybeSingle();
+            }
 
             res ??= {
               'id': tenantId,
@@ -437,49 +461,67 @@ class AuthProvider with ChangeNotifier {
       }
 
       final matchedSchool = SchoolModel.fromJson(res);
-      final schoolId = matchedSchool.id;
-      final schoolName = matchedSchool.name;
+      final schoolId = AppHelper.parseSingleCleanSchoolId(matchedSchool.id) ?? matchedSchool.id.trim();
 
       final effectiveRole = role;
 
-      // Check if user is already connected with this specific role in user_schools
-      final existingRoleMember = await supabase
+      // Check if user is already connected with this school in user_schools
+      final existingMember = await supabase
           .from('user_schools')
-          .select('id, role')
+          .select('id, role, status')
           .eq('user_id', _currentUser!.id)
           .eq('school_id', schoolId)
-          .eq('role', effectiveRole)
           .maybeSingle();
 
-      // Check max teachers quota for new teacher registration/join (only if not already a member with this role)
-      if (effectiveRole == 'guru' && existingRoleMember == null) {
-        final existingTeachers = await supabase
-            .from('user_schools')
-            .select('id')
-            .eq('school_id', schoolId)
-            .eq('role', 'guru');
-        
-        final teacherCount = (existingTeachers as List).length;
-        if (teacherCount >= matchedSchool.maxTeachers) {
-          throw Exception('Batas maksimal ${matchedSchool.maxTeachers} guru untuk sekolah ini telah tercapai.');
+      if (existingMember != null) {
+        final existingStatus = (existingMember['status'] as String? ?? 'active').toLowerCase();
+        if (existingStatus == 'active') {
+          throw Exception('Anda sudah menjadi anggota di sekolah ini.');
+        } else if (existingStatus == 'pending') {
+          throw Exception('Permintaan bergabung sedang menunggu persetujuan dari Admin sekolah.');
+        } else if (existingStatus == 'requested_exit') {
+          throw Exception('Anda memiliki pengajuan keluar yang sedang diproses untuk sekolah ini.');
+        } else if (existingStatus == 'rejected' || existingStatus == 'inactive') {
+          // Re-apply: update status to pending
+          await supabase
+              .from('user_schools')
+              .update({
+                'role': effectiveRole,
+                'status': 'pending',
+                'updated_at': DateTime.now().toIso8601String(),
+              })
+              .eq('id', existingMember['id']);
         }
-      }
+      } else {
+        // Check max teachers quota for new teacher join (count active teachers)
+        if (effectiveRole == 'guru') {
+          final existingTeachers = await supabase
+              .from('user_schools')
+              .select('id')
+              .eq('school_id', schoolId)
+              .eq('role', 'guru')
+              .eq('status', 'active');
+          
+          final teacherCount = (existingTeachers as List).length;
+          if (teacherCount >= matchedSchool.maxTeachers) {
+            throw Exception('Batas maksimal ${matchedSchool.maxTeachers} guru untuk sekolah ini telah tercapai.');
+          }
+        }
 
-      if (existingRoleMember == null) {
         try {
-          await supabase.from('user_schools').upsert({
+          await supabase.from('user_schools').insert({
             'user_id': _currentUser!.id,
             'school_id': schoolId,
             'role': effectiveRole,
-            'status': 'active',
-          }, onConflict: 'user_id, school_id, role');
+            'status': 'pending',
+          });
         } catch (insertErr) {
           debugPrint('Note inserting user_schools: $insertErr');
+          rethrow;
         }
       }
 
-      // Update active school locally & persist
-      await switchActiveSchool(schoolId, schoolName, effectiveRole);
+      // DO NOT call switchActiveSchool: user stays in their current school until approved!
       await loadUserMemberships();
       _isSchoolExpired = false;
       _isLoading = false;
@@ -820,6 +862,45 @@ class AuthProvider with ChangeNotifier {
         }
       }
 
+      // 4. Fetch pending memberships for display in ProfilScreen
+      final List<UserSchoolModel> pendingList = [];
+      try {
+        final pendingRes = await supabase
+            .from('user_schools')
+            .select('*, schools(id, name, code, logo_url, npsn, status)')
+            .eq('user_id', _currentUser!.id)
+            .eq('status', 'pending')
+            .timeout(NetworkResilience.defaultQueryTimeout);
+
+        for (final item in (pendingRes as List)) {
+          final m = Map<String, dynamic>.from(item as Map);
+          m['role'] = item['role'] ?? _currentUser!.role;
+          final sId = AppHelper.parseSingleCleanSchoolId(m['school_id']);
+
+          if (m['schools'] == null && sId != null && sId.isNotEmpty) {
+            try {
+              final sRes = await supabase
+                  .from('schools')
+                  .select('id, name, code, logo_url, status')
+                  .eq('id', sId)
+                  .maybeSingle()
+                  .timeout(NetworkResilience.defaultQueryTimeout);
+              if (sRes != null) {
+                m['schools'] = sRes;
+              }
+            } catch (_) {}
+          }
+
+          final parsed = UserSchoolModel.fromJson(m);
+          if (parsed.schoolId.isNotEmpty) {
+            pendingList.add(parsed);
+          }
+        }
+      } catch (err) {
+        debugPrint('Error loading pending user_schools in memberships: $err');
+      }
+      _pendingMemberships = pendingList;
+
       if (_userMemberships.isNotEmpty) {
         // Persist to local cache for instant 0ms offline display
         await CacheService().save(
@@ -1096,6 +1177,7 @@ class AuthProvider with ChangeNotifier {
     _activeRole = 'guru';
     _activeSchool = null;
     _userMemberships = [];
+    _pendingMemberships = [];
     _isLoading = false;
     notifyListeners();
   }
@@ -1180,6 +1262,31 @@ class AuthProvider with ChangeNotifier {
       if (_currentUser != null && _currentUser!.id == userId && !isAdminAsli) {
         _currentUser = _currentUser!.copyWith(role: role);
       }
+      try {
+        await CacheService().purgePrefix('teachers_');
+        await CacheService().purgePrefix('user_');
+      } catch (_) {}
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = _cleanErrorMessage(e);
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> rejectJoinRequest(String userId, [String? schoolId]) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final targetSchoolId = schoolId ?? _activeSchoolId;
+      if (targetSchoolId == null || targetSchoolId.isEmpty) {
+        throw Exception('Konteks sekolah tidak valid untuk menolak pendaftaran.');
+      }
+      await authRepository.rejectJoinRequest(userId, targetSchoolId);
       try {
         await CacheService().purgePrefix('teachers_');
         await CacheService().purgePrefix('user_');

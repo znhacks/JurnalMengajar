@@ -232,4 +232,10 @@ class MockAuthRepository implements AuthRepository {
   Future<void> rejectExitRequest(String membershipId) async {
     await Future.delayed(const Duration(milliseconds: 300));
   }
+
+  @override
+  Future<void> rejectJoinRequest(String userId, String schoolId) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    _db.users.removeWhere((u) => u.id == userId && u.schoolId == schoolId && u.isPending);
+  }
 }

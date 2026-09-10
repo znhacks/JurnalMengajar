@@ -49,6 +49,8 @@ class TestMockAuthRepo implements AuthRepository {
   Future<void> approveExitRequest(String membershipId) async {}
   @override
   Future<void> rejectExitRequest(String membershipId) async {}
+  @override
+  Future<void> rejectJoinRequest(String userId, String schoolId) async {}
 }
 
 void main() {

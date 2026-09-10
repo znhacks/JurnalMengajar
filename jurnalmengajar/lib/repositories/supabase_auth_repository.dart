@@ -915,4 +915,54 @@ class SupabaseAuthRepository implements AuthRepository {
       throw Exception('Gagal menolak pengajuan keluar: $e');
     }
   }
+
+  @override
+  Future<void> rejectJoinRequest(String userId, String schoolId) async {
+    try {
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
+      
+      // 1. Check existing memberships for this user to determine if they belong to other schools
+      final userSchools = await _supabase
+          .from('user_schools')
+          .select('id, school_id, status')
+          .eq('user_id', userId);
+
+      final schoolRows = (userSchools as List);
+      final hasOtherActiveSchools = schoolRows.any(
+        (row) => row['school_id'] != cleanSchoolId && (row['status'] == 'active' || row['status'] == null)
+      );
+
+      // 2. Remove the pending membership from user_schools for this specific school
+      await _supabase
+          .from('user_schools')
+          .delete()
+          .eq('user_id', userId)
+          .eq('school_id', cleanSchoolId);
+
+      // Multi-tenant membership table cleanup if exists
+      try {
+        await _supabase
+            .from('school_memberships')
+            .delete()
+            .eq('user_id', userId)
+            .eq('school_id', cleanSchoolId);
+      } catch (_) {}
+
+      // 3. Only delete account from users table if user has no other active schools
+      // AND their base role is 'pending_guru' (new user who registered and was rejected on first school)
+      if (!hasOtherActiveSchools) {
+        final userRes = await _supabase
+            .from('users')
+            .select('role, school_id')
+            .eq('id', userId)
+            .maybeSingle();
+
+        if (userRes != null && userRes['role']?.toString().toLowerCase() == 'pending_guru') {
+          await _supabase.from('users').delete().eq('id', userId);
+        }
+      }
+    } catch (e) {
+      throw Exception('Gagal menolak permintaan bergabung: $e');
+    }
+  }
 }
