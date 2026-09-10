@@ -79,7 +79,7 @@ class AppRouter {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     return GoRouter(
-      initialLocation: '/splash',
+      initialLocation: '/',
       refreshListenable: authProvider,
       redirect: (context, state) {
         final isInitialized = authProvider.initialized;
@@ -95,9 +95,10 @@ class AppRouter {
             state.matchedLocation == '/register' ||
             state.matchedLocation == '/login-callback' ||
             state.matchedLocation == '/' ||
+            isSplash ||
             isResetPasswordRoute;
 
-        if (isSplash) return null;
+        // While auth is still initializing, let the current route wait safely without redirection
         if (!isInitialized) return null;
 
         if (isRecoveryMode) {

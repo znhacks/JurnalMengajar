@@ -289,7 +289,7 @@ class GuruDrawer extends StatelessWidget {
                     if (shellState != null) {
                       shellState.switchToTab(0);
                     } else {
-                      context.go('/guru/dashboard?tab=0');
+                      context.go('/guru/dashboard');
                     }
                   },
                 ),
@@ -302,7 +302,7 @@ class GuruDrawer extends StatelessWidget {
                     if (shellState != null) {
                       shellState.switchToTab(1);
                     } else {
-                      context.go('/guru/dashboard?tab=1');
+                      context.go('/guru/jadwal');
                     }
                   },
                 ),
@@ -315,7 +315,7 @@ class GuruDrawer extends StatelessWidget {
                     if (shellState != null) {
                       shellState.switchToTab(2);
                     } else {
-                      context.go('/guru/dashboard?tab=2');
+                      context.go('/guru/jurnal');
                     }
                   },
                 ),
@@ -328,7 +328,7 @@ class GuruDrawer extends StatelessWidget {
                     if (shellState != null) {
                       shellState.switchToTab(3);
                     } else {
-                      context.go('/guru/dashboard?tab=3');
+                      context.go('/guru/profil');
                     }
                   },
                 ),
@@ -346,7 +346,7 @@ class GuruDrawer extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     if (currentRoute != '/guru/download-jurnal') {
-                      context.push('/guru/download-jurnal');
+                      context.go('/guru/download-jurnal');
                     }
                   },
                 ),
@@ -360,7 +360,7 @@ class GuruDrawer extends StatelessWidget {
                     Navigator.pop(context);
                     if (currentRoute != '/guru/statistics' &&
                         currentRoute != '/guru/statistik') {
-                      context.push('/guru/statistics');
+                      context.go('/guru/statistik');
                     }
                   },
                 ),
@@ -372,7 +372,7 @@ class GuruDrawer extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     if (currentRoute != '/guru/warning-letters') {
-                      context.push('/guru/warning-letters');
+                      context.go('/guru/warning-letters');
                     }
                   },
                 ),
@@ -432,7 +432,7 @@ class GuruDrawer extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     if (currentRoute != '/about') {
-                      context.push('/about');
+                      context.go('/about');
                     }
                   },
                 ),

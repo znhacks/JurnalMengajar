@@ -35,10 +35,13 @@ import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'widgets/web_navigation_shortcut_wrapper.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'services/fcm_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  usePathUrlStrategy();
+  GoRouter.optionURLReflectsImperativeAPIs = true;
 
   // Initialize Firebase
   try {

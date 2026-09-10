@@ -1488,7 +1488,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           ),
         ),
         InkWell(
-          onTap: () => context.push('/guru/jadwal'),
+          onTap: () => context.go('/guru/jadwal'),
           borderRadius: BorderRadius.circular(12.r),
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),

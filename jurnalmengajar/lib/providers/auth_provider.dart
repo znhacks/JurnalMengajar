@@ -886,8 +886,8 @@ class AuthProvider with ChangeNotifier {
               _activeSchoolId = AppHelper.parseSingleCleanSchoolId(savedUserSchool) ??
                   (AppHelper.parseSingleCleanSchoolId(user.schoolId) ?? user.schoolId);
             }
-            // Non-Admin Asli: ONLY allow 'admin' if explicitly saved by this user and user has admin capability
-            final canRestoreAdmin = savedUserRole?.toLowerCase() == 'admin' && !isGuruMurni;
+            // Non-Admin Asli: Allow 'admin' if explicitly saved by this user, then loadUserMemberships() will strictly sanitize
+            final canRestoreAdmin = savedUserRole?.toLowerCase() == 'admin';
             _activeRole = canRestoreAdmin ? 'admin' : 'guru';
           }
           FcmService().syncToken(this);

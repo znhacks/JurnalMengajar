@@ -37,6 +37,32 @@ class GuruMainShellState extends State<GuruMainShell> {
         _currentIndex = index;
       });
     }
+    // Synchronize browser route so reload preserves this tab
+    try {
+      final currentLoc = GoRouterState.of(context).matchedLocation;
+      switch (index) {
+        case 0:
+          if (currentLoc != '/guru/dashboard') {
+            context.go('/guru/dashboard');
+          }
+          break;
+        case 1:
+          if (currentLoc != '/guru/jadwal') {
+            context.go('/guru/jadwal');
+          }
+          break;
+        case 2:
+          if (currentLoc != '/guru/jurnal') {
+            context.go('/guru/jurnal');
+          }
+          break;
+        case 3:
+          if (currentLoc != '/guru/profil' && currentLoc != '/guru/profile') {
+            context.go('/guru/profil');
+          }
+          break;
+      }
+    } catch (_) {}
   }
 
   final List<Widget> _screens = [
@@ -81,7 +107,7 @@ class GuruMainShellState extends State<GuruMainShell> {
   @override
   void didUpdateWidget(covariant GuruMainShell oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.initialIndex != null && widget.initialIndex != oldWidget.initialIndex) {
+    if (widget.initialIndex != null && widget.initialIndex != _currentIndex) {
       setState(() {
         _currentIndex = widget.initialIndex!;
       });
@@ -176,7 +202,15 @@ class GuruMainShellState extends State<GuruMainShell> {
     final authProvider = context.watch<AuthProvider>();
     final currentUser = authProvider.currentUser;
 
-    if (currentUser != null && _loadedUserId != currentUser.id) {
+    if (!authProvider.initialized || currentUser == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_loadedUserId != currentUser.id) {
       _loadedUserId = currentUser.id;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadUserData(currentUser);
