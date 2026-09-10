@@ -14,12 +14,15 @@ import '../core/utils/network_resilience.dart';
 class AuthProvider with ChangeNotifier {
   static const String _kActiveSchoolIdKey = 'active_school_id';
   static const String _kActiveRoleKey = 'active_role';
+  static String _userSchoolKey(String userId) => 'active_school_id_$userId';
+  static String _userRoleKey(String userId) => 'active_role_$userId';
   final AuthRepository _authRepository;
 
   UserModel? _currentUser;
   bool _isLoading = false;
   bool _initialized = false; // true once the first getCurrentUser() attempt finishes
   bool _isLoadingUser = false; // guard against concurrent _loadCurrentUser() calls
+  bool _isLoadingMemberships = false; // guard against concurrent loadUserMemberships() calls
   String? _errorMessage;
   bool _isRecoveryMode = false;
   bool _isSchoolExpired = false;
@@ -314,10 +317,14 @@ class AuthProvider with ChangeNotifier {
     // Notify listeners immediately so the UI switches context with 0ms delay
     notifyListeners();
     
-    // Persist active school & role locally in background
+    // Persist active school & role locally in background (both user-scoped and global)
     SharedPreferences.getInstance().then((prefs) {
       prefs.setString(_kActiveSchoolIdKey, cleanSchoolId);
-      prefs.setString(_kActiveRoleKey, role);
+      prefs.setString(_kActiveRoleKey, effectiveRole);
+      if (_currentUser != null) {
+        prefs.setString(_userSchoolKey(_currentUser!.id), cleanSchoolId);
+        prefs.setString(_userRoleKey(_currentUser!.id), effectiveRole);
+      }
     }).catchError((e) {
       debugPrint('Error saving active school to SharedPreferences: $e');
     });
@@ -487,15 +494,18 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> _applyActiveMembershipFromPreferences() async {
-    if (_userMemberships.isEmpty) {
+    if (_userMemberships.isEmpty || _currentUser == null) {
       _activeSchool = null;
       return;
     }
 
     final prefs = await SharedPreferences.getInstance();
-    final rawSavedSchoolId = prefs.getString(_kActiveSchoolIdKey);
+    final userId = _currentUser!.id;
+    // Prefer user-scoped keys, fallback to legacy global keys
+    final rawSavedSchoolId = prefs.getString(_userSchoolKey(userId)) ?? prefs.getString(_kActiveSchoolIdKey);
     final savedSchoolId = AppHelper.parseSingleCleanSchoolId(rawSavedSchoolId);
-    final savedRole = prefs.getString(_kActiveRoleKey);
+    final rawSavedRole = prefs.getString(_userRoleKey(userId)) ?? prefs.getString(_kActiveRoleKey);
+    final savedRole = rawSavedRole?.toLowerCase().trim();
 
     UserSchoolModel? activeMember;
 
@@ -510,37 +520,107 @@ class AuthProvider with ChangeNotifier {
         ),
       );
       // Clean up corrupt SharedPreferences if 'guru' was saved
-      if (savedRole?.toLowerCase() == 'guru') {
-        prefs.setString(_kActiveRoleKey, 'admin');
-      }
-      if (savedSchoolId != null && assignedSchool != null && savedSchoolId != assignedSchool) {
+      prefs.setString(_userRoleKey(userId), 'admin');
+      prefs.setString(_kActiveRoleKey, 'admin');
+      if (assignedSchool != null && assignedSchool.isNotEmpty) {
+        prefs.setString(_userSchoolKey(userId), assignedSchool);
         prefs.setString(_kActiveSchoolIdKey, assignedSchool);
       }
-    } else if (savedSchoolId != null && savedSchoolId.isNotEmpty) {
-      try {
-        activeMember = _userMemberships.firstWhere(
-          (m) => m.schoolId == savedSchoolId && (savedRole == null || m.role.toLowerCase() == savedRole.toLowerCase()),
-        );
-      } catch (_) {
-        activeMember = _userMemberships.firstWhere(
-          (m) => m.schoolId == savedSchoolId,
-          orElse: () => _userMemberships.first,
-        );
-      }
     } else {
-      if (isAdminCadangan && (savedRole == null || savedRole.toLowerCase() == 'admin')) {
-        activeMember = _userMemberships.firstWhere(
-          (m) => m.role.toLowerCase() == 'admin',
-          orElse: () => _userMemberships.first,
-        );
+      // NON-ADMIN ASLI: Account is GURU (Pure Guru or Admin Cadangan)
+      // PRIORITY 1: IN-MEMORY CONTEXT PRESERVATION
+      // If the app is already running and has a valid active school and active role in memory,
+      // PRESERVE IT! Opening Navbar, rebuilds, or background reload must NEVER overwrite active context!
+      if (_activeSchoolId != null && _activeSchoolId!.isNotEmpty) {
+        try {
+          activeMember = _userMemberships.firstWhere(
+            (m) => m.schoolId == _activeSchoolId && m.role.toLowerCase() == _activeRole.toLowerCase(),
+          );
+        } catch (_) {
+          try {
+            activeMember = _userMemberships.firstWhere(
+              (m) => m.schoolId == _activeSchoolId && m.role.toLowerCase() == 'guru',
+              orElse: () => _userMemberships.firstWhere((m) => m.schoolId == _activeSchoolId),
+            );
+          } catch (_) {}
+        }
+      }
+
+      // PRIORITY 2: USE SAVED PREFERENCES (for initial boot / session restore)
+      if (activeMember == null && savedSchoolId != null && savedSchoolId.isNotEmpty) {
+        // Can user activate 'admin' role in savedSchoolId?
+        // ONLY if user is Admin Cadangan AND has an active admin membership in savedSchoolId AND savedRole is explicitly 'admin'!
+        final canUseAdmin = isAdminCadangan &&
+            savedRole == 'admin' &&
+            _userMemberships.any((m) => m.schoolId == savedSchoolId && m.role.toLowerCase() == 'admin' && m.status?.toLowerCase() == 'active');
+        final targetRole = canUseAdmin ? 'admin' : 'guru';
+
+        try {
+          activeMember = _userMemberships.firstWhere(
+            (m) => m.schoolId == savedSchoolId && m.role.toLowerCase() == targetRole,
+          );
+        } catch (_) {
+          try {
+            activeMember = _userMemberships.firstWhere(
+              (m) => m.schoolId == savedSchoolId,
+              orElse: () => _userMemberships.firstWhere(
+                (m) => m.role.toLowerCase() == 'guru',
+                orElse: () => _userMemberships.first,
+              ),
+            );
+          } catch (_) {
+            activeMember = _userMemberships.first;
+          }
+        }
+      }
+
+      // PRIORITY 3: FALLBACK TO PRIMARY USER SCHOOL (DEFAULT TO GURU!)
+      if (activeMember == null) {
+        final primarySchoolId = AppHelper.parseSingleCleanSchoolId(_currentUser?.schoolId);
+        if (primarySchoolId != null && primarySchoolId.isNotEmpty) {
+          try {
+            activeMember = _userMemberships.firstWhere(
+              (m) => m.schoolId == primarySchoolId && m.role.toLowerCase() == 'guru',
+              orElse: () => _userMemberships.firstWhere((m) => m.schoolId == primarySchoolId),
+            );
+          } catch (_) {}
+        }
+      }
+
+      // PRIORITY 4: ULTIMATE FALLBACK - ALWAYS PREFER GURU OVER ADMIN
+      activeMember ??= _userMemberships.firstWhere(
+        (m) => m.role.toLowerCase() == 'guru',
+        orElse: () => _userMemberships.first,
+      );
+    }
+
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(activeMember.schoolId) ?? activeMember.schoolId;
+
+    // ENFORCE AUTHORITATIVE ROLE
+    String finalActiveRole;
+    if (isAdminAsli) {
+      finalActiveRole = 'admin';
+    } else if (isGuruMurni) {
+      // Pure Guru can NEVER be anything other than guru!
+      finalActiveRole = 'guru';
+    } else {
+      // Admin Cadangan: can only be 'admin' if this specific membership is 'admin' AND active!
+      if (activeMember.role.toLowerCase() == 'admin' && activeMember.status?.toLowerCase() == 'active') {
+        finalActiveRole = 'admin';
       } else {
-        activeMember = _userMemberships.first;
+        finalActiveRole = 'guru';
       }
     }
 
-    _activeSchoolId = AppHelper.parseSingleCleanSchoolId(activeMember.schoolId) ?? activeMember.schoolId;
-    _activeRole = isAdminAsli ? 'admin' : (isGuruMurni ? 'guru' : activeMember.role);
+    _activeSchoolId = cleanActiveSchoolId;
+    _activeRole = finalActiveRole;
     _activeSchoolName = activeMember.schoolName;
+
+    // Persist verified user-scoped preferences
+    prefs.setString(_userSchoolKey(userId), cleanActiveSchoolId);
+    prefs.setString(_userRoleKey(userId), finalActiveRole);
+    prefs.setString(_kActiveSchoolIdKey, cleanActiveSchoolId);
+    prefs.setString(_kActiveRoleKey, finalActiveRole);
 
     // IMPORTANT: DO NOT overwrite _currentUser.role! Keep base user role immutable in memory!
     if (_currentUser != null) {
@@ -554,6 +634,8 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> loadUserMemberships() async {
     if (_currentUser == null) return;
+    if (_isLoadingMemberships) return;
+    _isLoadingMemberships = true;
 
     // SWR: Load memberships immediately from cache (0ms) so app is interactive instantly
     if (_userMemberships.isEmpty) {
@@ -761,6 +843,8 @@ class AuthProvider with ChangeNotifier {
           await _applyActiveMembershipFromPreferences();
         }
       }
+    } finally {
+      _isLoadingMemberships = false;
     }
   }
 
@@ -788,12 +872,23 @@ class AuthProvider with ChangeNotifier {
       } else {
         _currentUser = user;
         if (user != null) {
+          final prefs = await SharedPreferences.getInstance();
+          final uid = user.id;
+          final savedUserRole = prefs.getString(_userRoleKey(uid)) ?? prefs.getString(_kActiveRoleKey);
+          final savedUserSchool = prefs.getString(_userSchoolKey(uid)) ?? prefs.getString(_kActiveSchoolIdKey);
+
           if (isAdminAsli) {
             _activeRole = 'admin';
             _activeSchoolId = AppHelper.parseSingleCleanSchoolId(user.schoolId) ?? user.schoolId;
           } else {
-            _activeRole = 'guru';
-            _activeSchoolId = AppHelper.parseSingleCleanSchoolId(user.schoolId) ?? user.schoolId;
+            // If in-memory is already set and valid, retain it
+            if (_activeSchoolId == null || _activeSchoolId!.isEmpty) {
+              _activeSchoolId = AppHelper.parseSingleCleanSchoolId(savedUserSchool) ??
+                  (AppHelper.parseSingleCleanSchoolId(user.schoolId) ?? user.schoolId);
+            }
+            // Non-Admin Asli: ONLY allow 'admin' if explicitly saved by this user and user has admin capability
+            final canRestoreAdmin = savedUserRole?.toLowerCase() == 'admin' && !isGuruMurni;
+            _activeRole = canRestoreAdmin ? 'admin' : 'guru';
           }
           FcmService().syncToken(this);
           await loadUserMemberships();
@@ -834,6 +929,19 @@ class AuthProvider with ChangeNotifier {
         _activeRole = 'guru';
         _activeSchoolId = AppHelper.parseSingleCleanSchoolId(loggedInUser.schoolId) ?? loggedInUser.schoolId;
       }
+
+      // Immediately write safe initial preferences for this user
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final uid = loggedInUser.id;
+        if (_activeSchoolId != null && _activeSchoolId!.isNotEmpty) {
+          prefs.setString(_userSchoolKey(uid), _activeSchoolId!);
+          prefs.setString(_kActiveSchoolIdKey, _activeSchoolId!);
+        }
+        prefs.setString(_userRoleKey(uid), _activeRole);
+        prefs.setString(_kActiveRoleKey, _activeRole);
+      } catch (_) {}
+
       await loadUserMemberships();
       _isLoading = false;
       notifyListeners();
@@ -974,6 +1082,10 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     try {
       final prefs = await SharedPreferences.getInstance();
+      if (_currentUser != null) {
+        await prefs.remove(_userSchoolKey(_currentUser!.id));
+        await prefs.remove(_userRoleKey(_currentUser!.id));
+      }
       await prefs.remove(_kActiveSchoolIdKey);
       await prefs.remove(_kActiveRoleKey);
     } catch (_) {}

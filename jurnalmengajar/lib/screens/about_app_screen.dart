@@ -12,8 +12,8 @@ class AboutAppScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final isAdmin = authProvider.currentUser?.role == 'admin';
+    final authProvider = context.watch<AuthProvider>();
+    final isAdmin = authProvider.activeRole == 'admin';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(

@@ -93,7 +93,7 @@ class GuruDrawer extends StatelessWidget {
       );
     }
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authProvider = context.watch<AuthProvider>();
     final currentUser = authProvider.currentUser;
 
     final warningProvider = context.watch<WarningLetterProvider>();

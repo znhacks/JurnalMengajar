@@ -24,8 +24,7 @@ class DetailJurnalScreen extends StatelessWidget {
     final masterProvider = context.watch<MasterDataProvider>();
     final journalProvider = context.watch<JournalProvider>();
     final authProvider = context.watch<AuthProvider>();
-    final currentUser = authProvider.currentUser;
-    final isAdmin = currentUser?.role == 'admin';
+    final isAdmin = authProvider.activeRole == 'admin';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     late JournalModel journal;

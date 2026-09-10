@@ -213,8 +213,10 @@ class SchoolSwitcherModal extends StatelessWidget {
                         );
 
                         masterProvider.loadAllData(item.schoolId);
-                        scheduleProvider.loadAllSchedules(item.schoolId);
-                        journalProvider.loadAllJournals(item.schoolId);
+                        if (item.role.toLowerCase() == 'admin') {
+                          scheduleProvider.loadAllSchedules(item.schoolId);
+                          journalProvider.loadAllJournals(item.schoolId);
+                        }
                       },
                       leading: SchoolAvatar(
                         logoUrl: item.logoUrl,

@@ -37,6 +37,7 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
   Future<void> _checkExistingJournal() async {
     final journalProvider = Provider.of<JournalProvider>(context, listen: false);
     final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     // Let's first wait for a tiny delay or wait for frames to ensure schedules are loaded
     await Future.delayed(Duration.zero);
@@ -56,10 +57,17 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
     } catch (_) {}
 
     if (schedule == null) {
-      await scheduleProvider.loadAllSchedules();
+      if (authProvider.activeRole == 'admin') {
+        await scheduleProvider.loadAllSchedules(authProvider.activeSchoolId);
+      } else if (authProvider.currentUser?.id != null) {
+        await scheduleProvider.loadTeacherSchedules(authProvider.currentUser!.id, DateTime.now(), forceRefresh: true);
+      }
       try {
-        schedule = scheduleProvider.schedules.firstWhere(
+        schedule = scheduleProvider.cachedTeacherSchedules.firstWhere(
           (s) => s.id == widget.scheduleId,
+          orElse: () => scheduleProvider.schedules.firstWhere(
+            (s) => s.id == widget.scheduleId,
+          ),
         );
       } catch (_) {}
     }
@@ -116,7 +124,7 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
     final authProvider = context.watch<AuthProvider>();
-    final isAdmin = authProvider.currentUser?.role == 'admin';
+    final isAdmin = authProvider.activeRole == 'admin';
 
     // Find schedule
     ScheduleModel? schedule;
