@@ -54,6 +54,7 @@ class AuthProvider with ChangeNotifier {
 
   List<UserSchoolModel> _userMemberships = [];
   List<UserSchoolModel> _pendingMemberships = [];
+  List<UserSchoolModel> _inactiveMemberships = [];
   String? _activeSchoolId;
   String _activeSchoolName = 'Sekolah';
   String _activeRole = 'guru';
@@ -70,6 +71,7 @@ class AuthProvider with ChangeNotifier {
 
   List<UserSchoolModel> get userMemberships => _userMemberships;
   List<UserSchoolModel> get pendingMemberships => _pendingMemberships;
+  List<UserSchoolModel> get inactiveMemberships => _inactiveMemberships;
   String? get activeSchoolId => _activeSchoolId;
   String get activeSchoolName => _activeSchoolName;
   String get activeRole => _activeRole;
@@ -538,6 +540,8 @@ class AuthProvider with ChangeNotifier {
   Future<void> _applyActiveMembershipFromPreferences() async {
     if (_userMemberships.isEmpty || _currentUser == null) {
       _activeSchool = null;
+      _activeSchoolId = null;
+      _activeSchoolName = '';
       return;
     }
 
@@ -694,55 +698,61 @@ class AuthProvider with ChangeNotifier {
     try {
       final supabase = Supabase.instance.client;
       final Map<String, UserSchoolModel> membershipMap = {};
+      final List<UserSchoolModel> pendingList = [];
+      final List<UserSchoolModel> inactiveList = [];
+      final Set<String> inactiveSchoolIds = {};
 
-      // 1. Fetch from user_schools (FILTER ONLY ACTIVE ROWS)
+      // 1. Fetch from user_schools (ALL MEMBERSHIPS: active, pending, inactive)
       try {
         final res = await supabase
             .from('user_schools')
             .select('*, schools(id, name, code, logo_url, npsn, status)')
             .eq('user_id', _currentUser!.id)
-            .eq('status', 'active')
             .timeout(NetworkResilience.defaultQueryTimeout);
 
         for (final item in (res as List)) {
           final m = Map<String, dynamic>.from(item as Map);
           final status = (m['status'] as String? ?? 'active').toLowerCase();
-          if (status != 'active') continue; // Extra safety guard
-
           m['role'] = item['role'] ?? _currentUser!.role;
           final mRole = m['role'].toString().toLowerCase();
 
-          // ADMIN ASLI PROTECTION: An Admin Asli must NEVER load 'guru' memberships!
-          if (isAdminAsli && (mRole == 'guru' || mRole == 'teacher')) {
-            continue;
-          }
-
-          // ADMIN ASLI PROTECTION: Only assigned school allowed for Admin Asli!
-          final assignedSchool = AppHelper.parseSingleCleanSchoolId(_currentUser?.schoolId);
           final sId = AppHelper.parseSingleCleanSchoolId(m['school_id']);
-          if (isAdminAsli && assignedSchool != null && assignedSchool.isNotEmpty && sId != assignedSchool) {
-            continue;
-          }
+          if (sId == null || sId.isEmpty) continue;
 
-          if (m['schools'] == null && m['school_id'] != null) {
-            if (sId != null && sId.isNotEmpty) {
-              try {
-                final sRes = await supabase
-                    .from('schools')
-                    .select('id, name, code, logo_url, status')
-                    .eq('id', sId)
-                    .maybeSingle()
-                    .timeout(NetworkResilience.defaultQueryTimeout);
-                if (sRes != null) {
-                  m['schools'] = sRes;
-                }
-              } catch (_) {}
-            }
+          if (m['schools'] == null) {
+            try {
+              final sRes = await supabase
+                  .from('schools')
+                  .select('id, name, code, logo_url, status')
+                  .eq('id', sId)
+                  .maybeSingle()
+                  .timeout(NetworkResilience.defaultQueryTimeout);
+              if (sRes != null) {
+                m['schools'] = sRes;
+              }
+            } catch (_) {}
           }
 
           final parsed = UserSchoolModel.fromJson(m);
-          if (parsed.schoolId.isNotEmpty) {
-            final key = '${parsed.schoolId}_${parsed.role.toLowerCase()}';
+
+          if (status == 'pending') {
+            pendingList.add(parsed);
+          } else if (status == 'inactive') {
+            inactiveList.add(parsed);
+            inactiveSchoolIds.add(sId);
+          } else if (status == 'active' || status == 'requested_exit') {
+            // ADMIN ASLI PROTECTION: An Admin Asli must NEVER load 'guru' memberships!
+            if (isAdminAsli && (mRole == 'guru' || mRole == 'teacher')) {
+              continue;
+            }
+
+            // ADMIN ASLI PROTECTION: Only assigned school allowed for Admin Asli!
+            final assignedSchool = AppHelper.parseSingleCleanSchoolId(_currentUser?.schoolId);
+            if (isAdminAsli && assignedSchool != null && assignedSchool.isNotEmpty && sId != assignedSchool) {
+              continue;
+            }
+
+            final key = '${parsed.schoolId}_$mRole';
             membershipMap[key] = parsed;
           }
         }
@@ -762,6 +772,9 @@ class AuthProvider with ChangeNotifier {
           final m = Map<String, dynamic>.from(item as Map);
           final parsed = UserSchoolModel.fromJson(m);
           if (parsed.schoolId.isNotEmpty) {
+            final cleanMemId = AppHelper.parseSingleCleanSchoolId(parsed.schoolId);
+            if (cleanMemId != null && inactiveSchoolIds.contains(cleanMemId)) continue;
+
             final parsedRole = parsed.role.toLowerCase();
             if (isAdminAsli && (parsedRole == 'guru' || parsedRole == 'teacher')) continue;
 
@@ -782,6 +795,8 @@ class AuthProvider with ChangeNotifier {
       for (final sId in allowedSchoolIds) {
         final cleanId = AppHelper.parseSingleCleanSchoolId(sId);
         if (cleanId != null && cleanId.isNotEmpty) {
+          if (inactiveSchoolIds.contains(cleanId)) continue;
+
           final roleForMembership = isAdminAsli ? 'admin' : _currentUser!.role.toLowerCase();
           final key = '${cleanId}_$roleForMembership';
           if (!membershipMap.containsKey(key)) {
@@ -812,10 +827,11 @@ class AuthProvider with ChangeNotifier {
 
       if (_userMemberships.isEmpty && _currentUser != null) {
         // Self-heal: If user has schoolId or schoolName in profile, look up school and link
+        // Only if not inactive!
         try {
           Map<String, dynamic>? schoolData;
           final cleanUserSchoolId = AppHelper.parseSingleCleanSchoolId(_currentUser!.schoolId);
-          if (cleanUserSchoolId != null && cleanUserSchoolId.isNotEmpty) {
+          if (cleanUserSchoolId != null && cleanUserSchoolId.isNotEmpty && !inactiveSchoolIds.contains(cleanUserSchoolId)) {
             schoolData = await supabase
                 .from('schools')
                 .select('id, name, code, logo_url')
@@ -830,6 +846,12 @@ class AuthProvider with ChangeNotifier {
                 .ilike('name', _currentUser!.schoolName!.trim())
                 .maybeSingle()
                 .timeout(NetworkResilience.defaultQueryTimeout);
+            if (schoolData != null) {
+              final foundId = AppHelper.parseSingleCleanSchoolId(schoolData['id']);
+              if (foundId != null && inactiveSchoolIds.contains(foundId)) {
+                schoolData = null;
+              }
+            }
           }
           if (schoolData != null) {
             final sId = schoolData['id'] as String;
@@ -862,44 +884,8 @@ class AuthProvider with ChangeNotifier {
         }
       }
 
-      // 4. Fetch pending memberships for display in ProfilScreen
-      final List<UserSchoolModel> pendingList = [];
-      try {
-        final pendingRes = await supabase
-            .from('user_schools')
-            .select('*, schools(id, name, code, logo_url, npsn, status)')
-            .eq('user_id', _currentUser!.id)
-            .eq('status', 'pending')
-            .timeout(NetworkResilience.defaultQueryTimeout);
-
-        for (final item in (pendingRes as List)) {
-          final m = Map<String, dynamic>.from(item as Map);
-          m['role'] = item['role'] ?? _currentUser!.role;
-          final sId = AppHelper.parseSingleCleanSchoolId(m['school_id']);
-
-          if (m['schools'] == null && sId != null && sId.isNotEmpty) {
-            try {
-              final sRes = await supabase
-                  .from('schools')
-                  .select('id, name, code, logo_url, status')
-                  .eq('id', sId)
-                  .maybeSingle()
-                  .timeout(NetworkResilience.defaultQueryTimeout);
-              if (sRes != null) {
-                m['schools'] = sRes;
-              }
-            } catch (_) {}
-          }
-
-          final parsed = UserSchoolModel.fromJson(m);
-          if (parsed.schoolId.isNotEmpty) {
-            pendingList.add(parsed);
-          }
-        }
-      } catch (err) {
-        debugPrint('Error loading pending user_schools in memberships: $err');
-      }
       _pendingMemberships = pendingList;
+      _inactiveMemberships = inactiveList;
 
       if (_userMemberships.isNotEmpty) {
         // Persist to local cache for instant 0ms offline display
@@ -1178,6 +1164,7 @@ class AuthProvider with ChangeNotifier {
     _activeSchool = null;
     _userMemberships = [];
     _pendingMemberships = [];
+    _inactiveMemberships = [];
     _isLoading = false;
     notifyListeners();
   }
@@ -1321,6 +1308,78 @@ class AuthProvider with ChangeNotifier {
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  Future<bool> leaveSchool(String schoolId, {String? membershipId}) async {
+    if (_currentUser == null) return false;
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
+
+    // Guard: Admin Asli cannot leave their primary assigned school
+    if (isAdminAsli && cleanSchoolId == AppHelper.parseSingleCleanSchoolId(_currentUser!.schoolId)) {
+      _errorMessage = 'Admin Asli tidak dapat keluar dari sekolah utama.';
+      notifyListeners();
+      return false;
+    }
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      // 1. Call repository to update database membership to inactive and cleanup users table
+      await _authRepository.leaveSchool(
+        schoolId: cleanSchoolId,
+        userId: _currentUser!.id,
+        membershipId: membershipId,
+      );
+
+      // 2. Clear cache for the exited school
+      await CacheService().remove('active_school_$cleanSchoolId');
+
+      // 3. Fallback active school if the exited school was the active school
+      if (_activeSchoolId == cleanSchoolId) {
+        final remainingActive = _userMemberships.where(
+          (m) => (AppHelper.parseSingleCleanSchoolId(m.schoolId) ?? m.schoolId) != cleanSchoolId,
+        ).toList();
+
+        final prefs = await SharedPreferences.getInstance();
+        final userId = _currentUser!.id;
+
+        if (remainingActive.isNotEmpty) {
+          final next = remainingActive.first;
+          final nextSchoolId = AppHelper.parseSingleCleanSchoolId(next.schoolId) ?? next.schoolId;
+          _activeSchoolId = nextSchoolId;
+          _activeSchoolName = next.schoolName;
+          _activeRole = next.role.toLowerCase();
+
+          prefs.setString(_userSchoolKey(userId), nextSchoolId);
+          prefs.setString(_userRoleKey(userId), _activeRole);
+          prefs.setString(_kActiveSchoolIdKey, nextSchoolId);
+          prefs.setString(_kActiveRoleKey, _activeRole);
+        } else {
+          _activeSchoolId = null;
+          _activeSchoolName = '';
+          _activeSchool = null;
+
+          prefs.remove(_userSchoolKey(userId));
+          prefs.remove(_userRoleKey(userId));
+          prefs.remove(_kActiveSchoolIdKey);
+          prefs.remove(_kActiveRoleKey);
+        }
+      }
+
+      // 4. Reload all memberships to refresh active, pending, and inactive state
+      await loadUserMemberships();
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = _cleanErrorMessage(e);
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
 
   Future<bool> requestExitFromSchool(String? membershipId, {String? schoolId, String? role}) async {

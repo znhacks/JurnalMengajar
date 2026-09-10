@@ -54,6 +54,7 @@ class SchoolSwitcherModal extends StatelessWidget {
           schoolName: m.schoolName,
           role: isAdminAsli ? 'admin' : m.role,
           logoUrl: m.logoUrl,
+          status: m.status ?? 'active',
         ));
       }
     }
@@ -194,105 +195,130 @@ class SchoolSwitcherModal extends StatelessWidget {
                           return;
                         }
 
-                        final scheduleProvider =
-                            Provider.of<ScheduleProvider>(context, listen: false);
-                        final journalProvider =
-                            Provider.of<JournalProvider>(context, listen: false);
-                        final masterProvider =
-                            Provider.of<MasterDataProvider>(context, listen: false);
-                        final warningProvider =
-                            Provider.of<WarningLetterProvider>(context, listen: false);
+                          final scheduleProvider =
+                              Provider.of<ScheduleProvider>(context, listen: false);
+                          final journalProvider =
+                              Provider.of<JournalProvider>(context, listen: false);
+                          final masterProvider =
+                              Provider.of<MasterDataProvider>(context, listen: false);
+                          final warningProvider =
+                              Provider.of<WarningLetterProvider>(context, listen: false);
 
-                        // Close modal immediately for snappy, instantaneous UX
-                        Navigator.pop(context);
+                          // Close modal immediately for snappy, instantaneous UX
+                          Navigator.pop(context);
 
-                        scheduleProvider.clearTeacherSchedulesCache();
-                        journalProvider.clearTeacherJournalsCache();
-                        warningProvider.clearCache();
+                          scheduleProvider.clearTeacherSchedulesCache();
+                          journalProvider.clearTeacherJournalsCache();
+                          warningProvider.clearCache();
 
-                        authProvider.switchActiveSchool(
-                          item.schoolId,
-                          item.schoolName,
-                          item.role,
-                        );
+                          authProvider.switchActiveSchool(
+                            item.schoolId,
+                            item.schoolName,
+                            item.role,
+                          );
 
-                        masterProvider.loadAllData(item.schoolId);
-                        if (item.role.toLowerCase() == 'admin') {
-                          scheduleProvider.loadAllSchedules(item.schoolId);
-                          journalProvider.loadAllJournals(item.schoolId);
-                          warningProvider.loadAllWarningLetters(item.schoolId);
-                        }
-                      },
-                      leading: SchoolAvatar(
-                        logoUrl: item.logoUrl,
-                        schoolName: item.schoolName,
-                        radius: 20,
-                        isSelected: isSelected,
-                      ),
-                      title: Text(
-                        item.schoolName,
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 15.sp,
-                          fontWeight:
-                              isSelected ? FontWeight.w800 : FontWeight.w600,
-                          color: isSelected
-                              ? (isDark
-                                  ? const Color(0xFFA5B4FC)
-                                  : const Color(0xFF312E81))
-                              : Theme.of(context).colorScheme.onSurface,
+                          masterProvider.loadAllData(item.schoolId);
+                          if (item.role.toLowerCase() == 'admin') {
+                            scheduleProvider.loadAllSchedules(item.schoolId);
+                            journalProvider.loadAllJournals(item.schoolId);
+                            warningProvider.loadAllWarningLetters(item.schoolId);
+                          }
+                        },
+                        leading: SchoolAvatar(
+                          logoUrl: item.logoUrl,
+                          schoolName: item.schoolName,
+                          radius: 20,
+                          isSelected: isSelected,
                         ),
-                      ),
-                      subtitle: Row(
-                        children: [
-                          Container(
-                            margin: EdgeInsets.only(top: 4.h),
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 8.w, vertical: 2.h),
-                            decoration: BoxDecoration(
-                              color: isAdmin
-                                  ? (isDark
-                                      ? const Color(0xFF7F1D1D).withValues(alpha: 0.35)
-                                      : const Color(0xFFFEF2F2))
-                                  : (isDark
-                                      ? const Color(0xFF14532D).withValues(alpha: 0.35)
-                                      : const Color(0xFFF0FDF4)),
-                              borderRadius: BorderRadius.circular(6.r),
-                              border: Border.all(
-                                color: isAdmin
-                                    ? (isDark ? const Color(0xFFEF4444).withValues(alpha: 0.5) : const Color(0xFFFCA5A5))
-                                    : (isDark ? const Color(0xFF22C55E).withValues(alpha: 0.5) : const Color(0xFF86EFAC)),
-                              ),
-                            ),
-                            child: Text(
-                              isAdmin ? 'ADMIN' : 'GURU',
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.w800,
-                                color: isAdmin
-                                    ? (isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B))
-                                    : (isDark ? const Color(0xFF86EFAC) : const Color(0xFF166534)),
-                              ),
-                            ),
+                        title: Text(
+                          item.schoolName,
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 15.sp,
+                            fontWeight:
+                                isSelected ? FontWeight.w800 : FontWeight.w600,
+                            color: isSelected
+                                ? (isDark
+                                    ? const Color(0xFFA5B4FC)
+                                    : const Color(0xFF312E81))
+                                : Theme.of(context).colorScheme.onSurface,
                           ),
-                        ],
+                        ),
+                        subtitle: Row(
+                          children: [
+                            Container(
+                              margin: EdgeInsets.only(top: 4.h),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8.w, vertical: 2.h),
+                              decoration: BoxDecoration(
+                                color: isAdmin
+                                    ? (isDark
+                                        ? const Color(0xFF7F1D1D).withValues(alpha: 0.35)
+                                        : const Color(0xFFFEF2F2))
+                                    : (isDark
+                                        ? const Color(0xFF14532D).withValues(alpha: 0.35)
+                                        : const Color(0xFFF0FDF4)),
+                                borderRadius: BorderRadius.circular(6.r),
+                                border: Border.all(
+                                  color: isAdmin
+                                      ? (isDark ? const Color(0xFFEF4444).withValues(alpha: 0.5) : const Color(0xFFFCA5A5))
+                                      : (isDark ? const Color(0xFF22C55E).withValues(alpha: 0.5) : const Color(0xFF86EFAC)),
+                                ),
+                              ),
+                              child: Text(
+                                isAdmin ? 'ADMIN' : 'GURU',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w800,
+                                  color: isAdmin
+                                      ? (isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B))
+                                      : (isDark ? const Color(0xFF86EFAC) : const Color(0xFF166534)),
+                                ),
+                              ),
+                            ),
+                            if (item.status == 'requested_exit') ...[
+                              SizedBox(width: 6.w),
+                              Container(
+                                margin: EdgeInsets.only(top: 4.h),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 8.w, vertical: 2.h),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF78350F).withValues(alpha: 0.35)
+                                      : const Color(0xFFFEF3C7),
+                                  borderRadius: BorderRadius.circular(6.r),
+                                  border: Border.all(
+                                    color: isDark ? const Color(0xFFF59E0B).withValues(alpha: 0.5) : const Color(0xFFFCD34D),
+                                  ),
+                                ),
+                                child: Text(
+                                  '⏳ MENUNGGU KELUAR',
+                                  style: GoogleFonts.hankenGrotesk(
+                                    fontSize: 10.sp,
+                                    fontWeight: FontWeight.w800,
+                                    color: isDark ? const Color(0xFFFDE68A) : const Color(0xFFB45309),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        trailing: isSelected
+                            ? Container(
+                                padding: EdgeInsets.all(4.w),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF4F46E5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              )
+                            : null,
                       ),
-                      trailing: isSelected
-                          ? Container(
-                              padding: EdgeInsets.all(4.w),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF4F46E5),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            )
-                          : null,
-                    ),
-                  );
-                },
+                    );
+                  },
               ),
             ),
         ],
@@ -306,11 +332,13 @@ class SchoolRoleOption {
   final String schoolName;
   final String role;
   final String? logoUrl;
+  final String status;
 
   SchoolRoleOption({
     required this.schoolId,
     required this.schoolName,
     required this.role,
     this.logoUrl,
+    this.status = 'active',
   });
 }

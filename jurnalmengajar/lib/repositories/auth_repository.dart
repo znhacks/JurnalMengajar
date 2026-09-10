@@ -21,4 +21,5 @@ abstract class AuthRepository {
   Future<void> approveExitRequest(String membershipId);
   Future<void> rejectExitRequest(String membershipId);
   Future<void> rejectJoinRequest(String userId, String schoolId);
+  Future<void> leaveSchool({required String schoolId, required String userId, String? membershipId});
 }

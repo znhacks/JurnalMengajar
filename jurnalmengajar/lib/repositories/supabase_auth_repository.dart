@@ -850,54 +850,67 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> approveExitRequest(String membershipId) async {
     try {
-      // 1. Fetch membership details before deleting
+      // 1. Fetch membership details before updating
       final membership = await _supabase
           .from('user_schools')
           .select('user_id, school_id, role')
           .eq('id', membershipId)
           .maybeSingle();
 
-      // 2. Delete the specific role membership from user_schools
+      // 2. Deactivate membership in user_schools (do NOT delete data!)
       await _supabase
           .from('user_schools')
-          .delete()
+          .update({
+            'status': 'inactive',
+            'updated_at': DateTime.now().toIso8601String(),
+          })
           .eq('id', membershipId);
 
-      // 3. Update users table if user has no more active roles in this school
+      // 3. Update users table: clean school_ids and fallback active school
       if (membership != null) {
         final uId = membership['user_id'] as String;
         final sId = membership['school_id'] as String;
 
         final remaining = await _supabase
             .from('user_schools')
-            .select('id, school_id, role')
-            .eq('user_id', uId);
+            .select('id, school_id, role, schools(name)')
+            .eq('user_id', uId)
+            .eq('status', 'active');
 
         final remList = (remaining as List);
         final stillInThisSchool = remList.where((m) => m['school_id'] == sId).toList();
+        final remainingSchoolIds = remList
+            .map((r) => r['school_id']?.toString())
+            .whereType<String>()
+            .where((id) => id != sId)
+            .toSet()
+            .toList();
+
+        final updates = <String, dynamic>{
+          'school_ids': remainingSchoolIds,
+        };
 
         if (stillInThisSchool.isEmpty) {
           // User completely exited this school
           if (remList.isNotEmpty) {
             final next = remList.first;
-            await _supabase.from('users').update({
-              'school_id': next['school_id'],
-              'role': next['role'],
-            }).eq('id', uId);
+            updates['school_id'] = next['school_id'];
+            if (next['schools'] != null && next['schools'] is Map) {
+              updates['school_name'] = next['schools']['name'];
+            }
+            if (next['role'] != null) {
+              updates['role'] = next['role'];
+            }
           } else {
-            await _supabase.from('users').update({
-              'school_id': null,
-              'school_name': null,
-            }).eq('id', uId);
+            updates['school_id'] = null;
+            updates['school_name'] = null;
           }
         } else {
-          // User still has another role in this school (e.g. admin)!
-          // Update users table role to their remaining role in this school
           final nextRole = stillInThisSchool.first['role'] as String;
-          await _supabase.from('users').update({
-            'role': nextRole,
-          }).eq('id', uId);
+          updates['role'] = nextRole;
         }
+
+        await _supabase.from('users').update(updates).eq('id', uId);
       }
     } catch (e) {
       throw Exception('Gagal menyetujui pengajuan keluar: $e');
@@ -909,7 +922,10 @@ class SupabaseAuthRepository implements AuthRepository {
     try {
       await _supabase
           .from('user_schools')
-          .update({'status': 'active'})
+          .update({
+            'status': 'active',
+            'updated_at': DateTime.now().toIso8601String(),
+          })
           .eq('id', membershipId);
     } catch (e) {
       throw Exception('Gagal menolak pengajuan keluar: $e');
@@ -963,6 +979,102 @@ class SupabaseAuthRepository implements AuthRepository {
       }
     } catch (e) {
       throw Exception('Gagal menolak permintaan bergabung: $e');
+    }
+  }
+
+  @override
+  Future<void> leaveSchool({required String schoolId, required String userId, String? membershipId}) async {
+    try {
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
+
+      // 1. Try atomic PostgreSQL leave_school RPC first
+      bool rpcSucceeded = false;
+      try {
+        final rpcRes = await _supabase.rpc('leave_school', params: {
+          'p_school_id': cleanSchoolId,
+        });
+        if (rpcRes != null) {
+          rpcSucceeded = true;
+        }
+      } catch (rpcErr) {
+        debugPrint('leave_school RPC note (falling back to direct update): $rpcErr');
+      }
+
+      // 2. Direct fallback update if RPC was not used or failed
+      if (!rpcSucceeded) {
+        if (membershipId != null && membershipId.isNotEmpty) {
+          await _supabase
+              .from('user_schools')
+              .update({
+                'status': 'inactive',
+                'updated_at': DateTime.now().toIso8601String(),
+              })
+              .eq('id', membershipId)
+              .eq('user_id', userId);
+        } else {
+          await _supabase
+              .from('user_schools')
+              .update({
+                'status': 'inactive',
+                'updated_at': DateTime.now().toIso8601String(),
+              })
+              .eq('user_id', userId)
+              .eq('school_id', cleanSchoolId);
+        }
+
+        // Fetch remaining active schools for user
+        final remainingRes = await _supabase
+            .from('user_schools')
+            .select('school_id, role, schools(name)')
+            .eq('user_id', userId)
+            .eq('status', 'active');
+
+        final remainingList = (remainingRes as List);
+        final remainingActiveList = remainingList
+            .where((r) => (AppHelper.parseSingleCleanSchoolId(r['school_id']) ?? r['school_id']) != cleanSchoolId)
+            .toList();
+
+        final remainingSchoolIds = remainingActiveList
+            .map((r) => (AppHelper.parseSingleCleanSchoolId(r['school_id']) ?? r['school_id']?.toString()))
+            .whereType<String>()
+            .toSet()
+            .toList();
+
+        // Update users table
+        final userRow = await _supabase
+            .from('users')
+            .select('school_id, school_ids')
+            .eq('id', userId)
+            .maybeSingle();
+
+        if (userRow != null) {
+          final currentAssignedSchoolId = AppHelper.parseSingleCleanSchoolId(userRow['school_id']);
+          final updates = <String, dynamic>{
+            'school_ids': remainingSchoolIds,
+          };
+
+          if (currentAssignedSchoolId == cleanSchoolId) {
+            if (remainingActiveList.isNotEmpty) {
+              final next = remainingActiveList.first;
+              final nextId = AppHelper.parseSingleCleanSchoolId(next['school_id']) ?? next['school_id'];
+              updates['school_id'] = nextId;
+              if (next['schools'] != null && next['schools'] is Map) {
+                updates['school_name'] = next['schools']['name'];
+              }
+              if (next['role'] != null) {
+                updates['role'] = next['role'];
+              }
+            } else {
+              updates['school_id'] = null;
+              updates['school_name'] = null;
+            }
+          }
+
+          await _supabase.from('users').update(updates).eq('id', userId);
+        }
+      }
+    } catch (e) {
+      throw Exception('Gagal keluar dari sekolah: $e');
     }
   }
 }

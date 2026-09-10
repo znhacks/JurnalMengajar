@@ -54,6 +54,8 @@ class FakeAuthRepo implements AuthRepository {
   Future<void> rejectExitRequest(String membershipId) async {}
   @override
   Future<void> rejectJoinRequest(String userId, String schoolId) async {}
+  @override
+  Future<void> leaveSchool({required String schoolId, required String userId, String? membershipId}) async {}
 }
 
 void main() {

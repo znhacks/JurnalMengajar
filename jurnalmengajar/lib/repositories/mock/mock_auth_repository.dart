@@ -238,4 +238,25 @@ class MockAuthRepository implements AuthRepository {
     await Future.delayed(const Duration(milliseconds: 300));
     _db.users.removeWhere((u) => u.id == userId && u.schoolId == schoolId && u.isPending);
   }
+
+  @override
+  Future<void> leaveSchool({required String schoolId, required String userId, String? membershipId}) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final userIdx = _db.users.indexWhere((u) => u.id == userId);
+    if (userIdx != -1) {
+      final user = _db.users[userIdx];
+      final newSchoolIds = user.schoolIds.where((id) => id != schoolId).toList();
+      String? nextSchoolId;
+      if (user.schoolId == schoolId) {
+        nextSchoolId = newSchoolIds.isNotEmpty ? newSchoolIds.first : null;
+      } else {
+        nextSchoolId = user.schoolId;
+      }
+      _db.users[userIdx] = user.copyWith(
+        schoolId: nextSchoolId,
+        clearSchoolId: nextSchoolId == null,
+        schoolIds: newSchoolIds,
+      );
+    }
+  }
 }

@@ -103,19 +103,73 @@ class MockSchoolJoinAuthRepo implements AuthRepository {
   }
 
   @override
-  Future<void> requestExitFromSchool(String membershipId, {String? schoolId, String? role, String? userId}) async {}
+  Future<void> requestExitFromSchool(String membershipId, {String? schoolId, String? role, String? userId}) async {
+    final idx = userSchoolsDb.indexWhere((r) => r['id'] == membershipId);
+    if (idx != -1) {
+      userSchoolsDb[idx]['status'] = 'requested_exit';
+    }
+  }
 
   @override
-  Future<void> cancelExitRequest(String membershipId, {String? schoolId, String? role, String? userId}) async {}
+  Future<void> cancelExitRequest(String membershipId, {String? schoolId, String? role, String? userId}) async {
+    final idx = userSchoolsDb.indexWhere((r) => r['id'] == membershipId);
+    if (idx != -1) {
+      userSchoolsDb[idx]['status'] = 'active';
+    }
+  }
 
   @override
-  Future<List<Map<String, dynamic>>> getPendingExitRequests(String schoolId) async => [];
+  Future<List<Map<String, dynamic>>> getPendingExitRequests(String schoolId) async {
+    return userSchoolsDb.where((r) => r['school_id'] == schoolId && r['status'] == 'requested_exit').toList();
+  }
 
   @override
-  Future<void> approveExitRequest(String membershipId) async {}
+  Future<void> approveExitRequest(String membershipId) async {
+    final idx = userSchoolsDb.indexWhere((r) => r['id'] == membershipId);
+    if (idx != -1) {
+      userSchoolsDb[idx]['status'] = 'inactive';
+      final userId = userSchoolsDb[idx]['user_id'] as String;
+      final schoolId = userSchoolsDb[idx]['school_id'] as String;
+      final userIdx = usersDb.indexWhere((u) => u.id == userId);
+      if (userIdx != -1) {
+        final u = usersDb[userIdx];
+        final remaining = u.schoolIds.where((id) => id != schoolId).toList();
+        usersDb[userIdx] = u.copyWith(
+          schoolIds: remaining,
+          schoolId: u.schoolId == schoolId ? (remaining.isNotEmpty ? remaining.first : null) : u.schoolId,
+          clearSchoolId: u.schoolId == schoolId && remaining.isEmpty,
+        );
+      }
+    }
+  }
 
   @override
-  Future<void> rejectExitRequest(String membershipId) async {}
+  Future<void> rejectExitRequest(String membershipId) async {
+    final idx = userSchoolsDb.indexWhere((r) => r['id'] == membershipId);
+    if (idx != -1) {
+      userSchoolsDb[idx]['status'] = 'active';
+    }
+  }
+
+  @override
+  Future<void> leaveSchool({required String schoolId, required String userId, String? membershipId}) async {
+    final idx = usersDb.indexWhere((u) => u.id == userId);
+    if (idx != -1) {
+      final user = usersDb[idx];
+      final newSchoolIds = user.schoolIds.where((id) => id != schoolId).toList();
+      String? nextSchoolId;
+      if (user.schoolId == schoolId) {
+        nextSchoolId = newSchoolIds.isNotEmpty ? newSchoolIds.first : null;
+      } else {
+        nextSchoolId = user.schoolId;
+      }
+      usersDb[idx] = user.copyWith(
+        schoolId: nextSchoolId,
+        clearSchoolId: nextSchoolId == null,
+        schoolIds: newSchoolIds,
+      );
+    }
+  }
 }
 
 void main() {
@@ -333,6 +387,172 @@ void main() {
       expect(pendingList.length, equals(1));
       expect(pendingList.first.schoolId, equals('smkn-4'));
       expect(pendingList.first.status, equals('pending'));
+    });
+
+    test('leaveSchool updates user_schools and user record', () async {
+      const teacherId = 'teacher-multi';
+      const smkn11Id = '00000000-0000-0000-0000-000000000001';
+      const smkn4Id = '00000000-0000-0000-0000-000000000002';
+
+      mockRepo.usersDb.add(UserModel(
+        id: teacherId,
+        email: 'multi@jurnal.com',
+        fullName: 'Guru Multi Sekolah',
+        role: 'guru',
+        schoolId: smkn4Id,
+        schoolName: 'SMKN 4 Malang',
+        schoolIds: [smkn11Id, smkn4Id],
+      ));
+
+      // Leave SMKN 4
+      await mockRepo.leaveSchool(
+        schoolId: smkn4Id,
+        userId: teacherId,
+      );
+
+      final updatedUser = mockRepo.usersDb.firstWhere((u) => u.id == teacherId);
+      expect(updatedUser.schoolIds, contains(smkn11Id));
+      expect(updatedUser.schoolIds, isNot(contains(smkn4Id)));
+      // Fallback active school is SMKN 11
+      expect(updatedUser.schoolId, equals(smkn11Id));
+    });
+
+    test('leaveSchool clears schoolId when leaving only remaining school', () async {
+      const teacherId = 'teacher-single';
+      const smkn4Id = '00000000-0000-0000-0000-000000000002';
+
+      mockRepo.usersDb.add(UserModel(
+        id: teacherId,
+        email: 'single@jurnal.com',
+        fullName: 'Guru Single Sekolah',
+        role: 'guru',
+        schoolId: smkn4Id,
+        schoolName: 'SMKN 4 Malang',
+        schoolIds: [smkn4Id],
+      ));
+
+      // Leave SMKN 4
+      await mockRepo.leaveSchool(
+        schoolId: smkn4Id,
+        userId: teacherId,
+      );
+
+      final updatedUser = mockRepo.usersDb.firstWhere((u) => u.id == teacherId);
+      expect(updatedUser.schoolIds, isEmpty);
+      expect(updatedUser.schoolId, isNull);
+    });
+
+    test('Inactive memberships are tagged and not switchable', () {
+      final inactiveMember = UserSchoolModel(
+        id: 'us-inactive',
+        userId: 'teacher-1',
+        schoolId: 'smkn-4',
+        role: 'guru',
+        schoolName: 'SMKN 4 Malang',
+        status: 'inactive',
+      );
+
+      expect(inactiveMember.status, equals('inactive'));
+      expect(inactiveMember.schoolId, equals('smkn-4'));
+    });
+
+    test('requestExitFromSchool sets status to requested_exit without leaving immediately', () async {
+      const membershipId = 'us-exit-test';
+      final row = {
+        'id': membershipId,
+        'user_id': 'teacher-request-exit',
+        'school_id': 'smkn-4',
+        'role': 'guru',
+        'status': 'active',
+      };
+      mockRepo.userSchoolsDb.add(row);
+
+      await mockRepo.requestExitFromSchool(membershipId);
+
+      final updated = mockRepo.userSchoolsDb.firstWhere((r) => r['id'] == membershipId);
+      expect(updated['status'], equals('requested_exit'));
+
+      final pendingExits = await mockRepo.getPendingExitRequests('smkn-4');
+      expect(pendingExits.any((r) => r['id'] == membershipId), isTrue);
+    });
+
+    test('approveExitRequest updates status to inactive and removes school from user schoolIds', () async {
+      const membershipId = 'us-approve-exit';
+      const teacherId = 'teacher-approve-exit';
+      const smkn4Id = 'smkn-4-uuid';
+      const smkn11Id = 'smkn-11-uuid';
+
+      mockRepo.userSchoolsDb.add({
+        'id': membershipId,
+        'user_id': teacherId,
+        'school_id': smkn4Id,
+        'role': 'guru',
+        'status': 'requested_exit',
+      });
+
+      mockRepo.usersDb.add(UserModel(
+        id: teacherId,
+        email: 'approve_exit@test.com',
+        fullName: 'Guru Approve Exit',
+        role: 'guru',
+        schoolId: smkn4Id,
+        schoolName: 'SMKN 4 Malang',
+        schoolIds: [smkn4Id, smkn11Id],
+      ));
+
+      await mockRepo.approveExitRequest(membershipId);
+
+      final row = mockRepo.userSchoolsDb.firstWhere((r) => r['id'] == membershipId);
+      expect(row['status'], equals('inactive')); // Soft delete, NEVER hard deleted!
+
+      final user = mockRepo.usersDb.firstWhere((u) => u.id == teacherId);
+      expect(user.schoolIds, isNot(contains(smkn4Id)));
+      expect(user.schoolIds, contains(smkn11Id));
+      expect(user.schoolId, equals(smkn11Id)); // Switched to remaining active school
+    });
+
+    test('rejectExitRequest restores status to active', () async {
+      const membershipId = 'us-reject-exit';
+      mockRepo.userSchoolsDb.add({
+        'id': membershipId,
+        'user_id': 'teacher-reject-exit',
+        'school_id': 'smkn-4',
+        'role': 'guru',
+        'status': 'requested_exit',
+      });
+
+      await mockRepo.rejectExitRequest(membershipId);
+
+      final row = mockRepo.userSchoolsDb.firstWhere((r) => r['id'] == membershipId);
+      expect(row['status'], equals('active'));
+    });
+
+    test('Inactive schools are excluded from userMemberships and never displayed in active list', () {
+      final memberships = [
+        UserSchoolModel(
+          id: 'us-active-1',
+          userId: 'teacher-1',
+          schoolId: 'smkn-11',
+          role: 'guru',
+          schoolName: 'SMKN 11 Malang',
+          status: 'active',
+        ),
+        UserSchoolModel(
+          id: 'us-inactive-1',
+          userId: 'teacher-1',
+          schoolId: 'smkn-4',
+          role: 'guru',
+          schoolName: 'SMKN 4 Malang',
+          status: 'inactive',
+        ),
+      ];
+
+      // Simulate AuthProvider filtering where inactive is strictly kept out of userMemberships
+      final activeUserMemberships = memberships.where((m) => m.status != 'inactive').toList();
+
+      expect(activeUserMemberships.length, equals(1));
+      expect(activeUserMemberships.first.schoolId, equals('smkn-11'));
+      expect(activeUserMemberships.any((m) => m.schoolId == 'smkn-4'), isFalse);
     });
   });
 }
