@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../providers/master_data_provider.dart';
 import '../../../models/period_model.dart';
 import '../../../widgets/admin_drawer.dart';
+import '../../../widgets/admin_selection_action_button.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../providers/auth_provider.dart';
@@ -307,8 +308,8 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                 title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
                 actions: [
                   IconButton(
-                    icon: Icon(
-                      _selectedIds.length == periods.length ? Icons.deselect : Icons.select_all,
+                    icon: const Icon(
+                      Icons.checklist_rounded,
                       color: Colors.white,
                     ),
                     tooltip: _selectedIds.length == periods.length ? 'Batal Pilih Semua' : 'Pilih Semua',
@@ -335,9 +336,7 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                 ),
                 title: const Text('Master Periode'),
                 actions: [
-                  IconButton(
-                    icon: const Icon(Icons.checklist_rounded),
-                    tooltip: 'Pilih Massal',
+                  AdminSelectionActionButton(
                     onPressed: periods.isEmpty ? null : () => _toggleSelectionMode(),
                   ),
                 ],

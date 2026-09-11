@@ -7,6 +7,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../models/user_model.dart';
 import '../../../widgets/admin_drawer.dart';
+import '../../../widgets/admin_selection_action_button.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 
@@ -691,8 +692,11 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                   title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
                   actions: [
                     IconButton(
-                      icon: const Icon(Icons.select_all, color: Colors.white),
-                      tooltip: 'Pilih Semua',
+                      icon: const Icon(
+                        Icons.checklist_rounded,
+                        color: Colors.white,
+                      ),
+                      tooltip: _selectedIds.length == _filteredUsers.length ? 'Batal Pilih Semua' : 'Pilih Semua',
                       onPressed: () => _selectAll(_filteredUsers, authProvider),
                     ),
                     IconButton(
@@ -716,9 +720,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                   ),
                   title: const Text('Master User & Hak Akses'),
                   actions: [
-                    IconButton(
-                      icon: const Icon(Icons.checklist_rounded),
-                      tooltip: 'Pilih Massal',
+                    AdminSelectionActionButton(
                       onPressed: _filteredUsers.isEmpty ? null : () => _toggleSelectionMode(),
                     ),
                   ],

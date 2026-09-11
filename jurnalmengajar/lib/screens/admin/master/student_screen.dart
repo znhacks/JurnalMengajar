@@ -6,6 +6,7 @@ import '../../../providers/master_data_provider.dart';
 import '../../../models/student_model.dart';
 import '../../../models/class_model.dart';
 import '../../../widgets/state_widgets.dart';
+import '../../../widgets/admin_selection_action_button.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../widgets/animated_widgets.dart';
@@ -445,8 +446,8 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
               title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
               actions: [
                 IconButton(
-                  icon: Icon(
-                    _selectedIds.length == filteredStudents.length ? Icons.deselect : Icons.select_all,
+                  icon: const Icon(
+                    Icons.checklist_rounded,
                     color: Colors.white,
                   ),
                   tooltip: _selectedIds.length == filteredStudents.length ? 'Batal Pilih Semua' : 'Pilih Semua',
@@ -467,9 +468,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                 ),
               ),
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.checklist_rounded),
-                  tooltip: 'Pilih Massal',
+                AdminSelectionActionButton(
                   onPressed: filteredStudents.isEmpty ? null : () => _toggleSelectionMode(),
                 ),
               ],

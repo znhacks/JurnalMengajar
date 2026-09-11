@@ -12,6 +12,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../models/teacher_model.dart';
 import '../../../models/school_model.dart';
 import '../../../widgets/admin_drawer.dart';
+import '../../../widgets/admin_selection_action_button.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/utils/image_crop_helper.dart';
@@ -739,8 +740,8 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                 title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
                 actions: [
                   IconButton(
-                    icon: Icon(
-                      _selectedIds.length == teachers.length ? Icons.deselect : Icons.select_all,
+                    icon: const Icon(
+                      Icons.checklist_rounded,
                       color: Colors.white,
                     ),
                     tooltip: _selectedIds.length == teachers.length ? 'Batal Pilih Semua' : 'Pilih Semua',
@@ -767,9 +768,7 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                 ),
                 title: const Text('Master Data Guru'),
                 actions: [
-                  IconButton(
-                    icon: const Icon(Icons.checklist_rounded),
-                    tooltip: 'Pilih Massal',
+                  AdminSelectionActionButton(
                     onPressed: teachers.isEmpty ? null : () => _toggleSelectionMode(),
                   ),
                 ],

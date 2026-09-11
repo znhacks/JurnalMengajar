@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../providers/master_data_provider.dart';
 import '../../../models/hour_model.dart';
 import '../../../widgets/admin_drawer.dart';
+import '../../../widgets/admin_selection_action_button.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/theme/app_theme.dart';
@@ -327,8 +328,8 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                 title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
                 actions: [
                   IconButton(
-                    icon: Icon(
-                      _selectedIds.length == hours.length ? Icons.deselect : Icons.select_all,
+                    icon: const Icon(
+                      Icons.checklist_rounded,
                       color: Colors.white,
                     ),
                     tooltip: _selectedIds.length == hours.length ? 'Batal Pilih Semua' : 'Pilih Semua',
@@ -355,9 +356,7 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                 ),
                 title: const Text('Master Jam Pelajaran'),
                 actions: [
-                  IconButton(
-                    icon: const Icon(Icons.checklist_rounded),
-                    tooltip: 'Pilih Massal',
+                  AdminSelectionActionButton(
                     onPressed: hours.isEmpty ? null : () => _toggleSelectionMode(),
                   ),
                 ],

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../providers/master_data_provider.dart';
 import '../../../models/subject_model.dart';
 import '../../../widgets/admin_drawer.dart';
+import '../../../widgets/admin_selection_action_button.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 
@@ -234,8 +235,8 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                 title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
                 actions: [
                   IconButton(
-                    icon: Icon(
-                      _selectedIds.length == subjects.length ? Icons.deselect : Icons.select_all,
+                    icon: const Icon(
+                      Icons.checklist_rounded,
                       color: Colors.white,
                     ),
                     tooltip: _selectedIds.length == subjects.length ? 'Batal Pilih Semua' : 'Pilih Semua',
@@ -262,9 +263,7 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                 ),
                 title: const Text('Master Pelajaran'),
                 actions: [
-                  IconButton(
-                    icon: const Icon(Icons.checklist_rounded),
-                    tooltip: 'Pilih Massal',
+                  AdminSelectionActionButton(
                     onPressed: subjects.isEmpty ? null : () => _toggleSelectionMode(),
                   ),
                 ],
