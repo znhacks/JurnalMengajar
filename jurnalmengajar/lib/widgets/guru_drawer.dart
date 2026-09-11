@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -137,336 +138,385 @@ class GuruDrawer extends StatelessWidget {
       }
     }
 
+    Widget buildHeaderWidget() {
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.fromLTRB(
+          20.w,
+          MediaQuery.of(context).padding.top + 20.h,
+          20.w,
+          20.h,
+        ),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF4F46E5), // Vibrant Indigo
+              Color(0xFF3730A3),
+            ],
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 52.w,
+                  height: 52.w,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFACC15),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(52.r),
+                    child: photoUrl != null && photoUrl.startsWith('http')
+                        ? Image.network(
+                            photoUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Center(
+                              child: Text(
+                                name.isNotEmpty ? name[0].toUpperCase() : 'G',
+                                style: GoogleFonts.hankenGrotesk(
+                                  color: const Color(0xFF1E1B4B),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 22.sp,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Center(
+                            child: Text(
+                              name.isNotEmpty ? name[0].toUpperCase() : 'G',
+                              style: GoogleFonts.hankenGrotesk(
+                                color: const Color(0xFF1E1B4B),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 22.sp,
+                              ),
+                            ),
+                          ),
+                  ),
+                ),
+                RoleBadge(role: authProvider.activeRole),
+              ],
+            ),
+            SizedBox(height: 14.h),
+            Text(
+              name,
+              style: GoogleFonts.hankenGrotesk(
+                color: Colors.white,
+                fontSize: 18.sp,
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: 2.h),
+            Text(
+              position,
+              style: GoogleFonts.hankenGrotesk(
+                color: Colors.white70,
+                fontSize: 12.sp,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: 12.h),
+            // Interactive School Switcher Banner
+            Builder(
+              builder: (context) {
+                final isAdminOnly = authProvider.isExclusiveAdmin;
+                final switcherWidget = Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.business_rounded, color: Colors.white, size: 16),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Text(
+                          authProvider.activeSchoolName,
+                          style: GoogleFonts.hankenGrotesk(
+                            color: Colors.white,
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (!isAdminOnly)
+                        const Icon(Icons.swap_vert_rounded, color: Colors.white, size: 18),
+                    ],
+                  ),
+                );
+
+                if (isAdminOnly) {
+                  return switcherWidget;
+                }
+
+                return InkWell(
+                  onTap: () => SchoolSwitcherModal.show(context),
+                  borderRadius: BorderRadius.circular(12.r),
+                  child: switcherWidget,
+                );
+              },
+            ),
+          ],
+        ),
+      );
+    }
+
+    List<Widget> buildMenuItems() {
+      return [
+        _buildDrawerSectionHeader('MENU UTAMA'),
+        _buildDrawerItem(
+          icon: Icons.grid_view_rounded,
+          label: 'Dashboard',
+          isSelected: activeIndex == 0,
+          onTap: () {
+            Navigator.pop(context);
+            if (shellState != null) {
+              shellState.switchToTab(0);
+            } else {
+              context.go('/guru/dashboard');
+            }
+          },
+        ),
+        _buildDrawerItem(
+          icon: Icons.calendar_month_rounded,
+          label: 'Jadwal Mengajar',
+          isSelected: activeIndex == 1,
+          onTap: () {
+            Navigator.pop(context);
+            if (shellState != null) {
+              shellState.switchToTab(1);
+            } else {
+              context.go('/guru/jadwal');
+            }
+          },
+        ),
+        _buildDrawerItem(
+          icon: Icons.assignment_rounded,
+          label: 'Daftar Jurnal',
+          isSelected: activeIndex == 2,
+          onTap: () {
+            Navigator.pop(context);
+            if (shellState != null) {
+              shellState.switchToTab(2);
+            } else {
+              context.go('/guru/jurnal');
+            }
+          },
+        ),
+        _buildDrawerItem(
+          icon: Icons.person_rounded,
+          label: 'Profil Saya',
+          isSelected: activeIndex == 3,
+          onTap: () {
+            Navigator.pop(context);
+            if (shellState != null) {
+              shellState.switchToTab(3);
+            } else {
+              context.go('/guru/profil');
+            }
+          },
+        ),
+
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: 8.h),
+          child: const Divider(color: Color(0xFFE2E8F0), height: 1),
+        ),
+
+        _buildDrawerSectionHeader('FITUR LAINNYA'),
+        _buildDrawerItem(
+          icon: Icons.picture_as_pdf_rounded,
+          label: 'Download Jurnal',
+          isSelected: currentRoute == '/guru/download-jurnal',
+          onTap: () {
+            Navigator.pop(context);
+            if (currentRoute != '/guru/download-jurnal') {
+              context.go('/guru/download-jurnal');
+            }
+          },
+        ),
+        _buildDrawerItem(
+          icon: Icons.bar_chart_rounded,
+          label: 'Statistik Mengajar',
+          isSelected:
+              currentRoute == '/guru/statistics' ||
+              currentRoute == '/guru/statistik',
+          onTap: () {
+            Navigator.pop(context);
+            if (currentRoute != '/guru/statistics' &&
+                currentRoute != '/guru/statistik') {
+              context.go('/guru/statistik');
+            }
+          },
+        ),
+        _buildDrawerItem(
+          icon: Icons.assignment_late_rounded,
+          label: 'Surat Peringatan (SP)',
+          badgeCount: unreadWarnings,
+          isSelected: currentRoute == '/guru/warning-letters',
+          onTap: () {
+            Navigator.pop(context);
+            if (currentRoute != '/guru/warning-letters') {
+              context.go('/guru/warning-letters');
+            }
+          },
+        ),
+
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: 8.h),
+          child: Divider(
+            color: Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0),
+            height: 1,
+          ),
+        ),
+
+        Consumer<ThemeProvider>(
+          builder: (context, themeProvider, child) {
+            return Container(
+              margin: EdgeInsets.only(bottom: 4.h),
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 0),
+                leading: Icon(
+                  themeProvider.isDarkMode
+                      ? Icons.dark_mode_rounded
+                      : Icons.light_mode_rounded,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  size: 22,
+                ),
+                title: Text(
+                  themeProvider.isDarkMode ? 'Mode Gelap' : 'Mode Terang',
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                trailing: Transform.scale(
+                  scale: 0.8,
+                  child: Switch(
+                    value: themeProvider.isDarkMode,
+                    onChanged: (val) {
+                      themeProvider.toggleTheme(val);
+                    },
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+
+        _buildDrawerItem(
+          icon: Icons.info_outline_rounded,
+          label: 'Tentang Aplikasi',
+          isSelected: currentRoute == '/about',
+          onTap: () {
+            Navigator.pop(context);
+            if (currentRoute != '/about') {
+              context.go('/about');
+            }
+          },
+        ),
+      ];
+    }
+
+    Widget buildFooterWidget() {
+      return Container(
+        color: Theme.of(context).colorScheme.surface,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+              child: _buildDrawerItem(
+                icon: Icons.logout_rounded,
+                label: 'Keluar',
+                isSelected: false,
+                iconColor: Theme.of(context).colorScheme.onSurface,
+                textColor: Theme.of(context).colorScheme.onSurface,
+                onTap: () {
+                  _showLogoutDialog(context);
+                },
+              ),
+            ),
+            SizedBox(height: math.max(6.h, MediaQuery.of(context).padding.bottom)),
+          ],
+        ),
+      );
+    }
+
     return Drawer(
       backgroundColor: Theme.of(context).colorScheme.surface,
       shadowColor: Colors.transparent,
-      child: Column(
-        children: [
-          // Drawer Header
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.fromLTRB(
-              20.w,
-              MediaQuery.of(context).padding.top + 20.h,
-              20.w,
-              20.h,
-            ),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF4F46E5), // Vibrant Indigo
-                  Color(0xFF3730A3),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(16.r),
+          bottomRight: Radius.circular(16.r),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompactHeight = constraints.maxHeight < 560;
+
+          if (isCompactHeight) {
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  buildHeaderWidget(),
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: buildMenuItems(),
+                    ),
+                  ),
+                  buildFooterWidget(),
                 ],
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      width: 52.w,
-                      height: 52.w,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFACC15),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(52.r),
-                        child: photoUrl != null && photoUrl.startsWith('http')
-                            ? Image.network(
-                                photoUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Center(
-                                  child: Text(
-                                    name.isNotEmpty ? name[0].toUpperCase() : 'G',
-                                    style: GoogleFonts.hankenGrotesk(
-                                      color: const Color(0xFF1E1B4B),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 22.sp,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : Center(
-                                child: Text(
-                                  name.isNotEmpty ? name[0].toUpperCase() : 'G',
-                                  style: GoogleFonts.hankenGrotesk(
-                                    color: const Color(0xFF1E1B4B),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 22.sp,
-                                  ),
-                                ),
-                              ),
-                      ),
-                    ),
-                    RoleBadge(role: authProvider.activeRole),
-                  ],
-                ),
-                SizedBox(height: 14.h),
-                Text(
-                  name,
-                  style: GoogleFonts.hankenGrotesk(
-                    color: Colors.white,
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  position,
-                  style: GoogleFonts.hankenGrotesk(
-                    color: Colors.white70,
-                    fontSize: 12.sp,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 12.h),
-                // Interactive School Switcher Banner
-                Builder(
-                  builder: (context) {
-                    final isAdminOnly = authProvider.isExclusiveAdmin;
-                    final switcherWidget = Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.business_rounded, color: Colors.white, size: 16),
-                          SizedBox(width: 8.w),
-                          Expanded(
-                            child: Text(
-                              authProvider.activeSchoolName,
-                              style: GoogleFonts.hankenGrotesk(
-                                color: Colors.white,
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (!isAdminOnly)
-                            const Icon(Icons.swap_vert_rounded, color: Colors.white, size: 18),
-                        ],
-                      ),
-                    );
+            );
+          }
 
-                    if (isAdminOnly) {
-                      return switcherWidget;
-                    }
-
-                    return InkWell(
-                      onTap: () => SchoolSwitcherModal.show(context),
-                      borderRadius: BorderRadius.circular(12.r),
-                      child: switcherWidget,
-                    );
-                  },
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              buildHeaderWidget(),
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
+                  children: buildMenuItems(),
                 ),
-              ],
-            ),
-          ),
-
-          // Drawer Menu List
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
-              children: [
-                _buildDrawerSectionHeader('MENU UTAMA'),
-                _buildDrawerItem(
-                  icon: Icons.grid_view_rounded,
-                  label: 'Dashboard',
-                  isSelected: activeIndex == 0,
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (shellState != null) {
-                      shellState.switchToTab(0);
-                    } else {
-                      context.go('/guru/dashboard');
-                    }
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.calendar_month_rounded,
-                  label: 'Jadwal Mengajar',
-                  isSelected: activeIndex == 1,
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (shellState != null) {
-                      shellState.switchToTab(1);
-                    } else {
-                      context.go('/guru/jadwal');
-                    }
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.assignment_rounded,
-                  label: 'Daftar Jurnal',
-                  isSelected: activeIndex == 2,
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (shellState != null) {
-                      shellState.switchToTab(2);
-                    } else {
-                      context.go('/guru/jurnal');
-                    }
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.person_rounded,
-                  label: 'Profil Saya',
-                  isSelected: activeIndex == 3,
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (shellState != null) {
-                      shellState.switchToTab(3);
-                    } else {
-                      context.go('/guru/profil');
-                    }
-                  },
-                ),
-
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8.h),
-                  child: const Divider(color: Color(0xFFE2E8F0), height: 1),
-                ),
-
-                _buildDrawerSectionHeader('FITUR LAINNYA'),
-                _buildDrawerItem(
-                  icon: Icons.picture_as_pdf_rounded,
-                  label: 'Download Jurnal',
-                  isSelected: currentRoute == '/guru/download-jurnal',
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (currentRoute != '/guru/download-jurnal') {
-                      context.go('/guru/download-jurnal');
-                    }
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.bar_chart_rounded,
-                  label: 'Statistik Mengajar',
-                  isSelected:
-                      currentRoute == '/guru/statistics' ||
-                      currentRoute == '/guru/statistik',
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (currentRoute != '/guru/statistics' &&
-                        currentRoute != '/guru/statistik') {
-                      context.go('/guru/statistik');
-                    }
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.assignment_late_rounded,
-                  label: 'Surat Peringatan (SP)',
-                  badgeCount: unreadWarnings,
-                  isSelected: currentRoute == '/guru/warning-letters',
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (currentRoute != '/guru/warning-letters') {
-                      context.go('/guru/warning-letters');
-                    }
-                  },
-                ),
-
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8.h),
-                  child: Divider(
-                    color: Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0),
-                    height: 1,
-                  ),
-                ),
-
-                Consumer<ThemeProvider>(
-                  builder: (context, themeProvider, child) {
-                    return Container(
-                      margin: EdgeInsets.only(bottom: 4.h),
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      child: ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 0),
-                        leading: Icon(
-                          themeProvider.isDarkMode
-                              ? Icons.dark_mode_rounded
-                              : Icons.light_mode_rounded,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          size: 22,
-                        ),
-                        title: Text(
-                          themeProvider.isDarkMode ? 'Mode Gelap' : 'Mode Terang',
-                          style: GoogleFonts.hankenGrotesk(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                        trailing: Transform.scale(
-                          scale: 0.8,
-                          child: Switch(
-                            value: themeProvider.isDarkMode,
-                            onChanged: (val) {
-                              themeProvider.toggleTheme(val);
-                            },
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-
-                _buildDrawerItem(
-                  icon: Icons.info_outline_rounded,
-                  label: 'Tentang Aplikasi',
-                  isSelected: currentRoute == '/about',
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (currentRoute != '/about') {
-                      context.go('/about');
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          // Drawer Footer (Logout)
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-            child: _buildDrawerItem(
-              icon: Icons.logout_rounded,
-              label: 'Keluar',
-              isSelected: false,
-              iconColor: Theme.of(context).colorScheme.onSurface,
-              textColor: Theme.of(context).colorScheme.onSurface,
-              onTap: () {
-                _showLogoutDialog(context);
-              },
-            ),
-          ),
-          SizedBox(height: 6.h),
-        ],
+              ),
+              buildFooterWidget(),
+            ],
+          );
+        },
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,222 +17,281 @@ class AdminDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dividerColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
 
     return Drawer(
       backgroundColor: Theme.of(context).colorScheme.surface,
       shadowColor: Colors.transparent,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // ── Header (Logo & Active School) ──────────────────────────────────
-          Container(
-            color: Theme.of(context).colorScheme.surface,
-            padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 16.h,
-              bottom: 12.h,
-              left: 16.w,
-              right: 16.w,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Image.asset(
-                      'assets/LogoJr.png',
-                      height: 34.h,
-                      fit: BoxFit.contain,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(16.r),
+          bottomRight: Radius.circular(16.r),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Jika tinggi layar terbatas (misal laptop kecil/landscape/split screen),
+          // gunakan single scrolling agar menu dan footer tidak bertumpuk/terjepit.
+          final isCompactHeight = constraints.maxHeight < 560;
+
+          if (isCompactHeight) {
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildHeader(context, authProvider),
+                  Divider(
+                    height: 1,
+                    color: dividerColor,
+                    thickness: 1,
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: _buildMenuItems(context, dividerColor),
                     ),
-                    RoleBadge(role: authProvider.activeRole),
+                  ),
+                  _buildFooter(context, authProvider, dividerColor),
+                ],
+              ),
+            );
+          }
+
+          // Tampilan standar dengan tinggi cukup:
+          // Header tetap di atas, Menu List di Expanded dengan scroll mandiri (overflow-y: auto),
+          // Footer (Profil Saya, Mode Gelap, Keluar) tetap di bawah rapi dengan area terpisah.
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(context, authProvider),
+              Divider(
+                height: 1,
+                color: dividerColor,
+                thickness: 1,
+              ),
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                  children: _buildMenuItems(context, dividerColor),
+                ),
+              ),
+              _buildFooter(context, authProvider, dividerColor),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  // ── Header (Logo & Active School) ──────────────────────────────────────────
+  Widget _buildHeader(BuildContext context, AuthProvider authProvider) {
+    return Container(
+      color: Theme.of(context).colorScheme.surface,
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 16.h,
+        bottom: 12.h,
+        left: 16.w,
+        right: 16.w,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Image.asset(
+                'assets/LogoJr.png',
+                height: 34.h,
+                fit: BoxFit.contain,
+              ),
+              RoleBadge(role: authProvider.activeRole),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          Builder(
+            builder: (context) {
+              final isAdminOnly = authProvider.isExclusiveAdmin;
+              final switcherWidget = Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.business_rounded, color: Color(0xFF4F46E5), size: 16),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        authProvider.activeSchoolName,
+                        style: GoogleFonts.hankenGrotesk(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (!isAdminOnly)
+                      const Icon(Icons.swap_vert_rounded, color: Color(0xFF64748B), size: 18),
                   ],
                 ),
-                SizedBox(height: 12.h),
-                Builder(
-                  builder: (context) {
-                    final isAdminOnly = authProvider.isExclusiveAdmin;
-                    final switcherWidget = Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.business_rounded, color: Color(0xFF4F46E5), size: 16),
-                          SizedBox(width: 8.w),
-                          Expanded(
-                            child: Text(
-                              authProvider.activeSchoolName,
-                              style: GoogleFonts.hankenGrotesk(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (!isAdminOnly)
-                            const Icon(Icons.swap_vert_rounded, color: Color(0xFF64748B), size: 18),
-                        ],
-                      ),
-                    );
+              );
 
-                    if (isAdminOnly) {
-                      return switcherWidget;
-                    }
+              if (isAdminOnly) {
+                return switcherWidget;
+              }
 
-                    return InkWell(
-                      onTap: () => SchoolSwitcherModal.show(context),
-                      borderRadius: BorderRadius.circular(12.r),
-                      child: switcherWidget,
-                    );
-                  },
-                ),
-              ],
-            ),
+              return InkWell(
+                onTap: () => SchoolSwitcherModal.show(context),
+                borderRadius: BorderRadius.circular(12.r),
+                child: switcherWidget,
+              );
+            },
           ),
+        ],
+      ),
+    );
+  }
 
+  // ── Menu List Items ────────────────────────────────────────────────────────
+  List<Widget> _buildMenuItems(BuildContext context, Color dividerColor) {
+    return [
+      _buildMenuItem(
+        context,
+        Icons.space_dashboard_rounded,
+        'Dashboard',
+        '/admin/dashboard',
+      ),
+      _buildMenuItem(
+        context,
+        Icons.check_circle_rounded,
+        'Jurnal Mengajar',
+        '/admin/journals',
+      ),
+      _buildMenuItem(
+        context,
+        Icons.calendar_month_rounded,
+        'Jadwal Mengajar',
+        '/admin/schedules',
+      ),
+      _buildMenuItem(
+        context,
+        Icons.settings_rounded,
+        'Pengaturan',
+        '/admin/settings',
+      ),
+      _buildMenuItem(
+        context,
+        Icons.event_busy_rounded,
+        'Hari Libur / Cuti',
+        '/admin/holidays',
+      ),
+      _buildMenuItem(
+        context,
+        Icons.info_rounded,
+        'Tentang Aplikasi',
+        '/about',
+      ),
+
+      SizedBox(height: 8.h),
+      Divider(
+        height: 1,
+        color: dividerColor,
+        thickness: 1,
+      ),
+      SizedBox(height: 8.h),
+
+      Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: 12.w,
+          vertical: 4.h,
+        ),
+        child: Text(
+          'Master Data',
+          style: GoogleFonts.hankenGrotesk(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+      _buildMenuItem(
+        context,
+        Icons.local_offer_rounded,
+        'Periode',
+        '/admin/master-data/periods',
+      ),
+      _buildMenuItem(
+        context,
+        Icons.assignment_rounded,
+        'Pelajaran',
+        '/admin/master-data/subjects',
+      ),
+      _buildMenuItem(
+        context,
+        Icons.access_time_filled_rounded,
+        'Jam Pelajaran',
+        '/admin/master-data/hours',
+      ),
+      _buildMenuItem(
+        context,
+        Icons.home_rounded,
+        'Kelas & Siswa',
+        '/admin/master-data/classes',
+      ),
+      _buildMenuItem(
+        context,
+        Icons.school_rounded,
+        'Guru',
+        '/admin/master-data/teachers',
+      ),
+      _buildMenuItem(
+        context,
+        Icons.manage_accounts_rounded,
+        'User & Akses',
+        '/admin/master-data/users',
+      ),
+      _buildMenuItem(
+        context,
+        Icons.mail_rounded,
+        'Surat Peringatan (SP)',
+        '/admin/warning-letters',
+      ),
+    ];
+  }
+
+  // ── Footer (Profil Saya, Mode Gelap, Keluar) ──────────────────────────────
+  Widget _buildFooter(BuildContext context, AuthProvider authProvider, Color dividerColor) {
+    return Container(
+      color: Theme.of(context).colorScheme.surface,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           Divider(
             height: 1,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF334155)
-                : const Color(0xFFE2E8F0),
+            color: dividerColor,
             thickness: 1,
           ),
-
-          // ── Menu List ──────────────────────────────────────────────────────
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-              children: [
-                _buildMenuItem(
-                  context,
-                  Icons.space_dashboard_rounded,
-                  'Dashboard',
-                  '/admin/dashboard',
-                ),
-                _buildMenuItem(
-                  context,
-                  Icons.check_circle_rounded,
-                  'Jurnal Mengajar',
-                  '/admin/journals',
-                ),
-                _buildMenuItem(
-                  context,
-                  Icons.calendar_month_rounded,
-                  'Jadwal Mengajar',
-                  '/admin/schedules',
-                ),
-                _buildMenuItem(
-                  context,
-                  Icons.settings_rounded,
-                  'Pengaturan',
-                  '/admin/settings',
-                ),
-                _buildMenuItem(
-                  context,
-                  Icons.event_busy_rounded,
-                  'Hari Libur / Cuti',
-                  '/admin/holidays',
-                ),
-                _buildMenuItem(
-                  context,
-                  Icons.info_rounded,
-                  'Tentang Aplikasi',
-                  '/about',
-                ),
-
-                SizedBox(height: 8.h),
-                Divider(
-                  height: 1,
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFE2E8F0),
-                  thickness: 1,
-                ),
-                SizedBox(height: 8.h),
-
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 4.h,
-                  ),
-                  child: Text(
-                    'Master Data',
-                    style: GoogleFonts.hankenGrotesk(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                _buildMenuItem(
-                  context,
-                  Icons.local_offer_rounded,
-                  'Periode',
-                  '/admin/master-data/periods',
-                ),
-                _buildMenuItem(
-                  context,
-                  Icons.assignment_rounded,
-                  'Pelajaran',
-                  '/admin/master-data/subjects',
-                ),
-                _buildMenuItem(
-                  context,
-                  Icons.access_time_filled_rounded,
-                  'Jam Pelajaran',
-                  '/admin/master-data/hours',
-                ),
-                _buildMenuItem(
-                  context,
-                  Icons.home_rounded,
-                  'Kelas & Siswa',
-                  '/admin/master-data/classes',
-                ),
-                _buildMenuItem(
-                  context,
-                  Icons.school_rounded,
-                  'Guru',
-                  '/admin/master-data/teachers',
-                ),
-                _buildMenuItem(
-                  context,
-                  Icons.manage_accounts_rounded,
-                  'User & Akses',
-                  '/admin/master-data/users',
-                ),
-                _buildMenuItem(
-                  context,
-                  Icons.mail_rounded,
-                  'Surat Peringatan (SP)',
-                  '/admin/warning-letters',
-                ),
-                _buildMenuItem(
-                  context,
-                  Icons.person_rounded,
-                  'Profil Saya',
-                  '/admin/profile',
-                ),
-              ],
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 2.h),
+            child: _buildMenuItem(
+              context,
+              Icons.person_rounded,
+              'Profil Saya',
+              '/admin/profile',
             ),
-          ),
-
-          // ── Theme Switcher ────────────────────────────────────────────────
-          Divider(
-            height: 1,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF334155)
-                : const Color(0xFFE2E8F0),
-            thickness: 1,
           ),
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               return Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 2.h),
                 child: ListTile(
                   dense: true,
                   visualDensity: const VisualDensity(horizontal: -3, vertical: -3),
@@ -264,13 +324,9 @@ class AdminDrawer extends StatelessWidget {
               );
             },
           ),
-
-          // ── Footer / Logout ───────────────────────────────────────────────
           Divider(
             height: 1,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF334155)
-                : const Color(0xFFE2E8F0),
+            color: dividerColor,
             thickness: 1,
           ),
           Padding(
@@ -295,59 +351,61 @@ class AdminDrawer extends StatelessWidget {
                   fontSize: 13.sp,
                 ),
               ),
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (dialogCtx) => AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16.r),
-                    ),
-                    title: Text(
-                      'Konfirmasi Logout',
-                      style: GoogleFonts.hankenGrotesk(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    content: Text(
-                      'Apakah Anda yakin ingin keluar dari halaman Administrator?',
-                      style: GoogleFonts.hankenGrotesk(
-                        color: AppTheme.onSurfaceVariant,
-                      ),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(dialogCtx),
-                        child: Text(
-                          'Batal',
-                          style: GoogleFonts.hankenGrotesk(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () async {
-                          Navigator.pop(dialogCtx);
-                          Navigator.pop(context);
-                          await authProvider.logout();
-                          if (context.mounted) {
-                            context.go('/login');
-                          }
-                        },
-                        child: Text(
-                          'Logout',
-                          style: GoogleFonts.hankenGrotesk(
-                            color: AppTheme.errorColor,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+              onTap: () => _showLogoutDialog(context, authProvider),
             ),
           ),
-          SizedBox(height: 8.h),
+          SizedBox(height: math.max(8.h, MediaQuery.of(context).padding.bottom)),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context, AuthProvider authProvider) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        title: Text(
+          'Konfirmasi Logout',
+          style: GoogleFonts.hankenGrotesk(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin keluar dari halaman Administrator?',
+          style: GoogleFonts.hankenGrotesk(
+            color: AppTheme.onSurfaceVariant,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: Text(
+              'Batal',
+              style: GoogleFonts.hankenGrotesk(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              Navigator.pop(context);
+              await authProvider.logout();
+              if (context.mounted) {
+                context.go('/login');
+              }
+            },
+            child: Text(
+              'Logout',
+              style: GoogleFonts.hankenGrotesk(
+                color: AppTheme.errorColor,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -398,3 +456,4 @@ class AdminDrawer extends StatelessWidget {
     );
   }
 }
+
