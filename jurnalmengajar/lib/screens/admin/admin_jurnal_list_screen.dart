@@ -164,45 +164,62 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
 
     final isLoading = journalProvider.isLoading || masterProvider.isLoading || scheduleProvider.isLoading;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _isSelectionMode
-          ? AppBar(
-              backgroundColor: const Color(0xFF0F172A),
-              foregroundColor: Colors.white,
-              leading: IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => setState(() {
-                  _isSelectionMode = false;
-                  _selectedIds.clear();
-                }),
-              ),
-              title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
-              actions: [
-                IconButton(
-                  icon: Icon(
-                    _selectedIds.length == allJournals.length ? Icons.deselect : Icons.select_all,
-                    color: Colors.white,
+    return PopScope(
+      canPop: context.canPop(),
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        context.go('/admin/dashboard');
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: _isSelectionMode
+            ? AppBar(
+                backgroundColor: const Color(0xFF0F172A),
+                foregroundColor: Colors.white,
+                leading: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => setState(() {
+                    _isSelectionMode = false;
+                    _selectedIds.clear();
+                  }),
+                ),
+                title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
+                actions: [
+                  IconButton(
+                    icon: Icon(
+                      _selectedIds.length == allJournals.length ? Icons.deselect : Icons.select_all,
+                      color: Colors.white,
+                    ),
+                    tooltip: _selectedIds.length == allJournals.length ? 'Batal Pilih Semua' : 'Pilih Semua',
+                    onPressed: () => _selectAll(allJournals),
                   ),
-                  tooltip: _selectedIds.length == allJournals.length ? 'Batal Pilih Semua' : 'Pilih Semua',
-                  onPressed: () => _selectAll(allJournals),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    tooltip: 'Hapus Massal',
+                    onPressed: _selectedIds.isEmpty ? null : _handleBatchDelete,
+                  ),
+                ],
+              )
+            : AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  tooltip: 'Kembali',
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/admin/dashboard');
+                    }
+                  },
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.redAccent),
-                  tooltip: 'Hapus Massal',
-                  onPressed: _selectedIds.isEmpty ? null : _handleBatchDelete,
-                ),
-              ],
-            )
-          : AppBar(
-              title: const Text('Jurnal Mengajar'),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.checklist_rounded),
-                  tooltip: 'Pilih Massal',
-                  onPressed: allJournals.isEmpty ? null : () => _toggleSelectionMode(),
-                ),
-              ],
+                title: const Text('Jurnal Mengajar'),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.checklist_rounded),
+                    tooltip: 'Pilih Massal',
+                    onPressed: allJournals.isEmpty ? null : () => _toggleSelectionMode(),
+                  ),
+                ],
               bottom: PreferredSize(
                 preferredSize: Size.fromHeight(48.h),
                 child: Container(
@@ -344,6 +361,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                   ),
                 ],
               ),
+        ),
       ),
     );
   }

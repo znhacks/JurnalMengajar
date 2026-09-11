@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../models/user_model.dart';
@@ -667,43 +668,60 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
       return isPending;
     }).toList();
 
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: _isSelectionMode
-            ? AppBar(
-                backgroundColor: const Color(0xFF0F172A),
-                foregroundColor: Colors.white,
-                leading: IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => setState(() {
-                    _isSelectionMode = false;
-                    _selectedIds.clear();
-                  }),
-                ),
-                title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.select_all, color: Colors.white),
-                    tooltip: 'Pilih Semua',
-                    onPressed: () => _selectAll(_filteredUsers, authProvider),
+    return PopScope(
+      canPop: context.canPop(),
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        context.go('/admin/dashboard');
+      },
+      child: DefaultTabController(
+        length: 3,
+        child: Scaffold(
+          appBar: _isSelectionMode
+              ? AppBar(
+                  backgroundColor: const Color(0xFF0F172A),
+                  foregroundColor: Colors.white,
+                  leading: IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => setState(() {
+                      _isSelectionMode = false;
+                      _selectedIds.clear();
+                    }),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.redAccent),
-                    tooltip: 'Hapus Massal',
-                    onPressed: _selectedIds.isEmpty ? null : _handleBatchDeleteUsers,
+                  title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.select_all, color: Colors.white),
+                      tooltip: 'Pilih Semua',
+                      onPressed: () => _selectAll(_filteredUsers, authProvider),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.redAccent),
+                      tooltip: 'Hapus Massal',
+                      onPressed: _selectedIds.isEmpty ? null : _handleBatchDeleteUsers,
+                    ),
+                  ],
+                )
+              : AppBar(
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    tooltip: 'Kembali',
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/admin/dashboard');
+                      }
+                    },
                   ),
-                ],
-              )
-            : AppBar(
-                title: const Text('Master User & Hak Akses'),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.checklist_rounded),
-                    tooltip: 'Pilih Massal',
-                    onPressed: _filteredUsers.isEmpty ? null : () => _toggleSelectionMode(),
-                  ),
-                ],
+                  title: const Text('Master User & Hak Akses'),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.checklist_rounded),
+                      tooltip: 'Pilih Massal',
+                      onPressed: _filteredUsers.isEmpty ? null : () => _toggleSelectionMode(),
+                    ),
+                  ],
                 bottom: TabBar(
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
@@ -830,8 +848,9 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildExitRequestsList(AuthProvider authProvider) {
     if (_exitRequests.isEmpty) {

@@ -73,6 +73,11 @@ class _SwipeBackWrapperState extends State<SwipeBackWrapper>
   }
 
   void _popRoute() {
+    final rootNav = Navigator.of(context, rootNavigator: true);
+    if (rootNav.canPop()) {
+      rootNav.pop();
+      return;
+    }
     if (context.canPop()) {
       context.pop();
       return;

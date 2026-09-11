@@ -57,6 +57,13 @@ class _WebNavigationShortcutWrapperState
     if (now.difference(_lastPopTime).inMilliseconds < 300) return;
     _lastPopTime = now;
 
+    // Check if root navigator has an active modal/dialog/sheet to pop first
+    final rootNav = widget.router.routerDelegate.navigatorKey.currentState;
+    if (rootNav != null && rootNav.canPop()) {
+      rootNav.pop();
+      return;
+    }
+
     if (widget.router.canPop()) {
       widget.router.pop();
       return;
@@ -105,15 +112,23 @@ class _WebNavigationShortcutWrapperState
       }
     }
 
-    // 3. Escape key (Esc to close focus or navigate back)
+    // 3. Escape key (Priority 1: close text focus, Priority 2: close open dialog/modal, Priority 3: navigate back)
     if (key == LogicalKeyboardKey.escape) {
       if (_isEditingText()) {
         FocusManager.instance.primaryFocus?.unfocus();
         return false;
-      } else {
-        _triggerGoBack();
+      }
+
+      // Prioritas 1: Tutup modal/dialog jika sedang terbuka
+      final rootNav = widget.router.routerDelegate.navigatorKey.currentState;
+      if (rootNav != null && rootNav.canPop()) {
+        rootNav.pop();
         return true;
       }
+
+      // Prioritas 2: Jika tidak ada modal/dialog yang terbuka, navigasi Back sesuai riwayat
+      _triggerGoBack();
+      return true;
     }
 
     return false;

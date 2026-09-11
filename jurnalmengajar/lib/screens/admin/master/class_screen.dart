@@ -282,45 +282,62 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
     final masterProvider = context.watch<MasterDataProvider>();
     final classes = masterProvider.classes;
 
-    return Scaffold(
-      appBar: _isSelectionMode
-          ? AppBar(
-              backgroundColor: const Color(0xFF0F172A),
-              foregroundColor: Colors.white,
-              leading: IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => setState(() {
-                  _isSelectionMode = false;
-                  _selectedIds.clear();
-                }),
-              ),
-              title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
-              actions: [
-                IconButton(
-                  icon: Icon(
-                    _selectedIds.length == classes.length ? Icons.deselect : Icons.select_all,
-                    color: Colors.white,
+    return PopScope(
+      canPop: context.canPop(),
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        context.go('/admin/dashboard');
+      },
+      child: Scaffold(
+        appBar: _isSelectionMode
+            ? AppBar(
+                backgroundColor: const Color(0xFF0F172A),
+                foregroundColor: Colors.white,
+                leading: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => setState(() {
+                    _isSelectionMode = false;
+                    _selectedIds.clear();
+                  }),
+                ),
+                title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
+                actions: [
+                  IconButton(
+                    icon: Icon(
+                      _selectedIds.length == classes.length ? Icons.deselect : Icons.select_all,
+                      color: Colors.white,
+                    ),
+                    tooltip: _selectedIds.length == classes.length ? 'Batal Pilih Semua' : 'Pilih Semua',
+                    onPressed: () => _selectAll(classes),
                   ),
-                  tooltip: _selectedIds.length == classes.length ? 'Batal Pilih Semua' : 'Pilih Semua',
-                  onPressed: () => _selectAll(classes),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    tooltip: 'Hapus Massal',
+                    onPressed: _selectedIds.isEmpty ? null : _handleBatchDelete,
+                  ),
+                ],
+              )
+            : AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  tooltip: 'Kembali',
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/admin/dashboard');
+                    }
+                  },
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.redAccent),
-                  tooltip: 'Hapus Massal',
-                  onPressed: _selectedIds.isEmpty ? null : _handleBatchDelete,
-                ),
-              ],
-            )
-          : AppBar(
-              title: const Text('Master Kelas & Siswa'),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.checklist_rounded),
-                  tooltip: 'Pilih Massal',
-                  onPressed: classes.isEmpty ? null : () => _toggleSelectionMode(),
-                ),
-              ],
-            ),
+                title: const Text('Master Kelas & Siswa'),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.checklist_rounded),
+                    tooltip: 'Pilih Massal',
+                    onPressed: classes.isEmpty ? null : () => _toggleSelectionMode(),
+                  ),
+                ],
+              ),
       drawer: const AdminDrawer(currentRoute: '/admin/master-data/classes'),
       body: RefreshIndicator(
         onRefresh: _refreshData,
@@ -489,6 +506,7 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
-    );
-  }
+    ),
+  );
+}
 }
