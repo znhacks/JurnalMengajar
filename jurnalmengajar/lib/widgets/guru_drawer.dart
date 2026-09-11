@@ -27,15 +27,22 @@ class GuruDrawer extends StatelessWidget {
       required VoidCallback onTap,
       int badgeCount = 0,
       bool isDestructive = false,
+      Color? iconColor,
+      Color? textColor,
     }) {
       final Color activeColor = isDestructive
           ? const Color(0xFFEF4444)
           : Theme.of(context).colorScheme.primary;
-      final Color textColor = isDestructive
-          ? const Color(0xFFEF4444)
-          : (isSelected
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.onSurface);
+      final Color resolvedTextColor = textColor ??
+          (isDestructive
+              ? const Color(0xFFEF4444)
+              : (isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurface));
+      final Color resolvedIconColor = iconColor ??
+          (isSelected
+              ? activeColor
+              : (isDestructive ? activeColor : Theme.of(context).colorScheme.onSurfaceVariant));
 
       return Container(
         margin: EdgeInsets.only(bottom: 4.h),
@@ -51,9 +58,7 @@ class GuruDrawer extends StatelessWidget {
           contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.h),
           leading: Icon(
             icon,
-            color: isSelected
-                ? activeColor
-                : (isDestructive ? activeColor : Theme.of(context).colorScheme.onSurfaceVariant),
+            color: resolvedIconColor,
             size: 22,
           ),
           title: Text(
@@ -61,7 +66,7 @@ class GuruDrawer extends StatelessWidget {
             style: GoogleFonts.hankenGrotesk(
               fontSize: 13.sp,
               fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-              color: textColor,
+              color: resolvedTextColor,
             ),
           ),
           trailing: badgeCount > 0
@@ -453,7 +458,8 @@ class GuruDrawer extends StatelessWidget {
               icon: Icons.logout_rounded,
               label: 'Keluar',
               isSelected: false,
-              isDestructive: true,
+              iconColor: Theme.of(context).colorScheme.onSurface,
+              textColor: Theme.of(context).colorScheme.onSurface,
               onTap: () {
                 _showLogoutDialog(context);
               },
