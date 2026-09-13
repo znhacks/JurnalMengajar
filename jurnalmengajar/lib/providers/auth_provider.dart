@@ -1296,7 +1296,13 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     try {
       await authRepository.deleteAccount(userId);
-      await logout();
+      // ONLY log out if the target user being deleted is the currently logged-in user!
+      if (_currentUser != null && _currentUser!.id == userId) {
+        await logout();
+      } else {
+        _isLoading = false;
+        notifyListeners();
+      }
       return true;
     } catch (e) {
       _errorMessage = _cleanErrorMessage(e);

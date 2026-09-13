@@ -734,6 +734,14 @@ class SupabaseAuthRepository implements AuthRepository {
         throw Exception('Akun admin sekolah dilindungi sistem dan tidak dapat dihapus.');
       }
 
+      // Bersihkan data relasi sekolah terlebih dahulu agar tidak terganjal foreign key constraint
+      try {
+        await _supabase.from('user_schools').delete().eq('user_id', userId);
+      } catch (_) {}
+      try {
+        await _supabase.from('school_memberships').delete().eq('user_id', userId);
+      } catch (_) {}
+
       await _supabase.from('users').delete().eq('id', userId);
     } catch (e) {
       throw Exception('Gagal menghapus akun: $e');
