@@ -23,10 +23,19 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _daysController = TextEditingController();
 
+  final _noboxApiKeyController = TextEditingController();
+  bool _obscureApiKey = true;
+  String? _lastSchoolId;
+  bool _isEditingApiKey = false;
+
   @override
   void initState() {
     super.initState();
-    _loadSettings();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadSettings();
+      }
+    });
   }
 
   Future<void> _loadSettings() async {
@@ -41,9 +50,91 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     }
   }
 
+  Future<void> _loadNoboxForSchool(String schoolId) async {
+    _lastSchoolId = schoolId;
+    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    await settingsProvider.loadNoboxConfig(schoolId);
+    if (mounted) {
+      final config = settingsProvider.noboxConfig;
+      if (config != null && config.hasApiKey) {
+        _noboxApiKeyController.text = config.maskedApiKey ?? '';
+        setState(() {
+          _isEditingApiKey = false;
+        });
+      } else {
+        _noboxApiKeyController.clear();
+        setState(() {
+          _isEditingApiKey = true;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleSaveNoboxApiKey(String schoolId) async {
+    final rawKey = _noboxApiKeyController.text.trim();
+    if (rawKey.isEmpty) {
+      AppHelper.showSnackBar(
+        context,
+        'API Key NoBox.ai tidak boleh kosong',
+        isError: true,
+      );
+      return;
+    }
+
+    if (rawKey.startsWith('••••')) {
+      AppHelper.showSnackBar(
+        context,
+        'API Key saat ini sudah tersimpan dan terlindungi.',
+      );
+      return;
+    }
+
+    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    final success = await settingsProvider.saveNoboxApiKey(
+      schoolId: schoolId,
+      apiKey: rawKey,
+    );
+
+    if (mounted) {
+      if (success) {
+        setState(() {
+          _isEditingApiKey = false;
+          final config = settingsProvider.noboxConfig;
+          _noboxApiKeyController.text = config?.maskedApiKey ?? '';
+        });
+        AppHelper.showSnackBar(
+          context,
+          'API Key NoBox.ai berhasil disimpan!',
+        );
+      } else {
+        AppHelper.showSnackBar(
+          context,
+          settingsProvider.noboxErrorMessage ?? 'Gagal menyimpan API Key.',
+          isError: true,
+        );
+      }
+    }
+  }
+
+  Future<void> _handleTestNoboxConnection(String schoolId) async {
+    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    final res = await settingsProvider.testNoboxConnection(schoolId);
+    if (mounted) {
+      final isSuccess = res['success'] == true;
+      final msg = res['message']?.toString() ??
+          (isSuccess ? 'Koneksi NoBox.ai berhasil!' : 'Koneksi gagal.');
+      AppHelper.showSnackBar(
+        context,
+        msg,
+        isError: !isSuccess,
+      );
+    }
+  }
+
   @override
   void dispose() {
     _daysController.dispose();
+    _noboxApiKeyController.dispose();
     super.dispose();
   }
 
@@ -527,6 +618,18 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     final currentTeacherCount = masterProvider.teachers.length;
     final usagePercent = maxTeachers > 0 ? (currentTeacherCount / maxTeachers).clamp(0.0, 1.0) : 0.0;
 
+    final activeSchoolId = authProvider.activeSchoolId ?? school?.id;
+    if (activeSchoolId != null && activeSchoolId != _lastSchoolId) {
+      _lastSchoolId = activeSchoolId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _loadNoboxForSchool(activeSchoolId);
+        }
+      });
+    }
+
+    final noboxConfig = settingsProvider.noboxConfig;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -563,61 +666,65 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                           children: [
                             // Header: Plan Badge & School Info
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: EdgeInsets.all(10.w),
-                                      decoration: BoxDecoration(
-                                        gradient: isPro
-                                            ? const LinearGradient(
-                                                colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                                                begin: Alignment.topLeft,
-                                                end: Alignment.bottomRight,
-                                              )
-                                            : const LinearGradient(
-                                                colors: [Color(0xFF64748B), Color(0xFF475569)],
-                                                begin: Alignment.topLeft,
-                                                end: Alignment.bottomRight,
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.all(10.w),
+                                        decoration: BoxDecoration(
+                                          gradient: isPro
+                                              ? const LinearGradient(
+                                                  colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                )
+                                              : const LinearGradient(
+                                                  colors: [Color(0xFF64748B), Color(0xFF475569)],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                          borderRadius: BorderRadius.circular(14.r),
+                                        ),
+                                        child: Icon(
+                                          isPro ? Icons.workspace_premium_rounded : Icons.school_rounded,
+                                          color: Colors.white,
+                                          size: 24,
+                                        ),
+                                      ),
+                                      SizedBox(width: 12.w),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Paket Aplikasi',
+                                              style: TextStyle(
+                                                fontSize: 12.sp,
+                                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                fontWeight: FontWeight.w500,
                                               ),
-                                        borderRadius: BorderRadius.circular(14.r),
-                                      ),
-                                      child: Icon(
-                                        isPro ? Icons.workspace_premium_rounded : Icons.school_rounded,
-                                        color: Colors.white,
-                                        size: 24,
-                                      ),
-                                    ),
-                                    SizedBox(width: 12.w),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Paket Aplikasi',
-                                          style: TextStyle(
-                                            fontSize: 12.sp,
-                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                            ),
+                                            Text(
+                                              isPro
+                                                  ? 'PRO PLAN'
+                                                  : (isEnterprise ? 'ENTERPRISE' : 'FREE PLAN'),
+                                              style: GoogleFonts.hankenGrotesk(
+                                                fontSize: 18.sp,
+                                                fontWeight: FontWeight.w900,
+                                                color: isPro
+                                                    ? const Color(0xFFD97706)
+                                                    : Theme.of(context).colorScheme.onSurface,
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        Text(
-                                          isPro
-                                              ? 'PRO PLAN'
-                                              : (isEnterprise ? 'ENTERPRISE' : 'FREE PLAN'),
-                                          style: GoogleFonts.hankenGrotesk(
-                                            fontSize: 18.sp,
-                                            fontWeight: FontWeight.w900,
-                                            color: isPro
-                                                ? const Color(0xFFD97706)
-                                                : Theme.of(context).colorScheme.onSurface,
-                                            letterSpacing: 0.5,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
+                                SizedBox(width: 8.w),
                                 Container(
                                   padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
                                   decoration: BoxDecoration(
@@ -711,14 +818,15 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
                             // Teacher Quota Progress Indicator
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  'Kapasitas Guru Terdaftar',
-                                  style: TextStyle(
-                                    fontSize: 12.5.sp,
-                                    fontWeight: FontWeight.w600,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                Expanded(
+                                  child: Text(
+                                    'Kapasitas Guru Terdaftar',
+                                    style: TextStyle(
+                                      fontSize: 12.5.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                    ),
                                   ),
                                 ),
                                 Text(
@@ -875,12 +983,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                     ),
                                   ),
                                   SizedBox(width: 10.w),
-                                  Text(
-                                    'Batasan Penginputan Jurnal',
-                                    style: GoogleFonts.hankenGrotesk(
-                                      fontSize: 15.5.sp,
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                  Expanded(
+                                    child: Text(
+                                      'Batasan Penginputan Jurnal',
+                                      style: GoogleFonts.hankenGrotesk(
+                                        fontSize: 15.5.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -943,6 +1053,255 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                               ),
                             ],
                           ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20.h),
+
+                    // ─── 3. INTEGRASI NOTIFIKASI ORANG TUA (NOBOX.AI) ───────────────
+                    Card(
+                      margin: EdgeInsets.zero,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18.r),
+                        side: BorderSide(
+                          color: Colors.grey.withValues(alpha: 0.25),
+                          width: 1,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(18.w),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(8.w),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF16A34A).withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(10.r),
+                                  ),
+                                  child: const Icon(
+                                    Icons.chat_outlined,
+                                    color: Color(0xFF16A34A),
+                                    size: 20,
+                                  ),
+                                ),
+                                SizedBox(width: 10.w),
+                                Expanded(
+                                  child: Text(
+                                    'Integrasi Notifikasi Orang Tua',
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontSize: 15.5.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 10.h),
+                            Text(
+                              'Gunakan NoBox.ai untuk mengirim notifikasi otomatis kepada orang tua/wali siswa ketika siswa tercatat tidak hadir di sekolah.',
+                              style: TextStyle(
+                                fontSize: 12.5.sp,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                height: 1.4,
+                              ),
+                            ),
+                            const Divider(height: 24),
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'API Key NoBox.ai *',
+                                    style: TextStyle(
+                                      fontSize: 13.5.sp,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                if (noboxConfig != null && noboxConfig.hasApiKey && !_isEditingApiKey)
+                                  TextButton.icon(
+                                    onPressed: () {
+                                      setState(() {
+                                        _isEditingApiKey = true;
+                                        _noboxApiKeyController.clear();
+                                      });
+                                    },
+                                    icon: const Icon(Icons.edit_outlined, size: 14),
+                                    label: const Text('Ganti Key'),
+                                    style: TextButton.styleFrom(
+                                      visualDensity: VisualDensity.compact,
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            SizedBox(height: 8.h),
+                            TextFormField(
+                              controller: _noboxApiKeyController,
+                              obscureText: _obscureApiKey,
+                              readOnly: (noboxConfig != null && noboxConfig.hasApiKey && !_isEditingApiKey),
+                              decoration: InputDecoration(
+                                hintText: (noboxConfig != null && noboxConfig.hasApiKey && !_isEditingApiKey)
+                                    ? (noboxConfig.maskedApiKey ?? '••••••••••••••••••••••••')
+                                    : 'Masukkan API Key NoBox.ai sekolah',
+                                prefixIcon: const Icon(Icons.vpn_key_rounded, size: 20),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscureApiKey
+                                        ? Icons.visibility_off_rounded
+                                        : Icons.visibility_rounded,
+                                    size: 20,
+                                  ),
+                                  tooltip: _obscureApiKey ? 'Tampilkan API Key' : 'Sembunyikan API Key',
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscureApiKey = !_obscureApiKey;
+                                    });
+                                  },
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 14.h),
+
+                            // Status Koneksi / Integrasi
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                                borderRadius: BorderRadius.circular(12.r),
+                                border: Border.all(
+                                  color: Colors.grey.withValues(alpha: 0.2),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 10.w,
+                                    height: 10.w,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: (noboxConfig == null || !noboxConfig.hasApiKey)
+                                          ? Colors.grey
+                                          : (noboxConfig.isConnected
+                                              ? const Color(0xFF16A34A)
+                                              : (noboxConfig.isFailed
+                                                  ? const Color(0xFFDC2626)
+                                                  : const Color(0xFFD97706))),
+                                    ),
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          (noboxConfig == null || !noboxConfig.hasApiKey)
+                                              ? 'Status: Belum Dikonfigurasi'
+                                              : (noboxConfig.isConnected
+                                                  ? 'Status: Terhubung'
+                                                  : (noboxConfig.isFailed
+                                                      ? 'Status: Gagal Terhubung'
+                                                      : 'Status: Belum Diuji')),
+                                          style: GoogleFonts.hankenGrotesk(
+                                            fontSize: 13.sp,
+                                            fontWeight: FontWeight.w700,
+                                            color: Theme.of(context).colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        if (noboxConfig != null && noboxConfig.lastTestedAt != null) ...[
+                                          SizedBox(height: 2.h),
+                                          Text(
+                                            'Terakhir diuji: ${AppHelper.formatDate(noboxConfig.lastTestedAt!)}',
+                                            style: TextStyle(
+                                              fontSize: 11.sp,
+                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 16.h),
+
+                            // Action Buttons: Tes Koneksi & Simpan API Key
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: (activeSchoolId == null ||
+                                            noboxConfig == null ||
+                                            !noboxConfig.hasApiKey ||
+                                            settingsProvider.isTestingNobox ||
+                                            settingsProvider.isNoboxLoading)
+                                        ? null
+                                        : () => _handleTestNoboxConnection(activeSchoolId),
+                                    icon: settingsProvider.isTestingNobox
+                                        ? SizedBox(
+                                            width: 16.w,
+                                            height: 16.w,
+                                            child: const CircularProgressIndicator(strokeWidth: 2),
+                                          )
+                                        : const Icon(Icons.wifi_tethering_rounded, size: 18),
+                                    label: Text(
+                                      'Tes Koneksi',
+                                      style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12.r),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 10.w),
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: (activeSchoolId == null ||
+                                            settingsProvider.isNoboxLoading ||
+                                            settingsProvider.isTestingNobox)
+                                        ? null
+                                        : () => _handleSaveNoboxApiKey(activeSchoolId),
+                                    icon: settingsProvider.isNoboxLoading
+                                        ? SizedBox(
+                                            width: 16.w,
+                                            height: 16.w,
+                                            child: const CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Icon(Icons.save_rounded, size: 18),
+                                    label: Text(
+                                      'Simpan API Key',
+                                      style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF2563EB),
+                                      foregroundColor: Colors.white,
+                                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12.r),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ),

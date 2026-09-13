@@ -12,6 +12,7 @@ class NoboxWaService {
     required ClassModel classModel,
     required SubjectModel subjectModel,
     required DateTime date,
+    String? schoolId,
     String? note,
   }) async {
     try {
@@ -31,6 +32,7 @@ class NoboxWaService {
         'subject_name': subjectModel.name,
         'date': '${date.day}-${date.month}-${date.year}',
         'parent_phone': parentPhone,
+        'school_id': schoolId,
         'note': note,
       };
 
@@ -59,6 +61,7 @@ class NoboxWaService {
     required String schoolName,
     required DateTime date,
     required List<Map<String, String>> journalItems,
+    String? schoolId,
     String? parentPhone,
   }) async {
     try {
@@ -95,6 +98,7 @@ class NoboxWaService {
 
       final payload = {
         'parent_phone': phone,
+        'school_id': schoolId,
         'custom_message': reportText,
       };
 

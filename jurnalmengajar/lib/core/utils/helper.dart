@@ -3,11 +3,19 @@ import 'package:intl/intl.dart';
 
 class AppHelper {
   static String formatDate(DateTime date) {
-    return DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(date);
+    try {
+      return DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(date);
+    } catch (_) {
+      return DateFormat('EEEE, d MMMM yyyy').format(date);
+    }
   }
 
   static String formatDateShort(DateTime date) {
-    return DateFormat('d MMM yyyy', 'id_ID').format(date);
+    try {
+      return DateFormat('d MMM yyyy', 'id_ID').format(date);
+    } catch (_) {
+      return DateFormat('d MMM yyyy').format(date);
+    }
   }
 
   static String formatTime(String time) {

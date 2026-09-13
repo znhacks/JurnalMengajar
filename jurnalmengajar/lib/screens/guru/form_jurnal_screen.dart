@@ -551,6 +551,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
               orElse: () => SubjectModel(id: '', name: 'Mata Pelajaran', isActive: true),
             );
 
+            final activeSchoolId = context.read<AuthProvider>().activeSchoolId;
             // Trigger Nobox AI WhatsApp Student Absence notifications (Sakit / Izin / Alpha)
             _studentAttendance.forEach((studentId, status) {
               if (status == 'S' || status == 'I' || status == 'A') {
@@ -568,6 +569,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                   classModel: cls,
                   subjectModel: subject,
                   date: updatedJournal.date,
+                  schoolId: activeSchoolId,
                 );
               }
             });
@@ -624,6 +626,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
               orElse: () => SubjectModel(id: '', name: 'Mata Pelajaran', isActive: true),
             );
 
+            final activeSchoolId = context.read<AuthProvider>().activeSchoolId;
             // Trigger Nobox AI WhatsApp Student Absence notifications (Sakit / Izin / Alpha)
             _studentAttendance.forEach((studentId, status) {
               if (status == 'S' || status == 'I' || status == 'A') {
@@ -641,6 +644,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                   classModel: cls,
                   subjectModel: subject,
                   date: newJournal.date,
+                  schoolId: activeSchoolId,
                 );
               }
             });
