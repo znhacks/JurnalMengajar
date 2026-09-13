@@ -792,18 +792,41 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> requestExitFromSchool(String membershipId, {String? schoolId, String? role, String? userId}) async {
     try {
-      if (membershipId.isNotEmpty) {
-        await _supabase
+      final cleanSchoolId = schoolId != null ? (AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId) : null;
+      bool updated = false;
+
+      // Only attempt update by ID if it's a real record ID (not a synthetic fallback ID like us_xxx)
+      if (membershipId.isNotEmpty && !membershipId.startsWith('us_')) {
+        final res = await _supabase
             .from('user_schools')
             .update({'status': 'requested_exit'})
-            .eq('id', membershipId);
-      } else if (schoolId != null && role != null && userId != null) {
-        await _supabase
+            .eq('id', membershipId)
+            .select('id');
+        if ((res as List).isNotEmpty) {
+          updated = true;
+        }
+      }
+
+      // Fallback: update by userId and schoolId
+      if (!updated && cleanSchoolId != null && userId != null) {
+        var query = _supabase
             .from('user_schools')
             .update({'status': 'requested_exit'})
             .eq('user_id', userId)
-            .eq('school_id', schoolId)
-            .eq('role', role);
+            .eq('school_id', cleanSchoolId);
+        if (role != null) {
+          query = query.eq('role', role);
+        }
+        final res = await query.select('id');
+        if ((res as List).isEmpty) {
+          // If row doesn't exist yet in user_schools, insert/upsert it
+          await _supabase.from('user_schools').upsert({
+            'user_id': userId,
+            'school_id': cleanSchoolId,
+            'role': role ?? 'guru',
+            'status': 'requested_exit',
+          }, onConflict: 'user_id, school_id, role');
+        }
       }
     } catch (e) {
       throw Exception('Gagal mengajukan keluar: $e');
@@ -813,18 +836,30 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> cancelExitRequest(String membershipId, {String? schoolId, String? role, String? userId}) async {
     try {
-      if (membershipId.isNotEmpty) {
-        await _supabase
+      final cleanSchoolId = schoolId != null ? (AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId) : null;
+      bool updated = false;
+
+      if (membershipId.isNotEmpty && !membershipId.startsWith('us_')) {
+        final res = await _supabase
             .from('user_schools')
             .update({'status': 'active'})
-            .eq('id', membershipId);
-      } else if (schoolId != null && role != null && userId != null) {
-        await _supabase
+            .eq('id', membershipId)
+            .select('id');
+        if ((res as List).isNotEmpty) {
+          updated = true;
+        }
+      }
+
+      if (!updated && cleanSchoolId != null && userId != null) {
+        var query = _supabase
             .from('user_schools')
             .update({'status': 'active'})
             .eq('user_id', userId)
-            .eq('school_id', schoolId)
-            .eq('role', role);
+            .eq('school_id', cleanSchoolId);
+        if (role != null) {
+          query = query.eq('role', role);
+        }
+        await query;
       }
     } catch (e) {
       throw Exception('Gagal membatalkan pengajuan: $e');

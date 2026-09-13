@@ -1086,9 +1086,30 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
             : null,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(20.w),
-          child: Column(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            final auth = Provider.of<AuthProvider>(context, listen: false);
+            final master = Provider.of<MasterDataProvider>(context, listen: false);
+            final warning = Provider.of<WarningLetterProvider>(context, listen: false);
+            final schedule = Provider.of<ScheduleProvider>(context, listen: false);
+            final journal = Provider.of<JournalProvider>(context, listen: false);
+
+            await auth.loadUserMemberships();
+            if (teacher.id.isNotEmpty) {
+              await Future.wait([
+                master.loadAllData(auth.activeSchoolId),
+                warning.loadTeacherWarningLetters(teacher.id, auth.activeSchoolId),
+                schedule.loadTeacherSchedules(teacher.id, DateTime.now()),
+                journal.loadTeacherJournals(teacher.id),
+              ]);
+            } else {
+              await master.loadAllData(auth.activeSchoolId);
+            }
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.all(20.w),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Profile Card Header with Gradient
@@ -1309,9 +1330,21 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         ),
                         SizedBox(height: 8.h),
                         if (authProvider.userMemberships.isEmpty)
-                          Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.all(12.w),
+                          if (authProvider.isLoadingMemberships)
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.symmetric(vertical: 20.h),
+                              alignment: Alignment.center,
+                              child: const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2563EB)),
+                              ),
+                            )
+                          else
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(12.w),
                             decoration: BoxDecoration(
                               color: isDark
                                   ? Theme.of(context).colorScheme.surfaceContainerHighest
@@ -1372,7 +1405,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                       schoolName: m.schoolName,
                                       role: m.role,
                                       membershipId: m.id,
-                                      status: 'active',
+                                      status: m.status ?? 'active',
                                       logoUrl: m.logoUrl,
                                     ));
                                   }
@@ -1403,7 +1436,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                 final status = item.status;
                                 final isPendingJoin = status == 'pending';
                                 final isPendingExit = status == 'requested_exit';
-                                final isActive = !isPendingJoin && sId == authProvider.activeSchoolId &&
+                                final isActive = !isPendingJoin && !isPendingExit && sId == authProvider.activeSchoolId &&
                                     sRole.toLowerCase() == authProvider.activeRole.toLowerCase();
 
                                 return InkWell(
@@ -1449,179 +1482,213 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                     margin: EdgeInsets.only(bottom: 8.h),
                                     padding: EdgeInsets.all(12.w),
                                     decoration: BoxDecoration(
-                                      color: isActive
+                                      color: isPendingExit
                                           ? (isDark
-                                              ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
-                                              : const Color(0xFFEFF6FF))
-                                          : (isDark
-                                              ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                              : const Color(0xFFF8FAFC)),
+                                              ? const Color(0xFF78350F).withValues(alpha: 0.2)
+                                              : const Color(0xFFFFFBEB))
+                                          : isActive
+                                              ? (isDark
+                                                  ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
+                                                  : const Color(0xFFEFF6FF))
+                                              : (isDark
+                                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                                  : const Color(0xFFF8FAFC)),
                                       borderRadius: BorderRadius.circular(12.r),
                                       border: Border.all(
-                                        color: isActive
-                                            ? const Color(0xFF3B82F6)
-                                            : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
-                                        width: isActive ? 1.5.r : 1.r,
+                                        color: isPendingExit
+                                            ? (isDark ? const Color(0xFFD97706) : const Color(0xFFFCD34D))
+                                            : isActive
+                                                ? const Color(0xFF3B82F6)
+                                                : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                                        width: (isActive || isPendingExit) ? 1.5.r : 1.r,
                                       ),
                                     ),
-                                    child: Row(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        SchoolAvatar(
-                                          logoUrl: item.logoUrl,
-                                          schoolName: sName,
-                                          radius: 18,
-                                          isSelected: isActive,
-                                        ),
-                                        SizedBox(width: 10.w),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                sName,
-                                                style: TextStyle(
-                                                  fontSize: 13.sp,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Theme.of(context).colorScheme.onSurface,
-                                                ),
-                                              ),
-                                              Text(
-                                                'Peran: ${sRole.toUpperCase()}',
-                                                style: TextStyle(
-                                                  fontSize: 11.sp,
-                                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        if (isPendingJoin)
-                                          Chip(
-                                            avatar: const Text('⏳', style: TextStyle(fontSize: 11)),
-                                            label: const Text('Menunggu Persetujuan'),
-                                            backgroundColor: const Color(0xFFFEF3C7),
-                                            labelStyle: TextStyle(
-                                              fontSize: 10.sp,
-                                              color: const Color(0xFFD97706),
-                                              fontWeight: FontWeight.bold,
+                                        Row(
+                                          children: [
+                                            SchoolAvatar(
+                                              logoUrl: item.logoUrl,
+                                              schoolName: sName,
+                                              radius: 18,
+                                              isSelected: isActive,
                                             ),
-                                          )
-                                        else if (isPendingExit) ...[
-                                          Chip(
-                                            avatar: const Text('⏳', style: TextStyle(fontSize: 11)),
-                                            label: const Text('Menunggu Keluar'),
-                                            backgroundColor: const Color(0xFFFEF3C7),
-                                            labelStyle: TextStyle(
-                                              fontSize: 10.sp,
-                                              color: const Color(0xFFD97706),
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          SizedBox(width: 6.w),
-                                          OutlinedButton(
-                                            style: OutlinedButton.styleFrom(
-                                              foregroundColor: Colors.orange.shade800,
-                                              side: BorderSide(color: Colors.orange.shade400),
-                                              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                                              minimumSize: Size.zero,
-                                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(8.r),
-                                              ),
-                                            ),
-                                            onPressed: () async {
-                                              final success = await authProvider.cancelExitRequest(
-                                                membershipId,
-                                                schoolId: sId,
-                                                role: sRole,
-                                              );
-                                              if (!context.mounted) return;
-                                              if (success) {
-                                                AppHelper.showSnackBar(
-                                                  context,
-                                                  'Pengajuan keluar dari $sName berhasil dibatalkan.',
-                                                );
-                                              } else {
-                                                AppHelper.showSnackBar(
-                                                  context,
-                                                  authProvider.errorMessage ?? 'Gagal membatalkan pengajuan keluar.',
-                                                  isError: true,
-                                                );
-                                              }
-                                            },
-                                            child: Text('Batalkan', style: TextStyle(fontSize: 11.sp)),
-                                          ),
-                                        ] else ...[
-                                          if (isActive)
-                                            Chip(
-                                              avatar: const Text('✓', style: TextStyle(fontSize: 11, color: Color(0xFF166534), fontWeight: FontWeight.bold)),
-                                              label: const Text('Aktif'),
-                                              backgroundColor: const Color(0xFFDCFCE7),
-                                              labelStyle: TextStyle(
-                                                fontSize: 10.sp,
-                                                color: const Color(0xFF166534),
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            )
-                                          else
-                                            Text(
-                                              'Pilih',
-                                              style: TextStyle(
-                                                color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          if (!(authProvider.isAdminAsli && sId == authProvider.currentUser?.schoolId)) ...[
-                                            SizedBox(width: 8.w),
-                                            IconButton(
-                                              icon: const Icon(Icons.exit_to_app_rounded, color: Colors.redAccent),
-                                              tooltip: 'Keluar dari Sekolah',
-                                              onPressed: () async {
-                                                final confirmed = await showDialog<bool>(
-                                                  context: context,
-                                                  builder: (context) => AlertDialog(
-                                                    title: const Text('Ajukan Keluar dari Sekolah?'),
-                                                    content: const Text('Permintaan keluar harus disetujui oleh Admin sekolah.'),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () => Navigator.pop(context, false),
-                                                        child: const Text('Batal'),
-                                                      ),
-                                                      ElevatedButton(
-                                                        style: ElevatedButton.styleFrom(
-                                                          backgroundColor: Colors.red,
-                                                          foregroundColor: Colors.white,
-                                                        ),
-                                                        onPressed: () => Navigator.pop(context, true),
-                                                        child: const Text('Ajukan Permintaan'),
-                                                      ),
-                                                    ],
+                                            SizedBox(width: 10.w),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    sName,
+                                                    style: TextStyle(
+                                                      fontSize: 13.sp,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Theme.of(context).colorScheme.onSurface,
+                                                    ),
                                                   ),
-                                                );
-                                                if (confirmed == true) {
-                                                  final success = await authProvider.requestExitFromSchool(
-                                                    membershipId,
-                                                    schoolId: sId,
-                                                    role: sRole,
-                                                  );
-                                                  if (!context.mounted) return;
-                                                  if (success) {
-                                                    AppHelper.showSnackBar(
-                                                      context,
-                                                      'Permintaan keluar berhasil dikirim. Menunggu persetujuan Admin sekolah.',
-                                                    );
-                                                  } else {
-                                                    AppHelper.showSnackBar(
-                                                      context,
-                                                      authProvider.errorMessage ?? 'Gagal mengajukan permohonan keluar dari sekolah.',
-                                                      isError: true,
-                                                    );
-                                                  }
-                                                }
-                                              },
+                                                  Text(
+                                                    'Peran: ${sRole.toUpperCase()}',
+                                                    style: TextStyle(
+                                                      fontSize: 11.sp,
+                                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
+                                            if (isPendingJoin)
+                                              Chip(
+                                                avatar: const Text('⏳', style: TextStyle(fontSize: 11)),
+                                                label: const Text('Menunggu Persetujuan'),
+                                                backgroundColor: const Color(0xFFFEF3C7),
+                                                labelStyle: TextStyle(
+                                                  fontSize: 10.sp,
+                                                  color: const Color(0xFFD97706),
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              )
+                                            else if (!isPendingExit) ...[
+                                              if (isActive)
+                                                Chip(
+                                                  avatar: const Text('✓', style: TextStyle(fontSize: 11, color: Color(0xFF166534), fontWeight: FontWeight.bold)),
+                                                  label: const Text('Aktif'),
+                                                  backgroundColor: const Color(0xFFDCFCE7),
+                                                  labelStyle: TextStyle(
+                                                    fontSize: 10.sp,
+                                                    color: const Color(0xFF166534),
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                )
+                                              else
+                                                Text(
+                                                  'Pilih',
+                                                  style: TextStyle(
+                                                    color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              if (!(authProvider.isAdminAsli && sId == authProvider.currentUser?.schoolId)) ...[
+                                                SizedBox(width: 8.w),
+                                                IconButton(
+                                                  icon: const Icon(Icons.exit_to_app_rounded, color: Colors.redAccent),
+                                                  tooltip: 'Keluar dari Sekolah',
+                                                  onPressed: () async {
+                                                    final confirmed = await showDialog<bool>(
+                                                      context: context,
+                                                      builder: (context) => AlertDialog(
+                                                        title: const Text('Ajukan Keluar dari Sekolah?'),
+                                                        content: const Text('Permintaan keluar harus disetujui oleh Admin sekolah.'),
+                                                        actions: [
+                                                          TextButton(
+                                                            onPressed: () => Navigator.pop(context, false),
+                                                            child: const Text('Batal'),
+                                                          ),
+                                                          ElevatedButton(
+                                                            style: ElevatedButton.styleFrom(
+                                                              backgroundColor: Colors.red,
+                                                              foregroundColor: Colors.white,
+                                                            ),
+                                                            onPressed: () => Navigator.pop(context, true),
+                                                            child: const Text('Ajukan Permintaan'),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                    if (confirmed == true) {
+                                                      final success = await authProvider.requestExitFromSchool(
+                                                        membershipId,
+                                                        schoolId: sId,
+                                                        role: sRole,
+                                                      );
+                                                      if (!context.mounted) return;
+                                                      if (success) {
+                                                        AppHelper.showSnackBar(
+                                                          context,
+                                                          'Permintaan keluar berhasil dikirim. Menunggu persetujuan Admin sekolah.',
+                                                        );
+                                                      } else {
+                                                        AppHelper.showSnackBar(
+                                                          context,
+                                                          authProvider.errorMessage ?? 'Gagal mengajukan permohonan keluar dari sekolah.',
+                                                          isError: true,
+                                                        );
+                                                      }
+                                                    }
+                                                  },
+                                                ),
+                                              ],
+                                            ],
                                           ],
+                                        ),
+                                        if (isPendingExit) ...[
+                                          SizedBox(height: 8.h),
+                                          Container(
+                                            width: double.infinity,
+                                            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                                            decoration: BoxDecoration(
+                                              color: isDark
+                                                  ? const Color(0xFF78350F).withValues(alpha: 0.35)
+                                                  : const Color(0xFFFEF3C7),
+                                              borderRadius: BorderRadius.circular(8.r),
+                                              border: Border.all(
+                                                color: isDark
+                                                    ? const Color(0xFFF59E0B).withValues(alpha: 0.5)
+                                                    : const Color(0xFFFCD34D),
+                                              ),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Text('⏳', style: TextStyle(fontSize: 11.sp)),
+                                                SizedBox(width: 6.w),
+                                                Expanded(
+                                                  child: Text(
+                                                    'Menunggu persetujuan Admin',
+                                                    style: GoogleFonts.hankenGrotesk(
+                                                      fontSize: 11.sp,
+                                                      fontWeight: FontWeight.w700,
+                                                      color: isDark ? const Color(0xFFFDE68A) : const Color(0xFFB45309),
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(width: 8.w),
+                                                OutlinedButton(
+                                                  style: OutlinedButton.styleFrom(
+                                                    foregroundColor: Colors.orange.shade800,
+                                                    side: BorderSide(color: Colors.orange.shade400),
+                                                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                                                    minimumSize: Size.zero,
+                                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(8.r),
+                                                    ),
+                                                  ),
+                                                  onPressed: () async {
+                                                    final success = await authProvider.cancelExitRequest(
+                                                      membershipId,
+                                                      schoolId: sId,
+                                                      role: sRole,
+                                                    );
+                                                    if (!context.mounted) return;
+                                                    if (success) {
+                                                      AppHelper.showSnackBar(
+                                                        context,
+                                                        'Pengajuan keluar dari $sName berhasil dibatalkan.',
+                                                      );
+                                                    } else {
+                                                      AppHelper.showSnackBar(
+                                                        context,
+                                                        authProvider.errorMessage ?? 'Gagal membatalkan pengajuan keluar.',
+                                                        isError: true,
+                                                      );
+                                                    }
+                                                  },
+                                                  child: Text('Batalkan', style: TextStyle(fontSize: 11.sp)),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                         ],
                                       ],
                                     ),
@@ -1984,8 +2051,9 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildProfileDetailItem(
     IconData icon,

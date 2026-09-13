@@ -72,6 +72,7 @@ class AuthProvider with ChangeNotifier {
   List<UserSchoolModel> get userMemberships => _userMemberships;
   List<UserSchoolModel> get pendingMemberships => _pendingMemberships;
   List<UserSchoolModel> get inactiveMemberships => _inactiveMemberships;
+  bool get isLoadingMemberships => _isLoadingMemberships;
   String? get activeSchoolId => _activeSchoolId;
   String get activeSchoolName => _activeSchoolName;
   String get activeRole => _activeRole;
@@ -1383,6 +1384,19 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<bool> requestExitFromSchool(String? membershipId, {String? schoolId, String? role}) async {
+    // Prevent duplicate pending request
+    final targetSchoolId = schoolId != null ? (AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId) : null;
+    final alreadyPending = _userMemberships.any((m) {
+      final mClean = AppHelper.parseSingleCleanSchoolId(m.schoolId) ?? m.schoolId;
+      final matchSchool = (targetSchoolId != null && mClean == targetSchoolId) ||
+          (membershipId != null && m.id == membershipId);
+      final matchRole = role == null || m.role.toLowerCase() == role.toLowerCase();
+      return matchSchool && matchRole && m.status == 'requested_exit';
+    });
+    if (alreadyPending) {
+      return true;
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();

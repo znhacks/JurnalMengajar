@@ -7,6 +7,7 @@ import '../providers/schedule_provider.dart';
 import '../providers/journal_provider.dart';
 import '../providers/master_data_provider.dart';
 import '../providers/warning_letter_provider.dart';
+import '../core/utils/helper.dart';
 import 'school_avatar.dart';
 
 class SchoolSwitcherModal extends StatelessWidget {
@@ -194,6 +195,13 @@ class SchoolSwitcherModal extends StatelessWidget {
                           Navigator.pop(context);
                           return;
                         }
+                        if (item.status == 'requested_exit') {
+                          AppHelper.showSnackBar(
+                            context,
+                            'Permintaan keluar dari ${item.schoolName} sedang menunggu persetujuan Admin sekolah.',
+                          );
+                          return;
+                        }
 
                           final scheduleProvider =
                               Provider.of<ScheduleProvider>(context, listen: false);
@@ -291,7 +299,7 @@ class SchoolSwitcherModal extends StatelessWidget {
                                   ),
                                 ),
                                 child: Text(
-                                  '⏳ MENUNGGU KELUAR',
+                                  '⏳ MENUNGGU PERSETUJUAN ADMIN',
                                   style: GoogleFonts.hankenGrotesk(
                                     fontSize: 10.sp,
                                     fontWeight: FontWeight.w800,
