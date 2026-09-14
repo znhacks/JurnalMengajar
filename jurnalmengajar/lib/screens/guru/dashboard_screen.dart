@@ -602,14 +602,14 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
                       // ── 5. SECTION JADWAL MENGAJAR ─────────────────────────
                       _buildScheduleSectionHeader(),
-                      SizedBox(height: 12.h),
+                      SizedBox(height: 10.h),
                       _buildScheduleListSection(
                         masterProvider,
                         scheduleProvider,
                         journalProvider,
                       ),
 
-                      SizedBox(height: 28.h),
+                      SizedBox(height: 20.h),
 
                       // ── 6. SECTION JURNAL TERBARU SAYA ────────────────────
                       _buildRecentJournalsSection(
@@ -617,7 +617,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         masterProvider,
                       ),
 
-                      SizedBox(height: 36.h),
+                      SizedBox(height: 24.h),
                     ],
                   ),
                 ),
@@ -1527,16 +1527,16 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     if (list.isEmpty) {
       return Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(24.r),
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant, width: 1.5),
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant, width: 1.0),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF4F7CFF).withValues(alpha: 0.05),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -1619,10 +1619,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     if (groupedSchedules.isEmpty) {
       return Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(10.r),
           border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: Center(
@@ -1644,7 +1644,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         final isLast = index == groupedSchedules.length - 1;
 
         return Padding(
-          padding: EdgeInsets.only(bottom: isLast ? 0 : 12.h),
+          padding: EdgeInsets.only(bottom: isLast ? 0 : 8.h),
           child: _buildTeachingScheduleCard(
             scheduleGroup,
             master,
@@ -1691,8 +1691,6 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
     final timeBadgeText = 'Jam $hoursStr';
 
-    final isBookIcon = index % 2 == 0;
-
     return ScaleTap(
       onTap: () {
         if (matchingJournal != null) {
@@ -1710,64 +1708,58 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         }
       },
       child: Container(
-        padding: EdgeInsets.all(16.w),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(10.r),
           border: Border.all(
             color: Theme.of(context).colorScheme.outlineVariant,
-            width: 1.2,
+            width: 1.0,
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF4F7CFF).withValues(alpha: 0.06),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
+              color: const Color(0xFF4F7CFF).withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Row(
           children: [
-            // Soft Blue Rounded Icon Container
-            Container(
-              width: 48.w,
-              height: 48.w,
-              decoration: BoxDecoration(
-                color: const Color(0xFF4F7CFF).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16.r),
-              ),
-              child: Center(
-                child: Icon(
-                  isBookIcon
-                      ? Icons.menu_book_rounded
-                      : Icons.laptop_chromebook_rounded,
-                  color: const Color(0xFF4F7CFF),
-                  size: 24,
-                ),
-              ),
-            ),
-            SizedBox(width: 14.w),
-
-            // Class & Subject Info
+            // Class & Subject Info (No big icon!)
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
+                      Flexible(
+                        child: Text(
+                          cls.name,
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w800,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      // Single blue Jam badge positioned next to class name
                       Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 8.w,
-                          vertical: 2.5.h,
+                          horizontal: 7.w,
+                          vertical: 2.h,
                         ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF4F7CFF).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8.r),
+                          borderRadius: BorderRadius.circular(6.r),
                         ),
                         child: Text(
                           timeBadgeText,
                           style: GoogleFonts.hankenGrotesk(
-                            fontSize: 10.5.sp,
+                            fontSize: 10.sp,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF4F7CFF),
                           ),
@@ -1777,19 +1769,19 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         SizedBox(width: 6.w),
                         Container(
                           padding: EdgeInsets.symmetric(
-                            horizontal: 7.w,
-                            vertical: 2.5.h,
+                            horizontal: 6.w,
+                            vertical: 2.h,
                           ),
                           decoration: BoxDecoration(
                             color: AppHelper.getStatusColor(
                               matchingJournal.status,
                             ).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8.r),
+                            borderRadius: BorderRadius.circular(6.r),
                           ),
                           child: Text(
                             AppHelper.getStatusLabel(matchingJournal.status),
                             style: GoogleFonts.hankenGrotesk(
-                              fontSize: 9.5.sp,
+                              fontSize: 9.sp,
                               fontWeight: FontWeight.w700,
                               color: AppHelper.getStatusColor(
                                 matchingJournal.status,
@@ -1800,33 +1792,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       ],
                     ],
                   ),
-                  SizedBox(height: 6.h),
-                  Row(
-                    children: [
-                      Text(
-                        cls.name,
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w800,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      SizedBox(width: 6.w),
-                      Text(
-                        '(Jam $hoursStr)',
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 2.h),
+                  SizedBox(height: 3.h),
                   Text(
                     subject.name,
                     style: GoogleFonts.hankenGrotesk(
-                      fontSize: 12.5.sp,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -1839,17 +1809,19 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
             SizedBox(width: 8.w),
 
-            // Circular Right Arrow Button
+            // Compact Right Arrow Button
             Container(
-              padding: EdgeInsets.all(8.w),
-              decoration: const BoxDecoration(
-                color: Color(0xFFF0F5FF),
+              padding: EdgeInsets.all(6.w),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF334155).withValues(alpha: 0.6)
+                    : const Color(0xFFF0F5FF),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.arrow_forward_ios_rounded,
-                color: Color(0xFF8B7CFF),
-                size: 14,
+                color: Color(0xFF4F7CFF),
+                size: 11,
               ),
             ),
           ],
@@ -1941,15 +1913,15 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           ],
         ),
 
-        SizedBox(height: 14.h),
+        SizedBox(height: 10.h),
 
         if (journals.isEmpty)
           Container(
             width: double.infinity,
-            padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 20.w),
+            padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(20.r),
+              borderRadius: BorderRadius.circular(10.r),
               border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             child: Center(
@@ -1994,7 +1966,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   final isLast = index == list.length - 1;
 
                   return Padding(
-                    padding: EdgeInsets.only(bottom: isLast ? 0 : 12.h),
+                    padding: EdgeInsets.only(bottom: isLast ? 0 : 8.h),
                     child: index == 0
                         ? _buildLatestTimelineCard(journal, masterProvider)
                         : _buildHistoryTimelineCard(journal, masterProvider),
@@ -2045,40 +2017,40 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(10.r),
         border: Border.all(
           color: Theme.of(context).colorScheme.outlineVariant,
-          width: 1.2,
+          width: 1.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4F7CFF).withValues(alpha: 0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
+            color: const Color(0xFF4F7CFF).withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(10.r),
         child: InkWell(
           onTap: () => context.push('/guru/journal/${journal.id}'),
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(10.r),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(20.r),
+            borderRadius: BorderRadius.circular(10.r),
             child: IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Vertical Left Accent Bar
-                  Container(width: 4.w, color: statusColor),
+                  Container(width: 3.5.w, color: statusColor),
                   Expanded(
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(14.w, 14.h, 14.w, 14.h),
+                      padding: EdgeInsets.fromLTRB(12.w, 9.h, 12.w, 9.h),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Header: Date & Attendance Micro Pills
+                          // Header: Date & Attendance Micro Pills & Status
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.center,
@@ -2087,14 +2059,14 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                 children: [
                                   Icon(
                                     Icons.calendar_today_rounded,
-                                    size: 13.sp,
+                                    size: 11.5.sp,
                                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   ),
-                                  SizedBox(width: 6.w),
+                                  SizedBox(width: 5.w),
                                   Text(
                                     AppHelper.formatDateShort(journal.date),
                                     style: GoogleFonts.hankenGrotesk(
-                                      fontSize: 12.sp,
+                                      fontSize: 11.5.sp,
                                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -2102,75 +2074,74 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                 ],
                               ),
                               Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   _buildAttendancePill(
                                     'S',
                                     journal.sickCount,
                                     const Color(0xFFD97706),
                                   ),
-                                  SizedBox(width: 4.w),
+                                  SizedBox(width: 3.w),
                                   _buildAttendancePill(
                                     'I',
                                     journal.permissionCount,
                                     const Color(0xFF2563EB),
                                   ),
-                                  SizedBox(width: 4.w),
+                                  SizedBox(width: 3.w),
                                   _buildAttendancePill(
                                     'A',
                                     journal.alphaCount,
                                     const Color(0xFFDC2626),
+                                  ),
+                                  SizedBox(width: 6.w),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 7.w,
+                                      vertical: 2.h,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: statusColor.withValues(alpha: 0.10),
+                                      borderRadius: BorderRadius.circular(5.r),
+                                    ),
+                                    child: Text(
+                                      AppHelper.getStatusLabel(journal.status),
+                                      style: GoogleFonts.hankenGrotesk(
+                                        fontSize: 9.sp,
+                                        color: statusColor,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
                             ],
                           ),
 
-                          SizedBox(height: 10.h),
+                          SizedBox(height: 6.h),
 
                           // Main Content: Class Name & Jam Ke
                           Text(
                             '${cls.name} • Jam Ke-$hoursStr',
                             style: GoogleFonts.hankenGrotesk(
-                              fontSize: 14.5.sp,
+                              fontSize: 13.5.sp,
                               fontWeight: FontWeight.w800,
                               color: Theme.of(context).colorScheme.onSurface,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          SizedBox(height: 3.h),
+                          SizedBox(height: 2.h),
                           Text(
-                            '${subject.name} — ${journal.material}',
+                            journal.material.isNotEmpty
+                                ? '${subject.name} — ${journal.material}'
+                                : subject.name,
                             style: GoogleFonts.hankenGrotesk(
-                              fontSize: 12.sp,
+                              fontSize: 11.5.sp,
                               fontWeight: FontWeight.w500,
                               color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                          ),
-
-                          SizedBox(height: 10.h),
-
-                          // Status Badge Pill
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 10.w,
-                                vertical: 4.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: statusColor.withValues(alpha: 0.10),
-                                borderRadius: BorderRadius.circular(20.r),
-                              ),
-                              child: Text(
-                                AppHelper.getStatusLabel(journal.status),
-                                style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 10.5.sp,
-                                  color: statusColor,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
                           ),
                         ],
                       ),
@@ -2205,17 +2176,17 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(10.r),
         border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(10.r),
         child: InkWell(
           onTap: () => context.push('/guru/journal/${journal.id}'),
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(10.r),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 11.h),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -2227,7 +2198,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         Icon(
                           Icons.calendar_today_rounded,
                           size: 11.sp,
-                          color: const Color(0xFF94A3B8),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         SizedBox(width: 4.w),
                         Text(
@@ -2242,17 +2213,17 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     ),
                     Container(
                       padding: EdgeInsets.symmetric(
-                        horizontal: 8.w,
-                        vertical: 2.5.h,
+                        horizontal: 7.w,
+                        vertical: 2.h,
                       ),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(12.r),
+                        borderRadius: BorderRadius.circular(5.r),
                       ),
                       child: Text(
                         AppHelper.getStatusLabel(journal.status),
                         style: GoogleFonts.hankenGrotesk(
-                          fontSize: 9.5.sp,
+                          fontSize: 9.sp,
                           color: statusColor,
                           fontWeight: FontWeight.w700,
                         ),
@@ -2260,13 +2231,15 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     ),
                   ],
                 ),
-                SizedBox(height: 6.h),
+                SizedBox(height: 4.h),
                 Text(
-                  '${cls.name} • ${subject.name} — ${journal.material}',
+                  journal.material.isNotEmpty
+                      ? '${cls.name} • ${subject.name} — ${journal.material}'
+                      : '${cls.name} • ${subject.name}',
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF334155),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -2282,16 +2255,16 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   // ─── Attendance Micro-Pill ─────────────────────────────────────────────────
   Widget _buildAttendancePill(String label, int count, Color color) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.h),
+      padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.5.h),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(6.r),
+        borderRadius: BorderRadius.circular(4.r),
         border: Border.all(color: color.withValues(alpha: 0.15), width: 0.5),
       ),
       child: Text(
         '$label:$count',
         style: GoogleFonts.hankenGrotesk(
-          fontSize: 10.sp,
+          fontSize: 9.sp,
           fontWeight: FontWeight.w700,
           color: color,
         ),
