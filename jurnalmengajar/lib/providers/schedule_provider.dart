@@ -128,50 +128,93 @@ class ScheduleProvider with ChangeNotifier {
   void _validateNoActiveOverlap(
     ScheduleModel proposed, {
     String? excludeId,
+    Set<String>? excludeIds,
     required List<dynamic> teachers,
+    List<dynamic>? classes,
   }) {
     if (!proposed.isActive) return;
 
-    for (final s in _schedules) {
-      if (s.id == excludeId) continue;
-      if (s.isActive) {
-        final dateStrS = "${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}";
-        final dateStrProposed = "${proposed.date.year}-${proposed.date.month.toString().padLeft(2, '0')}-${proposed.date.day.toString().padLeft(2, '0')}";
-        if (dateStrS == dateStrProposed) {
-        
-        final isSameTeacher = s.teacherId == proposed.teacherId;
-        final isSameClass = s.classId == proposed.classId;
-        final isSameHour = s.teachingHour == proposed.teachingHour;
+    final proposedSchoolId = AppHelper.parseSingleCleanSchoolId(proposed.schoolId) ?? _currentSchoolId;
 
-        if (isSameHour && (isSameTeacher || isSameClass)) {
-          String teacherName = 'Guru';
+    for (final s in _schedules) {
+      if (excludeId != null && s.id == excludeId) continue;
+      if (excludeIds != null && excludeIds.contains(s.id)) continue;
+      if (!s.isActive) continue;
+
+      // Multi-tenant check: schedules in different schools do NOT conflict
+      final scheduleSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId);
+      if (proposedSchoolId != null &&
+          proposedSchoolId.isNotEmpty &&
+          scheduleSchoolId != null &&
+          scheduleSchoolId.isNotEmpty &&
+          proposedSchoolId != scheduleSchoolId) {
+        continue;
+      }
+
+      // Date check
+      final isSameDate = s.date.year == proposed.date.year &&
+          s.date.month == proposed.date.month &&
+          s.date.day == proposed.date.day;
+      if (!isSameDate) continue;
+
+      // Teaching hour check
+      final isSameHour = s.teachingHour == proposed.teachingHour;
+      if (!isSameHour) continue;
+
+      final isSameTeacher = proposed.teacherId.isNotEmpty &&
+          s.teacherId.isNotEmpty &&
+          s.teacherId == proposed.teacherId;
+      final isSameClass = proposed.classId.isNotEmpty &&
+          s.classId.isNotEmpty &&
+          s.classId == proposed.classId;
+
+      // 1. Teacher Conflict: Same teacher already has a schedule at this hour
+      if (isSameTeacher) {
+        String teacherName = 'Guru';
+        try {
+          final t = teachers.firstWhere((t) => t.id == proposed.teacherId);
+          teacherName = t.name;
+        } catch (_) {
           try {
             final t = teachers.firstWhere((t) => t.id == s.teacherId);
             teacherName = t.name;
-          } catch (_) {
-            try {
-              final t = teachers.firstWhere((t) => t.id == proposed.teacherId);
-              teacherName = t.name;
-            } catch (_) {}
-          }
-
-          throw Exception(
-            'Tidak bisa membuat jadwal.\n\n'
-            'Guru: $teacherName\n'
-            'Jam yang terpakai: Jam ke-${proposed.teachingHour}\n\n'
-            'Coba pilih jam lain'
-          );
+          } catch (_) {}
         }
+
+        throw Exception(
+          'Tidak bisa membuat jadwal.\n\n'
+          'Guru: $teacherName\n'
+          'Sudah memiliki jadwal pada Jam ke-${proposed.teachingHour}.\n\n'
+          'Coba pilih jam lain'
+        );
       }
+
+      // 2. Class Conflict: Same class already has a schedule at this hour (by another teacher)
+      if (isSameClass) {
+        String className = 'Kelas';
+        if (classes != null) {
+          try {
+            final c = classes.firstWhere((c) => c.id == proposed.classId);
+            className = 'Kelas ${c.name}';
+          } catch (_) {}
+        }
+
+        throw Exception(
+          'Tidak bisa membuat jadwal.\n\n'
+          '$className sudah memiliki jadwal pelajaran pada Jam ke-${proposed.teachingHour}.\n\n'
+          'Coba pilih jam atau kelas lain'
+        );
+      }
+
+      // If teachers are different and classes are different, it is ALLOWED.
     }
   }
-}
 
-  Future<bool> createSchedule(ScheduleModel model, List<dynamic> teachers) async {
+  Future<bool> createSchedule(ScheduleModel model, List<dynamic> teachers, [List<dynamic>? classes]) async {
     _isLoading = true;
     notifyListeners();
     try {
-      _validateNoActiveOverlap(model, teachers: teachers);
+      _validateNoActiveOverlap(model, teachers: teachers, classes: classes);
       final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
           ? model.copyWith(schoolId: _currentSchoolId)
           : model;
@@ -188,12 +231,55 @@ class ScheduleProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> createMultipleSchedules(List<ScheduleModel> models, List<dynamic> teachers) async {
+  Future<bool> createMultipleSchedules(List<ScheduleModel> models, List<dynamic> teachers, [List<dynamic>? classes, Set<String>? excludeIds]) async {
     _isLoading = true;
     notifyListeners();
     try {
-      for (final m in models) {
-        _validateNoActiveOverlap(m, teachers: teachers);
+      for (int i = 0; i < models.length; i++) {
+        final m = models[i];
+        _validateNoActiveOverlap(m, excludeIds: excludeIds, teachers: teachers, classes: classes);
+
+        // Check intra-batch conflicts
+        for (int j = i + 1; j < models.length; j++) {
+          final other = models[j];
+          if (!m.isActive || !other.isActive) continue;
+
+          final sameDate = m.date.year == other.date.year &&
+              m.date.month == other.date.month &&
+              m.date.day == other.date.day;
+          final sameHour = m.teachingHour == other.teachingHour;
+
+          if (sameDate && sameHour) {
+            if (m.teacherId.isNotEmpty && m.teacherId == other.teacherId) {
+              String teacherName = 'Guru';
+              try {
+                final t = teachers.firstWhere((t) => t.id == m.teacherId);
+                teacherName = t.name;
+              } catch (_) {}
+              throw Exception(
+                'Tidak bisa membuat jadwal.\n\n'
+                'Guru: $teacherName\n'
+                'Sudah memiliki jadwal pada Jam ke-${m.teachingHour}.\n\n'
+                'Coba pilih jam lain'
+              );
+            }
+
+            if (m.classId.isNotEmpty && m.classId == other.classId) {
+              String className = 'Kelas';
+              if (classes != null) {
+                try {
+                  final c = classes.firstWhere((c) => c.id == m.classId);
+                  className = 'Kelas ${c.name}';
+                } catch (_) {}
+              }
+              throw Exception(
+                'Tidak bisa membuat jadwal.\n\n'
+                '$className sudah memiliki jadwal pelajaran pada Jam ke-${m.teachingHour}.\n\n'
+                'Coba pilih jam atau kelas lain'
+              );
+            }
+          }
+        }
       }
       final finalModels = models.map((m) {
         if (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (m.schoolId == null || m.schoolId!.isEmpty)) {
@@ -214,11 +300,11 @@ class ScheduleProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> updateSchedule(ScheduleModel model, List<dynamic> teachers) async {
+  Future<bool> updateSchedule(ScheduleModel model, List<dynamic> teachers, [List<dynamic>? classes]) async {
     _isLoading = true;
     notifyListeners();
     try {
-      _validateNoActiveOverlap(model, excludeId: model.id, teachers: teachers);
+      _validateNoActiveOverlap(model, excludeId: model.id, teachers: teachers, classes: classes);
       final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
           ? model.copyWith(schoolId: _currentSchoolId)
           : model;

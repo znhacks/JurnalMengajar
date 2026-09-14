@@ -684,7 +684,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           return;
                         }
 
-                        success = await scheduleProvider.createMultipleSchedules(schedulesToCreate, masterProvider.teachers);
+                        success = await scheduleProvider.createMultipleSchedules(schedulesToCreate, masterProvider.teachers, masterProvider.classes);
                       } else {
                         // Edit Mode
                         final journalProvider = Provider.of<JournalProvider>(context, listen: false);
@@ -750,7 +750,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                               isActive: isActive,
                               schoolId: authProvider.activeSchoolId,
                             );
-                            final res = await scheduleProvider.updateSchedule(updatedSched, masterProvider.teachers);
+                            final res = await scheduleProvider.updateSchedule(updatedSched, masterProvider.teachers, masterProvider.classes);
                             if (!res) allSuccess = false;
                           }
                           success = allSuccess;
@@ -807,7 +807,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                             );
                             return;
                           }
-                          success = await scheduleProvider.createMultipleSchedules(schedulesToCreate, masterProvider.teachers);
+                          success = await scheduleProvider.createMultipleSchedules(schedulesToCreate, masterProvider.teachers, masterProvider.classes);
                         }
                       }
 
