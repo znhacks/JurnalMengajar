@@ -188,8 +188,8 @@ serve(async (req: Request) => {
     // 2. Webhook Warning Letter Trigger
     else if (table === "warning_letters") {
       targetUserId = record.teacher_id;
-      title = "Surat Peringatan (SP) Diterbitkan ⚠️";
-      body = `Anda menerima Surat Peringatan baru: ${record.title || "Mohon periksa detail"}.`;
+      title = "Pengingat Diterbitkan ⚠️";
+      body = `Anda menerima Pengingat baru: ${record.title || "Mohon periksa detail"}.`;
       notificationData = {
         route: "/guru/warning-letters",
         warningLetterId: record.id,

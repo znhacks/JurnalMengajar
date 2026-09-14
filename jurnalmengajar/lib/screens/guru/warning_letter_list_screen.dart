@@ -104,7 +104,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
           ),
         ),
         title: Text(
-          'Surat Peringatan Saya',
+          'Pengingat Saya',
           style: GoogleFonts.hankenGrotesk(
             fontWeight: FontWeight.bold,
           ),
@@ -124,15 +124,15 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                   await warningProvider.confirmAllWarnings(teacher.id);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Semua surat peringatan berhasil dikonfirmasi.')),
+                      const SnackBar(content: Text('Semua pengingat berhasil dikonfirmasi.')),
                     );
                   }
                 } else if (value == 'delete_all') {
                   final confirmDelete = await showDialog<bool>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text('Hapus Riwayat SP'),
-                      content: const Text('Apakah Anda yakin ingin menghapus semua surat peringatan yang sudah dikonfirmasi? Surat yang belum dikonfirmasi tidak akan dihapus.'),
+                      title: const Text('Hapus Riwayat Pengingat'),
+                      content: const Text('Apakah Anda yakin ingin menghapus semua pengingat yang sudah dikonfirmasi? Pengingat yang belum dikonfirmasi tidak akan dihapus.'),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context, false),
@@ -149,7 +149,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                     await warningProvider.deleteConfirmedWarnings(teacher.id);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Surat peringatan yang dikonfirmasi berhasil dihapus.')),
+                        const SnackBar(content: Text('Pengingat yang dikonfirmasi berhasil dihapus.')),
                       );
                     }
                   }
@@ -173,7 +173,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                   children: [
                     Icon(Icons.delete_sweep_rounded, size: 20, color: Colors.red),
                     SizedBox(width: 8),
-                    Text('Hapus Riwayat SP', style: TextStyle(color: Colors.red)),
+                    Text('Hapus Riwayat Pengingat', style: TextStyle(color: Colors.red)),
                   ],
                 ),
               ),
@@ -234,7 +234,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                 Padding(
                                   padding: EdgeInsets.symmetric(horizontal: 40.w),
                                   child: Text(
-                                    'Anda tidak memiliki surat peringatan. Terus pertahankan kedisiplinan dalam mengisi jurnal mengajar!',
+                                    'Anda tidak memiliki pengingat. Terus pertahankan kedisiplinan dalam mengisi jurnal mengajar!',
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 13.sp,
                                       color: Theme.of(context).brightness == Brightness.dark
@@ -312,7 +312,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                               ),
                                             ),
                                             Text(
-                                              'Peringatan Keterlambatan (${groupWarnings.length} Surat)',
+                                              'Pengingat Keterlambatan (${groupWarnings.length} Pengingat)',
                                               style: GoogleFonts.hankenGrotesk(
                                                 fontSize: 11.sp,
                                                 color: theme.brightness == Brightness.dark

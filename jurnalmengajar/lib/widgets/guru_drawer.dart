@@ -370,7 +370,7 @@ class GuruDrawer extends StatelessWidget {
         ),
         _buildDrawerItem(
           icon: Icons.assignment_late_rounded,
-          label: 'Surat Peringatan (SP)',
+          label: 'Pengingat',
           badgeCount: unreadWarnings,
           isSelected: currentRoute == '/guru/warning-letters',
           onTap: () {

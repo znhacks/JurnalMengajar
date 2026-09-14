@@ -1874,10 +1874,10 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         bgColor: const Color(0xFFEFF6FF),
                         onTap: () => _showEditProfileDialog(currentUser, teacher),
                       ),
-                      // 2. Surat Peringatan
+                      // 2. Pengingat
                       _buildHorizontalAction(
                         icon: Icons.mail_rounded,
-                        label: 'Peringatan',
+                        label: 'Pengingat',
                         color: const Color(0xFFBA1A1A),
                         bgColor: unreadCount > 0 ? const Color(0xFFFEE2E2) : const Color(0xFFF8FAFC),
                         badgeCount: unreadCount,

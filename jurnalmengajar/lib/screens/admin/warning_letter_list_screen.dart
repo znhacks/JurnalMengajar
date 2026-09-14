@@ -91,7 +91,7 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          'Surat Peringatan (SP)',
+          'Pengingat',
           style: GoogleFonts.hankenGrotesk(
             fontWeight: FontWeight.bold,
           ),
@@ -181,7 +181,7 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                       ),
                                       SizedBox(height: 16.h),
                                       Text(
-                                        'Tidak ada Surat Peringatan',
+                                        'Tidak ada Pengingat',
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 16.sp,
                                           fontWeight: FontWeight.bold,
@@ -301,7 +301,7 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                               borderRadius: BorderRadius.circular(999),
                                             ),
                                             child: Text(
-                                              unreadCount > 0 ? '$unreadCount Belum Dibaca' : '$totalCount SP',
+                                              unreadCount > 0 ? '$unreadCount Belum Dibaca' : '$totalCount Pengingat',
                                               style: GoogleFonts.hankenGrotesk(
                                                 fontSize: 9.sp,
                                                 fontWeight: FontWeight.w700,

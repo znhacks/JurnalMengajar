@@ -32,7 +32,7 @@ class SupabaseWarningLetterRepository implements WarningLetterRepository {
       }
       return list;
     } catch (e) {
-      throw Exception('Gagal memuat surat peringatan: $e');
+      throw Exception('Gagal memuat pengingat: $e');
     }
   }
 
@@ -73,7 +73,7 @@ class SupabaseWarningLetterRepository implements WarningLetterRepository {
       }
       return list;
     } catch (e) {
-      throw Exception('Gagal memuat surat peringatan guru: $e');
+      throw Exception('Gagal memuat pengingat guru: $e');
     }
   }
 
@@ -134,7 +134,7 @@ class SupabaseWarningLetterRepository implements WarningLetterRepository {
       if (e.toString().contains('duplicate key value') || e.toString().contains('23505')) {
         return;
       }
-      throw Exception('Gagal membuat surat peringatan: $e');
+      throw Exception('Gagal membuat pengingat: $e');
     }
   }
 
@@ -146,7 +146,7 @@ class SupabaseWarningLetterRepository implements WarningLetterRepository {
           .update({'status': 'read'})
           .eq('id', id);
     } catch (e) {
-      throw Exception('Gagal mengubah status surat peringatan: $e');
+      throw Exception('Gagal mengubah status pengingat: $e');
     }
   }
 
@@ -158,7 +158,7 @@ class SupabaseWarningLetterRepository implements WarningLetterRepository {
           .update(model.toJson())
           .eq('id', model.id);
     } catch (e) {
-      throw Exception('Gagal memperbarui surat peringatan: $e');
+      throw Exception('Gagal memperbarui pengingat: $e');
     }
   }
 
@@ -170,7 +170,7 @@ class SupabaseWarningLetterRepository implements WarningLetterRepository {
           .delete()
           .eq('id', id);
     } catch (e) {
-      throw Exception('Gagal menghapus surat peringatan: $e');
+      throw Exception('Gagal menghapus pengingat: $e');
     }
   }
 }

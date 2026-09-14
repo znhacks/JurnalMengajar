@@ -260,7 +260,7 @@ class AdminDrawer extends StatelessWidget {
       _buildMenuItem(
         context,
         Icons.mail_rounded,
-        'Surat Peringatan (SP)',
+        'Pengingat',
         '/admin/warning-letters',
       ),
     ];
