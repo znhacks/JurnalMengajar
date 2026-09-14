@@ -182,6 +182,12 @@ class AdminDrawer extends StatelessWidget {
       ),
       _buildMenuItem(
         context,
+        Icons.analytics_rounded,
+        'Statistik Guru',
+        '/admin/teacher-statistics',
+      ),
+      _buildMenuItem(
+        context,
         Icons.settings_rounded,
         'Pengaturan',
         '/admin/settings',

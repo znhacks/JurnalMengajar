@@ -23,7 +23,6 @@ import '../../providers/warning_letter_provider.dart';
 import '../../widgets/animated_widgets.dart';
 import '../../widgets/role_badge.dart';
 import '../../widgets/school_switcher_modal.dart';
-import '../../widgets/class_realization_card.dart';
 import '../../core/theme/app_theme.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -175,14 +174,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         .where((j) => j.status == 'pending')
         .length;
 
-    final activePeriod = masterProvider.activePeriod;
-    final allClasses = masterProvider.classes;
-    final periodClasses = activePeriod != null
-        ? allClasses.where((c) => c.periodId == activePeriod.id).toList()
-        : allClasses;
-    final displayClasses = (periodClasses.isNotEmpty ? periodClasses : allClasses).toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
-
     // Calculate start and end of week in UTC using component year/month/day directly to avoid local timezone shifts
     final startOfWeek = DateTime.utc(
       _focusedDay.year,
@@ -251,6 +242,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         masterProvider.isLoading ||
         scheduleProvider.isLoading ||
         journalProvider.isLoading;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark
+        ? const Color(0xFF60A5FA)
+        : const Color.fromARGB(255, 37, 99, 235);
 
     return PopScope(
       canPop: false,
@@ -442,18 +438,98 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ),
                         SizedBox(height: 16.h),
 
-                        // 4. Realisasi Mengajar Per Kelas Section
+                        // 4. Shortcut ke Halaman Statistik & Kedisiplinan Guru
                         FadeSlideIn(
                           delay: const Duration(milliseconds: 175),
-                          child: ClassRealizationCard(
-                            classes: displayClasses,
-                            schedules: schoolSchedules,
-                            journals: schoolJournals,
-                            isLoading: isLoading,
-                            errorMessage: masterProvider.errorMessage,
-                            selectedTeacherId: _selectedTeacherId,
-                            selectedTeacherName: selectedTeacher?.name,
-                            onClassTap: (cls) => context.push('/admin/journals'),
+                          child: InkWell(
+                            onTap: () => context.push('/admin/teacher-statistics'),
+                            borderRadius: BorderRadius.circular(16.r),
+                            child: Container(
+                              padding: EdgeInsets.all(16.w),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: isDark
+                                      ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                                      : [const Color(0xFFEFF6FF), const Color(0xFFDBEAFE)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(16.r),
+                                border: Border.all(
+                                  color: isDark ? const Color(0xFF334155) : const Color(0xFFBFDBFE),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(12.r),
+                                    decoration: BoxDecoration(
+                                      color: primaryColor.withValues(alpha: 0.15),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.analytics_rounded,
+                                      color: primaryColor,
+                                      size: 24.r,
+                                    ),
+                                  ),
+                                  SizedBox(width: 14.w),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Statistik & Kedisiplinan Guru',
+                                          style: GoogleFonts.hankenGrotesk(
+                                            fontSize: 14.5.sp,
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context).colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        SizedBox(height: 3.h),
+                                        Text(
+                                          'Lihat guru yang paling sering tepat waktu dan paling sering terlambat mengisi jurnal.',
+                                          style: TextStyle(
+                                            fontSize: 11.5.sp,
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                                    decoration: BoxDecoration(
+                                      color: primaryColor,
+                                      borderRadius: BorderRadius.circular(10.r),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          'Buka',
+                                          style: TextStyle(
+                                            fontSize: 11.5.sp,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        SizedBox(width: 4.w),
+                                        Icon(Icons.arrow_forward_rounded, size: 14.r, color: Colors.white),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                         SizedBox(height: 16.h),

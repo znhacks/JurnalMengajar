@@ -30,6 +30,7 @@ import '../../screens/admin/admin_jurnal_list_screen.dart';
 import '../../screens/admin/holidays_screen.dart';
 import '../../screens/admin/master/student_screen.dart';
 import '../../screens/admin/master/teacher_detail_screen.dart';
+import '../../screens/admin/teacher_statistics_screen.dart';
 import '../../screens/auth/school_expired_screen.dart';
 import '../../widgets/swipe_back_wrapper.dart';
 
@@ -342,6 +343,11 @@ class AppRouter {
           path: '/admin/warning-letters',
           pageBuilder: (context, state) => _buildCustomTransition(
               context, state, const AdminWarningLetterListScreen()),
+        ),
+        GoRoute(
+          path: '/admin/teacher-statistics',
+          pageBuilder: (context, state) => _buildCustomTransition(
+              context, state, const AdminTeacherStatisticsScreen()),
         ),
         GoRoute(
           path: '/admin/master-data/periods',

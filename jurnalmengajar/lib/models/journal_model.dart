@@ -22,6 +22,7 @@ class JournalModel {
   final bool isSoftDeleted;
   final DateTime? deletedAt;
   final String? schoolId;
+  final DateTime? createdAt;
 
   JournalModel({
     required this.id,
@@ -43,6 +44,7 @@ class JournalModel {
     this.isSoftDeleted = false,
     this.deletedAt,
     this.schoolId,
+    this.createdAt,
   });
 
   factory JournalModel.fromJson(Map<String, dynamic> json) {
@@ -125,6 +127,14 @@ class JournalModel {
       deletedAt = rawDelAt;
     }
 
+    DateTime? createdAt;
+    final rawCreatedAt = json['created_at'] ?? json['createdAt'];
+    if (rawCreatedAt is String) {
+      createdAt = DateTime.tryParse(rawCreatedAt);
+    } else if (rawCreatedAt is DateTime) {
+      createdAt = rawCreatedAt;
+    }
+
     return JournalModel(
       id: json['id']?.toString() ?? '',
       scheduleId: json['schedule_id']?.toString() ?? json['scheduleId']?.toString() ?? '',
@@ -145,6 +155,7 @@ class JournalModel {
       isSoftDeleted: isSoftDeleted,
       deletedAt: deletedAt,
       schoolId: AppHelper.parseSingleCleanSchoolId(json['school_id']),
+      createdAt: createdAt,
     );
   }
 
@@ -168,6 +179,9 @@ class JournalModel {
       'is_soft_deleted': isSoftDeleted,
       'deleted_at': deletedAt?.toIso8601String(),
     };
+    if (createdAt != null) {
+      map['created_at'] = createdAt!.toIso8601String();
+    }
     if (schoolId != null && schoolId!.isNotEmpty) {
       map['school_id'] = schoolId;
     }
@@ -194,6 +208,7 @@ class JournalModel {
     bool? isSoftDeleted,
     DateTime? deletedAt,
     String? schoolId,
+    DateTime? createdAt,
   }) {
     return JournalModel(
       id: id ?? this.id,
@@ -215,6 +230,7 @@ class JournalModel {
       isSoftDeleted: isSoftDeleted ?? this.isSoftDeleted,
       deletedAt: deletedAt ?? this.deletedAt,
       schoolId: schoolId ?? this.schoolId,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }
