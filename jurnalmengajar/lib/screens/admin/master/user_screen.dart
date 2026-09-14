@@ -5,11 +5,15 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/master_data_provider.dart';
+import '../../../providers/schedule_provider.dart';
 import '../../../models/user_model.dart';
+import '../../../models/teacher_model.dart';
 import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/admin_selection_action_button.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
+import '../../../services/excel_export_service.dart';
 
 class MasterUserScreen extends StatefulWidget {
   const MasterUserScreen({super.key});
@@ -18,7 +22,9 @@ class MasterUserScreen extends StatefulWidget {
   State<MasterUserScreen> createState() => _MasterUserScreenState();
 }
 
-class _MasterUserScreenState extends State<MasterUserScreen> {
+class _MasterUserScreenState extends State<MasterUserScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   List<UserModel> _allUsers = [];
   List<UserModel> _filteredUsers = [];
   bool _isLoading = false;
@@ -32,6 +38,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchUsers();
     });
@@ -57,10 +64,12 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
 
   @override
   void dispose() {
+    _tabController.dispose();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
+
 
   void _toggleSelectionMode({String? initialId}) {
     setState(() {
@@ -138,6 +147,227 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
       _fetchUsers();
     }
   }
+
+  bool _isExporting = false;
+
+  Future<void> _handleExportExcel(
+    List<UserModel> activeUsers,
+    List<UserModel> pendingUsers,
+    AuthProvider auth,
+  ) async {
+    if (_isExporting) return;
+    final currentTabIndex = _tabController.index;
+
+    if (currentTabIndex == 1) {
+      if (pendingUsers.isEmpty) {
+        AppHelper.showSnackBar(context, 'Tidak ada data pendaftaran yang menunggu persetujuan.', isError: true);
+        return;
+      }
+      setState(() => _isExporting = true);
+      AppHelper.showSnackBar(context, 'Mempersiapkan data pendaftaran...');
+      try {
+        final schoolName = auth.activeSchoolName.isNotEmpty ? auth.activeSchoolName : 'Sekolah';
+        await ExcelExportService.exportUsers(
+          users: pendingUsers,
+          schoolName: schoolName,
+          sheetName: 'Guru Menunggu Persetujuan',
+        );
+        if (mounted) {
+          AppHelper.showSnackBar(context, 'Data pendaftaran berhasil diekspor ke Excel.');
+        }
+      } catch (e) {
+        if (mounted) {
+          AppHelper.showSnackBar(context, 'Ekspor data gagal. Silakan coba lagi.', isError: true);
+        }
+      } finally {
+        if (mounted) setState(() => _isExporting = false);
+      }
+      return;
+    }
+
+    if (currentTabIndex == 2) {
+      if (_exitRequests.isEmpty) {
+        AppHelper.showSnackBar(context, 'Tidak ada pengajuan keluar untuk diekspor.', isError: true);
+        return;
+      }
+      setState(() => _isExporting = true);
+      AppHelper.showSnackBar(context, 'Mempersiapkan data pengajuan keluar...');
+      try {
+        final schoolName = auth.activeSchoolName.isNotEmpty ? auth.activeSchoolName : 'Sekolah';
+        final exitUsers = _exitRequests.map((req) {
+          final userMap = req['users'] as Map<String, dynamic>? ?? {};
+          return UserModel(
+            id: req['id'] as String? ?? '',
+            email: userMap['email'] as String? ?? '',
+            fullName: userMap['full_name'] as String? ?? 'Guru',
+            role: 'guru',
+            membershipRole: 'guru',
+            status: 'pending_exit',
+            phoneNumber: userMap['phone_number'] as String?,
+          );
+        }).toList();
+        await ExcelExportService.exportUsers(
+          users: exitUsers,
+          schoolName: schoolName,
+          sheetName: 'Pengajuan Keluar',
+        );
+        if (mounted) {
+          AppHelper.showSnackBar(context, 'Data pengajuan keluar berhasil diekspor ke Excel.');
+        }
+      } catch (e) {
+        if (mounted) {
+          AppHelper.showSnackBar(context, 'Ekspor data gagal. Silakan coba lagi.', isError: true);
+        }
+      } finally {
+        if (mounted) setState(() => _isExporting = false);
+      }
+      return;
+    }
+
+    // currentTabIndex == 0: Pengguna Aktif
+    if (activeUsers.isEmpty) {
+      AppHelper.showSnackBar(context, 'Tidak ada data pengguna aktif untuk diekspor.', isError: true);
+      return;
+    }
+
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Pilih Format Ekspor Excel',
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                'Pilih data yang ingin diekspor untuk ${auth.activeSchoolName.isNotEmpty ? auth.activeSchoolName : "sekolah aktif"}.',
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 13.sp,
+                  color: Colors.grey[600],
+                ),
+              ),
+              SizedBox(height: 16.h),
+              ListTile(
+                leading: Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: const Icon(Icons.school_rounded, color: Color(0xFF10B981)),
+                ),
+                title: Text(
+                  'Ekspor Data Guru (Lengkap)',
+                  style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  'Daftar guru aktif, mata pelajaran diampu, dan jadwal mengajar.',
+                  style: GoogleFonts.hankenGrotesk(fontSize: 12.sp),
+                ),
+                onTap: () => Navigator.pop(ctx, 'guru'),
+              ),
+              const Divider(),
+              ListTile(
+                leading: Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: const Icon(Icons.people_alt_rounded, color: Color(0xFF2563EB)),
+                ),
+                title: Text(
+                  'Ekspor Semua Pengguna Aktif',
+                  style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  'Seluruh akun pengguna aktif (guru & admin sekolah).',
+                  style: GoogleFonts.hankenGrotesk(fontSize: 12.sp),
+                ),
+                onTap: () => Navigator.pop(ctx, 'users'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (choice == null || !mounted) return;
+
+    setState(() => _isExporting = true);
+    AppHelper.showSnackBar(context, 'Mempersiapkan file Excel...');
+
+    try {
+      final schoolName = auth.activeSchoolName.isNotEmpty ? auth.activeSchoolName : 'Sekolah';
+      if (choice == 'guru') {
+        final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+        final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+
+        if (masterProvider.teachers.isEmpty) {
+          await masterProvider.loadAllData(auth.activeSchoolId);
+        }
+        if (scheduleProvider.schedules.isEmpty) {
+          await scheduleProvider.loadAllSchedules(auth.activeSchoolId);
+        }
+
+        List<TeacherModel> teachers = masterProvider.teachers;
+        if (teachers.isEmpty) {
+          final teacherUsers = activeUsers.where((u) => u.role.toLowerCase() == 'guru' || u.membershipRole?.toLowerCase() == 'guru');
+          teachers = teacherUsers.map((u) => TeacherModel(
+            id: u.id,
+            name: u.fullName,
+            position: 'Guru',
+            address: '-',
+            phoneNumber: u.phoneNumber ?? '-',
+            email: u.email,
+          )).toList();
+        }
+
+        if (teachers.isEmpty) {
+          if (mounted) {
+            AppHelper.showSnackBar(context, 'Tidak ada data guru aktif untuk diekspor.', isError: true);
+          }
+          return;
+        }
+
+        await ExcelExportService.exportTeachers(
+          teachers: teachers,
+          schoolName: schoolName,
+          schedules: scheduleProvider.schedules,
+          masterProvider: masterProvider,
+        );
+      } else {
+        await ExcelExportService.exportUsers(
+          users: activeUsers,
+          schoolName: schoolName,
+          sheetName: 'Pengguna Aktif',
+        );
+      }
+      if (mounted) {
+        AppHelper.showSnackBar(context, 'Data berhasil diekspor ke Excel.');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppHelper.showSnackBar(context, 'Ekspor data gagal. Silakan coba lagi.', isError: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
+    }
+  }
+
 
   Future<void> _fetchUsers() async {
     setState(() {
@@ -675,9 +905,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
         if (didPop) return;
         context.go('/admin/dashboard');
       },
-      child: DefaultTabController(
-        length: 3,
-        child: Scaffold(
+      child: Scaffold(
           appBar: _isSelectionMode
               ? AppBar(
                   backgroundColor: const Color(0xFF0F172A),
@@ -720,11 +948,28 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                   ),
                   title: const Text('Master User & Hak Akses'),
                   actions: [
+                    IconButton(
+                      icon: _isExporting
+                          ? SizedBox(
+                              width: 18.w,
+                              height: 18.w,
+                              child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2563EB)),
+                            )
+                          : const Icon(Icons.table_view_rounded, color: Color(0xFF10B981)),
+                      tooltip: 'Ekspor Excel',
+                      onPressed: (_isExporting || _filteredUsers.isEmpty)
+                          ? null
+                          : () {
+                              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                              _handleExportExcel(activeUsers, pendingUsers, authProvider);
+                            },
+                    ),
                     AdminSelectionActionButton(
                       onPressed: _filteredUsers.isEmpty ? null : () => _toggleSelectionMode(),
                     ),
                   ],
                 bottom: TabBar(
+                  controller: _tabController,
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
                   labelColor: const Color(0xFF2563EB),
@@ -829,6 +1074,7 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                             onRetry: _fetchUsers,
                           )
                         : TabBarView(
+                            controller: _tabController,
                             children: [
                               activeUsers.isEmpty
                                   ? const AppEmptyWidget(
@@ -850,9 +1096,9 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
+
 
   Widget _buildExitRequestsList(AuthProvider authProvider) {
     if (_exitRequests.isEmpty) {

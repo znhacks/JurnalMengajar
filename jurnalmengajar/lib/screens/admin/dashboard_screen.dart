@@ -23,6 +23,7 @@ import '../../providers/warning_letter_provider.dart';
 import '../../widgets/animated_widgets.dart';
 import '../../widgets/role_badge.dart';
 import '../../widgets/school_switcher_modal.dart';
+import '../../widgets/class_realization_card.dart';
 import '../../core/theme/app_theme.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -173,6 +174,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final totalPending = filteredJournals
         .where((j) => j.status == 'pending')
         .length;
+
+    final activePeriod = masterProvider.activePeriod;
+    final allClasses = masterProvider.classes;
+    final periodClasses = activePeriod != null
+        ? allClasses.where((c) => c.periodId == activePeriod.id).toList()
+        : allClasses;
+    final displayClasses = (periodClasses.isNotEmpty ? periodClasses : allClasses).toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
 
     // Calculate start and end of week in UTC using component year/month/day directly to avoid local timezone shifts
     final startOfWeek = DateTime.utc(
@@ -433,7 +442,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ),
                         SizedBox(height: 16.h),
 
-                        // 4. Schedule List Section
+                        // 4. Realisasi Mengajar Per Kelas Section
+                        FadeSlideIn(
+                          delay: const Duration(milliseconds: 175),
+                          child: ClassRealizationCard(
+                            classes: displayClasses,
+                            schedules: schoolSchedules,
+                            journals: schoolJournals,
+                            isLoading: isLoading,
+                            errorMessage: masterProvider.errorMessage,
+                            selectedTeacherId: _selectedTeacherId,
+                            selectedTeacherName: selectedTeacher?.name,
+                            onClassTap: (cls) => context.push('/admin/journals'),
+                          ),
+                        ),
+                        SizedBox(height: 16.h),
+
+                        // 5. Schedule List Section
                         FadeSlideIn(
                           delay: const Duration(milliseconds: 200),
                           child: Column(

@@ -10,6 +10,8 @@ import '../../../widgets/admin_selection_action_button.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../widgets/animated_widgets.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../services/excel_export_service.dart';
 
 class MasterStudentScreen extends StatefulWidget {
   final String classId;
@@ -97,6 +99,39 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
         });
       } else {
         AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menghapus data siswa.', isError: true);
+      }
+    }
+  }
+
+  bool _isExporting = false;
+
+  Future<void> _handleExportExcel(List<StudentModel> students, String className, AuthProvider auth) async {
+    if (_isExporting) return;
+    if (students.isEmpty) {
+      AppHelper.showSnackBar(context, 'Tidak ada data siswa untuk diekspor.', isError: true);
+      return;
+    }
+
+    setState(() => _isExporting = true);
+    AppHelper.showSnackBar(context, 'Mempersiapkan file Excel...');
+
+    try {
+      final schoolName = auth.activeSchoolName.isNotEmpty ? auth.activeSchoolName : 'Sekolah';
+      await ExcelExportService.exportStudents(
+        students: students,
+        className: className,
+        schoolName: schoolName,
+      );
+      if (mounted) {
+        AppHelper.showSnackBar(context, 'Data berhasil diekspor ke Excel.');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppHelper.showSnackBar(context, 'Ekspor gagal. Silakan coba lagi.', isError: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
       }
     }
   }
@@ -468,6 +503,22 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                 ),
               ),
               actions: [
+                IconButton(
+                  icon: _isExporting
+                      ? SizedBox(
+                          width: 18.w,
+                          height: 18.w,
+                          child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2563EB)),
+                        )
+                      : const Icon(Icons.table_view_rounded, color: Color(0xFF10B981)),
+                  tooltip: 'Ekspor Excel',
+                  onPressed: (_isExporting || filteredStudents.isEmpty)
+                      ? null
+                      : () {
+                          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                          _handleExportExcel(filteredStudents, cls.name, authProvider);
+                        },
+                ),
                 AdminSelectionActionButton(
                   onPressed: filteredStudents.isEmpty ? null : () => _toggleSelectionMode(),
                 ),

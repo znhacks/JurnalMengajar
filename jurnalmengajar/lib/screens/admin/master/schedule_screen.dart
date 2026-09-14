@@ -14,6 +14,7 @@ import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/utils/schedule_grouper.dart';
+import '../../../services/excel_export_service.dart';
 
 class MasterScheduleScreen extends StatefulWidget {
   const MasterScheduleScreen({super.key});
@@ -914,6 +915,38 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
 
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  bool _isExporting = false;
+
+  Future<void> _handleExportExcel(List<ScheduleModel> schedules, MasterDataProvider master, AuthProvider auth) async {
+    if (_isExporting) return;
+    if (schedules.isEmpty) {
+      AppHelper.showSnackBar(context, 'Tidak ada data jadwal untuk diekspor.', isError: true);
+      return;
+    }
+
+    setState(() => _isExporting = true);
+    AppHelper.showSnackBar(context, 'Mempersiapkan file Excel...');
+
+    try {
+      final schoolName = auth.activeSchoolName.isNotEmpty ? auth.activeSchoolName : 'Sekolah';
+      await ExcelExportService.exportSchedules(
+        schedules: schedules,
+        masterProvider: master,
+        schoolName: schoolName,
+      );
+      if (mounted) {
+        AppHelper.showSnackBar(context, 'Data berhasil diekspor ke Excel.');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppHelper.showSnackBar(context, 'Ekspor gagal. Silakan coba lagi.', isError: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -1010,6 +1043,24 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: _isExporting
+                ? SizedBox(
+                    width: 18.w,
+                    height: 18.w,
+                    child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2563EB)),
+                  )
+                : const Icon(Icons.table_view_rounded, color: Color(0xFF10B981)),
+            tooltip: 'Ekspor Excel',
+            onPressed: (_isExporting || validSchedules.isEmpty)
+                ? null
+                : () {
+                    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                    _handleExportExcel(validSchedules, masterProvider, authProvider);
+                  },
+          ),
+        ],
       ),
       drawer: const AdminDrawer(currentRoute: '/admin/schedules'),
       body: RefreshIndicator(

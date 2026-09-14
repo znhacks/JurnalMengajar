@@ -871,8 +871,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                if (_registerType == 'guru') ...[
                                  _buildFieldLabel('JABATAN'),
                                  GestureDetector(
-                                   onTap: () {
-                                     final subjectNames = masterProvider.subjects.map((s) => s.name).toList();
+                                   behavior: HitTestBehavior.opaque,
+                                   onTap: () async {
+                                     List<String> subjectNames = masterProvider.subjects
+                                         .where((s) => s.isActive)
+                                         .map((s) => s.name)
+                                         .toList();
+
+                                     // Jika data subjects di provider masih kosong, muat langsung dari database tabel subjects
+                                     if (subjectNames.isEmpty) {
+                                       try {
+                                         final effectiveSchoolId = _resolvedSchoolId;
+                                         var fetched = await masterProvider.subjectRepository.getAll(effectiveSchoolId);
+                                         if (fetched.isEmpty && effectiveSchoolId != null) {
+                                           fetched = await masterProvider.subjectRepository.getAll(null);
+                                         }
+                                         if (fetched.isNotEmpty) {
+                                           subjectNames = fetched
+                                               .where((s) => s.isActive)
+                                               .map((s) => s.name)
+                                               .toList();
+                                         }
+                                       } catch (e) {
+                                         debugPrint('[REGISTER] Error fetching subjects from DB: $e');
+                                       }
+                                     }
+
+                                     if (!context.mounted) return;
+
                                      _showPositionSelector(
                                        context,
                                        subjectNames,
@@ -1081,8 +1107,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               SizedBox(height: 24.h),
 
                               // Login Link
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   Text(
                                     'Sudah punya akun? ',
@@ -1181,66 +1208,222 @@ class _RegisterScreenState extends State<RegisterScreen> {
     Function(String) onSelect,
   ) {
     final searchController = TextEditingController();
-    List<String> options = subjects.map((s) => 'Guru $s').toSet().toList();
+
+    // Ambil mata pelajaran langsung dari database tabel subjects
+    final Set<String> allOptionsSet = {};
+
+    for (final s in subjects) {
+      final trimmed = s.trim();
+      if (trimmed.isNotEmpty) {
+        final formatted = trimmed.toLowerCase().startsWith('guru ')
+            ? trimmed
+            : 'Guru $trimmed';
+        allOptionsSet.add(formatted);
+      }
+    }
+
+    // Jika currentPosition sudah terisi dan belum ada di opsi, sertakan
+    if (currentPosition.trim().isNotEmpty) {
+      allOptionsSet.add(currentPosition.trim());
+    }
+
+    final List<String> options = allOptionsSet.toList()..sort((a, b) => a.compareTo(b));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark
+        ? const Color(0xFF60A5FA)
+        : const Color.fromARGB(255, 37, 99, 235);
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      backgroundColor: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
-          final query = searchController.text.toLowerCase();
+          final rawQuery = searchController.text.trim();
+          final query = rawQuery.toLowerCase();
           final filteredOptions = options
               .where((opt) => opt.toLowerCase().contains(query))
               .toList();
+          final hasExactMatch = options.any(
+            (opt) => opt.toLowerCase() == query,
+          );
 
           return Padding(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
-              top: 20.h,
+              top: 16.h,
               left: 20.w,
               right: 20.w,
             ),
             child: SizedBox(
-              height: 400.h,
+              height: 480.h,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Center(
+                    child: Container(
+                      width: 40.w,
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey[700] : Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2.r),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
                   Text(
                     'Pilih Jabatan / Guru Mapel',
-                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 12.h),
                   TextField(
                     controller: searchController,
-                    decoration: const InputDecoration(
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    decoration: InputDecoration(
                       hintText: 'Cari mata pelajaran / jabatan...',
-                      prefixIcon: Icon(Icons.search),
+                      hintStyle: TextStyle(
+                        fontSize: 13.5.sp,
+                        color: isDark ? const Color(0xFF64748B) : Colors.grey[400],
+                      ),
+                      prefixIcon: Icon(Icons.search, color: primaryColor),
+                      suffixIcon: rawQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 18),
+                              onPressed: () {
+                                searchController.clear();
+                                setState(() {});
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: isDark
+                          ? Theme.of(context).colorScheme.surfaceContainerHighest
+                          : const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
-                  SizedBox(height: 12.h),
+                  if (rawQuery.isNotEmpty && !hasExactMatch) ...[
+                    SizedBox(height: 8.h),
+                    InkWell(
+                      onTap: () {
+                        onSelect(rawQuery);
+                        Navigator.pop(context);
+                      },
+                      borderRadius: BorderRadius.circular(12.r),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.add_circle_outline, color: primaryColor, size: 18.r),
+                            SizedBox(width: 8.w),
+                            Expanded(
+                              child: Text(
+                                'Gunakan "$rawQuery" sebagai jabatan',
+                                style: TextStyle(
+                                  color: primaryColor,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13.sp,
+                                ),
+                              ),
+                            ),
+                            Icon(Icons.arrow_forward_ios, size: 12.r, color: primaryColor),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                  SizedBox(height: 8.h),
                   Expanded(
                     child: filteredOptions.isEmpty
-                        ? const Center(child: Text('Tidak ada pilihan ditemukan'))
-                        : ListView.builder(
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off_rounded,
+                                  size: 40.r,
+                                  color: isDark ? Colors.grey[600] : Colors.grey[400],
+                                ),
+                                SizedBox(height: 8.h),
+                                Text(
+                                  options.isEmpty
+                                      ? 'Mata pelajaran belum tersedia di database'
+                                      : 'Jabatan tidak ditemukan di daftar',
+                                  style: TextStyle(
+                                    fontSize: 13.5.sp,
+                                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                  ),
+                                ),
+                                if (rawQuery.isNotEmpty) ...[
+                                  SizedBox(height: 12.h),
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      onSelect(rawQuery);
+                                      Navigator.pop(context);
+                                    },
+                                    icon: const Icon(Icons.check, size: 16),
+                                    label: Text('Gunakan "$rawQuery"'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: primaryColor,
+                                      foregroundColor: Colors.white,
+                                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10.r),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          )
+                        : ListView.separated(
                             itemCount: filteredOptions.length,
+                            separatorBuilder: (context, index) => Divider(
+                              height: 1,
+                              thickness: 0.5,
+                              color: isDark
+                                  ? Colors.grey[800]
+                                  : const Color(0xFFF1F5F9),
+                            ),
                             itemBuilder: (context, index) {
                               final opt = filteredOptions[index];
                               final isSelected = opt.toLowerCase() == currentPosition.toLowerCase();
                               return ListTile(
+                                dense: true,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                                 title: Text(
                                   opt,
                                   style: TextStyle(
+                                    fontSize: 14.sp,
                                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    color: isSelected ? const Color.fromARGB(255, 37, 99, 235) : null,
+                                    color: isSelected
+                                        ? primaryColor
+                                        : Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                                 trailing: isSelected
-                                    ? const Icon(Icons.check, color: Color.fromARGB(255, 37, 99, 235))
+                                    ? Icon(Icons.check_circle_rounded, color: primaryColor, size: 20.r)
                                     : null,
                                 onTap: () {
                                   onSelect(opt);
@@ -1304,6 +1487,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             _resolvedSchoolId = remoteMatched.id;
             _detectedPlan = null;
           });
+          if (remoteMatched.id.isNotEmpty) {
+            masterProvider.loadAllData(remoteMatched.id);
+          }
           if (showSnackBar && mounted) {
             AppHelper.showSnackBar(context, 'Sekolah ditemukan: $schoolName');
           }
@@ -1386,6 +1572,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           _resolvedSchoolId = matchedSchool?.id;
           _detectedPlan = null;
         });
+        if (matchedSchool != null && matchedSchool.id.isNotEmpty) {
+          masterProvider.loadAllData(matchedSchool.id);
+        }
         if (showSnackBar && mounted) {
           AppHelper.showSnackBar(context, 'Sekolah ditemukan: $validSchoolName');
         }

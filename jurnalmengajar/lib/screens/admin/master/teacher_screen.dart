@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 import '../../../providers/master_data_provider.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/schedule_provider.dart';
 import '../../../models/teacher_model.dart';
 import '../../../models/school_model.dart';
 import '../../../widgets/admin_drawer.dart';
@@ -18,6 +19,7 @@ import '../../../core/utils/helper.dart';
 import '../../../core/utils/image_crop_helper.dart';
 import '../../../repositories/supabase_auth_repository.dart';
 import '../../../widgets/animated_widgets.dart';
+import '../../../services/excel_export_service.dart';
 
 class MasterTeacherScreen extends StatefulWidget {
   const MasterTeacherScreen({super.key});
@@ -118,6 +120,48 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
         });
       } else {
         AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menghapus data guru.', isError: true);
+      }
+    }
+  }
+
+  bool _isExporting = false;
+
+  Future<void> _handleExportExcel(List<TeacherModel> teachers, AuthProvider auth) async {
+    if (_isExporting) return;
+    if (teachers.isEmpty) {
+      AppHelper.showSnackBar(context, 'Tidak ada data guru untuk diekspor.', isError: true);
+      return;
+    }
+
+    setState(() => _isExporting = true);
+    AppHelper.showSnackBar(context, 'Mempersiapkan file Excel...');
+
+    try {
+      final schoolName = auth.activeSchoolName.isNotEmpty ? auth.activeSchoolName : 'Sekolah';
+      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+      final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+
+      // Ensure schedules for active school are loaded
+      if (scheduleProvider.schedules.isEmpty && auth.activeSchoolId != null) {
+        await scheduleProvider.loadAllSchedules(auth.activeSchoolId);
+      }
+
+      await ExcelExportService.exportTeachers(
+        teachers: teachers,
+        schoolName: schoolName,
+        schedules: scheduleProvider.schedules,
+        masterProvider: masterProvider,
+      );
+      if (mounted) {
+        AppHelper.showSnackBar(context, 'Data guru berhasil diekspor ke Excel.');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppHelper.showSnackBar(context, 'Ekspor gagal. Silakan coba lagi.', isError: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
       }
     }
   }
@@ -768,6 +812,29 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                 ),
                 title: const Text('Master Data Guru'),
                 actions: [
+                  IconButton(
+                    icon: _isExporting
+                        ? SizedBox(
+                            width: 18.w,
+                            height: 18.w,
+                            child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2563EB)),
+                          )
+                        : const Icon(Icons.table_view_rounded, color: Color(0xFF10B981)),
+                    tooltip: 'Ekspor Excel',
+                    onPressed: (_isExporting || teachers.isEmpty)
+                        ? null
+                        : () {
+                            final filtered = _searchQuery.isEmpty
+                                ? teachers
+                                : teachers.where((t) {
+                                    return t.name.toLowerCase().contains(_searchQuery) ||
+                                        t.position.toLowerCase().contains(_searchQuery) ||
+                                        t.email.toLowerCase().contains(_searchQuery);
+                                  }).toList();
+                            final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                            _handleExportExcel(filtered, authProvider);
+                          },
+                  ),
                   AdminSelectionActionButton(
                     onPressed: teachers.isEmpty ? null : () => _toggleSelectionMode(),
                   ),

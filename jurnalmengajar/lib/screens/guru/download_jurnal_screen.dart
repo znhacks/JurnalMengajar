@@ -16,7 +16,9 @@ import '../../providers/auth_provider.dart';
 import '../../providers/journal_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
+import '../../core/utils/helper.dart';
 import '../../services/journal_pdf_service.dart';
+import '../../services/excel_export_service.dart';
 import '../../widgets/guru_drawer.dart';
 
 class GuruDownloadJurnalScreen extends StatefulWidget {
@@ -738,6 +740,66 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         'Laporan_Jurnal_${teacher.name.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd').format(_startDate)}_${DateFormat('yyyyMMdd').format(_endDate)}.pdf';
 
     await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
+  }
+
+  bool _isExportingExcel = false;
+
+  Future<void> _exportToExcel(
+    TeacherModel teacher,
+    List<JournalModel> journals,
+    MasterDataProvider masterProvider,
+    AuthProvider authProvider,
+  ) async {
+    if (_isExportingExcel) return;
+    if (journals.isEmpty) {
+      AppHelper.showSnackBar(
+        context,
+        'Tidak ada data jurnal yang sesuai dengan filter terpilih.',
+        isError: true,
+      );
+      return;
+    }
+
+    setState(() => _isExportingExcel = true);
+    AppHelper.showSnackBar(context, 'Mempersiapkan file Excel...');
+
+    try {
+      final selectedSchool = _selectedSchoolId != null
+          ? (_selectedSchoolId == authProvider.activeSchoolId
+              ? authProvider.activeSchool
+              : masterProvider.schools.firstWhere(
+                  (s) => s.id == _selectedSchoolId,
+                  orElse: () => SchoolModel(
+                    id: 'default',
+                    name: _schoolNameController.text.trim(),
+                  ),
+                ))
+          : null;
+
+      final schoolName = selectedSchool?.name ??
+          (_schoolNameController.text.trim().isNotEmpty
+              ? _schoolNameController.text.trim()
+              : authProvider.activeSchoolName);
+
+      await ExcelExportService.exportJournals(
+        journals: journals,
+        masterProvider: masterProvider,
+        schoolName: schoolName,
+        teacherNameFilter: teacher.name,
+      );
+
+      if (mounted) {
+        AppHelper.showSnackBar(context, 'Data berhasil diekspor ke Excel.');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppHelper.showSnackBar(context, 'Ekspor gagal. Silakan coba lagi.', isError: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isExportingExcel = false);
+      }
+    }
   }
 
   @override
@@ -1467,6 +1529,51 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                     ),
                   ),
                 ],
+              ),
+
+              SizedBox(height: 12.h),
+
+              // Ekspor Excel Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isExportingExcel
+                      ? null
+                      : () => _exportToExcel(
+                            teacher,
+                            filteredJournals,
+                            masterProvider,
+                            authProvider,
+                          ),
+                  icon: _isExportingExcel
+                      ? SizedBox(
+                          width: 20.r,
+                          height: 20.r,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.table_view_rounded,
+                          color: Colors.white,
+                        ),
+                  label: Text(
+                    _isExportingExcel ? 'Mempersiapkan Excel...' : 'Ekspor Excel (.xlsx)',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981), // Emerald Green
+                    padding: EdgeInsets.symmetric(vertical: 14.h),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
+                ),
               ),
 
               SizedBox(height: 20.h),

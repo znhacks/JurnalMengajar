@@ -18,6 +18,7 @@ import '../../core/utils/helper.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/schedule_grouper.dart';
 import '../../widgets/animated_widgets.dart';
+import '../../services/excel_export_service.dart';
 
 class AdminJurnalListScreen extends StatefulWidget {
   /// If non-null, jump directly to a specific tab index (0=Semua, 1=Belum Diisi, 2=Menunggu, 3=Terverifikasi)
@@ -101,6 +102,39 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
         });
       } else {
         AppHelper.showSnackBar(context, journalProvider.errorMessage ?? 'Gagal menghapus jurnal.', isError: true);
+      }
+    }
+  }
+
+  bool _isExporting = false;
+
+  Future<void> _handleExportExcel(List<JournalModel> journals, MasterDataProvider master, AuthProvider auth) async {
+    if (_isExporting) return;
+    if (journals.isEmpty) {
+      AppHelper.showSnackBar(context, 'Tidak ada data jurnal untuk diekspor.', isError: true);
+      return;
+    }
+
+    setState(() => _isExporting = true);
+    AppHelper.showSnackBar(context, 'Mempersiapkan file Excel...');
+
+    try {
+      final schoolName = auth.activeSchoolName.isNotEmpty ? auth.activeSchoolName : 'Sekolah';
+      await ExcelExportService.exportJournals(
+        journals: journals,
+        masterProvider: master,
+        schoolName: schoolName,
+      );
+      if (mounted) {
+        AppHelper.showSnackBar(context, 'Data berhasil diekspor ke Excel.');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppHelper.showSnackBar(context, 'Ekspor gagal. Silakan coba lagi.', isError: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
       }
     }
   }
@@ -215,6 +249,50 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                 ),
                 title: const Text('Jurnal Mengajar'),
                 actions: [
+                  IconButton(
+                    icon: _isExporting
+                        ? SizedBox(
+                            width: 18.w,
+                            height: 18.w,
+                            child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2563EB)),
+                          )
+                        : const Icon(Icons.table_view_rounded, color: Color(0xFF10B981)),
+                    tooltip: 'Ekspor Excel',
+                    onPressed: (_isExporting || allJournals.isEmpty)
+                        ? null
+                        : () {
+                            // Filter active journals according to tab and search
+                            List<JournalModel> targetJournals = allJournals;
+                            if (_tabController.index == 2) {
+                              targetJournals = pendingJournals;
+                            } else if (_tabController.index == 3) {
+                              targetJournals = verifiedJournals;
+                            }
+                            if (_searchQuery.isNotEmpty) {
+                              final query = _searchQuery.toLowerCase();
+                              targetJournals = targetJournals.where((j) {
+                                final t = masterProvider.teachers.firstWhere(
+                                  (teacher) => teacher.id == j.teacherId,
+                                  orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
+                                );
+                                final c = masterProvider.classes.firstWhere(
+                                  (cls) => cls.id == j.classId,
+                                  orElse: () => ClassModel(id: '', name: '', periodId: '', studentCount: 0),
+                                );
+                                final s = masterProvider.subjects.firstWhere(
+                                  (subj) => subj.id == j.subjectId,
+                                  orElse: () => SubjectModel(id: '', name: '', isActive: false),
+                                );
+                                return t.name.toLowerCase().contains(query) ||
+                                    c.name.toLowerCase().contains(query) ||
+                                    s.name.toLowerCase().contains(query) ||
+                                    j.material.toLowerCase().contains(query);
+                              }).toList();
+                            }
+                            final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                            _handleExportExcel(targetJournals, masterProvider, authProvider);
+                          },
+                  ),
                   AdminSelectionActionButton(
                     onPressed: allJournals.isEmpty ? null : () => _toggleSelectionMode(),
                   ),
