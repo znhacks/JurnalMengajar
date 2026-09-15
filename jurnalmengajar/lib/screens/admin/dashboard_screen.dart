@@ -403,7 +403,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               masterProvider.teachers,
                             ),
                           ),
-                          SizedBox(height: 14.h),
+                          SizedBox(height: 12.h),
 
                           // 3. Stat Cards Row (4 Grid Cards)
                           FadeSlideIn(
@@ -472,9 +472,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             child: InkWell(
                               onTap: () =>
                                   context.push('/admin/teacher-statistics'),
-                              borderRadius: BorderRadius.circular(16.r),
+                              borderRadius: BorderRadius.circular(14.r),
                               child: Container(
-                                padding: EdgeInsets.all(16.w),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 14.w,
+                                  vertical: 10.h,
+                                ),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: isDark
@@ -489,7 +492,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
-                                  borderRadius: BorderRadius.circular(16.r),
+                                  borderRadius: BorderRadius.circular(14.r),
                                   border: Border.all(
                                     color: isDark
                                         ? const Color(0xFF334155)
@@ -508,7 +511,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 child: Row(
                                   children: [
                                     Container(
-                                      padding: EdgeInsets.all(12.r),
+                                      padding: EdgeInsets.all(9.r),
                                       decoration: BoxDecoration(
                                         color: primaryColor.withValues(
                                           alpha: 0.15,
@@ -518,10 +521,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                       child: Icon(
                                         Icons.analytics_rounded,
                                         color: primaryColor,
-                                        size: 24.r,
+                                        size: 20.r,
                                       ),
                                     ),
-                                    SizedBox(width: 14.w),
+                                    SizedBox(width: 12.w),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment:
@@ -530,18 +533,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                           Text(
                                             'Statistik & Kedisiplinan Guru',
                                             style: GoogleFonts.hankenGrotesk(
-                                              fontSize: 14.5.sp,
+                                              fontSize: 13.5.sp,
                                               fontWeight: FontWeight.bold,
                                               color: Theme.of(
                                                 context,
                                               ).colorScheme.onSurface,
                                             ),
                                           ),
-                                          SizedBox(height: 3.h),
+                                          SizedBox(height: 2.h),
                                           Text(
                                             'Lihat guru yang paling sering tepat waktu dan paling sering terlambat mengisi jurnal.',
                                             style: TextStyle(
-                                              fontSize: 11.5.sp,
+                                              fontSize: 11.sp,
                                               color: Theme.of(
                                                 context,
                                               ).colorScheme.onSurfaceVariant,
@@ -554,12 +557,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     Container(
                                       padding: EdgeInsets.symmetric(
                                         horizontal: 10.w,
-                                        vertical: 6.h,
+                                        vertical: 5.h,
                                       ),
                                       decoration: BoxDecoration(
                                         color: primaryColor,
                                         borderRadius: BorderRadius.circular(
-                                          10.r,
+                                          9.r,
                                         ),
                                       ),
                                       child: Row(
@@ -568,7 +571,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                           Text(
                                             'Buka',
                                             style: TextStyle(
-                                              fontSize: 11.5.sp,
+                                              fontSize: 11.sp,
                                               fontWeight: FontWeight.bold,
                                               color: Colors.white,
                                             ),
@@ -576,7 +579,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                           SizedBox(width: 4.w),
                                           Icon(
                                             Icons.arrow_forward_rounded,
-                                            size: 14.r,
+                                            size: 13.r,
                                             color: Colors.white,
                                           ),
                                         ],
@@ -587,7 +590,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               ),
                             ),
                           ),
-                          SizedBox(height: 16.h),
+                          SizedBox(height: 12.h),
 
                           // 5. Schedule List Section
                           FadeSlideIn(
@@ -600,7 +603,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                       ? 'Jadwal — ${AppHelper.formatDateShort(_selectedDay)}'
                                       : '${selectedTeacher?.name} — ${AppHelper.formatDateShort(_selectedDay)}',
                                 ),
-                                SizedBox(height: 10.h),
+                                SizedBox(height: 8.h),
                                 _buildScheduleSection(
                                   filteredSchedulesForDay,
                                   masterProvider,
@@ -815,7 +818,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
 
     return Container(
-      margin: const EdgeInsets.all(3),
+      margin: const EdgeInsets.all(2),
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,
@@ -855,10 +858,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           color: isDark ? const Color(0xFF334155) : AppTheme.outlineVariant,
         ),
       ),
-      padding: EdgeInsets.symmetric(vertical: 8.h),
+      padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 4.w),
       child: TableCalendar(
         locale: 'id_ID',
         headerStyle: HeaderStyle(
+          headerPadding: EdgeInsets.symmetric(vertical: 4.h),
           titleCentered: true,
           formatButtonVisible: false,
           leftChevronIcon: Icon(
@@ -875,8 +879,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        daysOfWeekHeight: 30.h,
-        rowHeight: 46.h,
+        daysOfWeekHeight: 22.h,
+        rowHeight: 38.h,
         firstDay: DateTime.now().subtract(const Duration(days: 365)),
         lastDay: DateTime.now().add(const Duration(days: 365)),
         focusedDay: _focusedDay,
@@ -1133,93 +1137,77 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget _buildTeacherSelectorCompact(List<TeacherModel> teachers) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Row(
-      children: [
-        Icon(
-          Icons.person_search_rounded,
-          color: const Color(0xFF2563EB),
-          size: 20.w,
+    return DropdownButtonFormField<String>(
+      key: ValueKey(_selectedTeacherId),
+      initialValue: _selectedTeacherId,
+      isExpanded: true,
+      hint: Text(
+        'Filter guru...',
+        style: GoogleFonts.hankenGrotesk(
+          fontSize: 12.sp,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
-        SizedBox(width: 8.w),
-        Expanded(
-          child: DropdownButtonFormField<String>(
-            key: ValueKey(_selectedTeacherId),
-            initialValue: _selectedTeacherId,
-            isExpanded: true,
-            hint: Text(
-              'Filter guru...',
-              style: GoogleFonts.hankenGrotesk(
-                fontSize: 12.sp,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            decoration: InputDecoration(
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 14.w,
-                vertical: 10.h,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14.r),
-                borderSide: BorderSide(
-                  color: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFE2E8F0),
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14.r),
-                borderSide: BorderSide(
-                  color: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFE2E8F0),
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14.r),
-                borderSide: const BorderSide(
-                  color: Color(0xFF2563EB),
-                  width: 1.5,
-                ),
-              ),
-              filled: true,
-              fillColor: isDark
-                  ? Theme.of(context).colorScheme.surfaceContainerHighest
-                  : Colors.white,
-            ),
+      ),
+      decoration: InputDecoration(
+        isDense: true,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 14.w,
+          vertical: 9.h,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: const BorderSide(
+            color: Color(0xFF2563EB),
+            width: 1.5,
+          ),
+        ),
+        filled: true,
+        fillColor: isDark
+            ? Theme.of(context).colorScheme.surfaceContainerHighest
+            : Colors.white,
+      ),
+      style: GoogleFonts.hankenGrotesk(
+        fontSize: 13.sp,
+        color: Theme.of(context).colorScheme.onSurface,
+        fontWeight: FontWeight.w600,
+      ),
+      dropdownColor: Theme.of(context).colorScheme.surface,
+      items: [
+        DropdownMenuItem<String>(
+          value: null,
+          child: Text(
+            'Semua Guru',
             style: GoogleFonts.hankenGrotesk(
-              fontSize: 13.sp,
-              color: Theme.of(context).colorScheme.onSurface,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
-            dropdownColor: Theme.of(context).colorScheme.surface,
-            items: [
-              DropdownMenuItem<String>(
-                value: null,
-                child: Text(
-                  'Semua Guru',
-                  style: GoogleFonts.hankenGrotesk(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+          ),
+        ),
+        ...teachers.map(
+          (teacher) => DropdownMenuItem<String>(
+            value: teacher.id,
+            child: Text(
+              teacher.name,
+              style: GoogleFonts.hankenGrotesk(
+                color: Theme.of(context).colorScheme.onSurface,
               ),
-              ...teachers.map(
-                (teacher) => DropdownMenuItem<String>(
-                  value: teacher.id,
-                  child: Text(
-                    teacher.name,
-                    style: GoogleFonts.hankenGrotesk(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-            onChanged: (value) => setState(() => _selectedTeacherId = value),
+            ),
           ),
         ),
       ],
+      onChanged: (value) => setState(() => _selectedTeacherId = value),
     );
   }
 
@@ -1272,7 +1260,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: groupedSchedules.length,
-      separatorBuilder: (context, _) => SizedBox(height: 10.h),
+      separatorBuilder: (context, _) => SizedBox(height: 8.h),
       itemBuilder: (context, index) {
         final scheduleGroup = groupedSchedules[index];
         final sched = scheduleGroup.primarySchedule;
@@ -1326,13 +1314,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 context.push('/admin/schedule/${sched.id}');
               }
             },
-            borderRadius: BorderRadius.circular(18.r),
+            borderRadius: BorderRadius.circular(14.r),
             child: Ink(
               decoration: BoxDecoration(
                 color: isDark
                     ? Theme.of(context).colorScheme.surface
                     : Colors.white,
-                borderRadius: BorderRadius.circular(18.r),
+                borderRadius: BorderRadius.circular(14.r),
                 border: Border.all(
                   color: isDark
                       ? const Color(0xFF334155)
@@ -1342,13 +1330,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
               child: Padding(
-                padding: EdgeInsets.all(14.w),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 9.h),
                 child: Row(
                   children: [
                     // Clean Teacher Avatar Frame
@@ -1359,11 +1347,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           color: isDark
                               ? const Color(0xFF334155)
                               : const Color(0xFFE2E8F0),
-                          width: 1.5,
+                          width: 1.2,
                         ),
                       ),
                       child: CircleAvatar(
-                        radius: 22.r,
+                        radius: 18.r,
                         backgroundColor: isDark
                             ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
                             : const Color(0xFFEEF2FF),
@@ -1380,12 +1368,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 color: isDark
                                     ? const Color(0xFF818CF8)
                                     : const Color(0xFF4F46E5),
-                                size: 22.r,
+                                size: 18.r,
                               )
                             : null,
                       ),
                     ),
-                    SizedBox(width: 14.w),
+                    SizedBox(width: 11.w),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1394,16 +1382,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           Text(
                             '${cls.name} • ${subj.name} (Jam $hoursStr)',
                             style: GoogleFonts.hankenGrotesk(
-                              fontSize: 13.5.sp,
+                              fontSize: 13.sp,
                               fontWeight: FontWeight.w800,
                               color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
-                          SizedBox(height: 3.h),
+                          SizedBox(height: 2.h),
                           Text(
                             'Guru: ${teacher.name}',
                             style: GoogleFonts.hankenGrotesk(
-                              fontSize: 12.sp,
+                              fontSize: 11.5.sp,
                               color: Theme.of(
                                 context,
                               ).colorScheme.onSurfaceVariant,
@@ -1425,11 +1413,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             child: Icon(
                               Icons.check_rounded,
                               color: Colors.white,
-                              size: 18.w,
+                              size: 16.w,
                             ),
                           )
                         : Container(
-                            padding: EdgeInsets.all(6.w),
+                            padding: EdgeInsets.all(5.w),
                             decoration: BoxDecoration(
                               color: isDark
                                   ? const Color(
@@ -1441,7 +1429,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             child: Icon(
                               Icons.access_time_filled_rounded,
                               color: const Color(0xFFE11D48),
-                              size: 16.w,
+                              size: 15.w,
                             ),
                           ),
                   ],
