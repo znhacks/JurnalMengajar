@@ -61,6 +61,8 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
   bool _isEditing = false;
   String? _selectedScheduleId;
   bool _isSaving = false;
+  String _teacherAttendanceStatus = 'hadir'; // 'hadir' | 'sakit' | 'izin'
+  bool _applyToAllSchedulesToday = false;
 
   @override
   void initState() {
@@ -210,6 +212,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           setState(() {
             _existingJournal = journalData;
             _isEditing = true;
+            _teacherAttendanceStatus = journalData.teacherAttendanceStatus;
             _materialController.text = journalData.material;
 
             // Parse structured note if it exists
@@ -298,6 +301,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           final draft = await CacheService().loadMap('draft_journal_$activeId');
           if (draft != null && mounted) {
             setState(() {
+              _teacherAttendanceStatus = draft['teacherAttendanceStatus']?.toString() ?? 'hadir';
               _materialController.text = draft['material']?.toString() ?? '';
               _noteController.text = draft['note']?.toString() ?? '';
               _sickNamesController.text = draft['sickNames']?.toString() ?? '';
@@ -333,6 +337,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     if (activeId.isEmpty || _isEditing) return;
 
     CacheService().save('draft_journal_$activeId', {
+      'teacherAttendanceStatus': _teacherAttendanceStatus,
       'material': _materialController.text,
       'note': _noteController.text,
       'sickNames': _sickNamesController.text,
@@ -424,11 +429,244 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     );
   }
 
+  void _showImageSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Pilih Sumber Foto',
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 12.h),
+              ListTile(
+                leading: Container(
+                  padding: EdgeInsets.all(8.r),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.camera_alt_rounded, color: Color(0xFF2563EB)),
+                ),
+                title: Text(
+                  'Ambil Foto dari Kamera',
+                  style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w600),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: EdgeInsets.all(8.r),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.photo_library_rounded, color: Color(0xFF10B981)),
+                ),
+                title: Text(
+                  'Pilih dari Galeri Foto / Dokumen',
+                  style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w600),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _submitForm(ScheduleModel schedule) async {
     if (_isSaving) return;
     setState(() => _isSaving = true);
 
     try {
+      final isAbsence = _teacherAttendanceStatus == 'sakit' || _teacherAttendanceStatus == 'izin';
+
+      if (isAbsence) {
+        final totalPhotos = _imageBytesList.length + _existingImageUrls.length;
+        if (totalPhotos < 1) {
+          AppHelper.showSnackBar(
+            context,
+            'Wajib melampirkan minimal 1 foto surat keterangan / izin!',
+            isError: true,
+          );
+          return;
+        }
+
+        final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        final effectiveSchoolId = authProvider.activeSchoolId ?? schedule.schoolId ?? _existingJournal?.schoolId;
+
+        final absenceLabel = _teacherAttendanceStatus == 'sakit'
+            ? '[GURU SAKIT] Surat Keterangan Dokter'
+            : '[GURU IZIN] Surat Izin / Dispensasi';
+
+        final customNote = _noteController.text.trim();
+        final finalNote = customNote.isNotEmpty ? 'Keterangan: $customNote' : null;
+
+        JournalAttachmentModel? attachment;
+        if (_imageBytesList.isNotEmpty) {
+          attachment = JournalAttachmentModel(
+            id: _existingJournal?.attachment?.id ?? 'ja_${DateTime.now().millisecondsSinceEpoch}',
+            filePath: _existingJournal?.attachment?.filePath ?? 'pending_upload',
+            fileType: 'image',
+            fileName: _imageNamesList.first,
+          );
+        } else if (_existingImageUrls.isNotEmpty) {
+          attachment = _existingJournal?.attachment;
+        }
+
+        if (_isEditing) {
+          final updatedJournal = JournalModel(
+            id: _existingJournal!.id,
+            scheduleId: schedule.id,
+            date: _existingJournal!.date,
+            teachingHour: schedule.teachingHour,
+            classId: schedule.classId,
+            subjectId: schedule.subjectId,
+            teacherId: schedule.teacherId,
+            material: absenceLabel,
+            sickCount: 0,
+            permissionCount: 0,
+            alphaCount: 0,
+            note: finalNote,
+            attachment: attachment,
+            status: 'pending',
+            attachmentUrl: _existingImageUrls.isNotEmpty ? _existingImageUrls.join(',') : null,
+            rejectionNote: null,
+            schoolId: effectiveSchoolId,
+            teacherAttendanceStatus: _teacherAttendanceStatus,
+          );
+
+          final success = await journalProvider.updateJournal(
+            updatedJournal,
+            imageBytesList: _imageBytesList,
+            imageNamesList: _imageNamesList,
+          );
+
+          if (success && mounted) {
+            AppHelper.showSnackBar(context, 'Surat keterangan berhasil diperbarui & dikirim!');
+            context.pop();
+          } else if (mounted) {
+            AppHelper.showSnackBar(
+              context,
+              journalProvider.errorMessage ?? 'Gagal memperbarui surat keterangan.',
+              isError: true,
+            );
+          }
+        } else {
+          final targetDate = widget.dateStr != null ? DateTime.parse(widget.dateStr!) : schedule.date;
+          final newJournal = JournalModel(
+            id: '',
+            scheduleId: schedule.id,
+            date: targetDate,
+            teachingHour: schedule.teachingHour,
+            classId: schedule.classId,
+            subjectId: schedule.subjectId,
+            teacherId: schedule.teacherId,
+            material: absenceLabel,
+            sickCount: 0,
+            permissionCount: 0,
+            alphaCount: 0,
+            note: finalNote,
+            attachment: attachment,
+            status: 'pending',
+            schoolId: effectiveSchoolId,
+            teacherAttendanceStatus: _teacherAttendanceStatus,
+          );
+
+          final success = await journalProvider.createJournal(
+            newJournal,
+            imageBytesList: _imageBytesList,
+            imageNamesList: _imageNamesList,
+          );
+
+          if (success && mounted) {
+            CacheService().remove('draft_journal_${schedule.id}');
+
+            // Multi-schedule batch apply if checked
+            if (_applyToAllSchedulesToday) {
+              final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+              final availableSchedules = scheduleProvider.cachedTeacherSchedules.where((s) {
+                if (!s.isActive) return false;
+                return s.date.year == targetDate.year &&
+                    s.date.month == targetDate.month &&
+                    s.date.day == targetDate.day;
+              }).toList();
+
+              final otherSchedules = availableSchedules.where((s) => s.id != schedule.id).toList();
+              if (otherSchedules.isNotEmpty) {
+                final created = await journalProvider.getJournalForSchedule(schedule.id, date: newJournal.date);
+                final uploadedUrl = created?.attachmentUrl;
+                final sharedAttachment = created?.attachment ?? attachment;
+
+                for (final otherSched in otherSchedules) {
+                  final existingOther = await journalProvider.getJournalForSchedule(otherSched.id, date: otherSched.date);
+                  if (existingOther == null) {
+                    final multiJournal = JournalModel(
+                      id: '',
+                      scheduleId: otherSched.id,
+                      date: otherSched.date,
+                      teachingHour: otherSched.teachingHour,
+                      classId: otherSched.classId,
+                      subjectId: otherSched.subjectId,
+                      teacherId: otherSched.teacherId,
+                      material: absenceLabel,
+                      sickCount: 0,
+                      permissionCount: 0,
+                      alphaCount: 0,
+                      note: finalNote,
+                      attachment: sharedAttachment,
+                      attachmentUrl: uploadedUrl,
+                      status: 'pending',
+                      schoolId: effectiveSchoolId,
+                      teacherAttendanceStatus: _teacherAttendanceStatus,
+                    );
+                    await journalProvider.createJournal(multiJournal);
+                  }
+                }
+              }
+            }
+
+            if (mounted) {
+              AppHelper.showSnackBar(
+                context,
+                _applyToAllSchedulesToday
+                    ? 'Surat ${_teacherAttendanceStatus == "sakit" ? "sakit" : "izin"} berhasil diterapkan untuk seluruh jadwal hari ini!'
+                    : 'Surat ${_teacherAttendanceStatus == "sakit" ? "sakit" : "izin"} berhasil dikirim untuk verifikasi!',
+              );
+              context.pop();
+            }
+          } else if (mounted) {
+            AppHelper.showSnackBar(
+              context,
+              journalProvider.errorMessage ?? 'Gagal menyimpan surat keterangan.',
+              isError: true,
+            );
+          }
+        }
+        return;
+      }
+
+      // Normal teaching journal flow (hadir)
       final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
       final sickNamesList = masterProvider.students
           .where((s) => _studentAttendance[s.id] == 'S')
@@ -533,6 +771,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 : null,
             rejectionNote: null, // Clear rejection note when revised!
             schoolId: effectiveSchoolId,
+            teacherAttendanceStatus: 'hadir',
           );
 
           final success = await journalProvider.updateJournal(
@@ -608,6 +847,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             attachment: attachment,
             status: 'pending',
             schoolId: effectiveSchoolId,
+            teacherAttendanceStatus: 'hadir',
           );
 
           final success = await journalProvider.createJournal(
@@ -880,37 +1120,11 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                     );
                   }
                 ),
-                SizedBox(height: 24.h),
-
-                // Materi Pembelajaran (Required)
-                Text(
-                  'Materi Pembelajaran *',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                SizedBox(height: 8.h),
-                TextFormField(
-                  controller: _materialController,
-                  maxLines: 4,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Materi pembelajaran tidak boleh kosong';
-                    }
-                    return null;
-                  },
-                  decoration: const InputDecoration(
-                    hintText:
-                        'Jelaskan secara ringkas materi yang diajarkan hari ini...',
-                  ),
-                ),
                 SizedBox(height: 20.h),
 
-                // Absensi Siswa
+                // Status Kehadiran Guru Selector
                 Text(
-                  'Absensi Siswa (Daftar Kelas)',
+                  'Status Kehadiran Guru *',
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
@@ -918,150 +1132,343 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                   ),
                 ),
                 SizedBox(height: 8.h),
-                // Attendance Summary Header Card
-                Builder(
-                  builder: (context) {
-                    final totalStudents = masterProvider.students.length;
-                    final totalHadir = masterProvider.students.where((s) => _studentAttendance[s.id] == 'H' || _studentAttendance[s.id] == null).length;
-                    final totalSakit = masterProvider.students.where((s) => _studentAttendance[s.id] == 'S').length;
-                    final totalIzin = masterProvider.students.where((s) => _studentAttendance[s.id] == 'I').length;
-                    final totalAlfa = masterProvider.students.where((s) => _studentAttendance[s.id] == 'A').length;
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildAttendanceTypeOption(
+                        context,
+                        id: 'hadir',
+                        label: 'Hadir',
+                        subtitle: 'Mengajar',
+                        icon: Icons.check_circle_outline_rounded,
+                        color: const Color(0xFF10B981),
+                        isSelected: _teacherAttendanceStatus == 'hadir',
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: _buildAttendanceTypeOption(
+                        context,
+                        id: 'izin',
+                        label: 'Izin',
+                        subtitle: 'Surat Izin',
+                        icon: Icons.assignment_outlined,
+                        color: const Color(0xFFF59E0B),
+                        isSelected: _teacherAttendanceStatus == 'izin',
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: _buildAttendanceTypeOption(
+                        context,
+                        id: 'sakit',
+                        label: 'Sakit',
+                        subtitle: 'Surat Dokter',
+                        icon: Icons.local_hospital_outlined,
+                        color: const Color(0xFFEF4444),
+                        isSelected: _teacherAttendanceStatus == 'sakit',
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16.h),
 
+                // Absence notification banner & multi-schedule toggle
+                if (_teacherAttendanceStatus != 'hadir') ...[
+                  Container(
+                    padding: EdgeInsets.all(14.w),
+                    decoration: BoxDecoration(
+                      color: _teacherAttendanceStatus == 'sakit'
+                          ? Colors.red.shade50
+                          : Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _teacherAttendanceStatus == 'sakit'
+                            ? Colors.red.shade200
+                            : Colors.amber.shade200,
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          _teacherAttendanceStatus == 'sakit'
+                              ? Icons.info_outline_rounded
+                              : Icons.mark_email_read_outlined,
+                          color: _teacherAttendanceStatus == 'sakit'
+                              ? Colors.red.shade700
+                              : Colors.amber.shade800,
+                          size: 22.sp,
+                        ),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _teacherAttendanceStatus == 'sakit'
+                                    ? 'Keterangan Sakit Guru'
+                                    : 'Keterangan Izin Guru',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontWeight: FontWeight.bold,
+                                  color: _teacherAttendanceStatus == 'sakit'
+                                      ? Colors.red.shade900
+                                      : Colors.amber.shade900,
+                                  fontSize: 13.sp,
+                                ),
+                              ),
+                              SizedBox(height: 4.h),
+                              Text(
+                                _teacherAttendanceStatus == 'sakit'
+                                    ? 'Anda tidak perlu mengisi materi atau absensi siswa. Cukup unggah foto Surat Keterangan Dokter di bawah.'
+                                    : 'Anda tidak perlu mengisi materi atau absensi siswa. Cukup unggah foto Surat Izin / Dispensasi di bawah.',
+                                style: GoogleFonts.hankenGrotesk(
+                                  color: _teacherAttendanceStatus == 'sakit'
+                                      ? Colors.red.shade800
+                                      : Colors.amber.shade900,
+                                  fontSize: 12.sp,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (availableSchedules.length > 1) ...[
+                    SizedBox(height: 10.h),
+                    Builder(
+                      builder: (context) {
+                        final isDark = Theme.of(context).brightness == Brightness.dark;
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                : const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(10.r),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF3B82F6) : const Color(0xFF93C5FD),
+                            ),
+                          ),
+                          child: CheckboxListTile(
+                            value: _applyToAllSchedulesToday,
+                            onChanged: (val) {
+                              setState(() {
+                                _applyToAllSchedulesToday = val ?? false;
+                              });
+                            },
+                            activeColor: const Color(0xFF2563EB),
+                            title: Text(
+                              'Terapkan surat ini untuk semua jadwal hari ini (${availableSchedules.length} jadwal)',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 12.5.sp,
+                                fontWeight: FontWeight.w700,
+                                color: isDark ? Colors.white : const Color(0xFF1E40AF),
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Foto surat yang sama akan otomatis diterapkan ke semua jam mengajar Anda hari ini.',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 11.sp,
+                                color: isDark ? Colors.grey[300] : const Color(0xFF3B82F6),
+                              ),
+                            ),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            dense: true,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                          ),
+                        );
+                      }
+                    ),
+                  ],
+                  SizedBox(height: 16.h),
+                ],
+
+                // Normal Teaching Inputs (Only when hadir)
+                if (_teacherAttendanceStatus == 'hadir') ...[
+                  // Materi Pembelajaran (Required)
+                  Text(
+                    'Materi Pembelajaran *',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  TextFormField(
+                    controller: _materialController,
+                    maxLines: 4,
+                    validator: (value) {
+                      if (_teacherAttendanceStatus == 'hadir' && (value == null || value.trim().isEmpty)) {
+                        return 'Materi pembelajaran tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      hintText:
+                          'Jelaskan secara ringkas materi yang diajarkan hari ini...',
+                    ),
+                  ),
+                  SizedBox(height: 20.h),
+
+                  // Absensi Siswa
+                  Text(
+                    'Absensi Siswa (Daftar Kelas)',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  // Attendance Summary Header Card
+                  Builder(
+                    builder: (context) {
+                      final totalStudents = masterProvider.students.length;
+                      final totalHadir = masterProvider.students.where((s) => _studentAttendance[s.id] == 'H' || _studentAttendance[s.id] == null).length;
+                      final totalSakit = masterProvider.students.where((s) => _studentAttendance[s.id] == 'S').length;
+                      final totalIzin = masterProvider.students.where((s) => _studentAttendance[s.id] == 'I').length;
+                      final totalAlfa = masterProvider.students.where((s) => _studentAttendance[s.id] == 'A').length;
+
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
+
+                      return Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Theme.of(context).colorScheme.surfaceContainerHighest
+                              : const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildSummaryItem('Total', '$totalStudents', Theme.of(context).colorScheme.onSurface),
+                            _buildSummaryItem('Hadir', '$totalHadir', const Color(0xFF10B981)),
+                            _buildSummaryItem('Sakit', '$totalSakit', const Color(0xFF2563EB)),
+                            _buildSummaryItem('Izin', '$totalIzin', const Color(0xFFF59E0B)),
+                            _buildSummaryItem('Alfa', '$totalAlfa', Colors.red),
+                          ],
+                        ),
+                      );
+                    }
+                  ),
+                  SizedBox(height: 12.h),
+                  // Students List
+                  Builder(builder: (context) {
                     final isDark = Theme.of(context).brightness == Brightness.dark;
-
                     return Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                      constraints: BoxConstraints(maxHeight: 280.h),
                       decoration: BoxDecoration(
-                        color: isDark
-                            ? Theme.of(context).colorScheme.surfaceContainerHighest
-                            : const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(8.r),
+                        color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                         ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildSummaryItem('Total', '$totalStudents', Theme.of(context).colorScheme.onSurface),
-                          _buildSummaryItem('Hadir', '$totalHadir', const Color(0xFF10B981)),
-                          _buildSummaryItem('Sakit', '$totalSakit', const Color(0xFF2563EB)),
-                          _buildSummaryItem('Izin', '$totalIzin', const Color(0xFFF59E0B)),
-                          _buildSummaryItem('Alfa', '$totalAlfa', Colors.red),
-                        ],
-                      ),
-                    );
-                  }
-                ),
-                SizedBox(height: 12.h),
-                // Students List
-                Builder(builder: (context) {
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
-                  return Container(
-                    constraints: BoxConstraints(maxHeight: 280.h),
-                    decoration: BoxDecoration(
-                      color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                      ),
-                    ),
-                    child: masterProvider.students.isEmpty
-                        ? Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(16.w),
-                              child: Text(
-                                'Tidak ada siswa terdaftar di kelas ini',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  fontSize: 13.sp,
+                      child: masterProvider.students.isEmpty
+                          ? Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.w),
+                                child: Text(
+                                  'Tidak ada siswa terdaftar di kelas ini',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    fontSize: 13.sp,
+                                  ),
                                 ),
                               ),
-                            ),
-                          )
-                        : ListView.separated(
-                            shrinkWrap: true,
-                            padding: EdgeInsets.all(10.w),
-                            itemCount: masterProvider.students.length,
-                            separatorBuilder: (context, _) => Divider(
-                              height: 8,
-                              color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
-                            ),
-                            itemBuilder: (context, index) {
-                              final student = masterProvider.students[index];
-                              final status = _studentAttendance[student.id] ?? 'H';
+                            )
+                          : ListView.separated(
+                              shrinkWrap: true,
+                              padding: EdgeInsets.all(10.w),
+                              itemCount: masterProvider.students.length,
+                              separatorBuilder: (context, _) => Divider(
+                                height: 8,
+                                color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                              ),
+                              itemBuilder: (context, index) {
+                                final student = masterProvider.students[index];
+                                final status = _studentAttendance[student.id] ?? 'H';
 
-                              return Padding(
-                                padding: EdgeInsets.symmetric(vertical: 4.h),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            student.name,
-                                            style: GoogleFonts.hankenGrotesk(
-                                              fontSize: 12.5.sp,
-                                              fontWeight: FontWeight.w700,
-                                              color: Theme.of(context).colorScheme.onSurface,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          if (student.nis != null && student.nis!.isNotEmpty)
+                                return Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 4.h),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
                                             Text(
-                                              'NIS: ${student.nis}',
+                                              student.name,
                                               style: GoogleFonts.hankenGrotesk(
-                                                fontSize: 10.sp,
-                                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                fontSize: 12.5.sp,
+                                                fontWeight: FontWeight.w700,
+                                                color: Theme.of(context).colorScheme.onSurface,
                                               ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
+                                            if (student.nis != null && student.nis!.isNotEmpty)
+                                              Text(
+                                                'NIS: ${student.nis}',
+                                                style: GoogleFonts.hankenGrotesk(
+                                                  fontSize: 10.sp,
+                                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(width: 8.w),
+                                      // H, S, I, A Status Toggle Buttons
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          _buildStatusToggle(context, 'H', status == 'H', const Color(0xFF10B981), () {
+                                            setState(() {
+                                              _studentAttendance[student.id] = 'H';
+                                            });
+                                          }),
+                                          SizedBox(width: 4.w),
+                                          _buildStatusToggle(context, 'S', status == 'S', const Color(0xFF2563EB), () {
+                                            setState(() {
+                                              _studentAttendance[student.id] = 'S';
+                                            });
+                                          }),
+                                          SizedBox(width: 4.w),
+                                          _buildStatusToggle(context, 'I', status == 'I', const Color(0xFFF59E0B), () {
+                                            setState(() {
+                                              _studentAttendance[student.id] = 'I';
+                                            });
+                                          }),
+                                          SizedBox(width: 4.w),
+                                          _buildStatusToggle(context, 'A', status == 'A', Colors.red, () {
+                                            setState(() {
+                                              _studentAttendance[student.id] = 'A';
+                                            });
+                                          }),
                                         ],
                                       ),
-                                    ),
-                                    SizedBox(width: 8.w),
-                                    // H, S, I, A Status Toggle Buttons
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        _buildStatusToggle(context, 'H', status == 'H', const Color(0xFF10B981), () {
-                                          setState(() {
-                                            _studentAttendance[student.id] = 'H';
-                                          });
-                                        }),
-                                        SizedBox(width: 4.w),
-                                        _buildStatusToggle(context, 'S', status == 'S', const Color(0xFF2563EB), () {
-                                          setState(() {
-                                            _studentAttendance[student.id] = 'S';
-                                          });
-                                        }),
-                                        SizedBox(width: 4.w),
-                                        _buildStatusToggle(context, 'I', status == 'I', const Color(0xFFF59E0B), () {
-                                          setState(() {
-                                            _studentAttendance[student.id] = 'I';
-                                          });
-                                        }),
-                                        SizedBox(width: 4.w),
-                                        _buildStatusToggle(context, 'A', status == 'A', Colors.red, () {
-                                          setState(() {
-                                            _studentAttendance[student.id] = 'A';
-                                          });
-                                        }),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                  );
-                }),
-                SizedBox(height: 24.h),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                    );
+                  }),
+                  SizedBox(height: 24.h),
+                ],
 
-                // Catatan Mengajar
+                // Catatan
                 Text(
-                  'Catatan Pembelajaran',
+                  _teacherAttendanceStatus == 'hadir'
+                      ? 'Catatan Pembelajaran'
+                      : 'Keterangan Tambahan (Opsional)',
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
@@ -1072,18 +1479,21 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 TextFormField(
                   controller: _noteController,
                   maxLines: 3,
-                  decoration: const InputDecoration(
-                    hintText:
-                        'Catatan tambahan seperti siswa yang tidak kondusif, kendala sarana, dll (Opsional)...',
+                  decoration: InputDecoration(
+                    hintText: _teacherAttendanceStatus == 'hadir'
+                        ? 'Catatan tambahan seperti siswa yang tidak kondusif, kendala sarana, dll (Opsional)...'
+                        : 'Tuliskan alasan sakit / izin atau catatan untuk admin/kepala sekolah...',
                   ),
                 ),
                 SizedBox(height: 20.h),
 
-                // Lampiran Jurnal
+                // Lampiran Jurnal / Lampiran Surat
                 Row(
                   children: [
                     Text(
-                      'Lampiran Foto',
+                      _teacherAttendanceStatus == 'hadir'
+                          ? 'Lampiran Foto Kegiatan'
+                          : 'Foto Surat Keterangan / Izin',
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.bold,
@@ -1102,7 +1512,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  'Tambahkan foto bukti kegiatan mengajar (1 - 3 foto)',
+                  _teacherAttendanceStatus == 'hadir'
+                      ? 'Tambahkan foto bukti kegiatan mengajar (1 - 3 foto)'
+                      : 'Lampirkan foto surat dokter / surat izin resmi (1 - 3 foto)',
                   style: TextStyle(
                     fontSize: 11.sp,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -1143,7 +1555,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                       // Add button slot
                       if (canAdd)
                         InkWell(
-                          onTap: () => _pickImage(ImageSource.camera),
+                          onTap: _showImageSourceDialog,
                           borderRadius: BorderRadius.circular(10),
                           child: Container(
                             width: 80.w,
@@ -1163,11 +1575,18 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.add_a_photo_outlined,
-                                    size: 22.r, color: const Color(0xFF2563EB)),
+                                Icon(
+                                  _teacherAttendanceStatus == 'hadir'
+                                      ? Icons.add_a_photo_outlined
+                                      : Icons.upload_file_outlined,
+                                  size: 22.r,
+                                  color: const Color(0xFF2563EB),
+                                ),
                                 SizedBox(height: 4.h),
                                 Text(
-                                  'Tambah\nFoto',
+                                  _teacherAttendanceStatus == 'hadir'
+                                      ? 'Tambah\nFoto'
+                                      : 'Unggah\nSurat',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     fontSize: 9.sp,
@@ -1187,6 +1606,14 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 // Submit Button
                 ElevatedButton(
                   onPressed: isLoading ? null : () => _submitForm(schedule!),
+                  style: _teacherAttendanceStatus != 'hadir'
+                      ? ElevatedButton.styleFrom(
+                          backgroundColor: _teacherAttendanceStatus == 'sakit'
+                              ? const Color(0xFFEF4444)
+                              : const Color(0xFFF59E0B),
+                          foregroundColor: Colors.white,
+                        )
+                      : null,
                   child: isLoading
                       ? SizedBox(
                           height: 24.w,
@@ -1199,12 +1626,90 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                           ),
                         )
                       : Text(
-                          _isEditing ? 'Kirim Revisi Jurnal' : 'Simpan Jurnal',
+                          _isEditing
+                              ? 'Kirim Revisi Jurnal'
+                              : (_teacherAttendanceStatus == 'sakit'
+                                  ? 'Kirim Surat Keterangan Sakit'
+                                  : (_teacherAttendanceStatus == 'izin'
+                                      ? 'Kirim Surat Izin'
+                                      : 'Simpan Jurnal')),
                         ),
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttendanceTypeOption(
+    BuildContext context, {
+    required String id,
+    required String label,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required bool isSelected,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _teacherAttendanceStatus = id;
+        });
+      },
+      borderRadius: BorderRadius.circular(12.r),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? color.withValues(alpha: isDark ? 0.25 : 0.12)
+              : (isDark ? Theme.of(context).colorScheme.surface : Colors.white),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: isSelected ? color : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.15),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : null,
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? color : Theme.of(context).colorScheme.onSurfaceVariant,
+              size: 22.sp,
+            ),
+            SizedBox(height: 6.h),
+            Text(
+              label,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 13.sp,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: isSelected ? color : Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            SizedBox(height: 2.h),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 10.sp,
+                color: isSelected ? color.withValues(alpha: 0.9) : Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -107,20 +107,63 @@ class DetailJurnalScreen extends StatelessWidget {
                         ),
                       ),
                       SizedBox(width: 16.w),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                        decoration: BoxDecoration(
-                          color: AppHelper.getStatusColor(journal.status).withValues(alpha: isDark ? 0.2 : 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          AppHelper.getStatusLabel(journal.status),
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: AppHelper.getStatusColor(journal.status),
-                            fontWeight: FontWeight.bold,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                            decoration: BoxDecoration(
+                              color: AppHelper.getStatusColor(journal.status).withValues(alpha: isDark ? 0.2 : 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              AppHelper.getStatusLabel(journal.status),
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: AppHelper.getStatusColor(journal.status),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                        ),
+                          if (journal.isTeacherAbsence) ...[
+                            SizedBox(height: 6.h),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                              decoration: BoxDecoration(
+                                color: journal.isTeacherSick
+                                    ? const Color(0xFFEF4444).withValues(alpha: isDark ? 0.25 : 0.12)
+                                    : const Color(0xFFF59E0B).withValues(alpha: isDark ? 0.25 : 0.12),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: journal.isTeacherSick
+                                      ? const Color(0xFFEF4444).withValues(alpha: 0.5)
+                                      : const Color(0xFFF59E0B).withValues(alpha: 0.5),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    journal.isTeacherSick
+                                        ? Icons.local_hospital_rounded
+                                        : Icons.assignment_outlined,
+                                    size: 12.sp,
+                                    color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B),
+                                  ),
+                                  SizedBox(width: 4.w),
+                                  Text(
+                                    journal.isTeacherSick ? 'Guru Sakit' : 'Guru Izin',
+                                    style: TextStyle(
+                                      fontSize: 11.sp,
+                                      color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
@@ -147,69 +190,130 @@ class DetailJurnalScreen extends StatelessWidget {
               ),
               SizedBox(height: 16.h),
 
-              // Materi Pembelajaran
-              Card(
-                margin: EdgeInsets.zero,
-                color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
-                child: Padding(
-                  padding: EdgeInsets.all(16.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Materi Pembelajaran',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
+              // Teacher Absence Card OR Normal Material + Attendance
+              if (journal.isTeacherAbsence) ...[
+                Card(
+                  margin: EdgeInsets.zero,
+                  color: journal.isTeacherSick
+                      ? (isDark ? const Color(0xFF450A0A).withValues(alpha: 0.4) : const Color(0xFFFEF2F2))
+                      : (isDark ? const Color(0xFF78350F).withValues(alpha: 0.3) : const Color(0xFFFFFBEB)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: journal.isTeacherSick
+                          ? (isDark ? const Color(0xFF991B1B) : const Color(0xFFFECACA))
+                          : (isDark ? const Color(0xFF92400E) : const Color(0xFFFDE68A)),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(16.w),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          journal.isTeacherSick ? Icons.medical_services_outlined : Icons.assignment_outlined,
+                          color: journal.isTeacherSick ? const Color(0xFFDC2626) : const Color(0xFFD97706),
+                          size: 24.sp,
                         ),
-                      ),
-                      SizedBox(height: 8.h),
-                      Text(
-                        journal.material,
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85),
-                          height: 1.5,
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                journal.isTeacherSick
+                                    ? 'Keterangan Sakit Guru (Surat Terlampir)'
+                                    : 'Keterangan Izin Guru (Surat Terlampir)',
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: journal.isTeacherSick
+                                      ? (isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B))
+                                      : (isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E)),
+                                ),
+                              ),
+                              SizedBox(height: 6.h),
+                              Text(
+                                journal.material,
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(height: 16.h),
+                SizedBox(height: 16.h),
+              ] else ...[
+                // Materi Pembelajaran
+                Card(
+                  margin: EdgeInsets.zero,
+                  color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+                  child: Padding(
+                    padding: EdgeInsets.all(16.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Materi Pembelajaran',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
+                        Text(
+                          journal.material,
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85),
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16.h),
 
-              // Absensi Siswa
-              Card(
-                margin: EdgeInsets.zero,
-                color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
-                child: Padding(
-                  padding: EdgeInsets.all(16.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Kehadiran Siswa',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
+                // Absensi Siswa
+                Card(
+                  margin: EdgeInsets.zero,
+                  color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+                  child: Padding(
+                    padding: EdgeInsets.all(16.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Kehadiran Siswa',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 16.h),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildAbsentStats(context, 'Sakit', journal.sickCount, Colors.amber),
-                          _buildAbsentStats(context, 'Izin', journal.permissionCount, Colors.blue),
-                          _buildAbsentStats(context, 'Alpha', journal.alphaCount, Colors.red),
-                        ],
-                      ),
-                    ],
+                        SizedBox(height: 16.h),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildAbsentStats(context, 'Sakit', journal.sickCount, Colors.amber),
+                            _buildAbsentStats(context, 'Izin', journal.permissionCount, Colors.blue),
+                            _buildAbsentStats(context, 'Alpha', journal.alphaCount, Colors.red),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(height: 16.h),
+                SizedBox(height: 16.h),
+              ],
 
               // Catatan
               Card(
@@ -221,7 +325,7 @@ class DetailJurnalScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Catatan Guru',
+                        journal.isTeacherAbsence ? 'Catatan / Alasan' : 'Catatan Guru',
                         style: TextStyle(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.bold,
@@ -253,7 +357,9 @@ class DetailJurnalScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Lampiran Dokumen',
+                        journal.isTeacherAbsence
+                            ? (journal.isTeacherSick ? 'Lampiran Surat Dokter' : 'Lampiran Surat Izin')
+                            : 'Lampiran Dokumen',
                         style: TextStyle(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.bold,

@@ -157,30 +157,69 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                                       ),
                                     ),
                                   ),
-                                  Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                                    decoration: BoxDecoration(
-                                      color: isDark
-                                          ? const Color(0xFF78350F).withValues(alpha: 0.4)
-                                          : const Color(0xFFFEF3C7),
-                                      borderRadius: BorderRadius.circular(20.r),
-                                      border: Border.all(
-                                        color: isDark
-                                            ? const Color(0xFF92400E)
-                                            : const Color(0xFFFDE68A),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (journal.isTeacherAbsence) ...[
+                                        Container(
+                                          margin: EdgeInsets.only(right: 6.w),
+                                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                                          decoration: BoxDecoration(
+                                            color: journal.isTeacherSick
+                                                ? (isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.5) : const Color(0xFFFEE2E2))
+                                                : (isDark ? const Color(0xFF78350F).withValues(alpha: 0.5) : const Color(0xFFFEF3C7)),
+                                            borderRadius: BorderRadius.circular(20.r),
+                                            border: Border.all(
+                                              color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                journal.isTeacherSick ? Icons.local_hospital_rounded : Icons.assignment_outlined,
+                                                size: 11.sp,
+                                                color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFD97706),
+                                              ),
+                                              SizedBox(width: 3.w),
+                                              Text(
+                                                journal.isTeacherSick ? 'SAKIT' : 'IZIN',
+                                                style: GoogleFonts.hankenGrotesk(
+                                                  fontSize: 9.5.sp,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFD97706),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                      Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                                        decoration: BoxDecoration(
+                                          color: isDark
+                                              ? const Color(0xFF78350F).withValues(alpha: 0.4)
+                                              : const Color(0xFFFEF3C7),
+                                          borderRadius: BorderRadius.circular(20.r),
+                                          border: Border.all(
+                                            color: isDark
+                                                ? const Color(0xFF92400E)
+                                                : const Color(0xFFFDE68A),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'MENUNGGU',
+                                          style: GoogleFonts.hankenGrotesk(
+                                            fontSize: 10.sp,
+                                            color: isDark
+                                                ? const Color(0xFFFDE68A)
+                                                : const Color(0xFFD97706),
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                    child: Text(
-                                      'MENUNGGU',
-                                      style: GoogleFonts.hankenGrotesk(
-                                        fontSize: 10.sp,
-                                        color: isDark
-                                            ? const Color(0xFFFDE68A)
-                                            : const Color(0xFFD97706),
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.3,
-                                      ),
-                                    ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -231,11 +270,15 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                               ),
 
                               Text(
-                                'Materi Diajarkan:',
+                                journal.isTeacherAbsence
+                                    ? (journal.isTeacherSick ? 'Surat Keterangan Sakit Guru:' : 'Surat Keterangan Izin Guru:')
+                                    : 'Materi Diajarkan:',
                                 style: GoogleFonts.hankenGrotesk(
                                   fontSize: 12.sp,
                                   fontWeight: FontWeight.w800,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  color: journal.isTeacherAbsence
+                                      ? (journal.isTeacherSick ? const Color(0xFFDC2626) : const Color(0xFFD97706))
+                                      : Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                               SizedBox(height: 6.h),
@@ -243,25 +286,62 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                                 width: double.infinity,
                                 padding: EdgeInsets.all(12.w),
                                 decoration: BoxDecoration(
-                                  color: isDark
-                                      ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                      : const Color(0xFFF8FAFC),
+                                  color: journal.isTeacherAbsence
+                                      ? (journal.isTeacherSick
+                                          ? (isDark ? const Color(0xFF450A0A).withValues(alpha: 0.3) : const Color(0xFFFEF2F2))
+                                          : (isDark ? const Color(0xFF78350F).withValues(alpha: 0.3) : const Color(0xFFFFFBEB)))
+                                      : (isDark
+                                          ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                          : const Color(0xFFF8FAFC)),
                                   borderRadius: BorderRadius.circular(12.r),
                                   border: Border.all(
-                                    color: isDark
-                                        ? const Color(0xFF334155)
-                                        : const Color(0xFFE2E8F0),
+                                    color: journal.isTeacherAbsence
+                                        ? (journal.isTeacherSick
+                                            ? (isDark ? const Color(0xFF991B1B) : const Color(0xFFFECACA))
+                                            : (isDark ? const Color(0xFF92400E) : const Color(0xFFFDE68A)))
+                                        : (isDark
+                                            ? const Color(0xFF334155)
+                                            : const Color(0xFFE2E8F0)),
                                   ),
                                 ),
-                                child: Text(
-                                  journal.material,
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 12.5.sp,
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                    height: 1.4,
-                                  ),
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      journal.material,
+                                      style: GoogleFonts.hankenGrotesk(
+                                        fontSize: 12.5.sp,
+                                        fontWeight: journal.isTeacherAbsence ? FontWeight.w700 : FontWeight.normal,
+                                        color: journal.isTeacherAbsence
+                                            ? (journal.isTeacherSick ? const Color(0xFFDC2626) : const Color(0xFFB45309))
+                                            : Theme.of(context).colorScheme.onSurface,
+                                        height: 1.4,
+                                      ),
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if (journal.isTeacherAbsence) ...[
+                                      SizedBox(height: 4.h),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.attach_file_rounded,
+                                            size: 13.sp,
+                                            color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFD97706),
+                                          ),
+                                          SizedBox(width: 4.w),
+                                          Text(
+                                            'Lampiran surat tersedia untuk ditinjau',
+                                            style: GoogleFonts.hankenGrotesk(
+                                              fontSize: 11.sp,
+                                              fontStyle: FontStyle.italic,
+                                              color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFD97706),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ),
                               Divider(

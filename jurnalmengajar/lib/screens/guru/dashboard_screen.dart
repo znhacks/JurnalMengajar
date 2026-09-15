@@ -1767,6 +1767,27 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       ),
                       if (matchingJournal != null) ...[
                         SizedBox(width: 6.w),
+                        if (matchingJournal.isTeacherAbsence) ...[
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 6.w,
+                              vertical: 2.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: (matchingJournal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B)).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6.r),
+                            ),
+                            child: Text(
+                              matchingJournal.isTeacherSick ? 'Sakit' : 'Izin',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 9.sp,
+                                fontWeight: FontWeight.w700,
+                                color: matchingJournal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 4.w),
+                        ],
                         Container(
                           padding: EdgeInsets.symmetric(
                             horizontal: 6.w,
@@ -2076,24 +2097,46 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  _buildAttendancePill(
-                                    'S',
-                                    journal.sickCount,
-                                    const Color(0xFFD97706),
-                                  ),
-                                  SizedBox(width: 3.w),
-                                  _buildAttendancePill(
-                                    'I',
-                                    journal.permissionCount,
-                                    const Color(0xFF2563EB),
-                                  ),
-                                  SizedBox(width: 3.w),
-                                  _buildAttendancePill(
-                                    'A',
-                                    journal.alphaCount,
-                                    const Color(0xFFDC2626),
-                                  ),
-                                  SizedBox(width: 6.w),
+                                  if (journal.isTeacherAbsence) ...[
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 7.w,
+                                        vertical: 2.h,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: (journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B)).withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(5.r),
+                                      ),
+                                      child: Text(
+                                        journal.isTeacherSick ? 'Surat Sakit' : 'Surat Izin',
+                                        style: GoogleFonts.hankenGrotesk(
+                                          fontSize: 9.sp,
+                                          fontWeight: FontWeight.w700,
+                                          color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFD97706),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 4.w),
+                                  ] else ...[
+                                    _buildAttendancePill(
+                                      'S',
+                                      journal.sickCount,
+                                      const Color(0xFFD97706),
+                                    ),
+                                    SizedBox(width: 3.w),
+                                    _buildAttendancePill(
+                                      'I',
+                                      journal.permissionCount,
+                                      const Color(0xFF2563EB),
+                                    ),
+                                    SizedBox(width: 3.w),
+                                    _buildAttendancePill(
+                                      'A',
+                                      journal.alphaCount,
+                                      const Color(0xFFDC2626),
+                                    ),
+                                    SizedBox(width: 6.w),
+                                  ],
                                   Container(
                                     padding: EdgeInsets.symmetric(
                                       horizontal: 7.w,
@@ -2211,23 +2254,49 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         ),
                       ],
                     ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 7.w,
-                        vertical: 2.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(5.r),
-                      ),
-                      child: Text(
-                        AppHelper.getStatusLabel(journal.status),
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 9.sp,
-                          color: statusColor,
-                          fontWeight: FontWeight.w700,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (journal.isTeacherAbsence) ...[
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 7.w,
+                              vertical: 2.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: (journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B)).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(5.r),
+                            ),
+                            child: Text(
+                              journal.isTeacherSick ? 'Surat Sakit' : 'Surat Izin',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 9.sp,
+                                fontWeight: FontWeight.w700,
+                                color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFD97706),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 4.w),
+                        ],
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 7.w,
+                            vertical: 2.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(5.r),
+                          ),
+                          child: Text(
+                            AppHelper.getStatusLabel(journal.status),
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 9.sp,
+                              color: statusColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),

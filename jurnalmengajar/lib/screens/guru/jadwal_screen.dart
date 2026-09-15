@@ -752,7 +752,30 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     Color statusBadgeBg = isDark ? const Color(0xFF334155).withValues(alpha: 0.5) : const Color(0xFFF1F5F9);
     Color statusBadgeTextColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
-    if (journalStatus == 'verified') {
+    if (matchingJournal != null && matchingJournal.isTeacherAbsence) {
+      if (matchingJournal.status == 'verified') {
+        nodeColor = const Color(0xFF10B981);
+        nodeIcon = Icons.check;
+        statusBadgeText = matchingJournal.isTeacherSick ? 'Sakit (Disetujui)' : 'Izin (Disetujui)';
+        statusBadgeBg = const Color(0xFF10B981).withValues(alpha: isDark ? 0.2 : 0.12);
+        statusBadgeTextColor = const Color(0xFF10B981);
+      } else if (matchingJournal.status == 'pending') {
+        nodeColor = matchingJournal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B);
+        nodeIcon = matchingJournal.isTeacherSick ? Icons.local_hospital_rounded : Icons.assignment_outlined;
+        statusBadgeText = matchingJournal.isTeacherSick ? 'Sakit (Menunggu)' : 'Izin (Menunggu)';
+        statusBadgeBg = (matchingJournal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B)).withValues(alpha: isDark ? 0.2 : 0.12);
+        statusBadgeTextColor = matchingJournal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B);
+      } else if (matchingJournal.status == 'rejected') {
+        nodeColor = const Color(0xFFEF4444);
+        nodeIcon = Icons.priority_high_rounded;
+        statusBadgeText = 'Surat Ditolak';
+        statusBadgeBg = Colors.red.withValues(alpha: isDark ? 0.2 : 0.12);
+        statusBadgeTextColor = Colors.red;
+      } else {
+        nodeColor = isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB);
+        nodeIcon = null;
+      }
+    } else if (journalStatus == 'verified') {
       nodeColor = const Color(0xFF10B981); // Green for ACC
       nodeIcon = Icons.check;
       statusBadgeText = 'Disetujui';

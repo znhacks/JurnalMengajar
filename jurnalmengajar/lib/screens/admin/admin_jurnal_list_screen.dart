@@ -771,24 +771,63 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                             ),
                           ),
                           SizedBox(width: 8.w),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 10.w, vertical: 4.h),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? statusColor.withValues(alpha: 0.25)
-                                  : statusColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              AppHelper.getStatusLabel(journal.status),
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 10.sp,
-                                color: statusColor,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.2,
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (journal.isTeacherAbsence) ...[
+                                Container(
+                                  margin: EdgeInsets.only(right: 6.w),
+                                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                                  decoration: BoxDecoration(
+                                    color: journal.isTeacherSick
+                                        ? (isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.5) : const Color(0xFFFEE2E2))
+                                        : (isDark ? const Color(0xFF78350F).withValues(alpha: 0.5) : const Color(0xFFFEF3C7)),
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(
+                                      color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        journal.isTeacherSick ? Icons.local_hospital_rounded : Icons.assignment_outlined,
+                                        size: 11.sp,
+                                        color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFD97706),
+                                      ),
+                                      SizedBox(width: 3.w),
+                                      Text(
+                                        journal.isTeacherSick ? 'SAKIT' : 'IZIN',
+                                        style: GoogleFonts.hankenGrotesk(
+                                          fontSize: 9.sp,
+                                          color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFD97706),
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 10.w, vertical: 4.h),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? statusColor.withValues(alpha: 0.25)
+                                      : statusColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  AppHelper.getStatusLabel(journal.status),
+                                  style: GoogleFonts.hankenGrotesk(
+                                    fontSize: 10.sp,
+                                    color: statusColor,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         ],
                       ),
@@ -819,16 +858,30 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? Theme.of(context).colorScheme.surfaceContainerHighest
-                              : const Color(0xFFF8FAFC),
+                          color: journal.isTeacherAbsence
+                              ? (journal.isTeacherSick
+                                  ? (isDark ? const Color(0xFF450A0A).withValues(alpha: 0.3) : const Color(0xFFFEF2F2))
+                                  : (isDark ? const Color(0xFF78350F).withValues(alpha: 0.3) : const Color(0xFFFFFBEB)))
+                              : (isDark
+                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                  : const Color(0xFFF8FAFC)),
                           borderRadius: BorderRadius.circular(8),
+                          border: journal.isTeacherAbsence
+                              ? Border.all(
+                                  color: journal.isTeacherSick
+                                      ? (isDark ? const Color(0xFF991B1B) : const Color(0xFFFECACA))
+                                      : (isDark ? const Color(0xFF92400E) : const Color(0xFFFDE68A)),
+                                )
+                              : null,
                         ),
                         child: Text(
                           journal.material,
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 12.sp,
-                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: journal.isTeacherAbsence ? FontWeight.w600 : FontWeight.normal,
+                            color: journal.isTeacherAbsence
+                                ? (journal.isTeacherSick ? const Color(0xFFDC2626) : const Color(0xFFB45309))
+                                : Theme.of(context).colorScheme.onSurface,
                             height: 1.4,
                           ),
                           maxLines: 2,
