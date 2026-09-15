@@ -511,7 +511,7 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
           runSpacing: 12.h,
           children: [
             SizedBox(
-              width: isNarrow ? (constraints.maxWidth - 12.w) / 2 : (constraints.maxWidth - 36.w) / 4,
+              width: isNarrow ? ((constraints.maxWidth - 12.w) / 2 - 0.5) : ((constraints.maxWidth - 36.w) / 4 - 0.5),
               child: _buildKpiCard(
                 title: 'Tingkat Disiplin',
                 value: '${onTimeRate.toStringAsFixed(1)}%',
@@ -522,7 +522,7 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
               ),
             ),
             SizedBox(
-              width: isNarrow ? (constraints.maxWidth - 12.w) / 2 : (constraints.maxWidth - 36.w) / 4,
+              width: isNarrow ? ((constraints.maxWidth - 12.w) / 2 - 0.5) : ((constraints.maxWidth - 36.w) / 4 - 0.5),
               child: _buildKpiCard(
                 title: 'Tepat Waktu',
                 value: '$totalOnTime',
@@ -533,7 +533,7 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
               ),
             ),
             SizedBox(
-              width: isNarrow ? (constraints.maxWidth - 12.w) / 2 : (constraints.maxWidth - 36.w) / 4,
+              width: isNarrow ? ((constraints.maxWidth - 12.w) / 2 - 0.5) : ((constraints.maxWidth - 36.w) / 4 - 0.5),
               child: _buildKpiCard(
                 title: 'Terlambat',
                 value: '$totalLate',
@@ -544,7 +544,7 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
               ),
             ),
             SizedBox(
-              width: isNarrow ? (constraints.maxWidth - 12.w) / 2 : (constraints.maxWidth - 36.w) / 4,
+              width: isNarrow ? ((constraints.maxWidth - 12.w) / 2 - 0.5) : ((constraints.maxWidth - 36.w) / 4 - 0.5),
               child: _buildKpiCard(
                 title: 'Belum Terisi',
                 value: '$totalUnsubmitted',
@@ -1011,7 +1011,7 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
     required int totalCount,
   }) {
     return Container(
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(kIsWeb ? 16.w : 12.w),
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(16.r),
@@ -1078,6 +1078,7 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
           // Category Filter Chips
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
             child: Row(
               children: [
                 _buildCategoryChip('Semua (${stats.length})', TeacherFilterCategory.all, isDark, primaryColor),
@@ -1202,7 +1203,7 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
       child: Column(
         children: [
           Padding(
-            padding: EdgeInsets.all(14.w),
+            padding: EdgeInsets.symmetric(horizontal: kIsWeb ? 14.w : 12.w, vertical: 12.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1303,45 +1304,48 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
                 ],
 
                 // Detail Metrics Strip
-                Row(
-                  children: [
-                    _buildStatPill('Tepat Waktu', '${stat.onTimeCount}', const Color(0xFF10B981)),
-                    SizedBox(width: 8.w),
-                    _buildStatPill('Terlambat', '${stat.lateCount}', const Color(0xFFF59E0B)),
-                    SizedBox(width: 8.w),
-                    _buildStatPill('Belum Diisi', '${stat.unsubmittedCount}', const Color(0xFFEF4444)),
-                    const Spacer(),
-                    if (stat.lateCount > 0)
-                      InkWell(
-                        onTap: () {
-                          setState(() {
-                            if (isExpanded) {
-                              _expandedTeacherIds.remove(stat.teacher.id);
-                            } else {
-                              _expandedTeacherIds.add(stat.teacher.id);
-                            }
-                          });
-                        },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isWide = constraints.maxWidth >= 520;
+
+                    if (isWide) {
+                      return Row(
+                        children: [
+                          _buildStatPill('Tepat Waktu', '${stat.onTimeCount}', const Color(0xFF10B981)),
+                          SizedBox(width: 8.w),
+                          _buildStatPill('Terlambat', '${stat.lateCount}', const Color(0xFFF59E0B)),
+                          SizedBox(width: 8.w),
+                          _buildStatPill('Belum Diisi', '${stat.unsubmittedCount}', const Color(0xFFEF4444)),
+                          const Spacer(),
+                          if (stat.lateCount > 0)
+                            _buildExpandButton(stat, isExpanded, primaryColor),
+                        ],
+                      );
+                    }
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          spacing: 6.w,
+                          runSpacing: 6.h,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            Text(
-                              isExpanded ? 'Tutup Rincian' : 'Rincian Telat (${stat.lateCount})',
-                              style: TextStyle(
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.w600,
-                                color: primaryColor,
-                              ),
-                            ),
-                            Icon(
-                              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                              size: 16.r,
-                              color: primaryColor,
-                            ),
+                            _buildStatPill('Tepat Waktu', '${stat.onTimeCount}', const Color(0xFF10B981)),
+                            _buildStatPill('Terlambat', '${stat.lateCount}', const Color(0xFFF59E0B)),
+                            _buildStatPill('Belum Diisi', '${stat.unsubmittedCount}', const Color(0xFFEF4444)),
                           ],
                         ),
-                      ),
-                  ],
+                        if (stat.lateCount > 0) ...[
+                          SizedBox(height: 8.h),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: _buildExpandButton(stat, isExpanded, primaryColor),
+                          ),
+                        ],
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
@@ -1351,7 +1355,7 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
           if (isExpanded && stat.lateJournals.isNotEmpty) ...[
             const Divider(height: 1),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+              padding: EdgeInsets.symmetric(horizontal: kIsWeb ? 14.w : 12.w, vertical: 10.h),
               decoration: BoxDecoration(
                 color: isDark ? Colors.grey[900] : const Color(0xFFF1F5F9),
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(14.r)),
@@ -1391,6 +1395,7 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
                                 ),
                               ),
                             ),
+                            SizedBox(width: 6.w),
                             Container(
                               padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                               decoration: BoxDecoration(
@@ -1416,6 +1421,47 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildExpandButton(
+    TeacherPunctualityStat stat,
+    bool isExpanded,
+    Color primaryColor,
+  ) {
+    return InkWell(
+      onTap: () {
+        setState(() {
+          if (isExpanded) {
+            _expandedTeacherIds.remove(stat.teacher.id);
+          } else {
+            _expandedTeacherIds.add(stat.teacher.id);
+          }
+        });
+      },
+      borderRadius: BorderRadius.circular(6.r),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              isExpanded ? 'Tutup Rincian' : 'Rincian Telat (${stat.lateCount})',
+              style: TextStyle(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w600,
+                color: primaryColor,
+              ),
+            ),
+            SizedBox(width: 2.w),
+            Icon(
+              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+              size: 16.r,
+              color: primaryColor,
+            ),
+          ],
+        ),
       ),
     );
   }
