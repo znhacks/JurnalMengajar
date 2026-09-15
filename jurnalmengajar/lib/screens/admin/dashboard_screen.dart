@@ -160,6 +160,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
     final journalProvider = context.watch<JournalProvider>();
+    context.watch<HolidayProvider>();
     final schoolSchedules = scheduleProvider.schedules;
     final schoolJournals = journalProvider.journals;
 
@@ -822,12 +823,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,
-        border: hasSchedule
+        border: isHoliday
             ? Border.all(
-                color: const Color(0xFFF59E0B),
+                color: const Color(0xFFEF4444),
                 width: isSelected ? 2.0 : 1.5,
               )
-            : null,
+            : hasSchedule
+                ? Border.all(
+                    color: const Color(0xFFF59E0B),
+                    width: isSelected ? 2.0 : 1.5,
+                  )
+                : null,
       ),
       alignment: Alignment.center,
       child: Text(
@@ -1218,14 +1224,84 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     JournalProvider journalProvider,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final holidayProvider = Provider.of<HolidayProvider>(
+      context,
+      listen: false,
+    );
+    final holiday = holidayProvider.getHolidayForDate(_selectedDay);
 
     if (schedulesForDay.isEmpty) {
+      if (holiday != null) {
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(vertical: 18.h, horizontal: 16.w),
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0xFF7F1D1D).withValues(alpha: 0.25)
+                : const Color(0xFFFEF2F2),
+            borderRadius: BorderRadius.circular(14.r),
+            border: Border.all(
+              color: isDark
+                  ? const Color(0xFF991B1B)
+                  : const Color(0xFFFCA5A5),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFDC2626),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.event_busy_rounded,
+                  color: Colors.white,
+                  size: 20.r,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'HARI LIBUR: ${holiday.title.toUpperCase()}',
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w800,
+                        color: isDark
+                            ? const Color(0xFFFCA5A5)
+                            : const Color(0xFF991B1B),
+                      ),
+                    ),
+                    if (holiday.description != null &&
+                        holiday.description!.isNotEmpty) ...[
+                      SizedBox(height: 2.h),
+                      Text(
+                        holiday.description!,
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 11.5.sp,
+                          color: isDark
+                              ? const Color(0xFFFECACA)
+                              : const Color(0xFFB91C1C),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
       return Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: 28.h, horizontal: 16.w),
+        padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 16.w),
         decoration: BoxDecoration(
           color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(14.r),
           border: Border.all(
             color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
           ),
@@ -1236,7 +1312,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             Icon(
               Icons.event_available_rounded,
               color: const Color(0xFF94A3B8),
-              size: 38.w,
+              size: 36.w,
             ),
             SizedBox(height: 8.h),
             Text(
@@ -1256,7 +1332,57 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       schedulesForDay.cast<ScheduleModel>(),
     );
 
-    return ListView.separated(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (holiday != null) ...[
+          Container(
+            width: double.infinity,
+            margin: EdgeInsets.only(bottom: 8.h),
+            padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 12.w),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF7F1D1D).withValues(alpha: 0.25)
+                  : const Color(0xFFFEF2F2),
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(
+                color: isDark
+                    ? const Color(0xFF991B1B)
+                    : const Color(0xFFFCA5A5),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(6.w),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFDC2626),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.event_busy_rounded,
+                    color: Colors.white,
+                    size: 16.r,
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Text(
+                    'HARI LIBUR: ${holiday.title.toUpperCase()}',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 12.5.sp,
+                      fontWeight: FontWeight.w800,
+                      color: isDark
+                          ? const Color(0xFFFCA5A5)
+                          : const Color(0xFF991B1B),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: groupedSchedules.length,
@@ -1439,6 +1565,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
         );
       },
-    );
+    ),
+  ],
+);
   }
 }
+

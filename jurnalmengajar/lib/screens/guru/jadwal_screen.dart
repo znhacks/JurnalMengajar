@@ -175,12 +175,17 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,
-        border: hasSchedule
+        border: isHoliday
             ? Border.all(
-                color: const Color(0xFFF59E0B),
+                color: const Color(0xFFEF4444),
                 width: isSelected ? 2.0 : 1.5,
               )
-            : null,
+            : hasSchedule
+                ? Border.all(
+                    color: const Color(0xFFF59E0B),
+                    width: isSelected ? 2.0 : 1.5,
+                  )
+                : null,
       ),
       alignment: Alignment.center,
       child: Text(

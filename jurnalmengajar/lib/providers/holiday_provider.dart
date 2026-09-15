@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/holiday_model.dart';
+import '../core/utils/helper.dart';
 
 class HolidayProvider with ChangeNotifier {
   List<HolidayModel> _holidays = [];
@@ -17,7 +18,10 @@ class HolidayProvider with ChangeNotifier {
     notifyListeners();
     try {
       final supabase = Supabase.instance.client;
-      String? targetSchoolId = schoolId;
+      final cleanId = AppHelper.parseSingleCleanSchoolId(schoolId);
+      String? targetSchoolId = (cleanId != null && cleanId.isNotEmpty)
+          ? cleanId
+          : schoolId?.trim();
 
       if (targetSchoolId == null || targetSchoolId.isEmpty || targetSchoolId == 'a1111111-1111-1111-1111-111111111111') {
         final schoolRes = await supabase.from('schools').select('id').limit(1).maybeSingle();
@@ -61,13 +65,16 @@ class HolidayProvider with ChangeNotifier {
     notifyListeners();
     try {
       final supabase = Supabase.instance.client;
-      String? targetSchoolId = schoolId;
+      final cleanId = AppHelper.parseSingleCleanSchoolId(schoolId);
+      String? targetSchoolId = (cleanId != null && cleanId.isNotEmpty)
+          ? cleanId
+          : schoolId?.trim();
 
       // Dynamically fetch actual valid school_id from DB if passed dummy UUID
       final schoolRes = await supabase.from('schools').select('id').limit(1).maybeSingle();
       if (schoolRes != null) {
         final dbSchoolId = schoolRes['id'] as String?;
-        if (targetSchoolId == null || targetSchoolId == 'a1111111-1111-1111-1111-111111111111') {
+        if (targetSchoolId == null || targetSchoolId.isEmpty || targetSchoolId == 'a1111111-1111-1111-1111-111111111111') {
           targetSchoolId = dbSchoolId;
         }
       }
@@ -117,7 +124,7 @@ class HolidayProvider with ChangeNotifier {
         debugPrint('Note: soft-deleting school journals during addHoliday: $e');
       }
 
-      await loadHolidays(schoolId);
+      await loadHolidays(targetSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
@@ -135,6 +142,8 @@ class HolidayProvider with ChangeNotifier {
     notifyListeners();
     try {
       final supabase = Supabase.instance.client;
+      final cleanId = AppHelper.parseSingleCleanSchoolId(schoolId);
+      final targetSchoolId = (cleanId != null && cleanId.isNotEmpty) ? cleanId : schoolId.trim();
 
       // Restore journals if dates are provided, scoped to this school
       if (startDate != null && endDate != null) {
@@ -145,7 +154,7 @@ class HolidayProvider with ChangeNotifier {
           final classesRes = await supabase
               .from('classes')
               .select('id')
-              .eq('school_id', schoolId);
+              .eq('school_id', targetSchoolId);
           final classIds = (classesRes as List)
               .map((c) => c['id'] as String)
               .where((id) => id.isNotEmpty)
@@ -168,7 +177,7 @@ class HolidayProvider with ChangeNotifier {
       }
 
       await supabase.from('school_holidays').delete().eq('id', holidayId);
-      await loadHolidays(schoolId);
+      await loadHolidays(targetSchoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
