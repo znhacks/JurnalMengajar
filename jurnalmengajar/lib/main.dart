@@ -147,15 +147,35 @@ class _JurnalMengajarAppState extends State<JurnalMengajarApp> {
     // Wrap with ScreenUtilInit for fully responsive UI sizes across different screens
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth > 600;
+        final width = constraints.maxWidth;
+        final height = constraints.maxHeight;
+
+        final Size designSize;
+        if (width < 600) {
+          // HP / Mobile Phone: preserve exact original mobile canvas
+          designSize = const Size(360, 690);
+        } else if (width < 1024) {
+          // Tablet (Web & Native): use tablet-proportional canvas
+          final isPortrait = height >= width;
+          designSize = isPortrait ? const Size(768, 1024) : const Size(1024, 768);
+        } else {
+          // Laptop / Desktop PC: preserve exact desktop canvas
+          designSize = kIsWeb
+              ? const Size(1280, 800)
+              : Size(width, height);
+        }
+
         return ScreenUtilInit(
-          designSize: isDesktop
-              ? (kIsWeb
-                  ? const Size(1280, 800) // Fixed design size on Web to prevent page/route reload on zoom/resize
-                  : Size(constraints.maxWidth, constraints.maxHeight))
-              : const Size(360, 690),
+          designSize: designSize,
           minTextAdapt: true,
           splitScreenMode: true,
+          fontSizeResolver: (fontSize, instance) {
+            // Guardrail: Never allow font size to scale below 1.0 (designed size)
+            // preventing microscopic text on tablets while keeping phone and laptop scaling intact
+            final scale = instance.scaleText;
+            final effectiveScale = scale < 1.0 ? 1.0 : scale;
+            return fontSize * effectiveScale;
+          },
           builder: (context, child) {
             final themeProvider = Provider.of<ThemeProvider>(context);
             return MaterialApp.router(

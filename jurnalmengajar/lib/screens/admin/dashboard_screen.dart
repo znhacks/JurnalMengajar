@@ -642,6 +642,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTabletOrDesktop = screenWidth >= 600;
 
     return Material(
       color: Colors.transparent,
@@ -649,7 +651,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16.r),
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 12.h),
+          padding: EdgeInsets.symmetric(
+            horizontal: isTabletOrDesktop ? 10.w : 6.w,
+            vertical: isTabletOrDesktop ? 14.h : 12.h,
+          ),
           decoration: BoxDecoration(
             color: isDark
                 ? Theme.of(context).colorScheme.surfaceContainerHighest
@@ -673,19 +678,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             children: [
               // Icon Container
               Container(
-                padding: EdgeInsets.all(7.w),
+                padding: EdgeInsets.all(isTabletOrDesktop ? 9.w : 7.w),
                 decoration: BoxDecoration(
                   color: isDark ? accentColor.withValues(alpha: 0.2) : bgColor,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: accentColor, size: 16.w),
+                child: Icon(
+                  icon,
+                  color: accentColor,
+                  size: isTabletOrDesktop ? 20.w : 16.w,
+                ),
               ),
-              SizedBox(height: 8.h),
+              SizedBox(height: isTabletOrDesktop ? 10.h : 8.h),
               // Count Number
               Text(
                 count,
                 style: GoogleFonts.hankenGrotesk(
-                  fontSize: 18.sp,
+                  fontSize: isTabletOrDesktop ? 20.sp : 18.sp,
                   fontWeight: FontWeight.w800,
                   color: Theme.of(context).colorScheme.onSurface,
                   height: 1.1,
@@ -697,7 +706,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               Text(
                 title,
                 style: GoogleFonts.hankenGrotesk(
-                  fontSize: 10.5.sp,
+                  fontSize: isTabletOrDesktop ? 12.sp : 10.5.sp,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w700,
                   height: 1.1,
