@@ -56,6 +56,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
     }
 
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
     final Color cardBg = Theme.of(context).colorScheme.surface;
     final Color cardBorder = Theme.of(context).colorScheme.outlineVariant;
     final Color textPrimary = Theme.of(context).colorScheme.onSurface;
@@ -324,7 +325,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                   borderRadius: BorderRadius.circular(16.r),
                   border: Border.all(color: cardBorder),
                 ),
-                padding: EdgeInsets.all(12.w),
+                padding: EdgeInsets.all(isLandscape ? 12 : 12.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -336,7 +337,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                         color: textPrimary,
                       ),
                     ),
-                    SizedBox(height: 10.h),
+                    SizedBox(height: isLandscape ? 8 : 10.h),
                     Row(
                       children: [
                         Expanded(
@@ -345,6 +346,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                             color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF10B981),
                             bgColor: isDark ? const Color(0xFF10B981).withValues(alpha: 0.15) : const Color(0xFFE8F5E9),
                             value: '$disetujuiCount',
+                            isLandscape: isLandscape,
                           ),
                         ),
                         SizedBox(width: 8.w),
@@ -354,6 +356,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                             color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
                             bgColor: isDark ? const Color(0xFF2563EB).withValues(alpha: 0.15) : const Color(0xFFEBF5FF),
                             value: '$pendingCount',
+                            isLandscape: isLandscape,
                           ),
                         ),
                         SizedBox(width: 8.w),
@@ -363,6 +366,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                             color: isDark ? const Color(0xFFF87171) : Colors.red,
                             bgColor: isDark ? const Color(0xFFDC2626).withValues(alpha: 0.15) : const Color(0xFFFFEBEE),
                             value: '$ditolakCount',
+                            isLandscape: isLandscape,
                           ),
                         ),
                       ],
@@ -379,7 +383,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                   borderRadius: BorderRadius.circular(16.r),
                   border: Border.all(color: cardBorder),
                 ),
-                padding: EdgeInsets.all(12.w),
+                padding: EdgeInsets.all(isLandscape ? 12 : 12.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -391,7 +395,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                         color: textPrimary,
                       ),
                     ),
-                    SizedBox(height: 10.h),
+                    SizedBox(height: isLandscape ? 8 : 10.h),
                     Row(
                       children: [
                         Expanded(
@@ -400,6 +404,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                             value: sakitCount,
                             bgColor: isDark ? const Color(0xFFD97706).withValues(alpha: 0.15) : const Color(0xFFFEF3C7),
                             textColor: isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+                            isLandscape: isLandscape,
                           ),
                         ),
                         SizedBox(width: 8.w),
@@ -409,6 +414,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                             value: izinCount,
                             bgColor: isDark ? const Color(0xFF0284C7).withValues(alpha: 0.15) : const Color(0xFFE0F2FE),
                             textColor: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
+                            isLandscape: isLandscape,
                           ),
                         ),
                         SizedBox(width: 8.w),
@@ -418,6 +424,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                             value: alphaCount,
                             bgColor: isDark ? const Color(0xFFDC2626).withValues(alpha: 0.15) : const Color(0xFFFEE2E2),
                             textColor: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                            isLandscape: isLandscape,
                           ),
                         ),
                       ],
@@ -539,18 +546,26 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
     required Color color,
     required Color bgColor,
     required String value,
+    bool isLandscape = false,
   }) {
     return Container(
+      constraints: isLandscape ? const BoxConstraints(minHeight: 64.0) : null,
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(12.r),
       ),
-      padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 4.w),
+      padding: isLandscape
+          ? const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0)
+          : EdgeInsets.symmetric(vertical: 8.h, horizontal: 4.w),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 14.w),
-          SizedBox(height: 6.h),
+          Icon(
+            icon,
+            color: color,
+            size: isLandscape ? 18.0 : 14.w,
+          ),
+          SizedBox(height: isLandscape ? 6.0 : 6.h),
           Text(
             value,
             style: GoogleFonts.hankenGrotesk(
@@ -569,13 +584,17 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
     required int value,
     required Color bgColor,
     required Color textColor,
+    bool isLandscape = false,
   }) {
     return Container(
+      constraints: isLandscape ? const BoxConstraints(minHeight: 64.0) : null,
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(12.r),
       ),
-      padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 6.w),
+      padding: isLandscape
+          ? const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0)
+          : EdgeInsets.symmetric(vertical: 10.h, horizontal: 6.w),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -587,7 +606,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
               color: textColor,
             ),
           ),
-          SizedBox(height: 4.h),
+          SizedBox(height: isLandscape ? 6.0 : 4.h),
           Text(
             '$value',
             style: GoogleFonts.hankenGrotesk(
