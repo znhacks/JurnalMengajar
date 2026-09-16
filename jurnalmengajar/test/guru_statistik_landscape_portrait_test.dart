@@ -86,10 +86,6 @@ class FakePeriodRepo implements PeriodRepository {
   Future<void> delete(String id) async {}
   @override
   Future<void> deleteMultiple(List<String> ids) async {}
-  @override
-  Future<void> setActivePeriod(String id, [String? schoolId]) async {}
-  @override
-  Future<PeriodModel?> getActivePeriod([String? schoolId]) async => null;
 }
 
 class FakeSubjectRepo implements SubjectRepository {
