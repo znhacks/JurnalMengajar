@@ -52,7 +52,7 @@ class AdminTeacherStatisticsScreen extends StatefulWidget {
 class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScreen> {
   final TextEditingController _searchController = TextEditingController();
   StatTimeFilter _timeFilter = StatTimeFilter.all;
-  TeacherFilterCategory _categoryFilter = TeacherFilterCategory.all;
+  final Set<TeacherFilterCategory> _selectedCategories = {TeacherFilterCategory.all};
   String _searchQuery = '';
   final Set<String> _expandedTeacherIds = {};
 
@@ -237,16 +237,21 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
         if (!matchesName && !matchesPos) return false;
       }
 
-      switch (_categoryFilter) {
-        case TeacherFilterCategory.onTime:
-          return s.onTimeRate >= 80.0 && s.totalJournals > 0;
-        case TeacherFilterCategory.lateOnly:
-          return s.lateCount > 0;
-        case TeacherFilterCategory.unsubmittedOnly:
-          return s.unsubmittedCount > 0;
-        case TeacherFilterCategory.all:
-          return true;
+      if (_selectedCategories.contains(TeacherFilterCategory.all)) {
+        return true;
       }
+
+      bool matchesCategory = false;
+      if (_selectedCategories.contains(TeacherFilterCategory.onTime)) {
+        if (s.onTimeRate >= 80.0 && s.totalJournals > 0) matchesCategory = true;
+      }
+      if (_selectedCategories.contains(TeacherFilterCategory.lateOnly)) {
+        if (s.lateCount > 0) matchesCategory = true;
+      }
+      if (_selectedCategories.contains(TeacherFilterCategory.unsubmittedOnly)) {
+        if (s.unsubmittedCount > 0) matchesCategory = true;
+      }
+      return matchesCategory;
     }).toList();
 
     // Urutkan default: Guru yang memiliki aktivitas jurnal & jadwal di atas
@@ -1081,7 +1086,7 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
             physics: const BouncingScrollPhysics(),
             child: Row(
               children: [
-                _buildCategoryChip('Semua (${stats.length})', TeacherFilterCategory.all, isDark, primaryColor),
+                _buildCategoryChip('Semua ($totalCount)', TeacherFilterCategory.all, isDark, primaryColor),
                 SizedBox(width: 8.w),
                 _buildCategoryChip('Tepat Waktu (≥80%)', TeacherFilterCategory.onTime, isDark, const Color(0xFF10B981)),
                 SizedBox(width: 8.w),
@@ -1134,9 +1139,27 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
   }
 
   Widget _buildCategoryChip(String label, TeacherFilterCategory category, bool isDark, Color activeColor) {
-    final isSelected = _categoryFilter == category;
+    final isSelected = _selectedCategories.contains(category);
     return InkWell(
-      onTap: () => setState(() => _categoryFilter = category),
+      onTap: () {
+        setState(() {
+          if (category == TeacherFilterCategory.all) {
+            _selectedCategories
+              ..clear()
+              ..add(TeacherFilterCategory.all);
+          } else {
+            _selectedCategories.remove(TeacherFilterCategory.all);
+            if (_selectedCategories.contains(category)) {
+              _selectedCategories.remove(category);
+              if (_selectedCategories.isEmpty) {
+                _selectedCategories.add(TeacherFilterCategory.all);
+              }
+            } else {
+              _selectedCategories.add(category);
+            }
+          }
+        });
+      },
       borderRadius: BorderRadius.circular(20.r),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
