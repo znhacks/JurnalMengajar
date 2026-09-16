@@ -149,7 +149,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           maxDays: maxDays,
           masterProvider: masterProvider,
         );
-        await warningProvider.loadTeacherWarningLetters(teacher.id, authProvider.activeSchoolId);
+        await warningProvider.loadTeacherWarningLetters(
+          teacher.id,
+          authProvider.activeSchoolId,
+        );
 
         if (!_hasCheckedReminder) {
           _hasCheckedReminder = true;
@@ -352,14 +355,18 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 13.sp,
                                       fontWeight: FontWeight.w700,
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
                                     ),
                                   ),
                                   Text(
                                     subject.name,
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 11.sp,
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ],
@@ -438,18 +445,25 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     );
 
     final today = DateTime.now();
-    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ?? authProvider.activeSchoolId?.trim();
+    final cleanActiveSchoolId =
+        AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
+        authProvider.activeSchoolId?.trim();
 
     final scheduledDateKeys = <String>{};
     for (final s in scheduleProvider.cachedTeacherSchedules) {
       if (!s.isActive) continue;
       if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
-        final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
-        if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+        final sSchoolId =
+            AppHelper.parseSingleCleanSchoolId(s.schoolId) ??
+            s.schoolId?.trim();
+        if (sSchoolId != null &&
+            sSchoolId.isNotEmpty &&
+            sSchoolId != cleanActiveSchoolId) {
           continue;
         }
       }
-      final key = '${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}';
+      final key =
+          '${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}';
       scheduledDateKeys.add(key);
     }
 
@@ -457,8 +471,12 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         .where((s) {
           if (!s.isActive) return false;
           if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
-            final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
-            if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+            final sSchoolId =
+                AppHelper.parseSingleCleanSchoolId(s.schoolId) ??
+                s.schoolId?.trim();
+            if (sSchoolId != null &&
+                sSchoolId.isNotEmpty &&
+                sSchoolId != cleanActiveSchoolId) {
               return false;
             }
           }
@@ -585,7 +603,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                         holiday.description != null &&
                                                 holiday.description!.isNotEmpty
                                             ? holiday.description!
-                                            : 'KBM ditiadakan. Anda tidak perlu mengisikan jurnal mengajar.',
+                                            : 'KBM ditiadakan. Anda tidak perlu mengisikan jurnal.',
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 11.sp,
                                           color: const Color(0xFFB91C1C),
@@ -750,14 +768,17 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     borderRadius: BorderRadius.circular(50.r),
                     child: Builder(
                       builder: (context) {
-                        final authUser = context.watch<AuthProvider>().currentUser;
-                        final displayPhoto = (authUser?.photoUrl != null &&
+                        final authUser = context
+                            .watch<AuthProvider>()
+                            .currentUser;
+                        final displayPhoto =
+                            (authUser?.photoUrl != null &&
                                 authUser!.photoUrl!.startsWith('http'))
                             ? authUser.photoUrl
                             : (teacher.photoUrl != null &&
-                                    teacher.photoUrl!.startsWith('http')
-                                ? teacher.photoUrl
-                                : null);
+                                      teacher.photoUrl!.startsWith('http')
+                                  ? teacher.photoUrl
+                                  : null);
 
                         return displayPhoto != null
                             ? Image.network(
@@ -846,21 +867,18 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
               final isDark = Theme.of(context).brightness == Brightness.dark;
 
               final switcherWidget = Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 14.w,
-                  vertical: 8.h,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(14.r),
                   border: Border.all(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(
-                        0xFF4F7CFF,
-                      ).withValues(alpha: 0.06),
+                      color: const Color(0xFF4F7CFF).withValues(alpha: 0.06),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -956,7 +974,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                           end: Alignment.bottomRight,
                         )
                       : null,
-                  color: isSelected ? null : Theme.of(context).colorScheme.surface,
+                  color: isSelected
+                      ? null
+                      : Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(24.r),
                   border: Border.all(
                     color: isSelected
@@ -976,7 +996,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         ]
                       : [
                           BoxShadow(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.02),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.02),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -987,7 +1009,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 12.5.sp,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                    color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.surface
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -1021,7 +1045,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant, width: 1.5),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant,
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF4F7CFF).withValues(alpha: 0.08),
@@ -1066,7 +1093,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 ),
                 borderRadius: BorderRadius.circular(10.r),
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 4.h,
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -1147,7 +1177,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   date.month == _selectedDay.month &&
                   date.day == _selectedDay.day;
               final isSunday = date.weekday == DateTime.sunday;
-              final dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+              final dateKey =
+                  '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
               final hasSchedule = scheduledDateKeys.contains(dateKey);
 
               BoxDecoration circleDecoration;
@@ -1223,7 +1254,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 // 3. DATE WITH TEACHING SCHEDULE (TARGET SCREENSHOT 2)
                 // Yellow circle / outline around the date number
                 circleDecoration = BoxDecoration(
-                  color: const Color(0xFFFEF3C7).withValues(alpha: isDark ? 0.22 : 0.45),
+                  color: const Color(
+                    0xFFFEF3C7,
+                  ).withValues(alpha: isDark ? 0.22 : 0.45),
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: const Color(0xFFF59E0B),
@@ -1239,7 +1272,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 );
                 textColor = isSunday
                     ? const Color(0xFFEF4444)
-                    : (isDark ? const Color(0xFFFDE047) : const Color(0xFFD97706));
+                    : (isDark
+                          ? const Color(0xFFFDE047)
+                          : const Color(0xFFD97706));
                 fontWeight = FontWeight.w700;
                 bottomIndicator = SizedBox(height: 3.h);
               } else {
@@ -1301,7 +1336,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         return StatefulBuilder(
           builder: (dialogCtx, setDialogState) {
             return Dialog(
-              insetPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
+              insetPadding: EdgeInsets.symmetric(
+                horizontal: 16.w,
+                vertical: 24.h,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20.r),
               ),
@@ -1334,7 +1372,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       locale: 'id_ID',
                       daysOfWeekHeight: 30.h,
                       rowHeight: 44.h,
-                      firstDay: DateTime.now().subtract(const Duration(days: 365)),
+                      firstDay: DateTime.now().subtract(
+                        const Duration(days: 365),
+                      ),
                       lastDay: DateTime.now().add(const Duration(days: 365)),
                       focusedDay: focused,
                       calendarFormat: CalendarFormat.month,
@@ -1423,14 +1463,17 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     required Set<String> scheduledDateKeys,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dateKey = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+    final dateKey =
+        '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
     final hasSchedule = scheduledDateKeys.contains(dateKey);
     final isSunday = day.weekday == DateTime.sunday;
 
     Color bgColor = Colors.transparent;
     Color textColor = isOutside
         ? (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
-        : (isSunday ? const Color(0xFFEF4444) : Theme.of(context).colorScheme.onSurface);
+        : (isSunday
+              ? const Color(0xFFEF4444)
+              : Theme.of(context).colorScheme.onSurface);
     FontWeight fontWeight = FontWeight.w500;
     BoxBorder? border;
 
@@ -1531,7 +1574,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(10.r),
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant, width: 1.0),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+            width: 1.0,
+          ),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF4F7CFF).withValues(alpha: 0.05),
@@ -1623,7 +1669,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(10.r),
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
         child: Center(
           child: Text(
@@ -1774,7 +1822,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                               vertical: 2.h,
                             ),
                             decoration: BoxDecoration(
-                              color: (matchingJournal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B)).withValues(alpha: 0.12),
+                              color:
+                                  (matchingJournal.isTeacherSick
+                                          ? const Color(0xFFEF4444)
+                                          : const Color(0xFFF59E0B))
+                                      .withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(6.r),
                             ),
                             child: Text(
@@ -1782,7 +1834,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 9.sp,
                                 fontWeight: FontWeight.w700,
-                                color: matchingJournal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B),
+                                color: matchingJournal.isTeacherSick
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFFF59E0B),
                               ),
                             ),
                           ),
@@ -1943,7 +1997,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(10.r),
-              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
             child: Center(
               child: Column(
@@ -1959,7 +2015,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w700,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                   SizedBox(height: 4.h),
@@ -2081,14 +2139,18 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                   Icon(
                                     Icons.calendar_today_rounded,
                                     size: 11.5.sp,
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
                                   ),
                                   SizedBox(width: 5.w),
                                   Text(
                                     AppHelper.formatDateShort(journal.date),
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 11.5.sp,
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -2104,15 +2166,25 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                         vertical: 2.h,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: (journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B)).withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(5.r),
+                                        color:
+                                            (journal.isTeacherSick
+                                                    ? const Color(0xFFEF4444)
+                                                    : const Color(0xFFF59E0B))
+                                                .withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(
+                                          5.r,
+                                        ),
                                       ),
                                       child: Text(
-                                        journal.isTeacherSick ? 'Surat Sakit' : 'Surat Izin',
+                                        journal.isTeacherSick
+                                            ? 'Surat Sakit'
+                                            : 'Surat Izin',
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 9.sp,
                                           fontWeight: FontWeight.w700,
-                                          color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFD97706),
+                                          color: journal.isTeacherSick
+                                              ? const Color(0xFFEF4444)
+                                              : const Color(0xFFD97706),
                                         ),
                                       ),
                                     ),
@@ -2143,7 +2215,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                       vertical: 2.h,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: statusColor.withValues(alpha: 0.10),
+                                      color: statusColor.withValues(
+                                        alpha: 0.10,
+                                      ),
                                       borderRadius: BorderRadius.circular(5.r),
                                     ),
                                     child: Text(
@@ -2181,7 +2255,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 11.5.sp,
                               fontWeight: FontWeight.w500,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -2248,7 +2324,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                           AppHelper.formatDateShort(journal.date),
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 11.sp,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -2264,15 +2342,23 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                               vertical: 2.h,
                             ),
                             decoration: BoxDecoration(
-                              color: (journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B)).withValues(alpha: 0.15),
+                              color:
+                                  (journal.isTeacherSick
+                                          ? const Color(0xFFEF4444)
+                                          : const Color(0xFFF59E0B))
+                                      .withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(5.r),
                             ),
                             child: Text(
-                              journal.isTeacherSick ? 'Surat Sakit' : 'Surat Izin',
+                              journal.isTeacherSick
+                                  ? 'Surat Sakit'
+                                  : 'Surat Izin',
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 9.sp,
                                 fontWeight: FontWeight.w700,
-                                color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFD97706),
+                                color: journal.isTeacherSick
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFFD97706),
                               ),
                             ),
                           ),
