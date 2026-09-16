@@ -422,6 +422,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
     final journalProvider = context.watch<JournalProvider>();
+    final holidayProvider = context.watch<HolidayProvider>();
 
     final currentUser = authProvider.currentUser;
     if (currentUser == null) {
@@ -450,6 +451,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         authProvider.activeSchoolId?.trim();
 
     final scheduledDateKeys = <String>{};
+    final completedDateKeys = <String>{};
+    final Map<String, List<ScheduleModel>> schedulesByDate = {};
+
     for (final s in scheduleProvider.cachedTeacherSchedules) {
       if (!s.isActive) continue;
       if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
@@ -465,6 +469,31 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       final key =
           '${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}';
       scheduledDateKeys.add(key);
+      schedulesByDate.putIfAbsent(key, () => []).add(s);
+    }
+
+    for (final entry in schedulesByDate.entries) {
+      final key = entry.key;
+      final list = entry.value;
+      final grouped = groupDailySchedules(list);
+      if (grouped.isNotEmpty) {
+        final allFilled = grouped.every((group) {
+          final s = group.primarySchedule;
+          return journalProvider.teacherJournals.any((j) {
+            final sameDate =
+                '${j.date.year}-${j.date.month.toString().padLeft(2, '0')}-${j.date.day.toString().padLeft(2, '0')}' == key;
+            final sameSchedule = j.scheduleId == s.id ||
+                group.scheduleIds.contains(j.scheduleId) ||
+                (j.classId == s.classId && j.subjectId == s.subjectId);
+            return sameDate &&
+                sameSchedule &&
+                (j.status == 'pending' || j.status == 'verified' || j.isTeacherAbsence);
+          });
+        });
+        if (allFilled) {
+          completedDateKeys.add(key);
+        }
+      }
     }
 
     final activeSchedulesThisMonth = scheduleProvider.cachedTeacherSchedules
@@ -534,8 +563,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         delay: const Duration(milliseconds: 80),
                         child: _buildCalendarCard(
                           scheduledDateKeys,
+                          completedDateKeys,
                           teacher,
                           scheduleProvider,
+                          journalProvider,
+                          holidayProvider,
                         ),
                       ),
 
@@ -1025,8 +1057,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   // ─── 4. KARTU KALENDER ─────────────────────────────────────────────────────
   Widget _buildCalendarCard(
     Set<String> scheduledDateKeys,
+    Set<String> completedDateKeys,
     TeacherModel teacher,
     ScheduleProvider scheduleProvider,
+    JournalProvider journalProvider,
+    HolidayProvider holidayProvider,
   ) {
     final monthYearStr = DateFormat('MMMM yyyy', 'id_ID').format(_focusedDay);
 
@@ -1090,6 +1125,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   scheduleProvider,
                   teacher,
                   scheduledDateKeys,
+                  completedDateKeys,
+                  holidayProvider,
+                  journalProvider,
                 ),
                 borderRadius: BorderRadius.circular(10.r),
                 child: Padding(
@@ -1180,105 +1218,125 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
               final dateKey =
                   '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
               final hasSchedule = scheduledDateKeys.contains(dateKey);
+              final isAllFilled = completedDateKeys.contains(dateKey);
+              final isHoliday = holidayProvider.getHolidayForDate(date) != null ||
+                  journalProvider.teacherJournals.any((j) =>
+                      j.date.year == date.year &&
+                      j.date.month == date.month &&
+                      j.date.day == date.day &&
+                      j.isTeacherAbsence);
 
               BoxDecoration circleDecoration;
               Color textColor;
               FontWeight fontWeight;
               Widget bottomIndicator;
 
-              if (isSelected && hasSchedule) {
-                // 1. SELECTED DATE WITH SCHEDULE
-                // Prominent blue gradient with crisp yellow border/outline
+              if (isSelected) {
+                // Indikator berpindah-pindah tetap biru kecuali libur/cuti merah
+                if (isHoliday) {
+                  circleDecoration = BoxDecoration(
+                    color: const Color(0xFFDC2626),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFEF4444),
+                      width: 2.0,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFDC2626).withValues(alpha: 0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  );
+                  textColor = Colors.white;
+                  fontWeight = FontWeight.w800;
+                  bottomIndicator = Container(
+                    width: 14.w,
+                    height: 3.h,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444),
+                      borderRadius: BorderRadius.circular(2.r),
+                    ),
+                  );
+                } else {
+                  circleDecoration = BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF4F7CFF), Color(0xFF8B7CFF)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF60A5FA),
+                      width: 2.0,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF4F7CFF).withValues(alpha: 0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  );
+                  textColor = Colors.white;
+                  fontWeight = FontWeight.w800;
+                  bottomIndicator = Container(
+                    width: 14.w,
+                    height: 3.h,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4F7CFF),
+                      borderRadius: BorderRadius.circular(2.r),
+                    ),
+                  );
+                }
+              } else if (isHoliday) {
+                // Libur / cuti: berwarna merah
                 circleDecoration = BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF4F7CFF), Color(0xFF8B7CFF)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
+                  color: const Color(0xFFDC2626).withValues(alpha: isDark ? 0.22 : 0.15),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: const Color(0xFFF59E0B),
-                    width: 2.2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF4F7CFF).withValues(alpha: 0.35),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                    BoxShadow(
-                      color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                );
-                textColor = Theme.of(context).colorScheme.surface;
-                fontWeight = FontWeight.w800;
-                bottomIndicator = Container(
-                  width: 14.w,
-                  height: 3.h,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF59E0B),
-                    borderRadius: BorderRadius.circular(2.r),
+                    color: const Color(0xFFEF4444),
+                    width: 1.5,
                   ),
                 );
-              } else if (isSelected) {
-                // 2. SELECTED DATE WITHOUT SCHEDULE
-                circleDecoration = BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF4F7CFF), Color(0xFF8B7CFF)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF4F7CFF).withValues(alpha: 0.35),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                );
-                textColor = Theme.of(context).colorScheme.surface;
-                fontWeight = FontWeight.w800;
-                bottomIndicator = Container(
-                  width: 14.w,
-                  height: 3.h,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4F7CFF),
-                    borderRadius: BorderRadius.circular(2.r),
-                  ),
-                );
-              } else if (hasSchedule) {
-                // 3. DATE WITH TEACHING SCHEDULE (TARGET SCREENSHOT 2)
-                // Yellow circle / outline around the date number
-                circleDecoration = BoxDecoration(
-                  color: const Color(
-                    0xFFFEF3C7,
-                  ).withValues(alpha: isDark ? 0.22 : 0.45),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: const Color(0xFFF59E0B),
-                    width: 1.8,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                );
-                textColor = isSunday
-                    ? const Color(0xFFEF4444)
-                    : (isDark
-                          ? const Color(0xFFFDE047)
-                          : const Color(0xFFD97706));
+                textColor = const Color(0xFFEF4444);
                 fontWeight = FontWeight.w700;
                 bottomIndicator = SizedBox(height: 3.h);
+              } else if (hasSchedule) {
+                if (isAllFilled) {
+                  // Selesai semua jadwal diisi: berwarna biru
+                  circleDecoration = BoxDecoration(
+                    color: const Color(0xFF3B82F6).withValues(alpha: isDark ? 0.22 : 0.15),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF3B82F6),
+                      width: 1.5,
+                    ),
+                  );
+                  textColor = isDark
+                      ? const Color(0xFF93C5FD)
+                      : const Color(0xFF1D4ED8);
+                  fontWeight = FontWeight.w700;
+                  bottomIndicator = SizedBox(height: 3.h);
+                } else {
+                  // Memiliki jadwal: berwarna hijau
+                  circleDecoration = BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.22 : 0.15),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF10B981),
+                      width: 1.5,
+                    ),
+                  );
+                  textColor = isDark
+                      ? const Color(0xFF6EE7B7)
+                      : const Color(0xFF047857);
+                  fontWeight = FontWeight.w700;
+                  bottomIndicator = SizedBox(height: 3.h);
+                }
               } else {
-                // 4. NORMAL DATE
+                // Normal date
                 circleDecoration = const BoxDecoration(
                   color: Colors.transparent,
                   shape: BoxShape.circle,
@@ -1327,6 +1385,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     ScheduleProvider scheduleProvider,
     TeacherModel teacher,
     Set<String> scheduledDateKeys,
+    Set<String> completedDateKeys,
+    HolidayProvider holidayProvider,
+    JournalProvider journalProvider,
   ) {
     showDialog(
       context: context,
@@ -1413,6 +1474,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             isToday: false,
                             isOutside: false,
                             scheduledDateKeys: scheduledDateKeys,
+                            completedDateKeys: completedDateKeys,
+                            holidayProvider: holidayProvider,
+                            journalProvider: journalProvider,
                           );
                         },
                         outsideBuilder: (ctx, day, focDay) {
@@ -1422,6 +1486,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             isToday: false,
                             isOutside: true,
                             scheduledDateKeys: scheduledDateKeys,
+                            completedDateKeys: completedDateKeys,
+                            holidayProvider: holidayProvider,
+                            journalProvider: journalProvider,
                           );
                         },
                         todayBuilder: (ctx, day, focDay) {
@@ -1432,6 +1499,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             isToday: true,
                             isOutside: false,
                             scheduledDateKeys: scheduledDateKeys,
+                            completedDateKeys: completedDateKeys,
+                            holidayProvider: holidayProvider,
+                            journalProvider: journalProvider,
                           );
                         },
                         selectedBuilder: (ctx, day, focDay) {
@@ -1441,6 +1511,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             isToday: isSameDay(DateTime.now(), day),
                             isOutside: false,
                             scheduledDateKeys: scheduledDateKeys,
+                            completedDateKeys: completedDateKeys,
+                            holidayProvider: holidayProvider,
+                            journalProvider: journalProvider,
                           );
                         },
                       ),
@@ -1461,11 +1534,21 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     required bool isToday,
     required bool isOutside,
     required Set<String> scheduledDateKeys,
+    required Set<String> completedDateKeys,
+    required HolidayProvider holidayProvider,
+    required JournalProvider journalProvider,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final dateKey =
         '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
     final hasSchedule = scheduledDateKeys.contains(dateKey);
+    final isAllFilled = completedDateKeys.contains(dateKey);
+    final isHoliday = holidayProvider.getHolidayForDate(day) != null ||
+        journalProvider.teacherJournals.any((j) =>
+            j.date.year == day.year &&
+            j.date.month == day.month &&
+            j.date.day == day.day &&
+            j.isTeacherAbsence);
     final isSunday = day.weekday == DateTime.sunday;
 
     Color bgColor = Colors.transparent;
@@ -1477,22 +1560,39 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     FontWeight fontWeight = FontWeight.w500;
     BoxBorder? border;
 
-    if (isSelected && hasSchedule) {
-      bgColor = const Color(0xFF4F7CFF);
-      textColor = Colors.white;
-      fontWeight = FontWeight.w800;
-      border = Border.all(color: const Color(0xFFF59E0B), width: 2.0);
-    } else if (isSelected) {
-      bgColor = const Color(0xFF4F7CFF);
-      textColor = Colors.white;
-      fontWeight = FontWeight.w800;
-    } else if (hasSchedule) {
-      bgColor = const Color(0xFFFEF3C7).withValues(alpha: isDark ? 0.22 : 0.45);
-      textColor = isOutside
-          ? (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
-          : (isDark ? const Color(0xFFFDE047) : const Color(0xFFD97706));
+    if (isSelected) {
+      if (isHoliday) {
+        bgColor = const Color(0xFFDC2626);
+        textColor = Colors.white;
+        fontWeight = FontWeight.w800;
+        border = Border.all(color: const Color(0xFFEF4444), width: 2.0);
+      } else {
+        bgColor = const Color(0xFF4F7CFF);
+        textColor = Colors.white;
+        fontWeight = FontWeight.w800;
+        border = Border.all(color: const Color(0xFF60A5FA), width: 2.0);
+      }
+    } else if (isHoliday) {
+      bgColor = const Color(0xFFDC2626).withValues(alpha: isDark ? 0.22 : 0.15);
+      textColor = const Color(0xFFEF4444);
       fontWeight = FontWeight.w700;
-      border = Border.all(color: const Color(0xFFF59E0B), width: 1.5);
+      border = Border.all(color: const Color(0xFFEF4444), width: 1.5);
+    } else if (hasSchedule) {
+      if (isAllFilled) {
+        bgColor = const Color(0xFF3B82F6).withValues(alpha: isDark ? 0.22 : 0.15);
+        textColor = isOutside
+            ? (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
+            : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8));
+        fontWeight = FontWeight.w700;
+        border = Border.all(color: const Color(0xFF3B82F6), width: 1.5);
+      } else {
+        bgColor = const Color(0xFF10B981).withValues(alpha: isDark ? 0.22 : 0.15);
+        textColor = isOutside
+            ? (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
+            : (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF047857));
+        fontWeight = FontWeight.w700;
+        border = Border.all(color: const Color(0xFF10B981), width: 1.5);
+      }
     } else if (isToday) {
       bgColor = const Color(0xFF4F7CFF).withValues(alpha: isDark ? 0.25 : 0.15);
       textColor = isDark ? const Color(0xFF93C5FD) : const Color(0xFF4F7CFF);

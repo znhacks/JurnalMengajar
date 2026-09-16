@@ -129,17 +129,69 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     );
   }
 
+  bool _areAllTeacherSchedulesFilledOnDay(
+    List<ScheduleModel> schedules,
+    List<JournalModel> journals,
+    DateTime day,
+  ) {
+    final activeSchoolId = Provider.of<AuthProvider>(context, listen: false).activeSchoolId;
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(activeSchoolId) ?? activeSchoolId?.trim();
+    final daySchedules = schedules.where((s) {
+      if (!s.isActive) return false;
+      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+        final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+        if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+          return false;
+        }
+      }
+      return s.date.year == day.year &&
+          s.date.month == day.month &&
+          s.date.day == day.day;
+    }).toList();
+
+    if (daySchedules.isEmpty) return false;
+
+    final grouped = groupDailySchedules(daySchedules);
+    if (grouped.isEmpty) return false;
+
+    return grouped.every((group) {
+      final s = group.primarySchedule;
+      return journals.any((j) {
+        final sameDate = j.date.year == day.year &&
+            j.date.month == day.month &&
+            j.date.day == day.day;
+        final sameSchedule = j.scheduleId == s.id ||
+            group.scheduleIds.contains(j.scheduleId) ||
+            (j.classId == s.classId && j.subjectId == s.subjectId);
+        return sameDate &&
+            sameSchedule &&
+            (j.status == 'pending' || j.status == 'verified' || j.isTeacherAbsence);
+      });
+    });
+  }
+
+  bool _hasTeacherAbsenceOnDay(List<JournalModel> journals, DateTime day) {
+    return journals.any((j) {
+      return j.date.year == day.year &&
+          j.date.month == day.month &&
+          j.date.day == day.day &&
+          j.isTeacherAbsence;
+    });
+  }
+
   Widget _buildScheduledDayCell(
     DateTime day,
     bool isSelected,
     bool isToday,
     bool isOutside,
     List<ScheduleModel> schedules,
+    List<JournalModel> journals,
   ) {
     final hasSchedule = _hasTeacherScheduleOnDay(schedules, day);
+    final isAllFilled = hasSchedule && _areAllTeacherSchedulesFilledOnDay(schedules, journals, day);
     final holidayProvider = Provider.of<HolidayProvider>(context, listen: false);
     final holiday = holidayProvider.getHolidayForDate(day);
-    final isHoliday = holiday != null;
+    final isHoliday = holiday != null || _hasTeacherAbsenceOnDay(journals, day);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final isSunday = day.weekday == DateTime.sunday;
@@ -149,21 +201,60 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
         : (isSunday ? const Color(0xFFEF4444) : Theme.of(context).colorScheme.onSurface);
     FontWeight fontWeight = FontWeight.w500;
+    BoxBorder? border;
 
     if (isSelected) {
-      bgColor = isHoliday ? const Color(0xFFDC2626) : AppTheme.primaryColor;
-      textColor = Colors.white;
-      fontWeight = FontWeight.w700;
+      // Indikator kalender yang berpindah-pindah tetap berwarna biru kecuali ketika libur / cuti berwarna merah
+      if (isHoliday) {
+        bgColor = const Color(0xFFDC2626);
+        textColor = Colors.white;
+        fontWeight = FontWeight.w700;
+        border = Border.all(
+          color: const Color(0xFFEF4444),
+          width: 2.0,
+        );
+      } else {
+        bgColor = AppTheme.primaryColor;
+        textColor = Colors.white;
+        fontWeight = FontWeight.w700;
+        border = Border.all(
+          color: const Color(0xFF60A5FA),
+          width: 2.0,
+        );
+      }
     } else if (isHoliday) {
-      bgColor = const Color(0xFFDC2626).withValues(alpha: isDark ? 0.2 : 0.15);
+      // Libur / cuti: berwarna merah
+      bgColor = const Color(0xFFDC2626).withValues(alpha: isDark ? 0.22 : 0.15);
       textColor = const Color(0xFFEF4444);
       fontWeight = FontWeight.w700;
+      border = Border.all(
+        color: const Color(0xFFEF4444),
+        width: 1.5,
+      );
     } else if (hasSchedule) {
-      bgColor = const Color(0xFFFFEB3B).withValues(alpha: isDark ? 0.2 : 0.35);
-      textColor = isOutside
-          ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
-          : (isDark ? const Color(0xFFFDE047) : const Color(0xFFB45309));
-      fontWeight = FontWeight.w700;
+      if (isAllFilled) {
+        // Selesai semua jadwal diisi: berwarna biru
+        bgColor = const Color(0xFF3B82F6).withValues(alpha: isDark ? 0.22 : 0.15);
+        textColor = isOutside
+            ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
+            : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8));
+        fontWeight = FontWeight.w700;
+        border = Border.all(
+          color: const Color(0xFF3B82F6),
+          width: 1.5,
+        );
+      } else {
+        // Memiliki jadwal: berwarna hijau
+        bgColor = const Color(0xFF10B981).withValues(alpha: isDark ? 0.22 : 0.15);
+        textColor = isOutside
+            ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
+            : (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF047857));
+        fontWeight = FontWeight.w700;
+        border = Border.all(
+          color: const Color(0xFF10B981),
+          width: 1.5,
+        );
+      }
     } else if (isToday) {
       bgColor = AppTheme.primaryColor.withValues(alpha: isDark ? 0.25 : 0.15);
       textColor = isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor;
@@ -175,17 +266,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,
-        border: isHoliday
-            ? Border.all(
-                color: const Color(0xFFEF4444),
-                width: isSelected ? 2.0 : 1.5,
-              )
-            : hasSchedule
-                ? Border.all(
-                    color: const Color(0xFFF59E0B),
-                    width: isSelected ? 2.0 : 1.5,
-                  )
-                : null,
+        border: border,
       ),
       alignment: Alignment.center,
       child: Text(
@@ -201,6 +282,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
 
   Widget _buildCalendarCard(
     ScheduleProvider scheduleProvider,
+    JournalProvider journalProvider,
     TeacherModel teacher,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -256,7 +338,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
             _focusedDay = focusedDay;
           });
         },
-        onHeaderTapped: (_) => _showFullCalendarDialog(context, scheduleProvider, teacher),
+        onHeaderTapped: (_) => _showFullCalendarDialog(context, scheduleProvider, journalProvider, teacher),
         calendarBuilders: CalendarBuilders(
           dowBuilder: (context, day) {
             final dayName = DateFormat.E('id_ID').format(day);
@@ -283,6 +365,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
               false,
               false,
               scheduleProvider.cachedTeacherSchedules,
+              journalProvider.teacherJournals,
             );
           },
           outsideBuilder: (context, day, focusedDay) {
@@ -292,6 +375,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
               false,
               true,
               scheduleProvider.cachedTeacherSchedules,
+              journalProvider.teacherJournals,
             );
           },
           todayBuilder: (context, day, focusedDay) {
@@ -301,6 +385,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
               true,
               false,
               scheduleProvider.cachedTeacherSchedules,
+              journalProvider.teacherJournals,
             );
           },
           selectedBuilder: (context, day, focusedDay) {
@@ -310,6 +395,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
               false,
               false,
               scheduleProvider.cachedTeacherSchedules,
+              journalProvider.teacherJournals,
             );
           },
         ),
@@ -320,6 +406,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
   void _showFullCalendarDialog(
     BuildContext context,
     ScheduleProvider scheduleProvider,
+    JournalProvider journalProvider,
     TeacherModel teacher,
   ) {
     showDialog(
@@ -421,6 +508,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                             false,
                             false,
                             scheduleProvider.cachedTeacherSchedules,
+                            journalProvider.teacherJournals,
                           );
                         },
                         outsideBuilder: (context, day, focusedDay) {
@@ -430,6 +518,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                             false,
                             true,
                             scheduleProvider.cachedTeacherSchedules,
+                            journalProvider.teacherJournals,
                           );
                         },
                         todayBuilder: (context, day, focusedDay) {
@@ -439,6 +528,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                             true,
                             false,
                             scheduleProvider.cachedTeacherSchedules,
+                            journalProvider.teacherJournals,
                           );
                         },
                         selectedBuilder: (context, day, focusedDay) {
@@ -448,6 +538,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                             false,
                             false,
                             scheduleProvider.cachedTeacherSchedules,
+                            journalProvider.teacherJournals,
                           );
                         },
                       ),
@@ -529,7 +620,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildCalendarCard(scheduleProvider, teacher),
+            _buildCalendarCard(scheduleProvider, journalProvider, teacher),
             SizedBox(height: 8.h),
 
             // Holiday Banner on Schedule Screen
