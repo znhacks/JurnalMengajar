@@ -9,6 +9,7 @@ import '../providers/warning_letter_provider.dart';
 import '../providers/theme_provider.dart';
 import '../core/utils/helper.dart';
 import '../screens/guru/main_shell.dart';
+import '../screens/guru/dashboard_screen.dart';
 import 'role_badge.dart';
 import 'school_switcher_modal.dart';
 
@@ -552,6 +553,7 @@ class GuruDrawer extends StatelessWidget {
             onPressed: () async {
               Navigator.pop(dialogCtx); // Close Dialog
               Navigator.pop(context); // Close Drawer
+              GuruDashboardScreen.resetReminderFlag();
               await authProvider.logout();
               if (context.mounted) {
                 context.go('/login');

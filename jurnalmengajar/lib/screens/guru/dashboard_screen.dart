@@ -27,6 +27,11 @@ import 'package:table_calendar/table_calendar.dart';
 class GuruDashboardScreen extends StatefulWidget {
   const GuruDashboardScreen({super.key});
 
+  /// Reset reminder status saat logout atau berganti akun
+  static void resetReminderFlag() {
+    _GuruDashboardScreenState._hasCheckedReminder = false;
+  }
+
   @override
   State<GuruDashboardScreen> createState() => _GuruDashboardScreenState();
 }
@@ -34,7 +39,7 @@ class GuruDashboardScreen extends StatefulWidget {
 class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
-  bool _hasCheckedReminder = false;
+  static bool _hasCheckedReminder = false;
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -68,6 +73,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         (_lastLoadedUserId != null && _lastLoadedUserId != currentUserId)) {
       _lastLoadedSchoolId = currentSchoolId;
       _lastLoadedUserId = currentUserId;
+      _hasCheckedReminder = false;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _refreshData();
       });
