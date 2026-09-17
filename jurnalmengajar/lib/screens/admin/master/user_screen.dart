@@ -808,24 +808,38 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                 // Action panel
                 if (!_isSelectionMode) ...[
                   if (isPendingTab) ...[
-                    // Approval Action Buttons (Terima, Tolak)
-                    Row(
+                    // Approval Action Buttons (Setujui, Tolak)
+                    Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.check_circle, color: Colors.green),
-                          tooltip: 'Setujui Pendaftaran',
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
+                        ElevatedButton(
                           onPressed: () => _handleApproveUser(user),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                          ),
+                          child: Text('Setujui', style: TextStyle(fontSize: 12.sp)),
                         ),
-                        SizedBox(width: 8.w),
-                        IconButton(
-                          icon: const Icon(Icons.cancel, color: Colors.red),
-                          tooltip: 'Tolak Pendaftaran',
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
+                        SizedBox(height: 6.h),
+                        OutlinedButton(
                           onPressed: () => _handleRejectUser(user),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                          ),
+                          child: Text('Tolak', style: TextStyle(fontSize: 12.sp)),
                         ),
                       ],
                     ),
