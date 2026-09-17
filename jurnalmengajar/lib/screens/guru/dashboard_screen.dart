@@ -1840,19 +1840,22 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     final timeBadgeText = 'Jam $hoursStr';
 
     return ScaleTap(
-      onTap: () {
+      onTap: () async {
         if (matchingJournal != null) {
           if (matchingJournal.status == 'rejected') {
-            context.push(
+            await context.push(
               '/guru/journal-form?scheduleId=${schedule.id}&journalId=${matchingJournal.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}',
             );
           } else {
-            context.push('/guru/journal/${matchingJournal.id}');
+            await context.push('/guru/journal/${matchingJournal.id}');
           }
         } else {
-          context.push(
+          await context.push(
             '/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}',
           );
+        }
+        if (mounted) {
+          _refreshData();
         }
       },
       child: Container(

@@ -287,7 +287,7 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
     final periods = masterProvider.periods;
 
     return PopScope(
-      canPop: context.canPop(),
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
           context.go('/admin/dashboard');
@@ -327,11 +327,7 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                   icon: const Icon(Icons.arrow_back_rounded),
                   tooltip: 'Kembali',
                   onPressed: () {
-                    if (context.canPop()) {
-                      context.pop();
-                    } else {
-                      context.go('/admin/dashboard');
-                    }
+                    context.go('/admin/dashboard');
                   },
                 ),
                 title: const Text('Master Periode'),

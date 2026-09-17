@@ -14,7 +14,7 @@ class SwipeBackWrapper extends StatefulWidget {
   const SwipeBackWrapper({
     super.key,
     required this.child,
-    this.enableSwipe = true,
+    this.enableSwipe = false,
     this.edgeThreshold,
   });
 

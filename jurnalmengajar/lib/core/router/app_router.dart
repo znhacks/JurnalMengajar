@@ -48,7 +48,7 @@ class AppRouter {
     return CustomTransitionPage<void>(
       key: state.pageKey,
       child: SwipeBackWrapper(
-        enableSwipe: !isRootRoute,
+        enableSwipe: false,
         child: child,
       ),
       transitionDuration: const Duration(milliseconds: 240),

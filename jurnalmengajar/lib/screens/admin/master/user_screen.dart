@@ -138,6 +138,10 @@ class _MasterUserScreenState extends State<MasterUserScreen>
       for (final id in idsToDelete) {
         await authProvider.deleteAccount(id);
       }
+      try {
+        final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+        await masterProvider.loadAllData(authProvider.activeSchoolId);
+      } catch (_) {}
       if (!mounted) return;
       AppHelper.showSnackBar(context, '${idsToDelete.length} akun pengguna berhasil dihapus.');
       setState(() {
@@ -464,6 +468,10 @@ class _MasterUserScreenState extends State<MasterUserScreen>
       if (!mounted) return;
 
       if (success) {
+        try {
+          final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+          await masterProvider.loadAllData(authProvider.activeSchoolId);
+        } catch (_) {}
         AppHelper.showSnackBar(context, 'Peran ${user.fullName} berhasil diperbarui menjadi ${newRole.toUpperCase()}!');
         _fetchUsers();
       } else {
@@ -525,6 +533,10 @@ class _MasterUserScreenState extends State<MasterUserScreen>
       if (!mounted) return;
 
       if (success) {
+        try {
+          final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+          await masterProvider.loadAllData(authProvider.activeSchoolId);
+        } catch (_) {}
         AppHelper.showSnackBar(context, 'Akun ${user.fullName} berhasil dihapus!');
         _fetchUsers();
       } else {
@@ -571,6 +583,10 @@ class _MasterUserScreenState extends State<MasterUserScreen>
       if (!mounted) return;
 
       if (success) {
+        try {
+          final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+          await masterProvider.loadAllData(authProvider.activeSchoolId);
+        } catch (_) {}
         AppHelper.showSnackBar(context, 'Akun ${user.fullName} berhasil disetujui sebagai GURU!');
         _fetchUsers();
       } else {
@@ -914,7 +930,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
     }).toList();
 
     return PopScope(
-      canPop: context.canPop(),
+      canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         context.go('/admin/dashboard');
@@ -953,11 +969,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                     icon: const Icon(Icons.arrow_back_rounded),
                     tooltip: 'Kembali',
                     onPressed: () {
-                      if (context.canPop()) {
-                        context.pop();
-                      } else {
-                        context.go('/admin/dashboard');
-                      }
+                      context.go('/admin/dashboard');
                     },
                   ),
                   title: const Text('Master User & Hak Akses'),
@@ -1240,6 +1252,10 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                                       final success = await authProvider.approveExitRequest(membershipId);
                                       if (!context.mounted) return;
                                       if (success) {
+                                        try {
+                                          final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+                                          await masterProvider.loadAllData(authProvider.activeSchoolId);
+                                        } catch (_) {}
                                         AppHelper.showSnackBar(context, 'Berhasil menyetujui pengajuan keluar peran $role untuk $name');
                                         _fetchUsers();
                                       } else {
@@ -1293,6 +1309,10 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                           final success = await authProvider.rejectExitRequest(membershipId);
                           if (!context.mounted) return;
                           if (success) {
+                            try {
+                              final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+                              await masterProvider.loadAllData(authProvider.activeSchoolId);
+                            } catch (_) {}
                             AppHelper.showSnackBar(context, 'Berhasil menolak pengajuan keluar untuk $name');
                             _fetchUsers();
                           } else {

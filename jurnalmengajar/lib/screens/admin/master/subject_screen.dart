@@ -215,7 +215,7 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
     final subjects = masterProvider.subjects;
 
     return PopScope(
-      canPop: context.canPop(),
+      canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         context.go('/admin/dashboard');
@@ -254,11 +254,7 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                   icon: const Icon(Icons.arrow_back_rounded),
                   tooltip: 'Kembali',
                   onPressed: () {
-                    if (context.canPop()) {
-                      context.pop();
-                    } else {
-                      context.go('/admin/dashboard');
-                    }
+                    context.go('/admin/dashboard');
                   },
                 ),
                 title: const Text('Master Pelajaran'),

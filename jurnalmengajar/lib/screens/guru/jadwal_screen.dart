@@ -946,15 +946,18 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
             child: Padding(
               padding: EdgeInsets.only(bottom: 14.h),
               child: InkWell(
-                onTap: () {
+                onTap: () async {
                   if (matchingJournal != null) {
                     if (matchingJournal.status == 'rejected') {
-                      context.push('/guru/journal-form?scheduleId=${schedule.id}&journalId=${matchingJournal.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
+                      await context.push('/guru/journal-form?scheduleId=${schedule.id}&journalId=${matchingJournal.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
                     } else {
-                      context.push('/guru/journal/${matchingJournal.id}');
+                      await context.push('/guru/journal/${matchingJournal.id}');
                     }
                   } else {
-                    context.push('/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
+                    await context.push('/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
+                  }
+                  if (mounted) {
+                    _loadData();
                   }
                 },
                 borderRadius: BorderRadius.circular(16.r),
