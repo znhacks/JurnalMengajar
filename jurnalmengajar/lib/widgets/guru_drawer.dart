@@ -342,7 +342,6 @@ class GuruDrawer extends StatelessWidget {
           child: const Divider(color: Color(0xFFE2E8F0), height: 1),
         ),
 
-        _buildDrawerSectionHeader('FITUR LAINNYA'),
         _buildDrawerItem(
           icon: Icons.picture_as_pdf_rounded,
           label: 'Download Jurnal',
