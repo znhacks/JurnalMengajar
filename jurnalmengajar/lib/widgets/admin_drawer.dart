@@ -213,20 +213,7 @@ class AdminDrawer extends StatelessWidget {
       ),
       SizedBox(height: 8.h),
 
-      Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: 12.w,
-          vertical: 4.h,
-        ),
-        child: Text(
-          'Master Data',
-          style: GoogleFonts.hankenGrotesk(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ),
+
       _buildMenuItem(
         context,
         Icons.local_offer_rounded,
