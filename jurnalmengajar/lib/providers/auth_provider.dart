@@ -1220,21 +1220,14 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<List<UserModel>> getAllUsers([String? schoolId]) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
     try {
       final targetSchoolId = schoolId ?? _activeSchoolId;
       final users = (targetSchoolId != null && targetSchoolId.isNotEmpty)
           ? await authRepository.getAllUsersForSchool(targetSchoolId)
           : await authRepository.getAllUsers();
-      _isLoading = false;
-      notifyListeners();
       return users;
     } catch (e) {
       _errorMessage = _cleanErrorMessage(e);
-      _isLoading = false;
-      notifyListeners();
       return [];
     }
   }
@@ -1471,18 +1464,11 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<List<Map<String, dynamic>>> getPendingExitRequests(String schoolId) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
     try {
       final requests = await _authRepository.getPendingExitRequests(schoolId);
-      _isLoading = false;
-      notifyListeners();
       return requests;
     } catch (e) {
       _errorMessage = _cleanErrorMessage(e);
-      _isLoading = false;
-      notifyListeners();
       return [];
     }
   }

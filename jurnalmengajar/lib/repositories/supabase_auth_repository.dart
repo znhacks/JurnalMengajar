@@ -540,64 +540,69 @@ class SupabaseAuthRepository implements AuthRepository {
       final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
       if (cleanSchoolId.isEmpty) return [];
 
-      // 1. Fetch school info to get school name
+      // 1, 2, 3. Fetch school info, user_schools memberships, and primary users in parallel
       String schoolName = '';
-      try {
-        final schoolRes = await _supabase
+      final Map<String, Map<String, dynamic>> membershipByUser = {};
+      final Set<String> targetUserIds = <String>{};
+
+      final results = await Future.wait([
+        _supabase
             .from('schools')
             .select('name')
             .eq('id', cleanSchoolId)
-            .maybeSingle();
-        if (schoolRes != null) {
-          schoolName = (schoolRes['name'] as String? ?? '').trim();
-        }
-      } catch (_) {}
-
-      // 2. Fetch memberships for this school ONLY with valid status (active, pending, requested_exit)
-      // Any row with status = 'inactive' or 'rejected' is strictly excluded at DB level!
-      final Map<String, Map<String, dynamic>> membershipByUser = {};
-      try {
-        final userSchoolsRes = await _supabase
+            .maybeSingle()
+            .timeout(const Duration(seconds: 12))
+            .catchError((_) => null),
+        _supabase
             .from('user_schools')
             .select('id, user_id, school_id, role, status')
             .eq('school_id', cleanSchoolId)
-            .inFilter('status', ['active', 'pending', 'requested_exit']);
-
-        for (final row in (userSchoolsRes as List)) {
-          final m = Map<String, dynamic>.from(row as Map);
-          final uid = m['user_id']?.toString();
-          if (uid != null && uid.isNotEmpty) {
-            membershipByUser[uid] = m;
-          }
-        }
-      } catch (err) {
-        debugPrint('Error fetching user_schools in getAllUsersForSchool: $err');
-      }
-
-      // Also find users whose primary school_id in users is cleanSchoolId (e.g. initial Admin)
-      final Set<String> targetUserIds = Set<String>.from(membershipByUser.keys);
-      try {
-        final primaryUsersRes = await _supabase
+            .inFilter('status', ['active', 'pending', 'requested_exit'])
+            .timeout(const Duration(seconds: 12))
+            .catchError((err) {
+              debugPrint('Error fetching user_schools in getAllUsersForSchool: $err');
+              return <Map<String, dynamic>>[];
+            }),
+        _supabase
             .from('users')
             .select('id')
-            .eq('school_id', cleanSchoolId);
+            .eq('school_id', cleanSchoolId)
+            .timeout(const Duration(seconds: 12))
+            .catchError((_) => <Map<String, dynamic>>[]),
+      ]);
 
-        for (final row in (primaryUsersRes as List)) {
-          final uid = row['id']?.toString();
-          if (uid != null && uid.isNotEmpty) {
-            targetUserIds.add(uid);
-          }
+      final schoolRes = results[0] as Map<String, dynamic>?;
+      if (schoolRes != null) {
+        schoolName = (schoolRes['name'] as String? ?? '').trim();
+      }
+
+      final userSchoolsRes = results[1] as List;
+      for (final row in userSchoolsRes) {
+        final m = Map<String, dynamic>.from(row as Map);
+        final uid = m['user_id']?.toString();
+        if (uid != null && uid.isNotEmpty) {
+          membershipByUser[uid] = m;
+          targetUserIds.add(uid);
         }
-      } catch (_) {}
+      }
+
+      final primaryUsersRes = results[2] as List;
+      for (final row in primaryUsersRes) {
+        final uid = (row as Map)['id']?.toString();
+        if (uid != null && uid.isNotEmpty) {
+          targetUserIds.add(uid);
+        }
+      }
 
       if (targetUserIds.isEmpty) return [];
 
-      // 3. Query users strictly scoped to targetUserIds (NO global SELECT all users!)
+      // 4. Query users strictly scoped to targetUserIds
       final usersRes = await _supabase
           .from('users')
           .select()
           .inFilter('id', targetUserIds.toList())
-          .order('full_name', ascending: true);
+          .order('full_name', ascending: true)
+          .timeout(const Duration(seconds: 12));
 
       final List<UserModel> result = [];
 
@@ -881,7 +886,8 @@ class SupabaseAuthRepository implements AuthRepository {
           .from('user_schools')
           .select('*, users(full_name, email, photo_url)')
           .eq('school_id', schoolId)
-          .eq('status', 'requested_exit');
+          .eq('status', 'requested_exit')
+          .timeout(const Duration(seconds: 12));
       
       return (res as List).map((row) => Map<String, dynamic>.from(row)).toList();
     } catch (e) {

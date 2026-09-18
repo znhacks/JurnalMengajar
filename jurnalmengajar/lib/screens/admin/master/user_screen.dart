@@ -39,10 +39,14 @@ class _MasterUserScreenState extends State<MasterUserScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchUsers();
-    });
     _searchController.addListener(_onSearchChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final auth = Provider.of<AuthProvider>(context, listen: false);
+        _lastSchoolId = auth.activeSchoolId;
+        _fetchUsers();
+      }
+    });
   }
 
   @override
@@ -50,15 +54,21 @@ class _MasterUserScreenState extends State<MasterUserScreen>
     super.didChangeDependencies();
     final authProvider = Provider.of<AuthProvider>(context, listen: true);
     final currentSchoolId = authProvider.activeSchoolId;
-    if (_lastSchoolId != currentSchoolId) {
+    if (_lastSchoolId != null && _lastSchoolId != currentSchoolId) {
       _lastSchoolId = currentSchoolId;
       _allUsers = [];
       _filteredUsers = [];
       _selectedIds.clear();
       _isSelectionMode = false;
       if (currentSchoolId != null && currentSchoolId.isNotEmpty) {
-        _fetchUsers();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _fetchUsers();
+          }
+        });
       }
+    } else if (_lastSchoolId == null && currentSchoolId != null) {
+      _lastSchoolId = currentSchoolId;
     }
   }
 
@@ -375,6 +385,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
 
 
   Future<void> _fetchUsers() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -382,11 +393,18 @@ class _MasterUserScreenState extends State<MasterUserScreen>
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final users = await authProvider.getAllUsers(authProvider.activeSchoolId);
-      List<Map<String, dynamic>> exitReqs = [];
-      if (authProvider.activeSchoolId != null) {
-        exitReqs = await authProvider.getPendingExitRequests(authProvider.activeSchoolId!);
-      }
+      final currentSchoolId = authProvider.activeSchoolId;
+
+      final usersFuture = authProvider.getAllUsers(currentSchoolId);
+      final exitReqsFuture = (currentSchoolId != null && currentSchoolId.isNotEmpty)
+          ? authProvider.getPendingExitRequests(currentSchoolId)
+          : Future.value(<Map<String, dynamic>>[]);
+
+      final results = await Future.wait([usersFuture, exitReqsFuture]);
+      final users = results[0] as List<UserModel>;
+      final exitReqs = results[1] as List<Map<String, dynamic>>;
+
+      if (!mounted) return;
       setState(() {
         _allUsers = users;
         _filteredUsers = users;
@@ -394,6 +412,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
@@ -1031,99 +1050,121 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                 ),
         ),
         drawer: const AdminDrawer(currentRoute: '/admin/master-data/users'),
-        body: RefreshIndicator(
-          onRefresh: _fetchUsers,
-          color: const Color(0xFF2563EB),
-          child: Column(
-            children: [
-              // Search field
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                child: TextField(
-                  controller: _searchController,
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 13.sp,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Cari nama atau email...',
-                    hintStyle: GoogleFonts.hankenGrotesk(
-                      fontSize: 13.sp,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: const Color(0xFF2563EB),
-                      size: 20.r,
-                    ),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(
-                              Icons.clear_rounded,
-                              size: 18.r,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+        body: SafeArea(
+          child: _isLoading && _allUsers.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : _errorMessage != null
+                  ? AppErrorWidget(
+                      message: _errorMessage!,
+                      onRetry: _fetchUsers,
+                    )
+                  : Column(
+                      children: [
+                        // Search field
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                          child: TextField(
+                            controller: _searchController,
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 13.sp,
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontWeight: FontWeight.w600,
                             ),
-                            onPressed: () => _searchController.clear(),
-                          )
-                        : null,
-                    fillColor: Theme.of(context).brightness == Brightness.dark
-                        ? Theme.of(context).colorScheme.surfaceContainerHighest
-                        : Colors.white,
-                    filled: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16.r),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF334155)
-                            : const Color(0xFFE2E8F0),
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16.r),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF334155)
-                            : const Color(0xFFE2E8F0),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16.r),
-                      borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: _isLoading && _allUsers.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
-                    : _errorMessage != null
-                        ? AppErrorWidget(
-                            message: _errorMessage!,
-                            onRetry: _fetchUsers,
-                          )
-                        : TabBarView(
+                            decoration: InputDecoration(
+                              hintText: 'Cari nama atau email...',
+                              hintStyle: GoogleFonts.hankenGrotesk(
+                                fontSize: 13.sp,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.search_rounded,
+                                color: const Color(0xFF2563EB),
+                                size: 20.r,
+                              ),
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: Icon(
+                                        Icons.clear_rounded,
+                                        size: 18.r,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      ),
+                                      onPressed: () => _searchController.clear(),
+                                    )
+                                  : null,
+                              fillColor: Theme.of(context).brightness == Brightness.dark
+                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                  : Colors.white,
+                              filled: true,
+                              contentPadding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16.r),
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? const Color(0xFF334155)
+                                      : const Color(0xFFE2E8F0),
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16.r),
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? const Color(0xFF334155)
+                                      : const Color(0xFFE2E8F0),
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16.r),
+                                borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: TabBarView(
                             controller: _tabController,
                             children: [
-                              activeUsers.isEmpty
-                                  ? const AppEmptyWidget(
-                                      title: 'Pengguna Tidak Ditemukan',
-                                      subtitle: 'Tidak ada pengguna aktif terdaftar.',
-                                    )
-                                  : _buildUserList(activeUsers, authProvider, isPendingTab: false),
-                              pendingUsers.isEmpty
-                                  ? const AppEmptyWidget(
-                                      title: 'Tidak Ada Pendaftaran',
-                                      subtitle: 'Tidak ada guru yang sedang menunggu persetujuan.',
-                                    )
-                                  : _buildUserList(pendingUsers, authProvider, isPendingTab: true),
-                              _buildExitRequestsList(authProvider),
+                              RefreshIndicator(
+                                onRefresh: _fetchUsers,
+                                color: const Color(0xFF2563EB),
+                                child: activeUsers.isEmpty
+                                    ? ListView(
+                                        physics: const AlwaysScrollableScrollPhysics(),
+                                        children: [
+                                          SizedBox(height: 80.h),
+                                          const AppEmptyWidget(
+                                            title: 'Pengguna Tidak Ditemukan',
+                                            subtitle: 'Tidak ada pengguna aktif terdaftar.',
+                                          ),
+                                        ],
+                                      )
+                                    : _buildUserList(activeUsers, authProvider, isPendingTab: false),
+                              ),
+                              RefreshIndicator(
+                                onRefresh: _fetchUsers,
+                                color: const Color(0xFF2563EB),
+                                child: pendingUsers.isEmpty
+                                    ? ListView(
+                                        physics: const AlwaysScrollableScrollPhysics(),
+                                        children: [
+                                          SizedBox(height: 80.h),
+                                          const AppEmptyWidget(
+                                            title: 'Tidak Ada Pendaftaran',
+                                            subtitle: 'Tidak ada guru yang sedang menunggu persetujuan.',
+                                          ),
+                                        ],
+                                      )
+                                    : _buildUserList(pendingUsers, authProvider, isPendingTab: true),
+                              ),
+                              RefreshIndicator(
+                                onRefresh: _fetchUsers,
+                                color: const Color(0xFF2563EB),
+                                child: _buildExitRequestsList(authProvider),
+                              ),
                             ],
                           ),
-              ),
-            ],
-          ),
+                        ),
+                      ],
+                    ),
         ),
       ),
     );
