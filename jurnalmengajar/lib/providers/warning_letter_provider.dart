@@ -129,19 +129,26 @@ class WarningLetterProvider with ChangeNotifier {
       }
     }
 
+    final currentSchoolId = AppHelper.parseSingleCleanSchoolId(masterProvider.currentSchoolId) ??
+        AppHelper.parseSingleCleanSchoolId(schedules.firstOrNull?.schoolId);
+
+    // Fetch all existing warning letters for this school in ONE single batch query (eliminates N+1 loop)
+    final Map<String, List<WarningLetterModel>> existingWarningsByTeacher = {};
+    try {
+      final allExisting = await warningLetterRepository.getAll(currentSchoolId);
+      for (final w in allExisting) {
+        existingWarningsByTeacher.putIfAbsent(w.teacherId, () => []).add(w);
+      }
+    } catch (_) {
+      // Fallback: continue with empty map
+    }
+
     for (final teacherEntry in schedulesByTeacher.entries) {
       final teacherId = teacherEntry.key;
       final teacherSchedules = teacherEntry.value;
       if (teacherSchedules.isEmpty) continue;
 
-      List<WarningLetterModel> existingWarnings = [];
-      try {
-        final currentSchoolId = AppHelper.parseSingleCleanSchoolId(masterProvider.currentSchoolId) ??
-            AppHelper.parseSingleCleanSchoolId(teacherSchedules.firstOrNull?.schoolId);
-        existingWarnings = await warningLetterRepository.getByTeacherId(teacherId, currentSchoolId);
-      } catch (_) {
-        // If error loading existing, continue with empty list
-      }
+      final existingWarnings = existingWarningsByTeacher[teacherId] ?? [];
 
       // Group teacher's active schedules using groupDailySchedules
       final groupedSchedules = groupDailySchedules(teacherSchedules);

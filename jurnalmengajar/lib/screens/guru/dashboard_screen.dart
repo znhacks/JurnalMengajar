@@ -58,7 +58,14 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       });
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshData();
+      if (!mounted) return;
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final currentSchoolId = authProvider.activeSchoolId;
+      if (currentSchoolId != null && currentSchoolId.isNotEmpty) {
+        _lastLoadedSchoolId = currentSchoolId;
+        _lastLoadedUserId = authProvider.currentUser?.id;
+        _refreshData();
+      }
     });
   }
 
@@ -69,18 +76,20 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     final currentSchoolId = authProvider.activeSchoolId;
     final currentUserId = authProvider.currentUser?.id;
 
-    if ((_lastLoadedSchoolId != null &&
-            _lastLoadedSchoolId != currentSchoolId) ||
-        (_lastLoadedUserId != null && _lastLoadedUserId != currentUserId)) {
+    final hasSchoolChanged = _lastLoadedSchoolId != currentSchoolId;
+    final hasUserChanged = _lastLoadedUserId != currentUserId;
+
+    if (hasSchoolChanged || hasUserChanged) {
       _lastLoadedSchoolId = currentSchoolId;
       _lastLoadedUserId = currentUserId;
       _hasCheckedReminder = false;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _refreshData();
-      });
-    } else {
-      _lastLoadedSchoolId = currentSchoolId;
-      _lastLoadedUserId = currentUserId;
+      if (currentSchoolId != null && currentSchoolId.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _refreshData();
+          }
+        });
+      }
     }
   }
 
@@ -92,6 +101,14 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
   Future<void> _refreshData() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentUser = authProvider.currentUser;
+    final schoolId = authProvider.activeSchoolId;
+
+    if (currentUser == null || schoolId == null || schoolId.isEmpty) {
+      debugPrint('[RUNTIME_DEBUG:GURU_DASHBOARD] currentUser or activeSchoolId is not ready, postponing _refreshData.');
+      return;
+    }
+
     final masterProvider = Provider.of<MasterDataProvider>(
       context,
       listen: false,
@@ -113,69 +130,58 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       listen: false,
     );
 
-    final currentUser = authProvider.currentUser;
-    if (currentUser != null) {
-      final schoolId = authProvider.activeSchoolId;
-      await masterProvider.loadAllData(schoolId);
+    // 1. Teacher identity is immediately known (user.id is the teacher.id)
+    TeacherModel teacher = masterProvider.teachers.firstWhere(
+      (t) => t.id == currentUser.id || t.email.toLowerCase() == currentUser.email.toLowerCase(),
+      orElse: () => TeacherModel(
+        id: currentUser.id,
+        name: currentUser.fullName,
+        position: currentUser.position ?? 'Guru',
+        address: currentUser.address ?? '',
+        phoneNumber: currentUser.phoneNumber ?? '',
+        email: currentUser.email,
+      ),
+    );
 
-      final teacher = masterProvider.teachers.firstWhere(
-        (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
-        orElse: () => TeacherModel(
-          id: '',
-          name: currentUser.fullName,
-          position: currentUser.position ?? 'Guru',
-          address: currentUser.address ?? '',
-          phoneNumber: currentUser.phoneNumber ?? '',
-          email: currentUser.email,
-        ),
-      );
+    // Fast Parallel Burst: master data refresh, teacher schedules, journals, holidays, warnings
+    await Future.wait([
+      masterProvider.loadAllData(schoolId),
+      scheduleProvider.loadTeacherSchedules(teacher.id, _selectedDay),
+      journalProvider.loadTeacherJournals(teacher.id),
+      holidayProvider.loadHolidays(schoolId),
+      warningProvider.loadTeacherWarningLetters(teacher.id, schoolId),
+    ]);
 
-      if (teacher.id.isNotEmpty) {
-        final targetSchoolId =
-            schoolId ?? 'a1111111-1111-1111-1111-111111111111';
-        await Future.wait([
-          scheduleProvider.loadTeacherSchedules(teacher.id, _selectedDay),
-          journalProvider.loadTeacherJournals(teacher.id),
-          holidayProvider.loadHolidays(targetSchoolId),
-        ]);
+    if (!mounted) return;
 
-        if (!mounted) return;
+    // Run Warning Letters Check & Issue in background (asynchronous, does not block dashboard rendering)
+    final settingsProvider = Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    );
+    final maxDays = settingsProvider.settings?.maxJournalInputDays ?? 3;
 
-        // Run Warning Letters Check & Issue if late
-        final settingsProvider = Provider.of<SettingsProvider>(
-          context,
-          listen: false,
-        );
-        await settingsProvider.loadSettings();
-        if (!mounted) return;
-        final maxDays = settingsProvider.settings?.maxJournalInputDays ?? 3;
-
-        await warningProvider.checkAndIssueWarnings(
-          schedules: scheduleProvider.cachedTeacherSchedules,
-          journals: journalProvider.teacherJournals,
-          maxDays: maxDays,
-          masterProvider: masterProvider,
-        );
-        await warningProvider.loadTeacherWarningLetters(
-          teacher.id,
-          authProvider.activeSchoolId,
-        );
-
-        if (!_hasCheckedReminder) {
-          _hasCheckedReminder = true;
-          _checkAndShowReminder(
-            teacher,
-            scheduleProvider,
-            journalProvider,
-            masterProvider,
-          );
-        }
-      } else {
-        // Clear old cached schedules, journals, and warnings if user is not registered as teacher in this school
-        scheduleProvider.clearTeacherSchedulesCache();
-        journalProvider.clearTeacherJournalsCache();
-        warningProvider.clearCache();
+    warningProvider.checkAndIssueWarnings(
+      schedules: scheduleProvider.cachedTeacherSchedules,
+      journals: journalProvider.teacherJournals,
+      maxDays: maxDays,
+      masterProvider: masterProvider,
+    ).then((_) {
+      if (mounted) {
+        warningProvider.loadTeacherWarningLetters(teacher.id, schoolId);
       }
+    }).catchError((err) {
+      debugPrint('[GURU_DASHBOARD] Background warning check error: $err');
+    });
+
+    if (!_hasCheckedReminder) {
+      _hasCheckedReminder = true;
+      _checkAndShowReminder(
+        teacher,
+        scheduleProvider,
+        journalProvider,
+        masterProvider,
+      );
     }
   }
 

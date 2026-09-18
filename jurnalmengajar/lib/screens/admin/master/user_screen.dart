@@ -50,15 +50,15 @@ class _MasterUserScreenState extends State<MasterUserScreen>
     super.didChangeDependencies();
     final authProvider = Provider.of<AuthProvider>(context, listen: true);
     final currentSchoolId = authProvider.activeSchoolId;
-    if (_lastSchoolId != null && _lastSchoolId != currentSchoolId) {
+    if (_lastSchoolId != currentSchoolId) {
       _lastSchoolId = currentSchoolId;
       _allUsers = [];
       _filteredUsers = [];
       _selectedIds.clear();
       _isSelectionMode = false;
-      _fetchUsers();
-    } else {
-      _lastSchoolId = currentSchoolId;
+      if (currentSchoolId != null && currentSchoolId.isNotEmpty) {
+        _fetchUsers();
+      }
     }
   }
 

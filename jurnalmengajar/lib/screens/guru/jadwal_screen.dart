@@ -36,7 +36,14 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
+      if (!mounted) return;
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final currentSchoolId = authProvider.activeSchoolId;
+      if (currentSchoolId != null && currentSchoolId.isNotEmpty) {
+        _lastLoadedSchoolId = currentSchoolId;
+        _lastLoadedUserId = authProvider.currentUser?.id;
+        _loadData();
+      }
     });
   }
 
@@ -47,21 +54,26 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     final currentSchoolId = authProvider.activeSchoolId;
     final currentUserId = authProvider.currentUser?.id;
 
-    if ((_lastLoadedSchoolId != null && _lastLoadedSchoolId != currentSchoolId) ||
-        (_lastLoadedUserId != null && _lastLoadedUserId != currentUserId)) {
+    final hasSchoolChanged = _lastLoadedSchoolId != currentSchoolId;
+    final hasUserChanged = _lastLoadedUserId != currentUserId;
+
+    if (hasSchoolChanged || hasUserChanged) {
       _lastLoadedSchoolId = currentSchoolId;
       _lastLoadedUserId = currentUserId;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _loadData();
-      });
-    } else {
-      _lastLoadedSchoolId = currentSchoolId;
-      _lastLoadedUserId = currentUserId;
+      if (currentSchoolId != null && currentSchoolId.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _loadData();
+          }
+        });
+      }
     }
   }
 
   Future<void> _loadData() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final schoolId = authProvider.activeSchoolId;
+    if (schoolId == null || schoolId.isEmpty) return;
     final masterProvider = Provider.of<MasterDataProvider>(
       context,
       listen: false,

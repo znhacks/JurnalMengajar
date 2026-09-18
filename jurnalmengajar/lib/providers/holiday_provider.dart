@@ -2,52 +2,118 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/holiday_model.dart';
 import '../core/utils/helper.dart';
+import '../core/services/cache_service.dart';
 
 class HolidayProvider with ChangeNotifier {
   List<HolidayModel> _holidays = [];
   bool _isLoading = false;
   String? _errorMessage;
+  String? _currentSchoolId;
+  int _loadSequence = 0;
+  Future<void>? _inFlightLoadHolidays;
+  String? _inFlightSchoolId;
 
   List<HolidayModel> get holidays => _holidays;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
   Future<void> loadHolidays(String? schoolId) async {
-    _isLoading = true;
+    final cleanId = AppHelper.parseSingleCleanSchoolId(schoolId);
+    final targetSchoolId = (cleanId != null && cleanId.isNotEmpty) ? cleanId : schoolId?.trim();
+
+    if (_inFlightLoadHolidays != null && _inFlightSchoolId == targetSchoolId) {
+      return _inFlightLoadHolidays!;
+    }
+
+    final future = _executeLoadHolidays(targetSchoolId);
+    _inFlightLoadHolidays = future;
+    _inFlightSchoolId = targetSchoolId;
+    try {
+      await future;
+    } finally {
+      if (_inFlightLoadHolidays == future) {
+        _inFlightLoadHolidays = null;
+        _inFlightSchoolId = null;
+      }
+    }
+  }
+
+  Future<void> _executeLoadHolidays(String? targetSchoolId) async {
+    final isSchoolChanged = targetSchoolId != null && targetSchoolId.isNotEmpty && targetSchoolId != _currentSchoolId;
+    if (isSchoolChanged) {
+      _holidays = [];
+      _errorMessage = null;
+    }
+    _currentSchoolId = targetSchoolId ?? _currentSchoolId;
     _errorMessage = null;
-    notifyListeners();
+    final int sequence = ++_loadSequence;
+
+    // SWR Instant Cache: load cached holidays immediately (0ms)
+    if (_holidays.isEmpty && _currentSchoolId != null && _currentSchoolId!.isNotEmpty) {
+      try {
+        final cached = await CacheService().loadList('holidays_$_currentSchoolId');
+        if (cached != null && cached.isNotEmpty && _holidays.isEmpty && sequence == _loadSequence) {
+          _holidays = cached.map((json) => HolidayModel.fromJson(json)).toList();
+          _isLoading = false;
+          notifyListeners();
+        } else {
+          _isLoading = true;
+          notifyListeners();
+        }
+      } catch (_) {
+        _isLoading = true;
+        notifyListeners();
+      }
+    } else {
+      _isLoading = true;
+      notifyListeners();
+    }
+
     try {
       final supabase = Supabase.instance.client;
-      final cleanId = AppHelper.parseSingleCleanSchoolId(schoolId);
-      String? targetSchoolId = (cleanId != null && cleanId.isNotEmpty)
-          ? cleanId
-          : schoolId?.trim();
+      String? resolvedSchoolId = _currentSchoolId;
 
-      if (targetSchoolId == null || targetSchoolId.isEmpty || targetSchoolId == 'a1111111-1111-1111-1111-111111111111') {
+      if (resolvedSchoolId == null || resolvedSchoolId.isEmpty || resolvedSchoolId == 'a1111111-1111-1111-1111-111111111111') {
         final schoolRes = await supabase.from('schools').select('id').limit(1).maybeSingle();
         if (schoolRes != null) {
-          targetSchoolId = schoolRes['id'] as String?;
+          resolvedSchoolId = schoolRes['id'] as String?;
         }
       }
 
-      if (targetSchoolId != null && targetSchoolId.isNotEmpty) {
+      if (resolvedSchoolId != null && resolvedSchoolId.isNotEmpty) {
         final res = await supabase
             .from('school_holidays')
             .select()
-            .eq('school_id', targetSchoolId)
+            .eq('school_id', resolvedSchoolId)
             .order('start_date', ascending: true);
 
-        _holidays = (res as List)
+        if (sequence != _loadSequence || _currentSchoolId != targetSchoolId) {
+          return;
+        }
+
+        final List<HolidayModel> fresh = (res as List)
             .map((json) => HolidayModel.fromJson(json))
             .toList();
+
+        _holidays = fresh;
+
+        // Persist to local cache for instant SWR on next open
+        final cacheable = (res as List)
+            .map((e) => e is Map<String, dynamic> ? e : Map<String, dynamic>.from(e as Map))
+            .toList();
+        CacheService().save('holidays_$resolvedSchoolId', cacheable);
       } else {
         _holidays = [];
       }
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      if (sequence == _loadSequence) {
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+      }
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (sequence == _loadSequence) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -124,6 +190,7 @@ class HolidayProvider with ChangeNotifier {
         debugPrint('Note: soft-deleting school journals during addHoliday: $e');
       }
 
+      CacheService().remove('holidays_$targetSchoolId');
       await loadHolidays(targetSchoolId);
       return true;
     } catch (e) {
@@ -177,6 +244,7 @@ class HolidayProvider with ChangeNotifier {
       }
 
       await supabase.from('school_holidays').delete().eq('id', holidayId);
+      CacheService().remove('holidays_$targetSchoolId');
       await loadHolidays(targetSchoolId);
       return true;
     } catch (e) {

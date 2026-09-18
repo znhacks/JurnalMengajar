@@ -129,9 +129,12 @@ class GuruMainShellState extends State<GuruMainShell> {
 
     if (_loadedUserId != currentUser.id) {
       _loadedUserId = currentUser.id;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _loadUserData(currentUser);
-      });
+      // Tab 0 (Dashboard) handles its own loading; only prefetch if starting on another tab
+      if (_currentIndex != 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _loadUserData(currentUser);
+        });
+      }
     }
 
 

@@ -23,6 +23,12 @@ class ScheduleProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
+  int _loadSequence = 0;
+  Future<void>? _inFlightLoadAll;
+  String? _inFlightSchoolId;
+  Future<void>? _inFlightTeacherLoad;
+  String? _inFlightTeacherKey;
+
   void clearTeacherSchedulesCache() {
     _cachedTeacherId = null;
     _cachedTeacherSchedules.clear();
@@ -30,6 +36,26 @@ class ScheduleProvider with ChangeNotifier {
 
   Future<void> loadAllSchedules([String? schoolId]) async {
     final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId?.trim();
+
+    // In-flight coalescing: reuse ongoing request for the same schoolId
+    if (_inFlightLoadAll != null && _inFlightSchoolId == cleanSchoolId) {
+      return _inFlightLoadAll!;
+    }
+
+    final future = _executeLoadAllSchedules(cleanSchoolId);
+    _inFlightLoadAll = future;
+    _inFlightSchoolId = cleanSchoolId;
+    try {
+      await future;
+    } finally {
+      if (_inFlightLoadAll == future) {
+        _inFlightLoadAll = null;
+        _inFlightSchoolId = null;
+      }
+    }
+  }
+
+  Future<void> _executeLoadAllSchedules(String? cleanSchoolId) async {
     final isSchoolChanged = cleanSchoolId != null && cleanSchoolId.isNotEmpty && cleanSchoolId != _currentSchoolId;
 
     if (isSchoolChanged) {
@@ -43,13 +69,14 @@ class ScheduleProvider with ChangeNotifier {
 
     _currentSchoolId = cleanSchoolId ?? _currentSchoolId;
     _errorMessage = null;
+    final int sequence = ++_loadSequence;
 
     // SWR Instant Cache Population: If _schedules is empty, show cached data immediately (0ms)
     final sKey = _currentSchoolId ?? 'default';
     if (_schedules.isEmpty) {
       try {
         final cached = await CacheService().loadList('schedules_$sKey');
-        if (cached != null && cached.isNotEmpty && _schedules.isEmpty) {
+        if (cached != null && cached.isNotEmpty && _schedules.isEmpty && sequence == _loadSequence) {
           _schedules = cached.map((s) => ScheduleModel.fromJson(s)).toList();
           _isLoading = false;
           notifyListeners();
@@ -68,22 +95,60 @@ class ScheduleProvider with ChangeNotifier {
 
     try {
       final fresh = await scheduleRepository.getAll(_currentSchoolId);
-      _schedules = fresh;
+      // Sequence and tenant check: drop stale response if context switched while in-flight
+      if (sequence != _loadSequence || _currentSchoolId != cleanSchoolId) {
+        debugPrint('[RUNTIME_DEBUG:SCHEDULE_PROVIDER] Stale loadAllSchedules dropped for $cleanSchoolId');
+        return;
+      }
+
+      // Multi-tenant defense: ensure no schedule from another school slips in
+      if (_currentSchoolId != null && _currentSchoolId!.isNotEmpty) {
+        _schedules = fresh.where((s) {
+          final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId);
+          return sSchoolId == null || sSchoolId.isEmpty || sSchoolId == _currentSchoolId;
+        }).toList();
+      } else {
+        _schedules = fresh;
+      }
       debugPrint('[RUNTIME_DEBUG:SCHEDULE_PROVIDER] Loaded ${_schedules.length} isolated schedules for $_currentSchoolId into ScheduleProvider state.');
     } catch (e) {
-      _errorMessage = e.toString();
-      debugPrint('[RUNTIME_DEBUG:SCHEDULE_PROVIDER] ERROR in loadAllSchedules: $e');
+      if (sequence == _loadSequence) {
+        _errorMessage = e.toString();
+        debugPrint('[RUNTIME_DEBUG:SCHEDULE_PROVIDER] ERROR in loadAllSchedules: $e');
+      }
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (sequence == _loadSequence) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<void> loadTeacherSchedules(String teacherId, DateTime date, {bool forceRefresh = false}) async {
-    // SWR Instant Cache Population for teacher schedules
+    final teacherKey = '${_currentSchoolId ?? "all"}_$teacherId';
+    if (_inFlightTeacherLoad != null && _inFlightTeacherKey == teacherKey && !forceRefresh) {
+      return _inFlightTeacherLoad!;
+    }
+
+    final future = _executeLoadTeacherSchedules(teacherId, date, forceRefresh: forceRefresh);
+    _inFlightTeacherLoad = future;
+    _inFlightTeacherKey = teacherKey;
+    try {
+      await future;
+    } finally {
+      if (_inFlightTeacherLoad == future) {
+        _inFlightTeacherLoad = null;
+        _inFlightTeacherKey = null;
+      }
+    }
+  }
+
+  Future<void> _executeLoadTeacherSchedules(String teacherId, DateTime date, {bool forceRefresh = false}) async {
+    // SWR Instant Cache Population for teacher schedules (check aligned keys)
     if (_cachedTeacherSchedules.isEmpty || _cachedTeacherId != teacherId) {
       try {
-        final cached = await CacheService().loadList('schedules_teacher_$teacherId');
+        final cached = await CacheService().loadList('teacher_schedules_$teacherId') ??
+            await CacheService().loadList('schedules_teacher_$teacherId');
         if (cached != null && cached.isNotEmpty) {
           _cachedTeacherSchedules = cached.map((s) => ScheduleModel.fromJson(s)).toList();
           _cachedTeacherId = teacherId;

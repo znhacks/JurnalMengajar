@@ -32,7 +32,16 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadJournals();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final currentSchoolId = authProvider.activeSchoolId;
+      if (currentSchoolId != null && currentSchoolId.isNotEmpty) {
+        _lastLoadedSchoolId = currentSchoolId;
+        _lastLoadedUserId = authProvider.currentUser?.id;
+        _loadJournals();
+      }
+    });
   }
 
   @override
@@ -42,16 +51,19 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
     final currentSchoolId = authProvider.activeSchoolId;
     final currentUserId = authProvider.currentUser?.id;
 
-    if ((_lastLoadedSchoolId != null && _lastLoadedSchoolId != currentSchoolId) ||
-        (_lastLoadedUserId != null && _lastLoadedUserId != currentUserId)) {
+    final hasSchoolChanged = _lastLoadedSchoolId != currentSchoolId;
+    final hasUserChanged = _lastLoadedUserId != currentUserId;
+
+    if (hasSchoolChanged || hasUserChanged) {
       _lastLoadedSchoolId = currentSchoolId;
       _lastLoadedUserId = currentUserId;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _loadJournals();
-      });
-    } else {
-      _lastLoadedSchoolId = currentSchoolId;
-      _lastLoadedUserId = currentUserId;
+      if (currentSchoolId != null && currentSchoolId.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _loadJournals();
+          }
+        });
+      }
     }
   }
 
@@ -68,24 +80,24 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
     final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
 
     final currentUser = authProvider.currentUser;
-    if (currentUser != null) {
-      final schoolId = authProvider.activeSchoolId;
-      await masterProvider.loadAllData(schoolId);
+    final schoolId = authProvider.activeSchoolId;
+    if (currentUser == null || schoolId == null || schoolId.isEmpty) return;
 
-      final teacher = masterProvider.teachers.firstWhere(
-        (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
-        orElse: () => TeacherModel(
-            id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
-      );
-      if (teacher.id.isNotEmpty) {
-        await Future.wait([
-          journalProvider.loadTeacherJournals(teacher.id),
-          scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
-        ]);
-      } else {
-        scheduleProvider.clearTeacherSchedulesCache();
-        journalProvider.clearTeacherJournalsCache();
-      }
+    await masterProvider.loadAllData(schoolId);
+
+    final teacher = masterProvider.teachers.firstWhere(
+      (t) => t.id == currentUser.id || t.email.toLowerCase() == currentUser.email.toLowerCase(),
+      orElse: () => TeacherModel(
+          id: currentUser.id, name: '', position: '', address: '', phoneNumber: '', email: ''),
+    );
+    if (teacher.id.isNotEmpty) {
+      await Future.wait([
+        journalProvider.loadTeacherJournals(teacher.id),
+        scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
+      ]);
+    } else {
+      scheduleProvider.clearTeacherSchedulesCache();
+      journalProvider.clearTeacherJournalsCache();
     }
   }
 

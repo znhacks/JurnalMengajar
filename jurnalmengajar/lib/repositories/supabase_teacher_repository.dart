@@ -52,43 +52,47 @@ class SupabaseTeacherRepository implements TeacherRepository {
           final Set<String> activeLinkedUserIds = {};
           final Set<String> scheduledTeacherIds = {};
 
-          // 1. Fetch only ACTIVE user memberships with TEACHER role for this specific school in user_schools
-          try {
-            final userSchoolsRes = await _supabase
-                .from('user_schools')
-                .select('user_id, role, status')
-                .eq('school_id', cleanSchoolId)
-                .eq('status', 'active')
-                .inFilter('role', ['guru', 'teacher']);
+          // 1 & 2. Fetch active memberships and scheduled teacher IDs concurrently
+          await Future.wait([
+            (() async {
+              try {
+                final userSchoolsRes = await _supabase
+                    .from('user_schools')
+                    .select('user_id, role, status')
+                    .eq('school_id', cleanSchoolId)
+                    .eq('status', 'active')
+                    .inFilter('role', ['guru', 'teacher']);
 
-            debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Active teacher memberships for $cleanSchoolId: ${(userSchoolsRes as List).length} rows');
-            for (final row in (userSchoolsRes as List)) {
-              final uid = row['user_id']?.toString();
-              if (uid != null && uid.isNotEmpty) {
-                activeLinkedUserIds.add(uid);
+                debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Active teacher memberships for $cleanSchoolId: ${(userSchoolsRes as List).length} rows');
+                for (final row in (userSchoolsRes as List)) {
+                  final uid = row['user_id']?.toString();
+                  if (uid != null && uid.isNotEmpty) {
+                    activeLinkedUserIds.add(uid);
+                  }
+                }
+              } catch (err) {
+                debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] user_schools query error: $err');
               }
-            }
-          } catch (err) {
-            debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] user_schools query error: $err');
-          }
+            })(),
+            (() async {
+              try {
+                final schedRes = await _supabase
+                    .from('schedules')
+                    .select('teacher_id')
+                    .eq('school_id', cleanSchoolId);
 
-          // 2. Fetch teachers who have active schedules in this school
-          try {
-            final schedRes = await _supabase
-                .from('schedules')
-                .select('teacher_id')
-                .eq('school_id', cleanSchoolId);
-
-            for (final row in (schedRes as List)) {
-              final tid = row['teacher_id']?.toString();
-              if (tid != null && tid.isNotEmpty) {
-                scheduledTeacherIds.add(tid);
+                for (final row in (schedRes as List)) {
+                  final tid = row['teacher_id']?.toString();
+                  if (tid != null && tid.isNotEmpty) {
+                    scheduledTeacherIds.add(tid);
+                  }
+                }
+                debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Teachers with schedules in $cleanSchoolId: ${scheduledTeacherIds.length}');
+              } catch (err) {
+                debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] schedules query error: $err');
               }
-            }
-            debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] Teachers with schedules in $cleanSchoolId: ${scheduledTeacherIds.length}');
-          } catch (err) {
-            debugPrint('[RUNTIME_DEBUG:TEACHER_REPO] schedules query error: $err');
-          }
+            })(),
+          ]);
 
           // 3. Query users scoped strictly to cleanSchoolId
           try {

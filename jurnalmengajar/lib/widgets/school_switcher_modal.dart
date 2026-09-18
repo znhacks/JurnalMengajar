@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../providers/journal_provider.dart';
-import '../providers/master_data_provider.dart';
 import '../providers/warning_letter_provider.dart';
 import '../core/utils/helper.dart';
 import 'school_avatar.dart';
@@ -207,8 +206,6 @@ class SchoolSwitcherModal extends StatelessWidget {
                               Provider.of<ScheduleProvider>(context, listen: false);
                           final journalProvider =
                               Provider.of<JournalProvider>(context, listen: false);
-                          final masterProvider =
-                              Provider.of<MasterDataProvider>(context, listen: false);
                           final warningProvider =
                               Provider.of<WarningLetterProvider>(context, listen: false);
 
@@ -224,13 +221,6 @@ class SchoolSwitcherModal extends StatelessWidget {
                             item.schoolName,
                             item.role,
                           );
-
-                          masterProvider.loadAllData(item.schoolId);
-                          if (item.role.toLowerCase() == 'admin') {
-                            scheduleProvider.loadAllSchedules(item.schoolId);
-                            journalProvider.loadAllJournals(item.schoolId);
-                            warningProvider.loadAllWarningLetters(item.schoolId);
-                          }
                         },
                         leading: SchoolAvatar(
                           logoUrl: item.logoUrl,

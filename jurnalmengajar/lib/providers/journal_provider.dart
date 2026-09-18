@@ -17,6 +17,12 @@ class JournalProvider with ChangeNotifier {
 
   JournalProvider({required this.journalRepository});
 
+  int _loadSequence = 0;
+  Future<void>? _inFlightLoadAll;
+  String? _inFlightSchoolId;
+  Future<void>? _inFlightTeacherLoad;
+  String? _inFlightTeacherId;
+
   List<JournalModel> get journals => _journals;
   List<JournalModel> get teacherJournals => _teacherJournals;
   bool get isLoading => _isLoading;
@@ -24,6 +30,25 @@ class JournalProvider with ChangeNotifier {
 
   Future<void> loadAllJournals([String? schoolId]) async {
     final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId?.trim();
+
+    if (_inFlightLoadAll != null && _inFlightSchoolId == cleanSchoolId) {
+      return _inFlightLoadAll!;
+    }
+
+    final future = _executeLoadAllJournals(cleanSchoolId);
+    _inFlightLoadAll = future;
+    _inFlightSchoolId = cleanSchoolId;
+    try {
+      await future;
+    } finally {
+      if (_inFlightLoadAll == future) {
+        _inFlightLoadAll = null;
+        _inFlightSchoolId = null;
+      }
+    }
+  }
+
+  Future<void> _executeLoadAllJournals(String? cleanSchoolId) async {
     final isSchoolChanged = cleanSchoolId != null && cleanSchoolId.isNotEmpty && cleanSchoolId != _currentSchoolId;
 
     if (isSchoolChanged) {
@@ -35,12 +60,13 @@ class JournalProvider with ChangeNotifier {
 
     _currentSchoolId = cleanSchoolId ?? _currentSchoolId;
     _errorMessage = null;
+    final int sequence = ++_loadSequence;
 
     final sKey = _currentSchoolId ?? 'default';
     if (_journals.isEmpty) {
       try {
         final cached = await CacheService().loadList('journals_$sKey');
-        if (cached != null && cached.isNotEmpty && _journals.isEmpty) {
+        if (cached != null && cached.isNotEmpty && _journals.isEmpty && sequence == _loadSequence) {
           _journals = cached.map((j) => JournalModel.fromJson(j)).toList();
           _isLoading = false;
           notifyListeners();
@@ -59,20 +85,56 @@ class JournalProvider with ChangeNotifier {
 
     try {
       final fresh = await journalRepository.getAll(_currentSchoolId);
-      _journals = fresh;
+      if (sequence != _loadSequence || _currentSchoolId != cleanSchoolId) {
+        debugPrint('[RUNTIME_DEBUG:JOURNAL_PROVIDER] Stale loadAllJournals dropped for $cleanSchoolId');
+        return;
+      }
+
+      // Multi-tenant defense: ensure no journal from another school slips in
+      if (_currentSchoolId != null && _currentSchoolId!.isNotEmpty) {
+        _journals = fresh.where((j) {
+          final sSchoolId = AppHelper.parseSingleCleanSchoolId(j.schoolId);
+          return sSchoolId == null || sSchoolId.isEmpty || sSchoolId == _currentSchoolId;
+        }).toList();
+      } else {
+        _journals = fresh;
+      }
     } catch (e) {
-      _errorMessage = e.toString();
+      if (sequence == _loadSequence) {
+        _errorMessage = e.toString();
+      }
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (sequence == _loadSequence) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<void> loadTeacherJournals(String teacherId) async {
+    if (_inFlightTeacherLoad != null && _inFlightTeacherId == teacherId) {
+      return _inFlightTeacherLoad!;
+    }
+
+    final future = _executeLoadTeacherJournals(teacherId);
+    _inFlightTeacherLoad = future;
+    _inFlightTeacherId = teacherId;
+    try {
+      await future;
+    } finally {
+      if (_inFlightTeacherLoad == future) {
+        _inFlightTeacherLoad = null;
+        _inFlightTeacherId = null;
+      }
+    }
+  }
+
+  Future<void> _executeLoadTeacherJournals(String teacherId) async {
     _errorMessage = null;
     if (_teacherJournals.isEmpty) {
       try {
-        final cached = await CacheService().loadList('journals_teacher_$teacherId');
+        final cached = await CacheService().loadList('teacher_journals_$teacherId') ??
+            await CacheService().loadList('journals_teacher_$teacherId');
         if (cached != null && cached.isNotEmpty && _teacherJournals.isEmpty) {
           _teacherJournals = cached.map((j) => JournalModel.fromJson(j)).toList();
           _isLoading = false;

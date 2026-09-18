@@ -48,7 +48,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     super.initState();
     _selectedTeacherId = widget.selectedTeacherId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshData();
+      if (!mounted) return;
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final currentSchoolId = authProvider.activeSchoolId;
+      if (currentSchoolId != null && currentSchoolId.isNotEmpty) {
+        _lastLoadedSchoolId = currentSchoolId;
+        _lastLoadedUserId = authProvider.currentUser?.id;
+        _refreshData();
+      }
     });
   }
 
@@ -59,17 +66,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final currentSchoolId = authProvider.activeSchoolId;
     final currentUserId = authProvider.currentUser?.id;
 
-    if ((_lastLoadedSchoolId != null &&
-            _lastLoadedSchoolId != currentSchoolId) ||
-        (_lastLoadedUserId != null && _lastLoadedUserId != currentUserId)) {
+    final hasSchoolChanged = _lastLoadedSchoolId != currentSchoolId;
+    final hasUserChanged = _lastLoadedUserId != currentUserId;
+
+    if (hasSchoolChanged || hasUserChanged) {
       _lastLoadedSchoolId = currentSchoolId;
       _lastLoadedUserId = currentUserId;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _refreshData();
-      });
-    } else {
-      _lastLoadedSchoolId = currentSchoolId;
-      _lastLoadedUserId = currentUserId;
+      if (currentSchoolId != null && currentSchoolId.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _refreshData();
+          }
+        });
+      }
     }
   }
 
@@ -85,6 +94,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Future<void> _refreshData() async {
     if (!mounted) return;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final schoolId = authProvider.activeSchoolId;
+    if (schoolId == null || schoolId.isEmpty) {
+      debugPrint('[RUNTIME_DEBUG:ADMIN_DASHBOARD] activeSchoolId is not ready yet, postponing _refreshData.');
+      return;
+    }
+
     final masterProvider = Provider.of<MasterDataProvider>(
       context,
       listen: false,
@@ -98,10 +114,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       listen: false,
     );
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final schoolId =
-        authProvider.activeSchoolId ?? 'a1111111-1111-1111-1111-111111111111';
-
     debugPrint(
       '----------------------------------------------------------------',
     );
@@ -110,14 +122,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       '[RUNTIME_DEBUG:ADMIN_DASHBOARD] Auth State: user=${authProvider.currentUser?.email}, role=${authProvider.activeRole}, schoolId=$schoolId, schoolName="${authProvider.activeSchoolName}"',
     );
 
+    final holidayProvider = Provider.of<HolidayProvider>(
+      context,
+      listen: false,
+    );
+    final warningProvider = Provider.of<WarningLetterProvider>(
+      context,
+      listen: false,
+    );
+
     await Future.wait([
       masterProvider.loadAllData(authProvider.activeSchoolId),
       scheduleProvider.loadAllSchedules(authProvider.activeSchoolId),
       journalProvider.loadAllJournals(authProvider.activeSchoolId),
-      Provider.of<HolidayProvider>(
-        context,
-        listen: false,
-      ).loadHolidays(schoolId),
+      holidayProvider.loadHolidays(schoolId),
+      warningProvider.loadAllWarningLetters(authProvider.activeSchoolId),
     ]);
 
     debugPrint('[RUNTIME_DEBUG:ADMIN_DASHBOARD] Data Refresh Finished.');
@@ -131,33 +150,43 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       '----------------------------------------------------------------',
     );
 
-    // Run Warning Letters Check & Issue if late
+    // Run Warning Letters Check & Issue in background (asynchronous, does not block dashboard rendering)
     if (mounted) {
       final settingsProvider = Provider.of<SettingsProvider>(
         context,
         listen: false,
       );
-      await settingsProvider.loadSettings();
-      if (!mounted) return;
       final maxDays = settingsProvider.settings?.maxJournalInputDays ?? 3;
 
-      final warningProvider = Provider.of<WarningLetterProvider>(
-        context,
-        listen: false,
-      );
-      await warningProvider.checkAndIssueWarnings(
+      warningProvider.checkAndIssueWarnings(
         schedules: scheduleProvider.schedules,
         journals: journalProvider.journals,
         maxDays: maxDays,
         masterProvider: masterProvider,
-      );
-      await warningProvider.loadAllWarningLetters(authProvider.activeSchoolId);
+      ).then((_) {
+        if (mounted) {
+          warningProvider.loadAllWarningLetters(authProvider.activeSchoolId);
+        }
+      }).catchError((err) {
+        debugPrint('[ADMIN_DASHBOARD] Background warning check error: $err');
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (!authProvider.initialized || authProvider.activeSchoolId == null) {
+      return Scaffold(
+        backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
     final journalProvider = context.watch<JournalProvider>();
@@ -267,7 +296,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         scheduleProvider.isLoading ||
         journalProvider.isLoading;
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark
         ? const Color(0xFF60A5FA)
         : const Color.fromARGB(255, 37, 99, 235);

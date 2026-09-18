@@ -68,8 +68,31 @@ class MasterDataProvider with ChangeNotifier {
     }
   }
 
+  int _loadSequence = 0;
+  Future<void>? _inFlightLoadAll;
+  String? _inFlightSchoolId;
+
   Future<void> loadAllData([String? schoolId]) async {
     final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId?.trim();
+
+    if (_inFlightLoadAll != null && _inFlightSchoolId == cleanSchoolId) {
+      return _inFlightLoadAll!;
+    }
+
+    final future = _executeLoadAllData(cleanSchoolId);
+    _inFlightLoadAll = future;
+    _inFlightSchoolId = cleanSchoolId;
+    try {
+      await future;
+    } finally {
+      if (_inFlightLoadAll == future) {
+        _inFlightLoadAll = null;
+        _inFlightSchoolId = null;
+      }
+    }
+  }
+
+  Future<void> _executeLoadAllData(String? cleanSchoolId) async {
     final isSchoolChanged = cleanSchoolId != null && cleanSchoolId.isNotEmpty && cleanSchoolId != _currentSchoolId;
 
     if (isSchoolChanged) {
@@ -86,6 +109,7 @@ class MasterDataProvider with ChangeNotifier {
 
     _currentSchoolId = cleanSchoolId ?? _currentSchoolId;
     _errorMessage = null;
+    final int sequence = ++_loadSequence;
 
     // SWR Instant Cache Population: If lists are empty, render from disk cache immediately (0ms)
     final sKey = _currentSchoolId ?? 'default';
@@ -98,23 +122,23 @@ class MasterDataProvider with ChangeNotifier {
         final cachedTeachers = await CacheService().loadList('teachers_$sKey');
 
         bool hasAnyCache = false;
-        if (cachedPeriods != null && cachedPeriods.isNotEmpty && _periods.isEmpty) {
+        if (cachedPeriods != null && cachedPeriods.isNotEmpty && _periods.isEmpty && sequence == _loadSequence) {
           _periods = cachedPeriods.map((p) => PeriodModel.fromJson(p)).toList();
           hasAnyCache = true;
         }
-        if (cachedSubjects != null && cachedSubjects.isNotEmpty && _subjects.isEmpty) {
+        if (cachedSubjects != null && cachedSubjects.isNotEmpty && _subjects.isEmpty && sequence == _loadSequence) {
           _subjects = cachedSubjects.map((s) => SubjectModel.fromJson(s)).toList();
           hasAnyCache = true;
         }
-        if (cachedHours != null && cachedHours.isNotEmpty && _hours.isEmpty) {
+        if (cachedHours != null && cachedHours.isNotEmpty && _hours.isEmpty && sequence == _loadSequence) {
           _hours = cachedHours.map((h) => HourModel.fromJson(h)).toList();
           hasAnyCache = true;
         }
-        if (cachedClasses != null && cachedClasses.isNotEmpty && _classes.isEmpty) {
+        if (cachedClasses != null && cachedClasses.isNotEmpty && _classes.isEmpty && sequence == _loadSequence) {
           _classes = cachedClasses.map((c) => ClassModel.fromJson(c)).toList();
           hasAnyCache = true;
         }
-        if (cachedTeachers != null && cachedTeachers.isNotEmpty && _teachers.isEmpty) {
+        if (cachedTeachers != null && cachedTeachers.isNotEmpty && _teachers.isEmpty && sequence == _loadSequence) {
           _teachers = cachedTeachers.map((t) => TeacherModel.fromJson(t)).toList();
           hasAnyCache = true;
         }
@@ -168,6 +192,11 @@ class MasterDataProvider with ChangeNotifier {
           Future.value(_schools),
       ]);
 
+      if (sequence != _loadSequence || _currentSchoolId != cleanSchoolId) {
+        debugPrint('[RUNTIME_DEBUG:MASTER_DATA] Stale loadAllData dropped for $cleanSchoolId');
+        return;
+      }
+
       final newPeriods = results[0] as List<PeriodModel>;
       final newSubjects = results[1] as List<SubjectModel>;
       final newHours = results[2] as List<HourModel>;
@@ -175,21 +204,45 @@ class MasterDataProvider with ChangeNotifier {
       final newTeachers = results[4] as List<TeacherModel>;
       final newSchools = results[5] as List<SchoolModel>;
 
-      // If switching school or if lists were empty, assign fresh data directly
-      _periods = newPeriods;
-      _subjects = newSubjects;
-      _hours = newHours;
-      _classes = newClasses;
-      _teachers = newTeachers;
+      // Multi-tenant defense: ensure no master data from another school slips in
+      if (_currentSchoolId != null && _currentSchoolId!.isNotEmpty) {
+        _periods = newPeriods.where((p) {
+          final sId = AppHelper.parseSingleCleanSchoolId(p.schoolId);
+          return sId == null || sId.isEmpty || sId == _currentSchoolId;
+        }).toList();
+        _subjects = newSubjects.where((s) {
+          final sId = AppHelper.parseSingleCleanSchoolId(s.schoolId);
+          return sId == null || sId.isEmpty || sId == _currentSchoolId;
+        }).toList();
+        _hours = newHours.where((h) {
+          final sId = AppHelper.parseSingleCleanSchoolId(h.schoolId);
+          return sId == null || sId.isEmpty || sId == _currentSchoolId;
+        }).toList();
+        _classes = newClasses.where((c) {
+          final sId = AppHelper.parseSingleCleanSchoolId(c.schoolId);
+          return sId == null || sId.isEmpty || sId == _currentSchoolId;
+        }).toList();
+        _teachers = newTeachers;
+      } else {
+        _periods = newPeriods;
+        _subjects = newSubjects;
+        _hours = newHours;
+        _classes = newClasses;
+        _teachers = newTeachers;
+      }
       if (newSchools.isNotEmpty || _schools.isEmpty) _schools = newSchools;
 
       debugPrint('[RUNTIME_DEBUG:MASTER_DATA] Loaded isolated data for $_currentSchoolId -> Periods: ${_periods.length}, Subjects: ${_subjects.length}, Hours: ${_hours.length}, Classes: ${_classes.length}, Teachers: ${_teachers.length}');
     } catch (e) {
-      _errorMessage = e.toString();
-      debugPrint('[RUNTIME_DEBUG:MASTER_DATA] ERROR in loadAllData: $e');
+      if (sequence == _loadSequence) {
+        _errorMessage = e.toString();
+        debugPrint('[RUNTIME_DEBUG:MASTER_DATA] ERROR in loadAllData: $e');
+      }
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (sequence == _loadSequence) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
