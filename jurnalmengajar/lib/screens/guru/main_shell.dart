@@ -16,7 +16,6 @@ import '../../models/teacher_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/journal_provider.dart';
-import '../../core/utils/helper.dart';
 
 class GuruMainShell extends StatefulWidget {
   final int? initialIndex;
@@ -28,8 +27,6 @@ class GuruMainShell extends StatefulWidget {
 
 class GuruMainShellState extends State<GuruMainShell> {
   late int _currentIndex;
-  double? _xPosition;
-  double? _yPosition;
   DateTime? _lastBackPressTime;
 
   void switchToTab(int index) {
@@ -115,88 +112,7 @@ class GuruMainShellState extends State<GuruMainShell> {
     }
   }
 
-  Widget _buildFloatingBadge({
-    required int count,
-    required Color color,
-    required IconData icon,
-    required Color badgeColor,
-    required Color badgeTextColor,
-    required VoidCallback onTap,
-    required double screenWidth,
-    required double screenHeight,
-  }) {
-    _xPosition ??= screenWidth - 72.w;
-    _yPosition ??= screenHeight - 160.h;
 
-    return Positioned(
-      left: _xPosition,
-      top: _yPosition,
-      child: GestureDetector(
-        onPanUpdate: (details) {
-          setState(() {
-            _xPosition = (_xPosition ?? 0) + details.delta.dx;
-            _yPosition = (_yPosition ?? 0) + details.delta.dy;
-
-            // Boundaries: stay on screen
-            _xPosition = _xPosition!.clamp(16.0, screenWidth - 72.w);
-            _yPosition = _yPosition!.clamp(16.0, screenHeight - 200.h);
-          });
-        },
-        onTap: onTap,
-        child: Container(
-          width: 56.w,
-          height: 56.w,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: 0.4),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-            border: Border.all(color: Colors.white, width: 2),
-          ),
-          alignment: Alignment.center,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Icon(
-                icon,
-                color: Colors.white,
-                size: 28,
-              ),
-              Positioned(
-                right: -6.w,
-                top: -6.h,
-                child: Container(
-                  padding: EdgeInsets.all(4.w),
-                  decoration: BoxDecoration(
-                    color: badgeColor,
-                    shape: BoxShape.circle,
-                  ),
-                  constraints: BoxConstraints(
-                    minWidth: 18.w,
-                    minHeight: 18.w,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '$count',
-                    style: GoogleFonts.hankenGrotesk(
-                      color: badgeTextColor,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 10.sp,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -218,18 +134,7 @@ class GuruMainShellState extends State<GuruMainShell> {
       });
     }
 
-    final warningProvider = context.watch<WarningLetterProvider>();
-    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId);
-    final unreadWarnings = warningProvider.warningLetters.where((w) {
-      if (w.status != 'unread') return false;
-      if (cleanActiveSchoolId == null || cleanActiveSchoolId.isEmpty) return true;
-      final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
-      return wSchoolId == null || wSchoolId.isEmpty || wSchoolId == cleanActiveSchoolId;
-    }).length;
 
-    final mediaQuery = MediaQuery.of(context);
-    final screenWidth = mediaQuery.size.width;
-    final screenHeight = mediaQuery.size.height;
 
     return PopScope(
       canPop: false,
@@ -272,22 +177,7 @@ class GuruMainShellState extends State<GuruMainShell> {
       },
       child: Scaffold(
         drawer: GuruDrawer(selectedIndex: _currentIndex),
-        body: Stack(
-          children: [
-            IndexedStack(index: _currentIndex, children: _screens),
-            if (unreadWarnings > 0)
-              _buildFloatingBadge(
-                count: unreadWarnings,
-                color: const Color(0xFFBA1A1A),
-                icon: Icons.assignment_late_rounded,
-                badgeColor: Colors.amber,
-                badgeTextColor: Colors.black,
-                onTap: () => context.push('/guru/warning-letters'),
-                screenWidth: screenWidth,
-                screenHeight: screenHeight,
-              ),
-          ],
-        ),
+        body: IndexedStack(index: _currentIndex, children: _screens),
       ),
     );
   }
