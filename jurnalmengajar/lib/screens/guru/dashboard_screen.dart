@@ -82,7 +82,6 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     if (hasSchoolChanged || hasUserChanged) {
       _lastLoadedSchoolId = currentSchoolId;
       _lastLoadedUserId = currentUserId;
-      _hasCheckedReminder = false;
       if (currentSchoolId != null && currentSchoolId.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
