@@ -8,14 +8,17 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../providers/master_data_provider.dart';
 import '../../../providers/schedule_provider.dart';
 import '../../../providers/journal_provider.dart';
+import '../../../providers/holiday_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../models/teacher_model.dart';
 import '../../../models/schedule_model.dart';
 import '../../../models/class_model.dart';
 import '../../../models/subject_model.dart';
 import '../../../models/hour_model.dart';
+import '../../../models/journal_model.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/helper.dart';
+import '../../../core/utils/schedule_grouper.dart';
 
 class TeacherDetailScreen extends StatefulWidget {
   final String teacherId;
@@ -40,10 +43,12 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
   Future<void> _loadData() async {
     final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
     final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+    final holidayProvider = Provider.of<HolidayProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await Future.wait([
       scheduleProvider.loadAllSchedules(authProvider.activeSchoolId),
       journalProvider.loadAllJournals(authProvider.activeSchoolId),
+      holidayProvider.loadHolidays(authProvider.activeSchoolId),
     ]);
   }
 
@@ -85,14 +90,65 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
     );
   }
 
+  bool _areAllTeacherSchedulesFilledOnDay(
+    List<ScheduleModel> schedules,
+    List<JournalModel> journals,
+    DateTime day,
+  ) {
+    final activeSchoolId = Provider.of<AuthProvider>(context, listen: false).activeSchoolId;
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(activeSchoolId) ?? activeSchoolId?.trim();
+    final daySchedules = schedules.where((s) {
+      if (!s.isActive || s.teacherId != widget.teacherId) return false;
+      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+        final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+        if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+          return false;
+        }
+      }
+      return s.date.year == day.year &&
+          s.date.month == day.month &&
+          s.date.day == day.day;
+    }).toList();
+
+    if (daySchedules.isEmpty) return false;
+
+    final grouped = groupDailySchedules(daySchedules);
+    if (grouped.isEmpty) return false;
+
+    return grouped.every((group) {
+      final s = group.primarySchedule;
+      return journals.any((j) {
+        final sameDate = j.date.year == day.year &&
+            j.date.month == day.month &&
+            j.date.day == day.day;
+        final sameSchedule = j.scheduleId == s.id ||
+            group.scheduleIds.contains(j.scheduleId) ||
+            (j.classId == s.classId && j.subjectId == s.subjectId && j.teacherId == widget.teacherId);
+        return sameDate &&
+            sameSchedule &&
+            (j.status == 'pending' || j.status == 'verified' || j.isTeacherAbsence);
+      });
+    });
+  }
+
   Widget _buildScheduledDayCell(
     DateTime day,
     bool isSelected,
     bool isToday,
     bool isOutside,
     List<ScheduleModel> schedules,
+    List<JournalModel> journals,
   ) {
     final hasSchedule = _hasTeacherScheduleOnDay(schedules, day);
+    final isAllFilled = hasSchedule && _areAllTeacherSchedulesFilledOnDay(schedules, journals, day);
+    final holidayProvider = Provider.of<HolidayProvider>(context, listen: false);
+    final holiday = holidayProvider.getHolidayForDate(day);
+    final isHoliday = holiday != null || journals.any((j) =>
+        j.teacherId == widget.teacherId &&
+        j.date.year == day.year &&
+        j.date.month == day.month &&
+        j.date.day == day.day &&
+        j.isTeacherAbsence);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSunday = day.weekday == DateTime.sunday;
 
@@ -101,17 +157,60 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
         ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
         : (isSunday ? const Color(0xFFEF4444) : Theme.of(context).colorScheme.onSurface);
     FontWeight fontWeight = FontWeight.w500;
+    BoxBorder? border;
 
     if (isSelected) {
-      bgColor = AppTheme.primaryColor;
-      textColor = Colors.white;
+      // Indikator kalender yang terpilih tetap berwarna biru kecuali ketika libur / cuti berwarna merah
+      if (isHoliday) {
+        bgColor = const Color(0xFFDC2626);
+        textColor = Colors.white;
+        fontWeight = FontWeight.w700;
+        border = Border.all(
+          color: const Color(0xFFEF4444),
+          width: 2.0,
+        );
+      } else {
+        bgColor = AppTheme.primaryColor;
+        textColor = Colors.white;
+        fontWeight = FontWeight.w700;
+        border = Border.all(
+          color: const Color(0xFF60A5FA),
+          width: 2.0,
+        );
+      }
+    } else if (isHoliday) {
+      // Libur / cuti: berwarna merah
+      bgColor = const Color(0xFFDC2626).withValues(alpha: isDark ? 0.22 : 0.15);
+      textColor = const Color(0xFFEF4444);
       fontWeight = FontWeight.w700;
+      border = Border.all(
+        color: const Color(0xFFEF4444),
+        width: 1.5,
+      );
     } else if (hasSchedule) {
-      bgColor = const Color(0xFFFFEB3B).withValues(alpha: isDark ? 0.2 : 0.35);
-      textColor = isOutside
-          ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
-          : (isDark ? const Color(0xFFFDE047) : const Color(0xFFB45309));
-      fontWeight = FontWeight.w700;
+      if (isAllFilled) {
+        // Selesai semua jadwal diisi: berwarna biru
+        bgColor = const Color(0xFF3B82F6).withValues(alpha: isDark ? 0.22 : 0.15);
+        textColor = isOutside
+            ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
+            : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8));
+        fontWeight = FontWeight.w700;
+        border = Border.all(
+          color: const Color(0xFF3B82F6),
+          width: 1.5,
+        );
+      } else {
+        // Memiliki jadwal tetapi belum semua mengisi jurnal: berwarna hijau
+        bgColor = const Color(0xFF10B981).withValues(alpha: isDark ? 0.22 : 0.15);
+        textColor = isOutside
+            ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
+            : (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF047857));
+        fontWeight = FontWeight.w700;
+        border = Border.all(
+          color: const Color(0xFF10B981),
+          width: 1.5,
+        );
+      }
     } else if (isToday) {
       bgColor = AppTheme.primaryColor.withValues(alpha: isDark ? 0.25 : 0.15);
       textColor = isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor;
@@ -123,12 +222,7 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,
-        border: hasSchedule
-            ? Border.all(
-                color: const Color(0xFFF59E0B),
-                width: isSelected ? 2.0 : 1.5,
-              )
-            : null,
+        border: border,
       ),
       alignment: Alignment.center,
       child: Text(
@@ -147,6 +241,7 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
     final journalProvider = context.watch<JournalProvider>();
+    context.watch<HolidayProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final teacher = masterProvider.teachers.firstWhere(
@@ -325,16 +420,16 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                       );
                     },
                     defaultBuilder: (context, day, focusedDay) {
-                      return _buildScheduledDayCell(day, false, false, false, scheduleProvider.schedules);
+                      return _buildScheduledDayCell(day, false, false, false, scheduleProvider.schedules, journalProvider.journals);
                     },
                     outsideBuilder: (context, day, focusedDay) {
-                      return _buildScheduledDayCell(day, false, false, true, scheduleProvider.schedules);
+                      return _buildScheduledDayCell(day, false, false, true, scheduleProvider.schedules, journalProvider.journals);
                     },
                     todayBuilder: (context, day, focusedDay) {
-                      return _buildScheduledDayCell(day, false, true, false, scheduleProvider.schedules);
+                      return _buildScheduledDayCell(day, false, true, false, scheduleProvider.schedules, journalProvider.journals);
                     },
                     selectedBuilder: (context, day, focusedDay) {
-                      return _buildScheduledDayCell(day, true, false, false, scheduleProvider.schedules);
+                      return _buildScheduledDayCell(day, true, false, false, scheduleProvider.schedules, journalProvider.journals);
                     },
                   ),
                 ),

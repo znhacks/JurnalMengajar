@@ -17,6 +17,7 @@ import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
 import '../../models/teacher_model.dart';
 import '../../models/schedule_model.dart';
+import '../../models/journal_model.dart';
 import '../../core/utils/schedule_grouper.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/warning_letter_provider.dart';
@@ -391,6 +392,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             delay: const Duration(milliseconds: 50),
                             child: _buildCalendarCard(
                               schoolSchedules,
+                              schoolJournals,
                               hasHighlightBefore,
                               hasHighlightAfter,
                             ),
@@ -772,21 +774,90 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     });
   }
 
+  bool _areAllSchedulesFilledOnDay(
+    List<ScheduleModel> schedules,
+    List<JournalModel> journals,
+    DateTime day,
+  ) {
+    final activeSchoolId = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).activeSchoolId;
+    final cleanActiveSchoolId =
+        AppHelper.parseSingleCleanSchoolId(activeSchoolId) ??
+        activeSchoolId?.trim();
+
+    final daySchedules = schedules.where((s) {
+      if (!s.isActive) return false;
+      if (_selectedTeacherId != null && s.teacherId != _selectedTeacherId) {
+        return false;
+      }
+      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+        final sSchoolId =
+            AppHelper.parseSingleCleanSchoolId(s.schoolId) ??
+            s.schoolId?.trim();
+        if (sSchoolId != null &&
+            sSchoolId.isNotEmpty &&
+            sSchoolId != cleanActiveSchoolId) {
+          return false;
+        }
+      }
+      return s.date.year == day.year &&
+          s.date.month == day.month &&
+          s.date.day == day.day;
+    }).toList();
+
+    if (daySchedules.isEmpty) return false;
+
+    final grouped = groupDailySchedules(daySchedules);
+    if (grouped.isEmpty) return false;
+
+    return grouped.every((group) {
+      final s = group.primarySchedule;
+      return journals.any((j) {
+        final sameDate = j.date.year == day.year &&
+            j.date.month == day.month &&
+            j.date.day == day.day;
+        final sameSchedule = j.scheduleId == s.id ||
+            group.scheduleIds.contains(j.scheduleId) ||
+            (j.classId == s.classId &&
+                j.subjectId == s.subjectId &&
+                j.teacherId == s.teacherId);
+        return sameDate &&
+            sameSchedule &&
+            (j.status == 'pending' ||
+                j.status == 'verified' ||
+                j.isTeacherAbsence);
+      });
+    });
+  }
+
   Widget _buildScheduledDayCell(
     DateTime day,
     bool isSelected,
     bool isToday,
     bool isOutside,
     List<ScheduleModel> schedules,
+    List<JournalModel> journals,
   ) {
     final hasSchedule = _hasTeacherScheduleOnDay(schedules, day);
+    final isAllFilled =
+        hasSchedule && _areAllSchedulesFilledOnDay(schedules, journals, day);
 
     final holidayProvider = Provider.of<HolidayProvider>(
       context,
       listen: false,
     );
     final holiday = holidayProvider.getHolidayForDate(day);
-    final isHoliday = holiday != null;
+    final isHoliday = holiday != null ||
+        (_selectedTeacherId != null
+            ? journals.any((j) =>
+                j.teacherId == _selectedTeacherId &&
+                j.date.year == day.year &&
+                j.date.month == day.month &&
+                j.date.day == day.day &&
+                j.isTeacherAbsence)
+            : false);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSunday = day.weekday == DateTime.sunday;
 
@@ -797,21 +868,60 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ? const Color(0xFFEF4444)
               : Theme.of(context).colorScheme.onSurface);
     FontWeight fontWeight = FontWeight.w500;
+    BoxBorder? border;
 
     if (isSelected) {
-      bgColor = isHoliday ? const Color(0xFFDC2626) : AppTheme.primaryColor;
-      textColor = Colors.white;
-      fontWeight = FontWeight.w700;
+      // Indikator kalender yang terpilih tetap berwarna biru kecuali ketika libur / cuti berwarna merah
+      if (isHoliday) {
+        bgColor = const Color(0xFFDC2626);
+        textColor = Colors.white;
+        fontWeight = FontWeight.w700;
+        border = Border.all(
+          color: const Color(0xFFEF4444),
+          width: 2.0,
+        );
+      } else {
+        bgColor = AppTheme.primaryColor;
+        textColor = Colors.white;
+        fontWeight = FontWeight.w700;
+        border = Border.all(
+          color: const Color(0xFF60A5FA),
+          width: 2.0,
+        );
+      }
     } else if (isHoliday) {
-      bgColor = const Color(0xFFDC2626).withValues(alpha: isDark ? 0.2 : 0.15);
+      // Libur / cuti: berwarna merah
+      bgColor = const Color(0xFFDC2626).withValues(alpha: isDark ? 0.22 : 0.15);
       textColor = const Color(0xFFEF4444);
       fontWeight = FontWeight.w700;
+      border = Border.all(
+        color: const Color(0xFFEF4444),
+        width: 1.5,
+      );
     } else if (hasSchedule) {
-      bgColor = const Color(0xFFFFEB3B).withValues(alpha: isDark ? 0.2 : 0.35);
-      textColor = isOutside
-          ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
-          : (isDark ? const Color(0xFFFDE047) : const Color(0xFFB45309));
-      fontWeight = FontWeight.w700;
+      if (isAllFilled) {
+        // Selesai semua jadwal diisi: berwarna biru
+        bgColor = const Color(0xFF3B82F6).withValues(alpha: isDark ? 0.22 : 0.15);
+        textColor = isOutside
+            ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
+            : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8));
+        fontWeight = FontWeight.w700;
+        border = Border.all(
+          color: const Color(0xFF3B82F6),
+          width: 1.5,
+        );
+      } else {
+        // Memiliki jadwal tetapi belum semua mengisi jurnal: berwarna hijau
+        bgColor = const Color(0xFF10B981).withValues(alpha: isDark ? 0.22 : 0.15);
+        textColor = isOutside
+            ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
+            : (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF047857));
+        fontWeight = FontWeight.w700;
+        border = Border.all(
+          color: const Color(0xFF10B981),
+          width: 1.5,
+        );
+      }
     } else if (isToday) {
       bgColor = AppTheme.primaryColor.withValues(alpha: isDark ? 0.25 : 0.15);
       textColor = isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor;
@@ -819,21 +929,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
 
     return Container(
-      margin: const EdgeInsets.all(2),
+      margin: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,
-        border: isHoliday
-            ? Border.all(
-                color: const Color(0xFFEF4444),
-                width: isSelected ? 2.0 : 1.5,
-              )
-            : hasSchedule
-                ? Border.all(
-                    color: const Color(0xFFF59E0B),
-                    width: isSelected ? 2.0 : 1.5,
-                  )
-                : null,
+        border: border,
       ),
       alignment: Alignment.center,
       child: Text(
@@ -849,6 +949,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _buildCalendarCard(
     List<ScheduleModel> schedules,
+    List<JournalModel> journals,
     bool hasHighlightBefore,
     bool hasHighlightAfter,
   ) {
@@ -904,7 +1005,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             _focusedDay = focusedDay;
           });
         },
-        onHeaderTapped: (_) => _showFullCalendarDialog(context, schedules),
+        onHeaderTapped: (_) => _showFullCalendarDialog(context, schedules, journals),
         calendarBuilders: CalendarBuilders(
           dowBuilder: (context, day) {
             final dayName = DateFormat.E('id_ID').format(day);
@@ -925,16 +1026,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             );
           },
           defaultBuilder: (context, day, focusedDay) {
-            return _buildScheduledDayCell(day, false, false, false, schedules);
+            return _buildScheduledDayCell(day, false, false, false, schedules, journals);
           },
           outsideBuilder: (context, day, focusedDay) {
-            return _buildScheduledDayCell(day, false, false, true, schedules);
+            return _buildScheduledDayCell(day, false, false, true, schedules, journals);
           },
           todayBuilder: (context, day, focusedDay) {
-            return _buildScheduledDayCell(day, false, true, false, schedules);
+            return _buildScheduledDayCell(day, false, true, false, schedules, journals);
           },
           selectedBuilder: (context, day, focusedDay) {
-            return _buildScheduledDayCell(day, true, false, false, schedules);
+            return _buildScheduledDayCell(day, true, false, false, schedules, journals);
           },
         ),
       ),
@@ -944,6 +1045,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   void _showFullCalendarDialog(
     BuildContext context,
     List<ScheduleModel> schedules,
+    List<JournalModel> journals,
   ) {
     showDialog(
       context: context,
@@ -1066,6 +1168,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             false,
                             false,
                             schedules,
+                            journals,
                           );
                         },
                         outsideBuilder: (context, day, focusedDay) {
@@ -1075,6 +1178,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             false,
                             true,
                             schedules,
+                            journals,
                           );
                         },
                         todayBuilder: (context, day, focusedDay) {
@@ -1084,6 +1188,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             true,
                             false,
                             schedules,
+                            journals,
                           );
                         },
                         selectedBuilder: (context, day, focusedDay) {
@@ -1093,6 +1198,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             false,
                             false,
                             schedules,
+                            journals,
                           );
                         },
                       ),

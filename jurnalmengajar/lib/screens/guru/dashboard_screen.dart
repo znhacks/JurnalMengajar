@@ -17,6 +17,7 @@ import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
 import '../../core/utils/helper.dart';
 import '../../core/utils/schedule_grouper.dart';
+import '../../core/theme/app_theme.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/warning_letter_provider.dart';
 import '../../widgets/animated_widgets.dart';
@@ -1267,11 +1268,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   );
                 } else {
                   circleDecoration = BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF4F7CFF), Color(0xFF8B7CFF)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
+                    color: AppTheme.primaryColor,
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: const Color(0xFF60A5FA),
@@ -1279,7 +1276,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF4F7CFF).withValues(alpha: 0.35),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.35),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
@@ -1291,7 +1288,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     width: 14.w,
                     height: 3.h,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF4F7CFF),
+                      color: AppTheme.primaryColor,
                       borderRadius: BorderRadius.circular(2.r),
                     ),
                   );
@@ -1573,7 +1570,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         fontWeight = FontWeight.w800;
         border = Border.all(color: const Color(0xFFEF4444), width: 2.0);
       } else {
-        bgColor = const Color(0xFF4F7CFF);
+        bgColor = AppTheme.primaryColor;
         textColor = Colors.white;
         fontWeight = FontWeight.w800;
         border = Border.all(color: const Color(0xFF60A5FA), width: 2.0);
@@ -1600,8 +1597,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         border = Border.all(color: const Color(0xFF10B981), width: 1.5);
       }
     } else if (isToday) {
-      bgColor = const Color(0xFF4F7CFF).withValues(alpha: isDark ? 0.25 : 0.15);
-      textColor = isDark ? const Color(0xFF93C5FD) : const Color(0xFF4F7CFF);
+      bgColor = AppTheme.primaryColor.withValues(alpha: isDark ? 0.25 : 0.15);
+      textColor = isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor;
       fontWeight = FontWeight.w700;
     }
 
