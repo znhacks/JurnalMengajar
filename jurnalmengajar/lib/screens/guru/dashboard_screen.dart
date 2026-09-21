@@ -874,15 +874,12 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
           SizedBox(height: 4.h),
 
-          // Big Headline: "Anda memiliki X jadwal bulan ini " (Clickable to open Jadwal tab)
+          // Big Headline: "Anda memiliki X jadwal bulan ini " (Clickable to open Jadwal Bulan Ini page)
           InkWell(
-            onTap: () {
-              final shellState = context
-                  .findAncestorStateOfType<GuruMainShellState>();
-              if (shellState != null) {
-                shellState.switchToTab(1);
-              } else {
-                context.go('/guru/dashboard?tab=1');
+            onTap: () async {
+              await context.push('/guru/jadwal-bulan-ini');
+              if (mounted) {
+                _refreshData();
               }
             },
             borderRadius: BorderRadius.circular(8.r),
