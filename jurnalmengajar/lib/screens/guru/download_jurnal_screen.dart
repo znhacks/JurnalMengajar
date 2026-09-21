@@ -75,6 +75,16 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     _teacherNipFocusNode.addListener(_onTeacherNipFocusChange);
   }
 
+  AuthProvider? _authProvider;
+  MasterDataProvider? _masterProvider;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _authProvider = Provider.of<AuthProvider>(context, listen: false);
+    _masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+  }
+
   @override
   void dispose() {
     _supervisorNameController.dispose();
@@ -92,9 +102,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     _hideActiveOverlay();
 
     // Restore active school's master data when leaving the download page
-    final auth = Provider.of<AuthProvider>(context, listen: false);
-    final master = Provider.of<MasterDataProvider>(context, listen: false);
-    master.loadAllData(auth.activeSchoolId);
+    if (_masterProvider != null && _authProvider != null) {
+      _masterProvider!.loadAllData(_authProvider!.activeSchoolId);
+    }
 
     super.dispose();
   }
@@ -802,6 +812,210 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     }
   }
 
+  Future<void> _showDownloadFormatOptions(
+    TeacherModel teacher,
+    List<JournalModel> journals,
+    MasterDataProvider masterProvider,
+    AuthProvider authProvider,
+  ) async {
+    if (journals.isEmpty) {
+      AppHelper.showSnackBar(
+        context,
+        'Tidak ada data jurnal yang sesuai dengan filter terpilih.',
+        isError: true,
+      );
+      return;
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40.w,
+                  height: 4.h,
+                  margin: EdgeInsets.only(bottom: 16.h),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey[700] : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2.r),
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Pilih Format Unduhan',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(ctx),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              SizedBox(height: 6.h),
+              Text(
+                'Pilih format file laporan jurnal yang ingin diunduh atau dicetak.',
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 13.sp,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              SizedBox(height: 18.h),
+              InkWell(
+                onTap: () => Navigator.pop(ctx, 'pdf'),
+                borderRadius: BorderRadius.circular(12.r),
+                child: Container(
+                  padding: EdgeInsets.all(14.w),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(10.w),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: isDark ? 0.2 : 0.1),
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                        child: const Icon(Icons.picture_as_pdf_rounded, color: Colors.red),
+                      ),
+                      SizedBox(width: 14.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Dokumen PDF (.pdf)',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              'Format dokumen siap cetak atau dibagikan',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 12.sp,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 12.h),
+              InkWell(
+                onTap: () => Navigator.pop(ctx, 'excel'),
+                borderRadius: BorderRadius.circular(12.r),
+                child: Container(
+                  padding: EdgeInsets.all(14.w),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(10.w),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.2 : 0.1),
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                        child: const Icon(Icons.table_view_rounded, color: Color(0xFF10B981)),
+                      ),
+                      SizedBox(width: 14.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Spreadsheet Excel (.xlsx)',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              'Format spreadsheet untuk rekap & olah data',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 12.sp,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 8.h),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (choice == null || !mounted) return;
+
+    if (choice == 'pdf') {
+      await _directDownloadOrPrint(
+        teacher,
+        journals,
+        masterProvider.classes,
+        masterProvider.subjects,
+        masterProvider,
+        authProvider,
+      );
+    } else if (choice == 'excel') {
+      await _exportToExcel(
+        teacher,
+        journals,
+        masterProvider,
+        authProvider,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
@@ -1499,20 +1713,29 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                   SizedBox(width: 12.w),
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => _directDownloadOrPrint(
-                        teacher,
-                        filteredJournals,
-                        masterProvider.classes,
-                        masterProvider.subjects,
-                        masterProvider,
-                        authProvider,
-                      ),
-                      icon: const Icon(
-                        Icons.download_rounded,
-                        color: Colors.white,
-                      ),
+                      onPressed: _isExportingExcel
+                          ? null
+                          : () => _showDownloadFormatOptions(
+                                teacher,
+                                filteredJournals,
+                                masterProvider,
+                                authProvider,
+                              ),
+                      icon: _isExportingExcel
+                          ? SizedBox(
+                              width: 20.r,
+                              height: 20.r,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.download_rounded,
+                              color: Colors.white,
+                            ),
                       label: Text(
-                        'Unduh / Cetak',
+                        _isExportingExcel ? 'Mengekspor...' : 'Unduh / Cetak',
                         style: GoogleFonts.hankenGrotesk(
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
@@ -1529,51 +1752,6 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                     ),
                   ),
                 ],
-              ),
-
-              SizedBox(height: 12.h),
-
-              // Ekspor Excel Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isExportingExcel
-                      ? null
-                      : () => _exportToExcel(
-                            teacher,
-                            filteredJournals,
-                            masterProvider,
-                            authProvider,
-                          ),
-                  icon: _isExportingExcel
-                      ? SizedBox(
-                          width: 20.r,
-                          height: 20.r,
-                          child: const CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(
-                          Icons.table_view_rounded,
-                          color: Colors.white,
-                        ),
-                  label: Text(
-                    _isExportingExcel ? 'Mempersiapkan Excel...' : 'Ekspor Excel (.xlsx)',
-                    style: GoogleFonts.hankenGrotesk(
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981), // Emerald Green
-                    padding: EdgeInsets.symmetric(vertical: 14.h),
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                  ),
-                ),
               ),
 
               SizedBox(height: 20.h),
