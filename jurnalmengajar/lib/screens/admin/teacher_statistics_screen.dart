@@ -1197,8 +1197,8 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
     final isExpanded = _expandedTeacherIds.contains(stat.teacher.id);
 
     // Status Level
-    String statusLabel;
-    Color statusColor;
+    String? statusLabel;
+    Color? statusColor;
     if (stat.totalSessions == 0 && stat.totalJournals == 0) {
       statusLabel = 'Belum Ada Jadwal';
       statusColor = const Color(0xFF64748B);
@@ -1208,9 +1208,6 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
     } else if (stat.onTimeRate >= 65.0) {
       statusLabel = 'Cukup Disiplin';
       statusColor = const Color(0xFFF59E0B);
-    } else {
-      statusLabel = 'Perlu Pembinaan';
-      statusColor = const Color(0xFFEF4444);
     }
 
     return Container(
@@ -1275,23 +1272,25 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
                         ],
                       ),
                     ),
-                    SizedBox(width: 8.w),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8.r),
-                        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-                      ),
-                      child: Text(
-                        statusLabel,
-                        style: TextStyle(
-                          fontSize: 10.5.sp,
-                          fontWeight: FontWeight.bold,
-                          color: statusColor,
+                    if (statusLabel != null && statusColor != null) ...[
+                      SizedBox(width: 8.w),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          statusLabel,
+                          style: TextStyle(
+                            fontSize: 10.5.sp,
+                            fontWeight: FontWeight.bold,
+                            color: statusColor,
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
                 SizedBox(height: 12.h),

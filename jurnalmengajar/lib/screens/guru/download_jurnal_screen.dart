@@ -1829,7 +1829,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                               color: Colors.white,
                             ),
                       label: Text(
-                        _isExportingExcel ? 'Mengekspor...' : 'Unduh ',
+                        _isExportingExcel ? 'Mengekspor...' : 'Unduh',
                         style: GoogleFonts.hankenGrotesk(
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
