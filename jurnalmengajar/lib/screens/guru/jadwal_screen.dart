@@ -177,6 +177,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
             (j.classId == s.classId && j.subjectId == s.subjectId);
         return sameDate &&
             sameSchedule &&
+            j.status != 'rejected' &&
             (j.status == 'pending' || j.status == 'verified' || j.isTeacherAbsence);
       });
     });
@@ -187,7 +188,8 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       return j.date.year == day.year &&
           j.date.month == day.month &&
           j.date.day == day.day &&
-          j.isTeacherAbsence;
+          j.isTeacherAbsence &&
+          j.status != 'rejected';
     });
   }
 

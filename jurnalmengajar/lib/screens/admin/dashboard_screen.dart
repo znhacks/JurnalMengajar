@@ -271,10 +271,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     final groupedSchedulesForDay = groupDailySchedules(filteredSchedulesForDay);
     final unsubmittedCount = groupedSchedulesForDay.where((group) {
-      final hasJournal = journalProvider.journals.any(
-        (j) => group.scheduleIds.contains(j.scheduleId),
+      final hasCompletedJournal = journalProvider.journals.any(
+        (j) => group.scheduleIds.contains(j.scheduleId) && j.status != 'rejected',
       );
-      return !hasJournal;
+      return !hasCompletedJournal;
     }).length;
 
     final selectedTeacher = _selectedTeacherId == null
@@ -853,6 +853,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 j.teacherId == s.teacherId);
         return sameDate &&
             sameSchedule &&
+            j.status != 'rejected' &&
             (j.status == 'pending' ||
                 j.status == 'verified' ||
                 j.isTeacherAbsence);
@@ -884,7 +885,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 j.date.year == day.year &&
                 j.date.month == day.month &&
                 j.date.day == day.day &&
-                j.isTeacherAbsence)
+                j.isTeacherAbsence &&
+                j.status != 'rejected')
             : false);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSunday = day.weekday == DateTime.sunday;
@@ -1550,9 +1552,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
         );
 
-        final hasJournal = journalProvider.journals.any(
-          (j) => scheduleGroup.scheduleIds.contains(j.scheduleId),
+        final matchingJournal = journalProvider.journals.cast<JournalModel?>().firstWhere(
+          (j) => scheduleGroup.scheduleIds.contains(j?.scheduleId),
+          orElse: () => null,
         );
+        final isRejected = matchingJournal != null && matchingJournal.status == 'rejected';
+        final isCompleted = matchingJournal != null && !isRejected;
         final hoursStr = AppHelper.formatTeachingHours(
           scheduleGroup.teachingHours,
         );
@@ -1561,15 +1566,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           color: Colors.transparent,
           child: InkWell(
             onTap: () {
-              if (hasJournal) {
-                try {
-                  final journal = journalProvider.journals.firstWhere(
-                    (j) => scheduleGroup.scheduleIds.contains(j.scheduleId),
-                  );
-                  context.push('/admin/journal/${journal.id}');
-                } catch (_) {
-                  context.push('/admin/schedule/${sched.id}');
-                }
+              if (matchingJournal != null) {
+                context.push('/admin/journal/${matchingJournal.id}');
               } else {
                 context.push('/admin/schedule/${sched.id}');
               }
@@ -1663,7 +1661,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
 
                     // Modern Soft Status Icon from Ref B
-                    hasJournal
+                    isCompleted
                         ? Container(
                             padding: EdgeInsets.all(2.w),
                             decoration: const BoxDecoration(
