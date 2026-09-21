@@ -327,10 +327,70 @@ class JournalProvider with ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
+      JournalModel? targetJournal;
+      try {
+        targetJournal = _journals.firstWhere(
+          (j) => j.id == journalId,
+          orElse: () => _teacherJournals.firstWhere((j) => j.id == journalId),
+        );
+      } catch (_) {}
+
+      if (targetJournal == null && teacherId != null && teacherId.isNotEmpty) {
+        try {
+          final tJournals = await journalRepository.getJournalsForTeacher(teacherId);
+          targetJournal = tJournals.firstWhere((j) => j.id == journalId);
+        } catch (_) {}
+      }
+
       await journalRepository.verifyJournal(journalId, status, rejectionNote: rejectionNote);
+
+      // If an absence journal (sakit/izin) is rejected, automatically reject all other absence journals
+      // for this teacher on the same date (e.g. multi-schedule absence today)
+      if (status == 'rejected' && targetJournal != null && targetJournal.isTeacherAbsence) {
+        final targetDate = targetJournal.date;
+        final teacherIdToUse = targetJournal.teacherId;
+
+        final candidateMap = <String, JournalModel>{};
+        for (final j in _journals) {
+          candidateMap[j.id] = j;
+        }
+        for (final j in _teacherJournals) {
+          candidateMap[j.id] = j;
+        }
+        if (teacherIdToUse.isNotEmpty) {
+          try {
+            final tJournals = await journalRepository.getJournalsForTeacher(teacherIdToUse);
+            for (final j in tJournals) {
+              candidateMap[j.id] = j;
+            }
+          } catch (_) {}
+        }
+
+        final otherAbsences = candidateMap.values.where((j) {
+          return j.id != targetJournal!.id &&
+              j.teacherId == teacherIdToUse &&
+              j.date.year == targetDate.year &&
+              j.date.month == targetDate.month &&
+              j.date.day == targetDate.day &&
+              j.isTeacherAbsence &&
+              j.status != 'rejected';
+        }).toList();
+
+        for (final other in otherAbsences) {
+          await journalRepository.verifyJournal(
+            other.id,
+            'rejected',
+            rejectionNote: rejectionNote ?? targetJournal.rejectionNote,
+          );
+        }
+      }
+
       await loadAllJournals(_currentSchoolId);
-      if (teacherId != null && teacherId.isNotEmpty) {
-        await loadTeacherJournals(teacherId);
+      final effectiveTeacherId = (teacherId != null && teacherId.isNotEmpty)
+          ? teacherId
+          : targetJournal?.teacherId;
+      if (effectiveTeacherId != null && effectiveTeacherId.isNotEmpty) {
+        await loadTeacherJournals(effectiveTeacherId);
       }
       return true;
     } catch (e) {

@@ -640,164 +640,159 @@ class DetailJurnalScreen extends StatelessWidget {
   }
 
   Widget _buildAttachmentPreview(BuildContext context, JournalModel journal) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final attachmentUrl = journal.attachmentUrl;
-    if (attachmentUrl == null || attachmentUrl.isEmpty) {
-      final attachment = journal.attachment;
-      if (attachment == null) {
-        return Text(
-          'Tidak ada lampiran diunggah.',
-          style: TextStyle(fontSize: 13.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
+    final List<JournalAttachmentModel> attachments = [];
+
+    if (attachmentUrl != null && attachmentUrl.isNotEmpty) {
+      final urls = attachmentUrl.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      for (int i = 0; i < urls.length; i++) {
+        final url = urls[i];
+        final uri = Uri.parse(url);
+        final fileName = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : 'lampiran_${i + 1}';
+        final fileType = fileName.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image';
+        attachments.add(
+          JournalAttachmentModel(
+            id: 'ja_remote_$i',
+            filePath: url,
+            fileType: fileType,
+            fileName: fileName,
+          ),
         );
       }
-      return _buildSingleAttachment(context, attachment);
+    } else if (journal.attachment != null) {
+      attachments.add(journal.attachment!);
     }
 
-    final urls = attachmentUrl.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-    if (urls.isEmpty) {
+    if (attachments.isEmpty) {
       return Text(
         'Tidak ada lampiran diunggah.',
         style: TextStyle(fontSize: 13.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
       );
     }
 
-    if (urls.length == 1) {
-      final url = urls.first;
-      final uri = Uri.parse(url);
-      final fileName = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : 'attachment';
-      final fileType = fileName.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image';
-      final att = JournalAttachmentModel(
-        id: 'ja_remote_0',
-        filePath: url,
-        fileType: fileType,
-        fileName: fileName,
-      );
-      return _buildSingleAttachment(context, att);
-    }
+    final imageAttachments = attachments.where((a) => a.fileType == 'image').toList();
+    final nonImageAttachments = attachments.where((a) => a.fileType != 'image').toList();
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: List.generate(urls.length, (index) {
-        final url = urls[index];
-        final uri = Uri.parse(url);
-        final fileName = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : 'attachment_${index + 1}';
-        final fileType = fileName.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image';
-        final att = JournalAttachmentModel(
-          id: 'ja_remote_$index',
-          filePath: url,
-          fileType: fileType,
-          fileName: fileName,
-        );
-        return Padding(
-          padding: EdgeInsets.only(bottom: index == urls.length - 1 ? 0 : 12.h),
-          child: _buildSingleAttachment(context, att),
-        );
-      }),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (imageAttachments.isNotEmpty) ...[
+          Wrap(
+            spacing: 10.w,
+            runSpacing: 10.h,
+            children: imageAttachments
+                .map((att) => _buildPhotoThumbnail(context, att, isDark))
+                .toList(),
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            'Ketuk foto untuk melihat ukuran penuh',
+            style: TextStyle(
+              fontSize: 11.sp,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+        if (imageAttachments.isNotEmpty && nonImageAttachments.isNotEmpty)
+          SizedBox(height: 12.h),
+        if (nonImageAttachments.isNotEmpty)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: nonImageAttachments
+                .map((att) => _buildPdfAttachment(context, att, isDark))
+                .toList(),
+          ),
+      ],
     );
   }
 
-  Widget _buildSingleAttachment(BuildContext context, JournalAttachmentModel attachment) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    if (attachment.fileType == 'image') {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            height: 200.h,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: attachment.filePath.startsWith('http')
-                  ? GestureDetector(
-                      onTap: () {
-                        FullScreenImageViewer.show(
-                          context,
-                          attachment.filePath,
-                          'journal_attachment_${attachment.id}',
-                        );
-                      },
-                      child: Hero(
-                        tag: 'journal_attachment_${attachment.id}',
-                        child: Image.network(
-                          attachment.filePath,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.broken_image, size: 50),
-                        ),
-                      ),
-                    )
-                  : Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.image_outlined, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                          const SizedBox(height: 8),
-                          Text(
-                            attachment.fileName,
-                            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-            ),
+  Widget _buildPhotoThumbnail(BuildContext context, JournalAttachmentModel attachment, bool isDark) {
+    final isNetwork = attachment.filePath.startsWith('http');
+    return GestureDetector(
+      onTap: isNetwork
+          ? () {
+              FullScreenImageViewer.show(
+                context,
+                attachment.filePath,
+                'journal_attachment_${attachment.id}',
+              );
+            }
+          : null,
+      child: Container(
+        width: 80.w,
+        height: 80.w,
+        decoration: BoxDecoration(
+          color: isDark
+              ? Theme.of(context).colorScheme.surfaceContainerHighest
+              : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+            width: 1.2,
           ),
-          SizedBox(height: 8.h),
-          Text(
-            attachment.fileName,
-            style: TextStyle(fontSize: 12.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
-            textAlign: TextAlign.center,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10.r),
+          child: isNetwork
+              ? Hero(
+                  tag: 'journal_attachment_${attachment.id}',
+                  child: Image.network(
+                    attachment.filePath,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Center(
+                      child: Icon(Icons.broken_image, size: 28.sp, color: Colors.grey),
+                    ),
+                  ),
+                )
+              : Center(
+                  child: Icon(
+                    Icons.image_outlined,
+                    size: 28.sp,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPdfAttachment(BuildContext context, JournalAttachmentModel attachment, bool isDark) {
+    return Container(
+      padding: EdgeInsets.all(14.w),
+      decoration: BoxDecoration(
+        color: Colors.red.withValues(alpha: isDark ? 0.15 : 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.withValues(alpha: isDark ? 0.35 : 0.2)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.picture_as_pdf, color: Colors.red, size: 32),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  attachment.fileName,
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  'Tipe: Dokumen PDF',
+                  style: TextStyle(fontSize: 11.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
+              ],
+            ),
           ),
         ],
-      );
-    } else {
-      return Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: Colors.red.withValues(alpha: isDark ? 0.15 : 0.05),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.red.withValues(alpha: isDark ? 0.35 : 0.2)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.picture_as_pdf, color: Colors.red, size: 36),
-            SizedBox(width: 16.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    attachment.fileName,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    'Tipe: PDF Dokumen',
-                    style: TextStyle(fontSize: 11.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.open_in_new, color: Color(0xFF2563EB)),
-              onPressed: () {
-                // PDF opening simulation
-              },
-            ),
-          ],
-        ),
-      );
-    }
+      ),
+    );
   }
 }

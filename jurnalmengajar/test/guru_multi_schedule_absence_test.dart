@@ -125,14 +125,24 @@ class FakeStudentRepo implements StudentRepository {
 }
 
 class FakeJournalRepo implements JournalRepository {
-  @override Future<List<JournalModel>> getAll([String? schoolId]) async => [];
-  @override Future<List<JournalModel>> getJournalsForTeacher(String teacherId) async => [];
+  final List<JournalModel> journals = [];
+  @override Future<List<JournalModel>> getAll([String? schoolId]) async => List.from(journals);
+  @override Future<List<JournalModel>> getJournalsForTeacher(String teacherId) async =>
+      journals.where((j) => j.teacherId == teacherId).toList();
   @override Future<JournalModel?> getJournalForSchedule(String scheduleId, {DateTime? date}) async => null;
-  @override Future<void> create(JournalModel journal) async {}
-  @override Future<void> update(JournalModel journal) async {}
-  @override Future<void> delete(String id) async {}
-  @override Future<void> deleteMultiple(List<String> ids) async {}
-  @override Future<void> verifyJournal(String journalId, String status, {String? rejectionNote}) async {}
+  @override Future<void> create(JournalModel journal) async => journals.add(journal);
+  @override Future<void> update(JournalModel journal) async {
+    final idx = journals.indexWhere((j) => j.id == journal.id);
+    if (idx != -1) journals[idx] = journal;
+  }
+  @override Future<void> delete(String id) async => journals.removeWhere((j) => j.id == id);
+  @override Future<void> deleteMultiple(List<String> ids) async => journals.removeWhere((j) => ids.contains(j.id));
+  @override Future<void> verifyJournal(String journalId, String status, {String? rejectionNote}) async {
+    final idx = journals.indexWhere((j) => j.id == journalId);
+    if (idx != -1) {
+      journals[idx] = journals[idx].copyWith(status: status, rejectionNote: rejectionNote);
+    }
+  }
 }
 
 class FakeScheduleRepo implements ScheduleRepository {
@@ -157,16 +167,24 @@ class MockScheduleProvider extends ScheduleProvider {
 }
 
 class MockJournalProvider extends JournalProvider {
-  final List<JournalModel> _mockJournals;
-  MockJournalProvider(this._mockJournals) : super(journalRepository: FakeJournalRepo());
+  final FakeJournalRepo _fakeRepo;
+  MockJournalProvider(List<JournalModel> initialJournals, [FakeJournalRepo? repo])
+      : _fakeRepo = repo ?? FakeJournalRepo(),
+        super(journalRepository: repo ?? FakeJournalRepo()) {
+    _fakeRepo.journals.addAll(initialJournals);
+  }
   @override
-  List<JournalModel> get teacherJournals => _mockJournals;
+  List<JournalModel> get teacherJournals => _fakeRepo.journals;
+  @override
+  List<JournalModel> get journals => _fakeRepo.journals;
   @override
   Future<void> loadTeacherJournals(String teacherId) async {}
   @override
+  Future<void> loadAllJournals([String? schoolId]) async {}
+  @override
   Future<JournalModel?> getJournalForSchedule(String scheduleId, {DateTime? date}) async {
     try {
-      return _mockJournals.firstWhere((j) {
+      return _fakeRepo.journals.firstWhere((j) {
         if (date != null) {
           return j.scheduleId == scheduleId &&
               j.date.year == date.year &&
@@ -181,17 +199,17 @@ class MockJournalProvider extends JournalProvider {
   }
   @override
   Future<bool> createJournal(JournalModel model, {List<Uint8List>? imageBytesList, List<String>? imageNamesList}) async {
-    final newId = model.id.isEmpty ? 'j_${_mockJournals.length + 1}' : model.id;
-    _mockJournals.add(model.copyWith(id: newId));
+    final newId = model.id.isEmpty ? 'j_${_fakeRepo.journals.length + 1}' : model.id;
+    _fakeRepo.journals.add(model.copyWith(id: newId));
     return true;
   }
   @override
   Future<bool> updateJournal(JournalModel model, {List<Uint8List>? imageBytesList, List<String>? imageNamesList}) async {
-    final idx = _mockJournals.indexWhere((j) => j.id == model.id);
+    final idx = _fakeRepo.journals.indexWhere((j) => j.id == model.id);
     if (idx != -1) {
-      _mockJournals[idx] = model;
+      _fakeRepo.journals[idx] = model;
     } else {
-      _mockJournals.add(model);
+      _fakeRepo.journals.add(model);
     }
     return true;
   }
@@ -503,5 +521,60 @@ void main() {
     expect(s2Journal.status, 'pending');
     expect(s2Journal.teacherAttendanceStatus, 'izin');
     expect(s2Journal.attachmentUrl, 'https://example.com/surat.jpg');
+  });
+
+  test('When one absence journal is rejected, all other absence journals for the same teacher on that day are automatically rejected', () async {
+    final today = DateTime.now();
+
+    final journal1 = JournalModel(
+      id: 'j_absence_1',
+      scheduleId: 'sched_1',
+      date: today,
+      teachingHour: 1,
+      classId: 'c1',
+      subjectId: 's1',
+      teacherId: 't1',
+      material: '[GURU IZIN] Surat Izin / Dispensasi',
+      status: 'pending',
+      teacherAttendanceStatus: 'izin',
+    );
+
+    final journal2 = JournalModel(
+      id: 'j_absence_2',
+      scheduleId: 'sched_2',
+      date: today,
+      teachingHour: 5,
+      classId: 'c2',
+      subjectId: 's2',
+      teacherId: 't1',
+      material: '[GURU IZIN] Surat Izin / Dispensasi',
+      status: 'pending',
+      teacherAttendanceStatus: 'izin',
+    );
+
+    final fakeRepo = FakeJournalRepo();
+    fakeRepo.journals.addAll([journal1, journal2]);
+    final journalProvider = JournalProvider(journalRepository: fakeRepo);
+    await journalProvider.loadTeacherJournals('t1');
+
+    // Admin rejects journal 1
+    final success = await journalProvider.verifyJournal(
+      'j_absence_1',
+      'rejected',
+      rejectionNote: 'Foto surat buram',
+      teacherId: 't1',
+    );
+
+    expect(success, isTrue);
+
+    // Both journal 1 and journal 2 must now be rejected with the same rejection note
+    final updatedJ1 = fakeRepo.journals.firstWhere((j) => j.id == 'j_absence_1');
+    final updatedJ2 = fakeRepo.journals.firstWhere((j) => j.id == 'j_absence_2');
+
+    expect(updatedJ1.status, 'rejected');
+    expect(updatedJ1.rejectionNote, 'Foto surat buram');
+
+    expect(updatedJ2.status, 'rejected');
+    expect(updatedJ2.rejectionNote, 'Foto surat buram');
   });
 }
