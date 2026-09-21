@@ -596,6 +596,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       // ── Holiday Banner (If Holiday on selected date) ───────
                       Builder(
                         builder: (context) {
+                          final isDark =
+                              Theme.of(context).brightness == Brightness.dark;
                           final holidayProvider = context
                               .watch<HolidayProvider>();
                           final holiday = holidayProvider.getHolidayForDate(
@@ -608,10 +610,14 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             margin: EdgeInsets.only(bottom: 16.h),
                             padding: EdgeInsets.all(14.w),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFEF2F2),
+                              color: isDark
+                                  ? const Color(0xFF7F1D1D).withValues(alpha: 0.25)
+                                  : const Color(0xFFFEF2F2),
                               borderRadius: BorderRadius.circular(20.r),
                               border: Border.all(
-                                color: const Color(0xFFFCA5A5),
+                                color: isDark
+                                    ? const Color(0xFF991B1B)
+                                    : const Color(0xFFFCA5A5),
                               ),
                             ),
                             child: Row(
@@ -639,7 +645,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 13.sp,
                                           fontWeight: FontWeight.w800,
-                                          color: const Color(0xFF991B1B),
+                                          color: isDark
+                                              ? const Color(0xFFFCA5A5)
+                                              : const Color(0xFF991B1B),
                                         ),
                                       ),
                                       SizedBox(height: 2.h),
@@ -650,7 +658,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                             : 'KBM ditiadakan. Anda tidak perlu mengisikan jurnal.',
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 11.sp,
-                                          color: const Color(0xFFB91C1C),
+                                          color: isDark
+                                              ? const Color(0xFFFECACA)
+                                              : const Color(0xFFB91C1C),
                                         ),
                                       ),
                                     ],

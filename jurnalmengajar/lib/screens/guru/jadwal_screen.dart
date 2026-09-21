@@ -640,6 +640,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
             // Holiday Banner on Schedule Screen
             Builder(
               builder: (context) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
                 final holidayProvider = context.watch<HolidayProvider>();
                 final holiday = holidayProvider.getHolidayForDate(_selectedDay);
                 if (holiday == null) return const SizedBox.shrink();
@@ -649,9 +650,15 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                   margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                   padding: EdgeInsets.all(14.w),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEF2F2),
+                    color: isDark
+                        ? const Color(0xFF7F1D1D).withValues(alpha: 0.25)
+                        : const Color(0xFFFEF2F2),
                     borderRadius: BorderRadius.circular(16.r),
-                    border: Border.all(color: const Color(0xFFFCA5A5)),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF991B1B)
+                          : const Color(0xFFFCA5A5),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -661,9 +668,9 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                           color: Color(0xFFDC2626),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.event_busy_rounded,
-                          color: Theme.of(context).colorScheme.surface,
+                          color: Colors.white,
                           size: 20,
                         ),
                       ),
@@ -677,7 +684,9 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 13.sp,
                                 fontWeight: FontWeight.w800,
-                                color: const Color(0xFF991B1B),
+                                color: isDark
+                                    ? const Color(0xFFFCA5A5)
+                                    : const Color(0xFF991B1B),
                               ),
                             ),
                             SizedBox(height: 2.h),
@@ -687,7 +696,9 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                                   : 'KBM ditiadakan. Kegiatan mengajar tidak perlu diisi.',
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 11.sp,
-                                color: const Color(0xFFB91C1C),
+                                color: isDark
+                                    ? const Color(0xFFFECACA)
+                                    : const Color(0xFFB91C1C),
                               ),
                             ),
                           ],
