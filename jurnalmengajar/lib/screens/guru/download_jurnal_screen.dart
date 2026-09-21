@@ -42,8 +42,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       TextEditingController();
   final TextEditingController _supervisorNipController =
       TextEditingController();
-  final TextEditingController _teacherNipController =
-      TextEditingController();
+  final TextEditingController _teacherNipController = TextEditingController();
   final TextEditingController _schoolNameController = TextEditingController(
     text: 'SMP NEGERI 1 SATU ATAP MEMPURA',
   );
@@ -134,7 +133,10 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         ),
       );
       if (teacher.id.isNotEmpty) {
-        final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+        final scheduleProvider = Provider.of<ScheduleProvider>(
+          context,
+          listen: false,
+        );
         await Future.wait([
           journalProvider.loadTeacherJournals(teacher.id),
           scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
@@ -146,7 +148,8 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       final activeSchool = authProvider.activeSchool;
       setState(() {
         _selectedSchoolId = activeId;
-        _schoolNameController.text = activeSchool?.name ?? authProvider.activeSchoolName;
+        _schoolNameController.text =
+            activeSchool?.name ?? authProvider.activeSchoolName;
       });
     }
   }
@@ -154,37 +157,45 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
   Future<void> _loadHistory() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _supervisorNameHistory = prefs.getStringList('history_supervisor_name') ?? [];
-      _supervisorNipHistory = prefs.getStringList('history_supervisor_nip') ?? [];
+      _supervisorNameHistory =
+          prefs.getStringList('history_supervisor_name') ?? [];
+      _supervisorNipHistory =
+          prefs.getStringList('history_supervisor_nip') ?? [];
       _teacherNipHistory = prefs.getStringList('history_teacher_nip') ?? [];
     });
   }
 
   Future<void> _saveToHistory() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     final name = _supervisorNameController.text.trim();
     final supervisorNip = _supervisorNipController.text.trim();
     final teacherNip = _teacherNipController.text.trim();
-    
+
     if (name.isNotEmpty) {
       _supervisorNameHistory.remove(name);
       _supervisorNameHistory.insert(0, name);
       if (_supervisorNameHistory.length > 5) {
         _supervisorNameHistory = _supervisorNameHistory.sublist(0, 5);
       }
-      await prefs.setStringList('history_supervisor_name', _supervisorNameHistory);
+      await prefs.setStringList(
+        'history_supervisor_name',
+        _supervisorNameHistory,
+      );
     }
-    
+
     if (supervisorNip.isNotEmpty) {
       _supervisorNipHistory.remove(supervisorNip);
       _supervisorNipHistory.insert(0, supervisorNip);
       if (_supervisorNipHistory.length > 5) {
         _supervisorNipHistory = _supervisorNipHistory.sublist(0, 5);
       }
-      await prefs.setStringList('history_supervisor_nip', _supervisorNipHistory);
+      await prefs.setStringList(
+        'history_supervisor_nip',
+        _supervisorNipHistory,
+      );
     }
-    
+
     if (teacherNip.isNotEmpty) {
       _teacherNipHistory.remove(teacherNip);
       _teacherNipHistory.insert(0, teacherNip);
@@ -193,7 +204,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       }
       await prefs.setStringList('history_teacher_nip', _teacherNipHistory);
     }
-    
+
     setState(() {});
   }
 
@@ -301,11 +312,15 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       ),
                       Container(
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onSurface, // Dark background matching browser Saved Info
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface, // Dark background matching browser Saved Info
                           borderRadius: BorderRadius.circular(8.r),
                           boxShadow: [
                             BoxShadow(
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.3),
                               blurRadius: 12,
                               offset: const Offset(0, 6),
                             ),
@@ -317,9 +332,15 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                           children: [
                             // Header "Saved info"
                             Padding(
-                              padding: EdgeInsets.fromLTRB(14.w, 10.h, 10.w, 6.h),
+                              padding: EdgeInsets.fromLTRB(
+                                14.w,
+                                10.h,
+                                10.w,
+                                6.h,
+                              ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     'Saved info',
@@ -347,7 +368,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                               ),
                             ),
                             const Divider(height: 1, color: Color(0xFF334155)),
-                            
+
                             // History items list
                             Flexible(
                               child: ListView.builder(
@@ -361,14 +382,19 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                                     controller: controller,
                                     focusNode: focusNode,
                                     onDelete: () async {
-                                      await _deleteHistoryItem(item, history, controller);
+                                      await _deleteHistoryItem(
+                                        item,
+                                        history,
+                                        controller,
+                                      );
                                     },
                                     onSelected: () {
                                       setState(() {
                                         controller.text = item;
-                                        controller.selection = TextSelection.fromPosition(
-                                          TextPosition(offset: item.length),
-                                        );
+                                        controller.selection =
+                                            TextSelection.fromPosition(
+                                              TextPosition(offset: item.length),
+                                            );
                                       });
                                       _hideActiveOverlay();
                                       focusNode.unfocus();
@@ -405,7 +431,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
   ) async {
     final prefs = await SharedPreferences.getInstance();
     history.remove(item);
-    
+
     String prefKey = '';
     if (controller == _supervisorNameController) {
       prefKey = 'history_supervisor_name';
@@ -414,11 +440,11 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     } else if (controller == _teacherNipController) {
       prefKey = 'history_teacher_nip';
     }
-    
+
     if (prefKey.isNotEmpty) {
       await prefs.setStringList(prefKey, history);
     }
-    
+
     if (history.isEmpty) {
       _hideActiveOverlay();
     } else {
@@ -580,7 +606,10 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     MasterDataProvider masterProvider,
     AuthProvider authProvider,
   ) {
-    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+    final scheduleProvider = Provider.of<ScheduleProvider>(
+      context,
+      listen: false,
+    );
     if (journals.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -616,14 +645,14 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
     final selectedSchool = _selectedSchoolId != null
         ? (_selectedSchoolId == authProvider.activeSchoolId
-            ? authProvider.activeSchool
-            : masterProvider.schools.firstWhere(
-                (s) => s.id == _selectedSchoolId,
-                orElse: () => SchoolModel(
-                  id: 'default',
-                  name: _schoolNameController.text.trim(),
-                ),
-              ))
+              ? authProvider.activeSchool
+              : masterProvider.schools.firstWhere(
+                  (s) => s.id == _selectedSchoolId,
+                  orElse: () => SchoolModel(
+                    id: 'default',
+                    name: _schoolNameController.text.trim(),
+                  ),
+                ))
         : null;
 
     Navigator.push(
@@ -631,10 +660,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       MaterialPageRoute(
         builder: (context) => Scaffold(
           appBar: AppBar(
-            title: const Text(
-              'Preview',
-              style: TextStyle(color: Colors.white),
-            ),
+            title: const Text('Preview', style: TextStyle(color: Colors.white)),
             backgroundColor: AppTheme.primaryColor,
             foregroundColor: Colors.white,
           ),
@@ -644,7 +670,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
               journals: journals,
               startDate: _startDate,
               endDate: _endDate,
-              classes: classes,                                                                                                             
+              classes: classes,
               subjects: subjects,
               school: selectedSchool,
               supervisorName: _supervisorNameController.text.trim(),
@@ -653,7 +679,8 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
               statusFilter: _selectedStatus,
               selectedClassName: selectedClassName,
               selectedSubjectName: selectedSubjectName,
-              schoolName: selectedSchool?.name ??
+              schoolName:
+                  selectedSchool?.name ??
                   (_schoolNameController.text.trim().isNotEmpty
                       ? _schoolNameController.text.trim()
                       : authProvider.activeSchoolName),
@@ -679,7 +706,10 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     MasterDataProvider masterProvider,
     AuthProvider authProvider,
   ) async {
-    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+    final scheduleProvider = Provider.of<ScheduleProvider>(
+      context,
+      listen: false,
+    );
     if (journals.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -715,14 +745,14 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
     final selectedSchool = _selectedSchoolId != null
         ? (_selectedSchoolId == authProvider.activeSchoolId
-            ? authProvider.activeSchool
-            : masterProvider.schools.firstWhere(
-                (s) => s.id == _selectedSchoolId,
-                orElse: () => SchoolModel(
-                  id: 'default',
-                  name: _schoolNameController.text.trim(),
-                ),
-              ))
+              ? authProvider.activeSchool
+              : masterProvider.schools.firstWhere(
+                  (s) => s.id == _selectedSchoolId,
+                  orElse: () => SchoolModel(
+                    id: 'default',
+                    name: _schoolNameController.text.trim(),
+                  ),
+                ))
         : null;
 
     final pdfBytes = await JournalPdfService.generateJournalReportPdf(
@@ -739,7 +769,8 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       statusFilter: _selectedStatus,
       selectedClassName: selectedClassName,
       selectedSubjectName: selectedSubjectName,
-      schoolName: selectedSchool?.name ??
+      schoolName:
+          selectedSchool?.name ??
           (_schoolNameController.text.trim().isNotEmpty
               ? _schoolNameController.text.trim()
               : authProvider.activeSchoolName),
@@ -776,17 +807,18 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     try {
       final selectedSchool = _selectedSchoolId != null
           ? (_selectedSchoolId == authProvider.activeSchoolId
-              ? authProvider.activeSchool
-              : masterProvider.schools.firstWhere(
-                  (s) => s.id == _selectedSchoolId,
-                  orElse: () => SchoolModel(
-                    id: 'default',
-                    name: _schoolNameController.text.trim(),
-                  ),
-                ))
+                ? authProvider.activeSchool
+                : masterProvider.schools.firstWhere(
+                    (s) => s.id == _selectedSchoolId,
+                    orElse: () => SchoolModel(
+                      id: 'default',
+                      name: _schoolNameController.text.trim(),
+                    ),
+                  ))
           : null;
 
-      final schoolName = selectedSchool?.name ??
+      final schoolName =
+          selectedSchool?.name ??
           (_schoolNameController.text.trim().isNotEmpty
               ? _schoolNameController.text.trim()
               : authProvider.activeSchoolName);
@@ -803,7 +835,11 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       }
     } catch (e) {
       if (mounted) {
-        AppHelper.showSnackBar(context, 'Ekspor gagal. Silakan coba lagi.', isError: true);
+        AppHelper.showSnackBar(
+          context,
+          'Ekspor gagal. Silakan coba lagi.',
+          isError: true,
+        );
       }
     } finally {
       if (mounted) {
@@ -889,7 +925,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12.r),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0),
                     ),
                   ),
                   child: Row(
@@ -897,10 +935,15 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       Container(
                         padding: EdgeInsets.all(10.w),
                         decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: isDark ? 0.2 : 0.1),
+                          color: Colors.red.withValues(
+                            alpha: isDark ? 0.2 : 0.1,
+                          ),
                           borderRadius: BorderRadius.circular(10.r),
                         ),
-                        child: const Icon(Icons.picture_as_pdf_rounded, color: Colors.red),
+                        child: const Icon(
+                          Icons.picture_as_pdf_rounded,
+                          color: Colors.red,
+                        ),
                       ),
                       SizedBox(width: 14.w),
                       Expanded(
@@ -920,7 +963,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                               'Format dokumen siap cetak atau dibagikan',
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 12.sp,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -943,7 +988,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12.r),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0),
                     ),
                   ),
                   child: Row(
@@ -951,10 +998,15 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       Container(
                         padding: EdgeInsets.all(10.w),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.2 : 0.1),
+                          color: const Color(
+                            0xFF10B981,
+                          ).withValues(alpha: isDark ? 0.2 : 0.1),
                           borderRadius: BorderRadius.circular(10.r),
                         ),
-                        child: const Icon(Icons.table_view_rounded, color: Color(0xFF10B981)),
+                        child: const Icon(
+                          Icons.table_view_rounded,
+                          color: Color(0xFF10B981),
+                        ),
                       ),
                       SizedBox(width: 14.w),
                       Expanded(
@@ -974,7 +1026,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                               'Format spreadsheet untuk rekap & olah data',
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 12.sp,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -1007,12 +1061,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         authProvider,
       );
     } else if (choice == 'excel') {
-      await _exportToExcel(
-        teacher,
-        journals,
-        masterProvider,
-        authProvider,
-      );
+      await _exportToExcel(teacher, journals, masterProvider, authProvider);
     }
   }
 
@@ -1025,7 +1074,8 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
     if (_selectedSchoolId == null) {
       _selectedSchoolId = authProvider.activeSchoolId;
-      _schoolNameController.text = authProvider.activeSchool?.name ?? authProvider.activeSchoolName;
+      _schoolNameController.text =
+          authProvider.activeSchool?.name ?? authProvider.activeSchoolName;
     }
 
     final teacher = _getCurrentTeacher(authProvider, masterProvider);
@@ -1169,20 +1219,31 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                             'Semester Ini',
                           ].map((preset) {
                             final isSelected = _presetRange == preset;
-                            final isDark = Theme.of(context).brightness == Brightness.dark;
+                            final isDark =
+                                Theme.of(context).brightness == Brightness.dark;
                             return ChoiceChip(
                               label: Text(preset),
                               selected: isSelected,
                               selectedColor: isDark
-                                  ? const Color(0xFF1E3A8A).withValues(alpha: 0.5)
-                                  : AppTheme.primaryColor.withValues(alpha: 0.15),
+                                  ? const Color(
+                                      0xFF1E3A8A,
+                                    ).withValues(alpha: 0.5)
+                                  : AppTheme.primaryColor.withValues(
+                                      alpha: 0.15,
+                                    ),
                               backgroundColor: isDark
-                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                  ? Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainerHighest
                                   : const Color(0xFFF1F5F9),
                               side: BorderSide(
                                 color: isSelected
-                                    ? (isDark ? const Color(0xFF60A5FA) : AppTheme.primaryColor)
-                                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                                    ? (isDark
+                                          ? const Color(0xFF60A5FA)
+                                          : AppTheme.primaryColor)
+                                    : (isDark
+                                          ? const Color(0xFF334155)
+                                          : const Color(0xFFE2E8F0)),
                                 width: isSelected ? 1.5 : 1.0,
                               ),
                               labelStyle: GoogleFonts.hankenGrotesk(
@@ -1191,8 +1252,12 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                                     ? FontWeight.w700
                                     : FontWeight.w500,
                                 color: isSelected
-                                    ? (isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor)
-                                    : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569)),
+                                    ? (isDark
+                                          ? const Color(0xFF93C5FD)
+                                          : AppTheme.primaryColor)
+                                    : (isDark
+                                          ? const Color(0xFFCBD5E1)
+                                          : const Color(0xFF475569)),
                               ),
                               onSelected: (_) => _applyPresetRange(preset),
                             );
@@ -1215,7 +1280,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                               ),
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color: Theme.of(context).brightness == Brightness.dark
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
                                       ? const Color(0xFF334155)
                                       : const Color(0xFFCBD5E1),
                                 ),
@@ -1228,7 +1295,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                                     'Tanggal Mulai',
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 10.sp,
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -1246,7 +1315,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 12.5.sp,
                                           fontWeight: FontWeight.w700,
-                                          color: Theme.of(context).colorScheme.onSurface,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
                                         ),
                                       ),
                                     ],
@@ -1274,7 +1345,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                               ),
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color: Theme.of(context).brightness == Brightness.dark
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
                                       ? const Color(0xFF334155)
                                       : const Color(0xFFCBD5E1),
                                 ),
@@ -1287,7 +1360,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                                     'Tanggal Selesai',
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 10.sp,
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -1305,7 +1380,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 12.5.sp,
                                           fontWeight: FontWeight.w700,
-                                          color: Theme.of(context).colorScheme.onSurface,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
                                         ),
                                       ),
                                     ],
@@ -1369,7 +1446,8 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
                     // Class Filter Dropdown
                     DropdownButtonFormField<String?>(
-                      initialValue: filteredClasses.any((c) => c.id == _selectedClassId)
+                      initialValue:
+                          filteredClasses.any((c) => c.id == _selectedClassId)
                           ? _selectedClassId
                           : null,
                       decoration: InputDecoration(
@@ -1403,7 +1481,10 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
                     // Subject Filter Dropdown
                     DropdownButtonFormField<String?>(
-                      initialValue: filteredSubjects.any((s) => s.id == _selectedSubjectId)
+                      initialValue:
+                          filteredSubjects.any(
+                            (s) => s.id == _selectedSubjectId,
+                          )
                           ? _selectedSubjectId
                           : null,
                       decoration: InputDecoration(
@@ -1478,19 +1559,25 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                             ),
                           );
                         }).toList();
-                        
-                        final hasSelected = items.any((item) => item.value == _selectedSchoolId);
+
+                        final hasSelected = items.any(
+                          (item) => item.value == _selectedSchoolId,
+                        );
                         if (!hasSelected && _selectedSchoolId != null) {
-                          items.add(DropdownMenuItem<String>(
-                            value: _selectedSchoolId,
-                            child: Text(
-                              _schoolNameController.text,
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 14.sp,
-                                color: Theme.of(context).colorScheme.onSurface,
+                          items.add(
+                            DropdownMenuItem<String>(
+                              value: _selectedSchoolId,
+                              child: Text(
+                                _schoolNameController.text,
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 14.sp,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
                               ),
                             ),
-                          ));
+                          );
                         }
                         return items;
                       }(),
@@ -1568,7 +1655,10 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         decoration: InputDecoration(
                           labelText: 'NIP / ID Supervisor',
                           hintText: 'Misal: 19780512 200312 1 002',
-                          prefixIcon: const Icon(Icons.badge_outlined, size: 20),
+                          prefixIcon: const Icon(
+                            Icons.badge_outlined,
+                            size: 20,
+                          ),
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: 12.w,
                             vertical: 10.h,
@@ -1590,7 +1680,10 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         decoration: InputDecoration(
                           labelText: 'NIP Guru Pengajar',
                           hintText: 'Misal: 19850315 200904 2 003',
-                          prefixIcon: const Icon(Icons.badge_outlined, size: 20),
+                          prefixIcon: const Icon(
+                            Icons.badge_outlined,
+                            size: 20,
+                          ),
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: 12.w,
                             vertical: 10.h,
@@ -1630,7 +1723,8 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 13.sp,
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? const Color(0xFFCBD5E1)
                                 : const Color(0xFF475569),
                           ),
@@ -1716,11 +1810,11 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       onPressed: _isExportingExcel
                           ? null
                           : () => _showDownloadFormatOptions(
-                                teacher,
-                                filteredJournals,
-                                masterProvider,
-                                authProvider,
-                              ),
+                              teacher,
+                              filteredJournals,
+                              masterProvider,
+                              authProvider,
+                            ),
                       icon: _isExportingExcel
                           ? SizedBox(
                               width: 20.r,
@@ -1735,7 +1829,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                               color: Colors.white,
                             ),
                       label: Text(
-                        _isExportingExcel ? 'Mengekspor...' : 'Unduh / Cetak',
+                        _isExportingExcel ? 'Mengekspor...' : 'Unduh ',
                         style: GoogleFonts.hankenGrotesk(
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
@@ -1775,7 +1869,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         borderRadius: BorderRadius.circular(14.r),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.03),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1872,10 +1968,7 @@ class _HistoryItemRowState extends State<_HistoryItemRow> {
         child: Container(
           width: double.infinity,
           color: _isHovered ? const Color(0xFF334155) : Colors.transparent,
-          padding: EdgeInsets.symmetric(
-            horizontal: 14.w,
-            vertical: 10.h,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
           child: Row(
             children: [
               Expanded(

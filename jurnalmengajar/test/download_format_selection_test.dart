@@ -30,99 +30,198 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeAuthRepo implements AuthRepository {
-  @override Future<UserModel?> getCurrentUser() async => null;
-  @override Future<UserModel> login(String email, String password) async => throw UnimplementedError();
-  @override Future<UserModel> loginWithGoogle() async => throw UnimplementedError();
-  @override Future<void> logout() async {}
-  @override Future<void> register(UserModel user, String password) async {}
-  @override Future<void> resetPassword(String email) async {}
-  @override Future<void> updatePassword(String newPassword) async {}
-  @override Future<void> changeEmail(String newEmail) async {}
-  @override Future<UserModel> updateProfile(UserModel user) async => user;
-  @override Future<void> updateFcmToken(String userId, String token) async {}
-  @override Future<List<UserModel>> getAllUsers([String? schoolId]) async => [];
-  @override Future<void> updateUserRole(String userId, String role, [String? schoolId]) async {}
-  @override Future<void> deleteAccount(String userId) async {}
-  @override Future<void> requestExitFromSchool(String membershipId, {String? schoolId, String? role, String? userId}) async {}
-  @override Future<void> cancelExitRequest(String membershipId, {String? schoolId, String? role, String? userId}) async {}
-  @override Future<List<Map<String, dynamic>>> getPendingExitRequests(String schoolId) async => [];
-  @override Future<List<UserModel>> getAllUsersForSchool(String schoolId) async => [];
-  @override Future<void> approveExitRequest(String membershipId) async {}
-  @override Future<void> rejectExitRequest(String membershipId) async {}
-  @override Future<void> rejectJoinRequest(String userId, String schoolId) async {}
-  @override Future<void> leaveSchool({required String schoolId, required String userId, String? membershipId}) async {}
+  @override
+  Future<UserModel?> getCurrentUser() async => null;
+  @override
+  Future<UserModel> login(String email, String password) async =>
+      throw UnimplementedError();
+  @override
+  Future<UserModel> loginWithGoogle() async => throw UnimplementedError();
+  @override
+  Future<void> logout() async {}
+  @override
+  Future<void> register(UserModel user, String password) async {}
+  @override
+  Future<void> resetPassword(String email) async {}
+  @override
+  Future<void> updatePassword(String newPassword) async {}
+  @override
+  Future<void> changeEmail(String newEmail) async {}
+  @override
+  Future<UserModel> updateProfile(UserModel user) async => user;
+  @override
+  Future<void> updateFcmToken(String userId, String token) async {}
+  @override
+  Future<List<UserModel>> getAllUsers([String? schoolId]) async => [];
+  @override
+  Future<void> updateUserRole(
+    String userId,
+    String role, [
+    String? schoolId,
+  ]) async {}
+  @override
+  Future<void> deleteAccount(String userId) async {}
+  @override
+  Future<void> requestExitFromSchool(
+    String membershipId, {
+    String? schoolId,
+    String? role,
+    String? userId,
+  }) async {}
+  @override
+  Future<void> cancelExitRequest(
+    String membershipId, {
+    String? schoolId,
+    String? role,
+    String? userId,
+  }) async {}
+  @override
+  Future<List<Map<String, dynamic>>> getPendingExitRequests(
+    String schoolId,
+  ) async => [];
+  @override
+  Future<List<UserModel>> getAllUsersForSchool(String schoolId) async => [];
+  @override
+  Future<void> approveExitRequest(String membershipId) async {}
+  @override
+  Future<void> rejectExitRequest(String membershipId) async {}
+  @override
+  Future<void> rejectJoinRequest(String userId, String schoolId) async {}
+  @override
+  Future<void> leaveSchool({
+    required String schoolId,
+    required String userId,
+    String? membershipId,
+  }) async {}
 }
 
 class FakePeriodRepo implements PeriodRepository {
-  @override Future<List<PeriodModel>> getAll([String? schoolId]) async => [];
-  @override Future<void> create(PeriodModel period) async {}
-  @override Future<void> update(PeriodModel period) async {}
-  @override Future<void> delete(String id) async {}
-  @override Future<void> deleteMultiple(List<String> ids) async {}
+  @override
+  Future<List<PeriodModel>> getAll([String? schoolId]) async => [];
+  @override
+  Future<void> create(PeriodModel period) async {}
+  @override
+  Future<void> update(PeriodModel period) async {}
+  @override
+  Future<void> delete(String id) async {}
+  @override
+  Future<void> deleteMultiple(List<String> ids) async {}
 }
 
 class FakeSubjectRepo implements SubjectRepository {
-  @override Future<List<SubjectModel>> getAll([String? schoolId]) async => [];
-  @override Future<void> create(SubjectModel subject) async {}
-  @override Future<void> update(SubjectModel subject) async {}
-  @override Future<void> delete(String id) async {}
-  @override Future<void> deleteMultiple(List<String> ids) async {}
+  @override
+  Future<List<SubjectModel>> getAll([String? schoolId]) async => [];
+  @override
+  Future<void> create(SubjectModel subject) async {}
+  @override
+  Future<void> update(SubjectModel subject) async {}
+  @override
+  Future<void> delete(String id) async {}
+  @override
+  Future<void> deleteMultiple(List<String> ids) async {}
 }
 
 class FakeHourRepo implements HourRepository {
-  @override Future<List<HourModel>> getAll([String? schoolId]) async => [];
-  @override Future<void> create(HourModel hour) async {}
-  @override Future<void> update(HourModel hour) async {}
-  @override Future<void> delete(String id) async {}
-  @override Future<void> deleteMultiple(List<String> ids) async {}
+  @override
+  Future<List<HourModel>> getAll([String? schoolId]) async => [];
+  @override
+  Future<void> create(HourModel hour) async {}
+  @override
+  Future<void> update(HourModel hour) async {}
+  @override
+  Future<void> delete(String id) async {}
+  @override
+  Future<void> deleteMultiple(List<String> ids) async {}
 }
 
 class FakeClassRepo implements ClassRepository {
-  @override Future<List<ClassModel>> getAll([String? schoolId]) async => [];
-  @override Future<void> create(ClassModel classModel) async {}
-  @override Future<void> update(ClassModel classModel) async {}
-  @override Future<void> delete(String id) async {}
-  @override Future<void> deleteMultiple(List<String> ids) async {}
+  @override
+  Future<List<ClassModel>> getAll([String? schoolId]) async => [];
+  @override
+  Future<void> create(ClassModel classModel) async {}
+  @override
+  Future<void> update(ClassModel classModel) async {}
+  @override
+  Future<void> delete(String id) async {}
+  @override
+  Future<void> deleteMultiple(List<String> ids) async {}
 }
 
 class FakeTeacherRepo implements TeacherRepository {
-  @override Future<List<TeacherModel>> getAll() async => [];
-  @override Future<List<TeacherModel>> getAllForSchool(String schoolId) async => [];
-  @override Future<void> create(TeacherModel teacher) async {}
-  @override Future<void> update(TeacherModel teacher) async {}
-  @override Future<void> delete(String id) async {}
-  @override Future<void> deleteMultiple(List<String> ids) async {}
+  @override
+  Future<List<TeacherModel>> getAll() async => [];
+  @override
+  Future<List<TeacherModel>> getAllForSchool(String schoolId) async => [];
+  @override
+  Future<void> create(TeacherModel teacher) async {}
+  @override
+  Future<void> update(TeacherModel teacher) async {}
+  @override
+  Future<void> delete(String id) async {}
+  @override
+  Future<void> deleteMultiple(List<String> ids) async {}
 }
 
 class FakeStudentRepo implements StudentRepository {
-  @override Future<List<StudentModel>> getAllByClass(String classId) async => [];
-  @override Future<void> create(StudentModel student) async {}
-  @override Future<void> update(StudentModel student) async {}
-  @override Future<void> delete(String id) async {}
-  @override Future<void> deleteMultiple(List<String> ids) async {}
+  @override
+  Future<List<StudentModel>> getAllByClass(String classId) async => [];
+  @override
+  Future<void> create(StudentModel student) async {}
+  @override
+  Future<void> update(StudentModel student) async {}
+  @override
+  Future<void> delete(String id) async {}
+  @override
+  Future<void> deleteMultiple(List<String> ids) async {}
 }
 
 class FakeJournalRepo implements JournalRepository {
   final List<JournalModel> journals = [];
-  @override Future<List<JournalModel>> getAll([String? schoolId]) async => List.from(journals);
-  @override Future<List<JournalModel>> getJournalsForTeacher(String teacherId) async =>
+  @override
+  Future<List<JournalModel>> getAll([String? schoolId]) async =>
+      List.from(journals);
+  @override
+  Future<List<JournalModel>> getJournalsForTeacher(String teacherId) async =>
       journals.where((j) => j.teacherId == teacherId).toList();
-  @override Future<JournalModel?> getJournalForSchedule(String scheduleId, {DateTime? date}) async => null;
-  @override Future<void> create(JournalModel journal) async => journals.add(journal);
-  @override Future<void> update(JournalModel journal) async {}
-  @override Future<void> delete(String id) async {}
-  @override Future<void> deleteMultiple(List<String> ids) async {}
-  @override Future<void> verifyJournal(String journalId, String status, {String? rejectionNote}) async {}
+  @override
+  Future<JournalModel?> getJournalForSchedule(
+    String scheduleId, {
+    DateTime? date,
+  }) async => null;
+  @override
+  Future<void> create(JournalModel journal) async => journals.add(journal);
+  @override
+  Future<void> update(JournalModel journal) async {}
+  @override
+  Future<void> delete(String id) async {}
+  @override
+  Future<void> deleteMultiple(List<String> ids) async {}
+  @override
+  Future<void> verifyJournal(
+    String journalId,
+    String status, {
+    String? rejectionNote,
+  }) async {}
 }
 
 class FakeScheduleRepo implements ScheduleRepository {
-  @override Future<List<ScheduleModel>> getAll([String? schoolId]) async => [];
-  @override Future<List<ScheduleModel>> getSchedulesForTeacher(String teacherId, {DateTime? date}) async => [];
-  @override Future<void> create(ScheduleModel schedule) async {}
-  @override Future<void> createMultiple(List<ScheduleModel> models) async {}
-  @override Future<void> update(ScheduleModel schedule) async {}
-  @override Future<void> delete(String id) async {}
-  @override Future<void> deleteMultiple(List<String> ids) async {}
+  @override
+  Future<List<ScheduleModel>> getAll([String? schoolId]) async => [];
+  @override
+  Future<List<ScheduleModel>> getSchedulesForTeacher(
+    String teacherId, {
+    DateTime? date,
+  }) async => [];
+  @override
+  Future<void> create(ScheduleModel schedule) async {}
+  @override
+  Future<void> createMultiple(List<ScheduleModel> models) async {}
+  @override
+  Future<void> update(ScheduleModel schedule) async {}
+  @override
+  Future<void> delete(String id) async {}
+  @override
+  Future<void> deleteMultiple(List<String> ids) async {}
 }
 
 class MockAuthProvider extends AuthProvider {
@@ -195,7 +294,9 @@ void main() {
     );
     masterProvider.teachers.add(teacher);
 
-    final scheduleProvider = ScheduleProvider(scheduleRepository: FakeScheduleRepo());
+    final scheduleProvider = ScheduleProvider(
+      scheduleRepository: FakeScheduleRepo(),
+    );
 
     return MultiProvider(
       providers: [
@@ -217,66 +318,72 @@ void main() {
   }
 
   group('GuruDownloadJurnalScreen Format Selection Tests', () {
-    testWidgets('standalone Ekspor Excel button is removed and Unduh / Cetak button is present', (tester) async {
-      final origOnError = FlutterError.onError;
-      FlutterError.onError = (FlutterErrorDetails details) {
-        if (!details.toString().contains('overflowed by')) {
-          origOnError?.call(details);
-        }
-      };
-      addTearDown(() {
-        FlutterError.onError = origOnError;
-      });
+    testWidgets(
+      'standalone Ekspor Excel button is removed and Unduh button is present',
+      (tester) async {
+        final origOnError = FlutterError.onError;
+        FlutterError.onError = (FlutterErrorDetails details) {
+          if (!details.toString().contains('overflowed by')) {
+            origOnError?.call(details);
+          }
+        };
+        addTearDown(() {
+          FlutterError.onError = origOnError;
+        });
 
-      tester.view.physicalSize = const Size(1200, 2400);
-      tester.view.devicePixelRatio = 1.0;
+        tester.view.physicalSize = const Size(1200, 2400);
+        tester.view.devicePixelRatio = 1.0;
 
-      await tester.pumpWidget(createTestWidget());
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
 
-      // Verify standalone 'Ekspor Excel (.xlsx)' button does NOT exist
-      expect(find.text('Ekspor Excel (.xlsx)'), findsNothing);
+        // Verify standalone 'Ekspor Excel (.xlsx)' button does NOT exist
+        expect(find.text('Ekspor Excel (.xlsx)'), findsNothing);
 
-      // Verify 'Unduh / Cetak' button exists
-      final unduhCetakFinder = find.text('Unduh / Cetak');
-      expect(unduhCetakFinder, findsOneWidget);
+        // Verify 'Unduh' button exists
+        final unduhCetakFinder = find.text('Unduh');
+        expect(unduhCetakFinder, findsOneWidget);
 
-      // Verify 'Preview' button exists
-      expect(find.text('Preview'), findsOneWidget);
+        // Verify 'Preview' button exists
+        expect(find.text('Preview'), findsOneWidget);
 
-      await tester.pumpWidget(const SizedBox.shrink());
-    });
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
 
-    testWidgets('tapping Unduh / Cetak opens modal bottom sheet with PDF and Excel options', (tester) async {
-      final origOnError = FlutterError.onError;
-      FlutterError.onError = (FlutterErrorDetails details) {
-        if (!details.toString().contains('overflowed by')) {
-          origOnError?.call(details);
-        }
-      };
-      addTearDown(() {
-        FlutterError.onError = origOnError;
-      });
+    testWidgets(
+      'tapping Unduh opens modal bottom sheet with PDF and Excel options',
+      (tester) async {
+        final origOnError = FlutterError.onError;
+        FlutterError.onError = (FlutterErrorDetails details) {
+          if (!details.toString().contains('overflowed by')) {
+            origOnError?.call(details);
+          }
+        };
+        addTearDown(() {
+          FlutterError.onError = origOnError;
+        });
 
-      tester.view.physicalSize = const Size(1200, 2400);
-      tester.view.devicePixelRatio = 1.0;
+        tester.view.physicalSize = const Size(1200, 2400);
+        tester.view.devicePixelRatio = 1.0;
 
-      await tester.pumpWidget(createTestWidget());
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
 
-      final unduhCetakFinder = find.text('Unduh / Cetak');
-      await tester.ensureVisible(unduhCetakFinder);
-      await tester.tap(unduhCetakFinder);
-      await tester.pumpAndSettle();
+        final unduhCetakFinder = find.text('Unduh');
+        await tester.ensureVisible(unduhCetakFinder);
+        await tester.tap(unduhCetakFinder);
+        await tester.pumpAndSettle();
 
-      // Modal bottom sheet should appear
-      expect(find.text('Pilih Format Unduhan'), findsOneWidget);
-      expect(find.text('Dokumen PDF (.pdf)'), findsOneWidget);
-      expect(find.text('Spreadsheet Excel (.xlsx)'), findsOneWidget);
-      expect(find.byIcon(Icons.picture_as_pdf_rounded), findsWidgets);
-      expect(find.byIcon(Icons.table_view_rounded), findsOneWidget);
+        // Modal bottom sheet should appear
+        expect(find.text('Pilih Format Unduhan'), findsOneWidget);
+        expect(find.text('Dokumen PDF (.pdf)'), findsOneWidget);
+        expect(find.text('Spreadsheet Excel (.xlsx)'), findsOneWidget);
+        expect(find.byIcon(Icons.picture_as_pdf_rounded), findsWidgets);
+        expect(find.byIcon(Icons.table_view_rounded), findsOneWidget);
 
-      await tester.pumpWidget(const SizedBox.shrink());
-    });
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
   });
 }
