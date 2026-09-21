@@ -18,6 +18,7 @@ import '../../models/teacher_model.dart';
 import '../../models/hour_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/utils/helper.dart';
+import '../../core/utils/schedule_grouper.dart';
 import '../../services/nobox_wa_service.dart';
 import '../../core/services/cache_service.dart';
 
@@ -534,11 +535,17 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           attachment = _existingJournal?.attachment;
         }
 
+        final targetDate = _existingJournal?.date ??
+            (widget.dateStr != null ? (DateTime.tryParse(widget.dateStr!) ?? schedule.date) : schedule.date);
+
+        bool success = false;
+        String? primaryJournalId;
+
         if (_isEditing) {
           final updatedJournal = JournalModel(
             id: _existingJournal!.id,
             scheduleId: schedule.id,
-            date: _existingJournal!.date,
+            date: targetDate,
             teachingHour: schedule.teachingHour,
             classId: schedule.classId,
             subjectId: schedule.subjectId,
@@ -556,24 +563,13 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             teacherAttendanceStatus: _teacherAttendanceStatus,
           );
 
-          final success = await journalProvider.updateJournal(
+          success = await journalProvider.updateJournal(
             updatedJournal,
             imageBytesList: _imageBytesList,
             imageNamesList: _imageNamesList,
           );
-
-          if (success && mounted) {
-            AppHelper.showSnackBar(context, 'Surat keterangan berhasil diperbarui & dikirim!');
-            context.pop();
-          } else if (mounted) {
-            AppHelper.showSnackBar(
-              context,
-              journalProvider.errorMessage ?? 'Gagal memperbarui surat keterangan.',
-              isError: true,
-            );
-          }
+          primaryJournalId = updatedJournal.id;
         } else {
-          final targetDate = widget.dateStr != null ? DateTime.parse(widget.dateStr!) : schedule.date;
           final newJournal = JournalModel(
             id: '',
             scheduleId: schedule.id,
@@ -593,75 +589,146 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             teacherAttendanceStatus: _teacherAttendanceStatus,
           );
 
-          final success = await journalProvider.createJournal(
+          success = await journalProvider.createJournal(
             newJournal,
             imageBytesList: _imageBytesList,
             imageNamesList: _imageNamesList,
           );
+        }
 
-          if (success && mounted) {
-            CacheService().remove('draft_journal_${schedule.id}');
+        if (success && mounted) {
+          CacheService().remove('draft_journal_${schedule.id}');
 
-            // Multi-schedule batch apply if checked
-            if (_applyToAllSchedulesToday) {
-              final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-              final availableSchedules = scheduleProvider.cachedTeacherSchedules.where((s) {
-                if (!s.isActive) return false;
-                return s.date.year == targetDate.year &&
-                    s.date.month == targetDate.month &&
-                    s.date.day == targetDate.day;
-              }).toList();
+          // Multi-schedule batch apply if checked
+          if (_applyToAllSchedulesToday) {
+            final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+            final sourceSchedules = scheduleProvider.cachedTeacherSchedules.isNotEmpty
+                ? scheduleProvider.cachedTeacherSchedules
+                : (scheduleProvider.teacherSchedulesForSelectedDate.isNotEmpty
+                    ? scheduleProvider.teacherSchedulesForSelectedDate
+                    : scheduleProvider.schedules);
+            final availableSchedules = sourceSchedules.where((s) {
+              if (!s.isActive) return false;
+              return s.date.year == targetDate.year &&
+                  s.date.month == targetDate.month &&
+                  s.date.day == targetDate.day;
+            }).toList();
 
-              final otherSchedules = availableSchedules.where((s) => s.id != schedule.id).toList();
-              if (otherSchedules.isNotEmpty) {
-                final created = await journalProvider.getJournalForSchedule(schedule.id, date: newJournal.date);
-                final uploadedUrl = created?.attachmentUrl;
-                final sharedAttachment = created?.attachment ?? attachment;
+            final availableGroups = groupDailySchedules(availableSchedules);
 
-                for (final otherSched in otherSchedules) {
-                  final existingOther = await journalProvider.getJournalForSchedule(otherSched.id, date: otherSched.date);
-                  if (existingOther == null) {
-                    final multiJournal = JournalModel(
-                      id: '',
-                      scheduleId: otherSched.id,
-                      date: otherSched.date,
-                      teachingHour: otherSched.teachingHour,
-                      classId: otherSched.classId,
-                      subjectId: otherSched.subjectId,
-                      teacherId: otherSched.teacherId,
-                      material: absenceLabel,
-                      sickCount: 0,
-                      permissionCount: 0,
-                      alphaCount: 0,
-                      note: finalNote,
-                      attachment: sharedAttachment,
-                      attachmentUrl: uploadedUrl,
-                      status: 'pending',
-                      schoolId: effectiveSchoolId,
-                      teacherAttendanceStatus: _teacherAttendanceStatus,
-                    );
-                    await journalProvider.createJournal(multiJournal);
-                  }
+            // Fetch created/updated primary journal to get uploaded attachment & URL
+            JournalModel? primaryJournal;
+            try {
+              if (primaryJournalId != null && primaryJournalId.isNotEmpty) {
+                primaryJournal = journalProvider.teacherJournals.firstWhere((j) => j.id == primaryJournalId);
+              }
+            } catch (_) {}
+            primaryJournal ??= await journalProvider.getJournalForSchedule(schedule.id, date: targetDate);
+
+            final uploadedUrl = primaryJournal?.attachmentUrl ??
+                (_existingImageUrls.isNotEmpty ? _existingImageUrls.join(',') : null);
+            final sharedAttachment = primaryJournal?.attachment ?? attachment;
+
+            for (final otherGroup in availableGroups) {
+              if (otherGroup.scheduleIds.contains(schedule.id) || otherGroup.primarySchedule.id == schedule.id) {
+                continue; // Skip the schedule session we just saved
+              }
+
+              final otherSched = otherGroup.primarySchedule;
+
+              // Check if journal already exists for this other schedule group on targetDate
+              JournalModel? existingOther;
+              for (final j in journalProvider.teacherJournals) {
+                final sameDate = j.date.year == targetDate.year &&
+                    j.date.month == targetDate.month &&
+                    j.date.day == targetDate.day;
+                final sameSchedule = j.scheduleId == otherSched.id ||
+                    otherGroup.scheduleIds.contains(j.scheduleId) ||
+                    (j.classId == otherSched.classId && j.subjectId == otherSched.subjectId);
+                if (sameDate && sameSchedule) {
+                  existingOther = j;
+                  break;
                 }
+              }
+
+              existingOther ??= await journalProvider.getJournalForSchedule(otherSched.id, date: targetDate);
+
+              if (existingOther != null) {
+                final updatedOther = JournalModel(
+                  id: existingOther.id,
+                  scheduleId: otherSched.id,
+                  date: targetDate,
+                  teachingHour: otherSched.teachingHour,
+                  classId: otherSched.classId,
+                  subjectId: otherSched.subjectId,
+                  teacherId: otherSched.teacherId,
+                  material: absenceLabel,
+                  sickCount: 0,
+                  permissionCount: 0,
+                  alphaCount: 0,
+                  note: finalNote,
+                  attachment: sharedAttachment,
+                  attachmentUrl: uploadedUrl,
+                  status: 'pending',
+                  rejectionNote: null,
+                  schoolId: effectiveSchoolId,
+                  teacherAttendanceStatus: _teacherAttendanceStatus,
+                );
+                await journalProvider.updateJournal(updatedOther);
+              } else {
+                final multiJournal = JournalModel(
+                  id: '',
+                  scheduleId: otherSched.id,
+                  date: targetDate,
+                  teachingHour: otherSched.teachingHour,
+                  classId: otherSched.classId,
+                  subjectId: otherSched.subjectId,
+                  teacherId: otherSched.teacherId,
+                  material: absenceLabel,
+                  sickCount: 0,
+                  permissionCount: 0,
+                  alphaCount: 0,
+                  note: finalNote,
+                  attachment: sharedAttachment,
+                  attachmentUrl: uploadedUrl,
+                  status: 'pending',
+                  schoolId: effectiveSchoolId,
+                  teacherAttendanceStatus: _teacherAttendanceStatus,
+                );
+                await journalProvider.createJournal(multiJournal);
+              }
+
+              CacheService().remove('draft_journal_${otherSched.id}');
+              for (final sid in otherGroup.scheduleIds) {
+                CacheService().remove('draft_journal_$sid');
               }
             }
 
-            if (mounted) {
-              AppHelper.showSnackBar(
-                context,
-                _applyToAllSchedulesToday
-                    ? 'Surat ${_teacherAttendanceStatus == "sakit" ? "sakit" : "izin"} berhasil diterapkan untuk seluruh jadwal hari ini!'
-                    : 'Surat ${_teacherAttendanceStatus == "sakit" ? "sakit" : "izin"} berhasil dikirim untuk verifikasi!',
-              );
-              context.pop();
+            if (schedule.teacherId.isNotEmpty) {
+              await journalProvider.loadTeacherJournals(schedule.teacherId);
             }
-          } else if (mounted) {
+          }
+
+          if (mounted) {
             AppHelper.showSnackBar(
               context,
-              journalProvider.errorMessage ?? 'Gagal menyimpan surat keterangan.',
-              isError: true,
+              _applyToAllSchedulesToday
+                  ? 'Surat ${_teacherAttendanceStatus == "sakit" ? "sakit" : "izin"} berhasil diterapkan untuk seluruh jadwal hari ini!'
+                  : (_isEditing
+                      ? 'Surat keterangan berhasil diperbarui & dikirim!'
+                      : 'Surat ${_teacherAttendanceStatus == "sakit" ? "sakit" : "izin"} berhasil dikirim untuk verifikasi!'),
             );
+            if (context.canPop()) {
+              context.pop();
+            }
           }
+        } else if (mounted) {
+          AppHelper.showSnackBar(
+            context,
+            journalProvider.errorMessage ??
+                (_isEditing ? 'Gagal memperbarui surat keterangan.' : 'Gagal menyimpan surat keterangan.'),
+            isError: true,
+          );
         }
         return;
       }
@@ -926,23 +993,6 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     final journalProvider = context.watch<JournalProvider>();
 
     final activeId = _selectedScheduleId ?? widget.scheduleId;
-    DateTime? targetDate;
-    if (widget.dateStr != null) {
-      try {
-        targetDate = DateTime.parse(widget.dateStr!);
-      } catch (_) {}
-    }
-
-    final availableSchedules = scheduleProvider.cachedTeacherSchedules.where((s) {
-      if (!s.isActive) return false;
-      if (targetDate != null) {
-        return s.date.year == targetDate.year &&
-            s.date.month == targetDate.month &&
-            s.date.day == targetDate.day;
-      }
-      return true;
-    }).toList();
-
     ScheduleModel? schedule;
     if (activeId.isNotEmpty) {
       try {
@@ -957,6 +1007,32 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         );
       } catch (_) {}
     }
+
+    DateTime? targetDate;
+    if (widget.dateStr != null) {
+      try {
+        targetDate = DateTime.parse(widget.dateStr!);
+      } catch (_) {}
+    }
+    targetDate ??= _existingJournal?.date ?? schedule?.date;
+
+    final sourceSchedules = scheduleProvider.cachedTeacherSchedules.isNotEmpty
+        ? scheduleProvider.cachedTeacherSchedules
+        : (scheduleProvider.teacherSchedulesForSelectedDate.isNotEmpty
+            ? scheduleProvider.teacherSchedulesForSelectedDate
+            : scheduleProvider.schedules);
+
+    final availableSchedules = sourceSchedules.where((s) {
+      if (!s.isActive) return false;
+      if (targetDate != null) {
+        return s.date.year == targetDate.year &&
+            s.date.month == targetDate.month &&
+            s.date.day == targetDate.day;
+      }
+      return true;
+    }).toList();
+
+    final availableGroupedSchedules = groupDailySchedules(availableSchedules);
 
     if (schedule == null && availableSchedules.isNotEmpty) {
       schedule = availableSchedules.first;
@@ -1235,7 +1311,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                       ],
                     ),
                   ),
-                  if (availableSchedules.length > 1) ...[
+                  if (availableGroupedSchedules.length > 1) ...[
                     SizedBox(height: 10.h),
                     Builder(
                       builder: (context) {
@@ -1259,7 +1335,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                             },
                             activeColor: const Color(0xFF2563EB),
                             title: Text(
-                              'Terapkan surat ini untuk semua jadwal hari ini (${availableSchedules.length} jadwal)',
+                              'Terapkan surat ini untuk semua jadwal hari ini (${availableGroupedSchedules.length} jadwal)',
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 12.5.sp,
                                 fontWeight: FontWeight.w700,
