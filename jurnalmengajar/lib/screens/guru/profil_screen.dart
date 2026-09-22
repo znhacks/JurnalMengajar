@@ -912,15 +912,20 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               final success = await authProvider.joinSchoolWithCode(code, role: requestedRole);
                               if (mounted) {
                                 if (success) {
+                                  final isAdminDirect = authProvider.activeRole == 'admin';
                                   messenger.showSnackBar(
-                                    const SnackBar(
+                                    SnackBar(
                                       content: Text(
-                                        'Permintaan bergabung berhasil dikirim. Menunggu persetujuan dari Admin sekolah.',
+                                        isAdminDirect
+                                            ? 'Berhasil masuk sebagai Admin Sekolah!'
+                                            : 'Permintaan bergabung berhasil dikirim. Menunggu persetujuan dari Admin sekolah.',
                                       ),
-                                      backgroundColor: Color(0xFF2563EB),
+                                      backgroundColor: const Color(0xFF2563EB),
                                     ),
                                   );
-                                  navigator.pop();
+                                  if (navigator.canPop()) {
+                                    navigator.pop();
+                                  }
                                 } else {
                                   messenger.showSnackBar(
                                     SnackBar(

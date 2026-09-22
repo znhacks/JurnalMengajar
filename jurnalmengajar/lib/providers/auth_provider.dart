@@ -471,41 +471,76 @@ class AuthProvider with ChangeNotifier {
       final matchedSchool = SchoolModel.fromJson(res);
       final schoolId = AppHelper.parseSingleCleanSchoolId(matchedSchool.id) ?? matchedSchool.id.trim();
 
-      final effectiveRole = role;
+      final effectiveRole = role.toLowerCase();
 
-      // Check if user is already connected with this school in user_schools for this specific role
+      // Check existing memberships for this user at this school across all roles
       final existingMemberRoleList = await supabase
           .from('user_schools')
           .select('id, role, status')
           .eq('user_id', _currentUser!.id)
-          .eq('school_id', schoolId)
-          .eq('role', effectiveRole);
+          .eq('school_id', schoolId);
 
-      Map<String, dynamic>? existingMemberForRole;
-      if ((existingMemberRoleList as List).isNotEmpty) {
-        existingMemberForRole = (existingMemberRoleList as List).first as Map<String, dynamic>;
+      final memberList = List<Map<String, dynamic>>.from(existingMemberRoleList as List);
+
+      final existingMemberForRole = memberList.firstWhere(
+        (m) => (m['role'] as String? ?? '').toLowerCase() == effectiveRole,
+        orElse: () => {},
+      );
+      final hasExistingForRole = existingMemberForRole.isNotEmpty;
+
+      if (effectiveRole == 'admin') {
+        // User claims Admin role with valid school activation code.
+        // Direct entry without re-registration or pending status; Guru role remains intact.
+        if (hasExistingForRole) {
+          final existingStatus = (existingMemberForRole['status'] as String? ?? 'active').toLowerCase();
+          if (existingStatus != 'active') {
+            await supabase
+                .from('user_schools')
+                .update({
+                  'status': 'active',
+                  'updated_at': DateTime.now().toIso8601String(),
+                })
+                .eq('id', existingMemberForRole['id']);
+          }
+        } else {
+          await supabase.from('user_schools').insert({
+            'user_id': _currentUser!.id,
+            'school_id': schoolId,
+            'role': 'admin',
+            'status': 'active',
+          });
+        }
+
+        // Multi-tenant membership table fallback/sync
+        try {
+          await supabase.from('school_memberships').upsert({
+            'user_id': _currentUser!.id,
+            'school_id': schoolId,
+            'role': 'admin',
+          }, onConflict: 'user_id, school_id');
+        } catch (_) {}
+
+        // Reload user memberships so in-memory list has both Guru and Admin memberships
+        await loadUserMemberships();
+
+        // Directly enter / switch as Admin without registering!
+        await switchActiveSchool(schoolId, matchedSchool.name, 'admin');
+
+        _isSchoolExpired = false;
+        _isLoading = false;
+        notifyListeners();
+        return true;
       }
 
-      if (existingMemberForRole != null) {
+      // If effectiveRole is 'guru' (standard teacher join request flow):
+      if (hasExistingForRole) {
         final existingStatus = (existingMemberForRole['status'] as String? ?? 'active').toLowerCase();
         if (existingStatus == 'active') {
-          throw Exception(
-            effectiveRole == 'admin'
-                ? 'Anda sudah terdaftar aktif sebagai Admin Sekolah di sekolah ini.'
-                : 'Anda sudah menjadi anggota di sekolah ini.',
-          );
+          throw Exception('Anda sudah menjadi anggota di sekolah ini.');
         } else if (existingStatus == 'pending') {
-          throw Exception(
-            effectiveRole == 'admin'
-                ? 'Permintaan bergabung sebagai Admin Cadangan sedang menunggu persetujuan dari Admin sekolah.'
-                : 'Permintaan bergabung sedang menunggu persetujuan dari Admin sekolah.',
-          );
+          throw Exception('Permintaan bergabung sedang menunggu persetujuan dari Admin sekolah.');
         } else if (existingStatus == 'requested_exit') {
-          throw Exception(
-            effectiveRole == 'admin'
-                ? 'Anda memiliki pengajuan keluar sebagai Admin Cadangan yang sedang diproses untuk sekolah ini.'
-                : 'Anda memiliki pengajuan keluar yang sedang diproses untuk sekolah ini.',
-          );
+          throw Exception('Anda memiliki pengajuan keluar yang sedang diproses untuk sekolah ini.');
         } else if (existingStatus == 'rejected' || existingStatus == 'inactive') {
           // Re-apply: update status to pending
           await supabase
@@ -518,25 +553,23 @@ class AuthProvider with ChangeNotifier {
         }
       } else {
         // Check max teachers quota for new teacher join (count active teachers)
-        if (effectiveRole == 'guru') {
-          final existingTeachers = await supabase
-              .from('user_schools')
-              .select('id')
-              .eq('school_id', schoolId)
-              .eq('role', 'guru')
-              .eq('status', 'active');
-          
-          final teacherCount = (existingTeachers as List).length;
-          if (teacherCount >= matchedSchool.maxTeachers) {
-            throw Exception('Batas maksimal ${matchedSchool.maxTeachers} guru untuk sekolah ini telah tercapai.');
-          }
+        final existingTeachers = await supabase
+            .from('user_schools')
+            .select('id')
+            .eq('school_id', schoolId)
+            .eq('role', 'guru')
+            .eq('status', 'active');
+        
+        final teacherCount = (existingTeachers as List).length;
+        if (teacherCount >= matchedSchool.maxTeachers) {
+          throw Exception('Batas maksimal ${matchedSchool.maxTeachers} guru untuk sekolah ini telah tercapai.');
         }
 
         try {
           await supabase.from('user_schools').insert({
             'user_id': _currentUser!.id,
             'school_id': schoolId,
-            'role': effectiveRole,
+            'role': 'guru',
             'status': 'pending',
           });
         } catch (insertErr) {
@@ -545,7 +578,7 @@ class AuthProvider with ChangeNotifier {
         }
       }
 
-      // DO NOT call switchActiveSchool: user stays in their current school until approved!
+      // For guru join request: user stays in their current school until approved!
       await loadUserMemberships();
       _isSchoolExpired = false;
       _isLoading = false;

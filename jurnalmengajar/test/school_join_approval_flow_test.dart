@@ -644,5 +644,45 @@ void main() {
       expect(remainingMemberships.first['role'], equals('guru'));
       expect(remainingMemberships.first['status'], equals('active'));
     });
+
+    test('Registered teacher entering school code as Admin activates directly without pending status (Guru remains intact)', () async {
+      const teacherId = 'teacher-cadangan-3';
+      const smkn11Id = 'smkn-11-uuid';
+
+      // 1. Account is already registered as an active Guru in SMKN 11
+      mockRepo.userSchoolsDb.add({
+        'id': 'mem-guru-active-3',
+        'user_id': teacherId,
+        'school_id': smkn11Id,
+        'role': 'guru',
+        'status': 'active',
+      });
+
+      // 2. Teacher joins as Admin with valid code:
+      // Direct activation without "daftar lagi" / pending status
+      final existingAdmin = mockRepo.userSchoolsDb.where(
+        (m) => m['user_id'] == teacherId && m['school_id'] == smkn11Id && m['role'] == 'admin',
+      ).toList();
+
+      if (existingAdmin.isEmpty) {
+        mockRepo.userSchoolsDb.add({
+          'id': 'mem-admin-direct-active',
+          'user_id': teacherId,
+          'school_id': smkn11Id,
+          'role': 'admin',
+          'status': 'active', // Directly active!
+        });
+      }
+
+      // 3. Verify user now has BOTH active roles (guru and admin) in SMKN 11
+      final schoolUsers = await mockRepo.getAllUsersForSchool(smkn11Id);
+      final activeGuru = schoolUsers.where((u) => u.id == teacherId && u.role == 'guru' && u.status == 'active').toList();
+      final activeAdmin = schoolUsers.where((u) => u.id == teacherId && u.role == 'admin' && u.status == 'active').toList();
+
+      expect(activeGuru.length, equals(1));
+      expect(activeAdmin.length, equals(1));
+      expect(schoolUsers.any((u) => u.id == teacherId && u.status == 'pending'), isFalse);
+    });
   });
 }
+

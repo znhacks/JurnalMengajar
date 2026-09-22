@@ -288,7 +288,6 @@ class SupabaseSchoolRepository implements SchoolRepository {
 
     final String canonicalCode = tenantRes?['school_code'] as String? ?? activationCode.trim().replaceAll(RegExp(r'\s+'), '');
 
-    // Update schools table for current_school_id
     final updateData = <String, dynamic>{
       'code': canonicalCode,
       'subscription_plan': plan,
@@ -297,14 +296,94 @@ class SupabaseSchoolRepository implements SchoolRepository {
       if (endsAt != null) 'subscription_until': endsAt.toIso8601String(),
     };
 
-    final updated = await _supabase
-        .from('schools')
-        .update(updateData)
-        .eq('id', currentSchoolId)
-        .select()
-        .single();
+    // 1. Check if school exists in schools table by currentSchoolId
+    Map<String, dynamic>? existingSchool;
+    try {
+      final sById = await _supabase
+          .from('schools')
+          .select()
+          .eq('id', currentSchoolId);
+      if ((sById as List).isNotEmpty) {
+        existingSchool = (sById as List).first as Map<String, dynamic>;
+      }
+    } catch (_) {}
 
-    return SchoolModel.fromJson(updated);
+    // 2. Fallback: check if school exists by canonicalCode or cleanCode
+    if (existingSchool == null) {
+      try {
+        final sByCode = await _supabase
+            .from('schools')
+            .select()
+            .or('code.ilike.$canonicalCode,code.ilike.$cleanCode');
+        if ((sByCode as List).isNotEmpty) {
+          existingSchool = (sByCode as List).first as Map<String, dynamic>;
+        }
+      } catch (_) {}
+    }
+
+    // 3. Fallback: check if school exists by tenant id
+    if (existingSchool == null && tenantRes != null) {
+      try {
+        final sByTenant = await _supabase
+            .from('schools')
+            .select()
+            .eq('id', tenantRes['id'] as String);
+        if ((sByTenant as List).isNotEmpty) {
+          existingSchool = (sByTenant as List).first as Map<String, dynamic>;
+        }
+      } catch (_) {}
+    }
+
+    Map<String, dynamic>? updatedRow;
+
+    if (existingSchool != null) {
+      // School exists: UPDATE it safely without single()
+      final targetId = existingSchool['id'] as String;
+      final updateRes = await _supabase
+          .from('schools')
+          .update(updateData)
+          .eq('id', targetId)
+          .select();
+
+      if ((updateRes as List).isNotEmpty) {
+        updatedRow = (updateRes as List).first as Map<String, dynamic>;
+      } else {
+        updatedRow = {
+          ...existingSchool,
+          ...updateData,
+        };
+      }
+    } else {
+      // School does NOT exist in schools table yet:
+      // Mobile app responsibility: create/upsert it so the mobile app has the school registered
+      final targetSchoolId = (currentSchoolId.isNotEmpty && currentSchoolId != tenantRes?['id'])
+          ? currentSchoolId
+          : (tenantRes?['id'] as String? ?? currentSchoolId);
+      final schoolName = tenantRes?['name'] as String? ?? 'Sekolah';
+
+      final upsertPayload = <String, dynamic>{
+        'id': targetSchoolId,
+        'name': schoolName,
+        ...updateData,
+      };
+
+      try {
+        final insertRes = await _supabase
+            .from('schools')
+            .upsert(upsertPayload, onConflict: 'id')
+            .select();
+
+        if ((insertRes as List).isNotEmpty) {
+          updatedRow = (insertRes as List).first as Map<String, dynamic>;
+        }
+      } catch (upsertErr) {
+        debugPrint('Note upserting school into schools: $upsertErr');
+      }
+
+      updatedRow ??= upsertPayload;
+    }
+
+    return SchoolModel.fromJson(updatedRow);
   }
 
   @override
