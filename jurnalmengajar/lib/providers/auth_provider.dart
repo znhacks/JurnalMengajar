@@ -357,23 +357,26 @@ class AuthProvider with ChangeNotifier {
       final cleanCode = code.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '');
 
       // 1. Direct query: SELECT * FROM schools WHERE code = :cleanCode AND status = 'active'
-      var res = await supabase
+      final schoolList = await supabase
           .from('schools')
           .select()
           .ilike('code', cleanCode)
-          .eq('status', 'active')
-          .maybeSingle();
+          .eq('status', 'active');
+
+      Map<String, dynamic>? res;
+      if ((schoolList as List).isNotEmpty) {
+        res = (schoolList as List).first as Map<String, dynamic>;
+      }
 
       // 2. If not found, check if exists with inactive status
       if (res == null) {
         final inactiveRes = await supabase
             .from('schools')
             .select()
-            .ilike('code', cleanCode)
-            .maybeSingle();
+            .ilike('code', cleanCode);
 
-        if (inactiveRes != null) {
-          final s = SchoolModel.fromJson(inactiveRes);
+        if ((inactiveRes as List).isNotEmpty) {
+          final s = SchoolModel.fromJson((inactiveRes as List).first as Map<String, dynamic>);
           if (s.isInactive) {
             throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).');
           }
@@ -382,35 +385,43 @@ class AuthProvider with ChangeNotifier {
         // 3. Fallback check by npsn or id (only query id if cleanCode is a valid UUID!)
         final isCleanCodeUuid = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$').hasMatch(cleanCode);
         if (isCleanCodeUuid) {
-          res = await supabase
+          final uuidList = await supabase
               .from('schools')
               .select()
               .or('npsn.ilike.$cleanCode,id.eq.$cleanCode')
-              .eq('status', 'active')
-              .maybeSingle();
+              .eq('status', 'active');
+          if ((uuidList as List).isNotEmpty) {
+            res = (uuidList as List).first as Map<String, dynamic>;
+          }
         } else {
-          res = await supabase
+          final npsnList = await supabase
               .from('schools')
               .select()
               .ilike('npsn', cleanCode)
-              .eq('status', 'active')
-              .maybeSingle();
+              .eq('status', 'active');
+          if ((npsnList as List).isNotEmpty) {
+            res = (npsnList as List).first as Map<String, dynamic>;
+          }
         }
 
         // 4. Fallback check by tenant
         if (res == null) {
-          var tenantRes = await supabase
+          final tenantList = await supabase
               .from('tenants')
               .select('id, name, school_code, status')
-              .ilike('school_code', '%$cleanCode%')
-              .maybeSingle();
+              .ilike('school_code', '%$cleanCode%');
 
-          if (tenantRes == null && isCleanCodeUuid) {
-            tenantRes = await supabase
+          Map<String, dynamic>? tenantRes;
+          if ((tenantList as List).isNotEmpty) {
+            tenantRes = (tenantList as List).first as Map<String, dynamic>;
+          } else if (isCleanCodeUuid) {
+            final tenantUuidList = await supabase
                 .from('tenants')
                 .select('id, name, school_code, status')
-                .eq('id', cleanCode)
-                .maybeSingle();
+                .eq('id', cleanCode);
+            if ((tenantUuidList as List).isNotEmpty) {
+              tenantRes = (tenantUuidList as List).first as Map<String, dynamic>;
+            }
           }
 
           if (tenantRes != null) {
@@ -423,38 +434,32 @@ class AuthProvider with ChangeNotifier {
               throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).');
             }
 
-            try {
-              await supabase.from('schools').upsert({
+            // CRITICAL: Check if a school already exists with tenantCode or cleanCode!
+            final existingSchoolList = await supabase
+                .from('schools')
+                .select()
+                .or('code.ilike.$tenantCode,code.ilike.$cleanCode')
+                .eq('status', 'active');
+
+            if ((existingSchoolList as List).isNotEmpty) {
+              res = (existingSchoolList as List).first as Map<String, dynamic>;
+            } else {
+              try {
+                await supabase.from('schools').upsert({
+                  'id': tenantId,
+                  'name': tenantName,
+                  'code': tenantCode,
+                  'status': tenantStatus,
+                }, onConflict: 'id');
+              } catch (_) {}
+
+              res = {
                 'id': tenantId,
                 'name': tenantName,
                 'code': tenantCode,
                 'status': tenantStatus,
-              }, onConflict: 'id');
-            } catch (_) {}
-
-            final isTenantUuid = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$').hasMatch(tenantId);
-            if (isTenantUuid) {
-              res = await supabase
-                  .from('schools')
-                  .select()
-                  .or('id.eq.$tenantId,code.ilike.$cleanCode')
-                  .eq('status', 'active')
-                  .maybeSingle();
-            } else {
-              res = await supabase
-                  .from('schools')
-                  .select()
-                  .ilike('code', cleanCode)
-                  .eq('status', 'active')
-                  .maybeSingle();
+              };
             }
-
-            res ??= {
-              'id': tenantId,
-              'name': tenantName,
-              'code': tenantCode,
-              'status': tenantStatus,
-            };
           }
         }
       }

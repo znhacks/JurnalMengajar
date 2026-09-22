@@ -30,20 +30,56 @@ class SupabaseSchoolRepository implements SchoolRepository {
       final cleanCode = code.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '');
       if (cleanCode.isEmpty) return null;
 
-      // 1. Search tenant in tenants table by school_code or ID (UUID)
+      // 1. Direct query on schools table: WHERE code = :cleanCode AND status = 'active'
+      try {
+        final schoolResponse = await _supabase
+            .from('schools')
+            .select()
+            .ilike('code', cleanCode)
+            .eq('status', 'active');
+
+        if ((schoolResponse as List).isNotEmpty) {
+          return SchoolModel.fromJson((schoolResponse as List).first);
+        }
+      } catch (_) {}
+
+      // 2. Check if school exists with this code but status is inactive
+      try {
+        final existingSchool = await _supabase
+            .from('schools')
+            .select()
+            .ilike('code', cleanCode);
+
+        if ((existingSchool as List).isNotEmpty) {
+          final school = SchoolModel.fromJson((existingSchool as List).first);
+          if (school.isInactive) {
+            throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).');
+          }
+          return school;
+        }
+      } catch (e) {
+        if (e.toString().contains('dinonaktifkan')) rethrow;
+      }
+
+      // 3. Fallback: Search tenant in tenants table by school_code or ID (UUID)
       Map<String, dynamic>? tenantRes;
       try {
-        tenantRes = await _supabase
+        final tList = await _supabase
             .from('tenants')
             .select('id, name, school_code, status')
-            .ilike('school_code', '%$cleanCode%')
-            .maybeSingle();
+            .ilike('school_code', '%$cleanCode%');
 
-        tenantRes ??= await _supabase
-            .from('tenants')
-            .select('id, name, school_code, status')
-            .eq('id', cleanCode)
-            .maybeSingle();
+        if ((tList as List).isNotEmpty) {
+          tenantRes = (tList as List).first as Map<String, dynamic>;
+        } else {
+          final tUuidList = await _supabase
+              .from('tenants')
+              .select('id, name, school_code, status')
+              .eq('id', cleanCode);
+          if ((tUuidList as List).isNotEmpty) {
+            tenantRes = (tUuidList as List).first as Map<String, dynamic>;
+          }
+        }
       } catch (e) {
         debugPrint('Note: tenants table query: $e');
       }
@@ -67,15 +103,15 @@ class SupabaseSchoolRepository implements SchoolRepository {
               .eq('tenant_id', tenantId)
               .eq('status', 'active')
               .order('ends_at', ascending: false)
-              .limit(1)
-              .maybeSingle();
+              .limit(1);
 
-          if (subRes != null) {
-            final rawEndsAt = subRes['ends_at'];
+          if ((subRes as List).isNotEmpty) {
+            final firstSub = (subRes as List).first as Map<String, dynamic>;
+            final rawEndsAt = firstSub['ends_at'];
             if (rawEndsAt != null) {
               endsAt = DateTime.tryParse(rawEndsAt.toString());
             }
-            final planId = (subRes['plan_id'] as String? ?? 'free').toLowerCase();
+            final planId = (firstSub['plan_id'] as String? ?? 'free').toLowerCase();
             final isActive = endsAt == null || DateTime.now().isBefore(endsAt);
             if (isActive && (planId == 'pro' || planId == 'enterprise')) {
               isTenantPro = true;
@@ -83,17 +119,15 @@ class SupabaseSchoolRepository implements SchoolRepository {
           }
         } catch (_) {}
 
-        // Auto-sync tenant into schools table if missing
-        try {
-          await _supabase.from('schools').upsert({
-            'id': tenantId,
-            'name': tenantName,
-            'code': cleanCode,
-            'status': tenantStatus,
-            'subscription_plan': isTenantPro ? 'pro' : 'free',
-            'subscription_until': endsAt?.toIso8601String(),
-          }, onConflict: 'id');
-        } catch (_) {}
+        // Check if school already exists by code in schools table before upserting
+        final existingByCode = await _supabase
+            .from('schools')
+            .select()
+            .ilike('code', cleanCode);
+
+        if ((existingByCode as List).isNotEmpty) {
+          return SchoolModel.fromJson((existingByCode as List).first);
+        }
 
         return SchoolModel(
           id: tenantId,
@@ -104,39 +138,6 @@ class SupabaseSchoolRepository implements SchoolRepository {
           status: 'active',
           subscriptionUntil: endsAt,
         );
-      }
-
-      // 2. Direct query on schools table: WHERE code = :cleanCode AND status = 'active'
-      try {
-        final schoolResponse = await _supabase
-            .from('schools')
-            .select()
-            .ilike('code', cleanCode)
-            .eq('status', 'active')
-            .maybeSingle();
-
-        if (schoolResponse != null) {
-          return SchoolModel.fromJson(schoolResponse);
-        }
-      } catch (_) {}
-
-      // 3. Check if school exists with this code but status is inactive
-      try {
-        final existingSchool = await _supabase
-            .from('schools')
-            .select()
-            .ilike('code', cleanCode)
-            .maybeSingle();
-
-        if (existingSchool != null) {
-          final school = SchoolModel.fromJson(existingSchool);
-          if (school.isInactive) {
-            throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).');
-          }
-          return school;
-        }
-      } catch (e) {
-        if (e.toString().contains('dinonaktifkan')) rethrow;
       }
 
       // 4. Fallback check by npsn or id in schools table
