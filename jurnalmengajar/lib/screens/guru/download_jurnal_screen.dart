@@ -137,6 +137,9 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
           context,
           listen: false,
         );
+        final activeId = authProvider.activeSchoolId;
+        journalProvider.setSchoolId(activeId);
+        scheduleProvider.setSchoolId(activeId);
         await Future.wait([
           journalProvider.loadTeacherJournals(teacher.id),
           scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
@@ -569,7 +572,17 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       59,
     );
 
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final targetSchoolId = AppHelper.parseSingleCleanSchoolId(_selectedSchoolId ?? authProvider.activeSchoolId);
+
     return allTeacherJournals.where((j) {
+      // School Filter
+      if (targetSchoolId != null && targetSchoolId.isNotEmpty) {
+        final jSchoolId = AppHelper.parseSingleCleanSchoolId(j.schoolId) ?? j.schoolId?.trim();
+        if (jSchoolId != null && jSchoolId.isNotEmpty && jSchoolId != targetSchoolId) {
+          return false;
+        }
+      }
       // Date Range Filter
       if (j.date.isBefore(startOfDay) || j.date.isAfter(endOfDay)) {
         return false;

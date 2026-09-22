@@ -124,6 +124,29 @@ class ScheduleProvider with ChangeNotifier {
     }
   }
 
+  void setSchoolId(String? schoolId) {
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId?.trim();
+    if (cleanSchoolId != _currentSchoolId) {
+      _currentSchoolId = cleanSchoolId;
+      if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+        _cachedTeacherSchedules.removeWhere((s) {
+          final sSchool = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+          return sSchool != null && sSchool.isNotEmpty && sSchool != cleanSchoolId;
+        });
+      } else {
+        _cachedTeacherSchedules.clear();
+      }
+      _cachedTeacherId = null;
+      _teacherSchedulesForSelectedDate.removeWhere((s) {
+        if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+          final sSchool = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+          return sSchool != null && sSchool.isNotEmpty && sSchool != cleanSchoolId;
+        }
+        return false;
+      });
+    }
+  }
+
   Future<void> loadTeacherSchedules(String teacherId, DateTime date, {bool forceRefresh = false}) async {
     final teacherKey = '${_currentSchoolId ?? "all"}_$teacherId';
     if (_inFlightTeacherLoad != null && _inFlightTeacherKey == teacherKey && !forceRefresh) {
@@ -144,15 +167,27 @@ class ScheduleProvider with ChangeNotifier {
   }
 
   Future<void> _executeLoadTeacherSchedules(String teacherId, DateTime date, {bool forceRefresh = false}) async {
+    final cleanSchoolId = _currentSchoolId;
+    final scopedKey = 'teacher_schedules_${cleanSchoolId ?? "all"}_$teacherId';
+
     // SWR Instant Cache Population for teacher schedules (check aligned keys)
     if (_cachedTeacherSchedules.isEmpty || _cachedTeacherId != teacherId) {
       try {
-        final cached = await CacheService().loadList('teacher_schedules_$teacherId') ??
+        final cached = await CacheService().loadList(scopedKey) ??
+            await CacheService().loadList('teacher_schedules_$teacherId') ??
             await CacheService().loadList('schedules_teacher_$teacherId');
         if (cached != null && cached.isNotEmpty) {
-          _cachedTeacherSchedules = cached.map((s) => ScheduleModel.fromJson(s)).toList();
+          final mapped = cached.map((s) => ScheduleModel.fromJson(s)).toList();
+          final filtered = (cleanSchoolId != null && cleanSchoolId.isNotEmpty)
+              ? mapped.where((s) {
+                  final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+                  return sSchoolId == null || sSchoolId.isEmpty || sSchoolId == cleanSchoolId;
+                }).toList()
+              : mapped;
+          _cachedTeacherSchedules = filtered;
           _cachedTeacherId = teacherId;
           _teacherSchedulesForSelectedDate = _cachedTeacherSchedules.where((s) {
+            if (!s.isActive) return false;
             return s.date.year == date.year &&
                 s.date.month == date.month &&
                 s.date.day == date.day;
@@ -168,9 +203,19 @@ class ScheduleProvider with ChangeNotifier {
       notifyListeners();
       try {
         final fresh = await scheduleRepository.getSchedulesForTeacher(teacherId);
-        if (fresh.isNotEmpty || _cachedTeacherSchedules.isEmpty) {
-          _cachedTeacherSchedules = fresh;
+        final filteredFresh = (cleanSchoolId != null && cleanSchoolId.isNotEmpty)
+            ? fresh.where((s) {
+                final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+                return sSchoolId == null || sSchoolId.isEmpty || sSchoolId == cleanSchoolId;
+              }).toList()
+            : fresh;
+
+        if (filteredFresh.isNotEmpty || _cachedTeacherSchedules.isEmpty) {
+          _cachedTeacherSchedules = filteredFresh;
           _cachedTeacherId = teacherId;
+          try {
+            CacheService().save(scopedKey, filteredFresh.map((e) => e.toJson()).toList());
+          } catch (_) {}
         }
       } catch (e) {
         _errorMessage = e.toString();
@@ -181,6 +226,13 @@ class ScheduleProvider with ChangeNotifier {
     }
 
     _teacherSchedulesForSelectedDate = _cachedTeacherSchedules.where((s) {
+      if (!s.isActive) return false;
+      if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+        final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+        if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanSchoolId) {
+          return false;
+        }
+      }
       return s.date.year == date.year &&
           s.date.month == date.month &&
           s.date.day == date.day;

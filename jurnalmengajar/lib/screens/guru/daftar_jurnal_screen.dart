@@ -91,6 +91,8 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
           id: currentUser.id, name: '', position: '', address: '', phoneNumber: '', email: ''),
     );
     if (teacher.id.isNotEmpty) {
+      journalProvider.setSchoolId(schoolId);
+      scheduleProvider.setSchoolId(schoolId);
       await Future.wait([
         journalProvider.loadTeacherJournals(teacher.id),
         scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
@@ -103,11 +105,22 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
     final journalProvider = context.watch<JournalProvider>();
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
 
-    final teacherJournals = journalProvider.teacherJournals;
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
+        authProvider.activeSchoolId?.trim();
+    final teacherJournals = journalProvider.teacherJournals.where((j) {
+      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+        final jSchoolId = AppHelper.parseSingleCleanSchoolId(j.schoolId) ?? j.schoolId?.trim();
+        if (jSchoolId != null && jSchoolId.isNotEmpty && jSchoolId != cleanActiveSchoolId) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
     final pendingJournals =
         teacherJournals.where((j) => j.status == 'pending').toList();
     final verifiedJournals =

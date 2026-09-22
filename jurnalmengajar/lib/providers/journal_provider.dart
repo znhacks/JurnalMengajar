@@ -111,14 +111,30 @@ class JournalProvider with ChangeNotifier {
     }
   }
 
+  void setSchoolId(String? schoolId) {
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId?.trim();
+    if (cleanSchoolId != _currentSchoolId) {
+      _currentSchoolId = cleanSchoolId;
+      if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+        _teacherJournals.removeWhere((j) {
+          final jSchool = AppHelper.parseSingleCleanSchoolId(j.schoolId) ?? j.schoolId?.trim();
+          return jSchool != null && jSchool.isNotEmpty && jSchool != cleanSchoolId;
+        });
+      } else {
+        _teacherJournals = [];
+      }
+    }
+  }
+
   Future<void> loadTeacherJournals(String teacherId) async {
-    if (_inFlightTeacherLoad != null && _inFlightTeacherId == teacherId) {
+    final teacherKey = '${_currentSchoolId ?? "all"}_$teacherId';
+    if (_inFlightTeacherLoad != null && _inFlightTeacherId == teacherKey) {
       return _inFlightTeacherLoad!;
     }
 
     final future = _executeLoadTeacherJournals(teacherId);
     _inFlightTeacherLoad = future;
-    _inFlightTeacherId = teacherId;
+    _inFlightTeacherId = teacherKey;
     try {
       await future;
     } finally {
@@ -130,13 +146,24 @@ class JournalProvider with ChangeNotifier {
   }
 
   Future<void> _executeLoadTeacherJournals(String teacherId) async {
+    final cleanSchoolId = _currentSchoolId;
+    final scopedKey = 'teacher_journals_${cleanSchoolId ?? "all"}_$teacherId';
     _errorMessage = null;
+
     if (_teacherJournals.isEmpty) {
       try {
-        final cached = await CacheService().loadList('teacher_journals_$teacherId') ??
+        final cached = await CacheService().loadList(scopedKey) ??
+            await CacheService().loadList('teacher_journals_$teacherId') ??
             await CacheService().loadList('journals_teacher_$teacherId');
         if (cached != null && cached.isNotEmpty && _teacherJournals.isEmpty) {
-          _teacherJournals = cached.map((j) => JournalModel.fromJson(j)).toList();
+          final mapped = cached.map((j) => JournalModel.fromJson(j)).toList();
+          final filtered = (cleanSchoolId != null && cleanSchoolId.isNotEmpty)
+              ? mapped.where((j) {
+                  final jSchoolId = AppHelper.parseSingleCleanSchoolId(j.schoolId) ?? j.schoolId?.trim();
+                  return jSchoolId == null || jSchoolId.isEmpty || jSchoolId == cleanSchoolId;
+                }).toList()
+              : mapped;
+          _teacherJournals = filtered;
           _isLoading = false;
           notifyListeners();
         } else {
@@ -154,8 +181,18 @@ class JournalProvider with ChangeNotifier {
 
     try {
       final fresh = await journalRepository.getJournalsForTeacher(teacherId);
-      if (fresh.isNotEmpty || _teacherJournals.isEmpty) {
-        _teacherJournals = fresh;
+      final filteredFresh = (cleanSchoolId != null && cleanSchoolId.isNotEmpty)
+          ? fresh.where((j) {
+              final jSchoolId = AppHelper.parseSingleCleanSchoolId(j.schoolId) ?? j.schoolId?.trim();
+              return jSchoolId == null || jSchoolId.isEmpty || jSchoolId == cleanSchoolId;
+            }).toList()
+          : fresh;
+
+      if (filteredFresh.isNotEmpty || _teacherJournals.isEmpty) {
+        _teacherJournals = filteredFresh;
+        try {
+          CacheService().save(scopedKey, filteredFresh.map((e) => e.toJson()).toList());
+        } catch (_) {}
       }
     } catch (e) {
       _errorMessage = e.toString();

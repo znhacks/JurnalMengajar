@@ -60,7 +60,12 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
       if (authProvider.activeRole == 'admin') {
         await scheduleProvider.loadAllSchedules(authProvider.activeSchoolId);
       } else if (authProvider.currentUser?.id != null) {
-        await scheduleProvider.loadTeacherSchedules(authProvider.currentUser!.id, DateTime.now(), forceRefresh: true);
+        scheduleProvider.setSchoolId(authProvider.activeSchoolId);
+        await scheduleProvider.loadTeacherSchedules(
+          authProvider.currentUser!.id,
+          DateTime.now(),
+          forceRefresh: true,
+        );
       }
       try {
         schedule = scheduleProvider.cachedTeacherSchedules.firstWhere(

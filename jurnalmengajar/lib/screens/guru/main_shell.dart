@@ -94,8 +94,11 @@ class GuruMainShellState extends State<GuruMainShell> {
     );
     
     if (teacher.id.isNotEmpty) {
+      final activeSchoolId = authProvider.activeSchoolId;
+      scheduleProvider.setSchoolId(activeSchoolId);
+      journalProvider.setSchoolId(activeSchoolId);
       await Future.wait([
-        warningProvider.loadTeacherWarningLetters(teacher.id, authProvider.activeSchoolId),
+        warningProvider.loadTeacherWarningLetters(teacher.id, activeSchoolId),
         scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
         journalProvider.loadTeacherJournals(teacher.id),
       ]);

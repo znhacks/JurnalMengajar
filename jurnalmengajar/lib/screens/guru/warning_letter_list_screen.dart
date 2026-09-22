@@ -39,8 +39,10 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
         );
 
         if (teacher.id.isNotEmpty) {
+          final activeSchoolId = authProvider.activeSchoolId;
+          scheduleProvider.setSchoolId(activeSchoolId);
           await Future.wait([
-            warningProvider.loadTeacherWarningLetters(teacher.id, authProvider.activeSchoolId),
+            warningProvider.loadTeacherWarningLetters(teacher.id, activeSchoolId),
             scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
           ]);
         }
@@ -194,8 +196,10 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                     final teacher = masterProvider.teachers.firstWhere(
                       (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
                     );
+                    final activeSchoolId = authProvider.activeSchoolId;
+                    scheduleProvider.setSchoolId(activeSchoolId);
                     await Future.wait([
-                      warningProvider.loadTeacherWarningLetters(teacher.id, authProvider.activeSchoolId),
+                      warningProvider.loadTeacherWarningLetters(teacher.id, activeSchoolId),
                       scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
                     ]);
                   }

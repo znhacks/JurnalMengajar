@@ -60,12 +60,15 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
           ),
         );
         if (teacher.id.isNotEmpty) {
+          final activeSchoolId = authProvider.activeSchoolId;
+          final schedProv = Provider.of<ScheduleProvider>(context, listen: false);
+          final journProv = Provider.of<JournalProvider>(context, listen: false);
+          schedProv.setSchoolId(activeSchoolId);
+          journProv.setSchoolId(activeSchoolId);
           await Future.wait([
-            warningProvider.loadTeacherWarningLetters(teacher.id, authProvider.activeSchoolId),
-            Provider.of<ScheduleProvider>(context, listen: false)
-                .loadTeacherSchedules(teacher.id, DateTime.now()),
-            Provider.of<JournalProvider>(context, listen: false)
-                .loadTeacherJournals(teacher.id),
+            warningProvider.loadTeacherWarningLetters(teacher.id, activeSchoolId),
+            schedProv.loadTeacherSchedules(teacher.id, DateTime.now()),
+            journProv.loadTeacherJournals(teacher.id),
           ]);
         }
       }
@@ -1096,6 +1099,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
 
             await auth.loadUserMemberships();
             if (teacher.id.isNotEmpty) {
+              schedule.setSchoolId(auth.activeSchoolId);
+              journal.setSchoolId(auth.activeSchoolId);
               await Future.wait([
                 master.loadAllData(auth.activeSchoolId),
                 warning.loadTeacherWarningLetters(teacher.id, auth.activeSchoolId),

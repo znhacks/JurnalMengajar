@@ -143,6 +143,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     );
 
     // Fast Parallel Burst: master data refresh, teacher schedules, journals, holidays, warnings
+    scheduleProvider.setSchoolId(schoolId);
+    journalProvider.setSchoolId(schoolId);
     await Future.wait([
       masterProvider.loadAllData(schoolId),
       scheduleProvider.loadTeacherSchedules(teacher.id, _selectedDay),
@@ -212,6 +214,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         ),
       );
       if (teacher.id.isNotEmpty) {
+        scheduleProvider.setSchoolId(authProvider.activeSchoolId);
         scheduleProvider.loadTeacherSchedules(teacher.id, date);
       }
     }
@@ -224,9 +227,19 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     MasterDataProvider masterProvider,
   ) {
     final today = DateTime.now();
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
+        authProvider.activeSchoolId?.trim();
+
     final activeSchedulesToday = scheduleProvider.cachedTeacherSchedules.where((
       s,
     ) {
+      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+        final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+        if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+          return false;
+        }
+      }
       return s.isActive &&
           s.date.year == today.year &&
           s.date.month == today.month &&
@@ -1679,7 +1692,19 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       );
     }
 
-    var list = scheduleProvider.teacherSchedulesForSelectedDate;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
+        authProvider.activeSchoolId?.trim();
+
+    var list = scheduleProvider.teacherSchedulesForSelectedDate.where((s) {
+      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+        final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+        if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
 
     // ── EMPTY STATE ──────────────────────────────────────────────────────────
     if (list.isEmpty) {
@@ -2028,7 +2053,19 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     JournalProvider journalProvider,
     MasterDataProvider masterProvider,
   ) {
-    var journals = journalProvider.teacherJournals;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
+        authProvider.activeSchoolId?.trim();
+
+    var journals = journalProvider.teacherJournals.where((j) {
+      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+        final jSchoolId = AppHelper.parseSingleCleanSchoolId(j.schoolId) ?? j.schoolId?.trim();
+        if (jSchoolId != null && jSchoolId.isNotEmpty && jSchoolId != cleanActiveSchoolId) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
 
     if (_searchQuery.isNotEmpty) {
       journals = journals.where((j) {

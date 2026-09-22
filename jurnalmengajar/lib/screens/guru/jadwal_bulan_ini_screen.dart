@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/theme/app_theme.dart';
 import '../../core/utils/helper.dart';
 import '../../core/utils/schedule_grouper.dart';
 import '../../models/class_model.dart';
@@ -77,6 +76,9 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
         );
 
         if (teacher.id.isNotEmpty) {
+          final schoolId = authProvider.activeSchoolId;
+          scheduleProvider.setSchoolId(schoolId);
+          journalProvider.setSchoolId(schoolId);
           await Future.wait([
             scheduleProvider.loadTeacherSchedules(teacher.id, _currentMonth),
             journalProvider.loadTeacherJournals(teacher.id),

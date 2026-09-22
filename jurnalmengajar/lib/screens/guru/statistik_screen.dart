@@ -8,6 +8,7 @@ import '../../providers/schedule_provider.dart';
 import '../../providers/journal_provider.dart';
 import '../../models/class_model.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/helper.dart';
 import '../../widgets/guru_drawer.dart';
 
 class GuruStatistikScreen extends StatefulWidget {
@@ -62,8 +63,17 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
     final Color textPrimary = Theme.of(context).colorScheme.onSurface;
     final Color textSecondary = Theme.of(context).colorScheme.onSurfaceVariant;
 
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
+        authProvider.activeSchoolId?.trim();
+
     // 1. Filter active schedules for this teacher in the selected month
     final schedulesInMonth = scheduleProvider.cachedTeacherSchedules.where((s) {
+      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+        final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+        if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+          return false;
+        }
+      }
       return s.isActive &&
           s.date.year == _selectedMonth.year &&
           s.date.month == _selectedMonth.month;
@@ -71,6 +81,12 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
 
     // 2. Filter journals for this teacher in the selected month
     final journalsInMonth = journalProvider.teacherJournals.where((j) {
+      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+        final jSchoolId = AppHelper.parseSingleCleanSchoolId(j.schoolId) ?? j.schoolId?.trim();
+        if (jSchoolId != null && jSchoolId.isNotEmpty && jSchoolId != cleanActiveSchoolId) {
+          return false;
+        }
+      }
       return j.date.year == _selectedMonth.year &&
           j.date.month == _selectedMonth.month;
     }).toList();

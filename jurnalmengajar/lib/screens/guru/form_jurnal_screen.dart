@@ -109,6 +109,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
           );
           if (teacher.id.isNotEmpty && targetDate != null) {
+            scheduleProvider.setSchoolId(authProvider.activeSchoolId);
             await scheduleProvider.loadTeacherSchedules(teacher.id, targetDate);
           }
         }
@@ -705,6 +706,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             }
 
             if (schedule.teacherId.isNotEmpty) {
+              journalProvider.setSchoolId(authProvider.activeSchoolId);
               await journalProvider.loadTeacherJournals(schedule.teacherId);
             }
           }

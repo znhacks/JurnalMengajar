@@ -222,7 +222,7 @@ class MockScheduleProvider extends ScheduleProvider {
   @override
   List<ScheduleModel> get schedules => _mockSchedules;
   @override
-  Future<void> loadSchedules([String? schoolId]) async {}
+  Future<void> loadAllSchedules([String? schoolId]) async {}
 }
 
 class MockJournalProvider extends JournalProvider {

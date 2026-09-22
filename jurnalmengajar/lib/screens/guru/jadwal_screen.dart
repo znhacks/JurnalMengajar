@@ -110,6 +110,8 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
 
       if (teacher.id.isNotEmpty) {
         final targetSchoolId = schoolId ?? 'a1111111-1111-1111-1111-111111111111';
+        scheduleProvider.setSchoolId(schoolId);
+        journalProvider.setSchoolId(schoolId);
         await Future.wait([
           scheduleProvider.loadTeacherSchedules(teacher.id, _selectedDay),
           journalProvider.loadTeacherJournals(teacher.id),
@@ -344,6 +346,8 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
             _focusedDay = focusedDay;
           });
           if (teacher.id.isNotEmpty) {
+            final activeSchoolId = Provider.of<AuthProvider>(context, listen: false).activeSchoolId;
+            scheduleProvider.setSchoolId(activeSchoolId);
             scheduleProvider.loadTeacherSchedules(teacher.id, selectedDay);
           }
         },
@@ -484,6 +488,8 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                           _focusedDay = focDay;
                         });
                         if (teacher.id.isNotEmpty) {
+                          final activeSchoolId = Provider.of<AuthProvider>(context, listen: false).activeSchoolId;
+                          scheduleProvider.setSchoolId(activeSchoolId);
                           scheduleProvider.loadTeacherSchedules(teacher.id, selDay);
                         }
                         Navigator.pop(context);
@@ -721,7 +727,17 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    final filteredSchedules = scheduleProvider.teacherSchedulesForSelectedDate;
+                    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
+                        authProvider.activeSchoolId?.trim();
+                    final filteredSchedules = scheduleProvider.teacherSchedulesForSelectedDate.where((s) {
+                      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+                        final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+                        if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+                          return false;
+                        }
+                      }
+                      return true;
+                    }).toList();
 
                     if (filteredSchedules.isEmpty) {
                       return _buildEmptyState();
