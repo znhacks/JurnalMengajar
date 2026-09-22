@@ -1894,25 +1894,39 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
     final timeBadgeText = 'Jam $hoursStr';
 
+    final now = DateTime.now();
+    final todayOnly = DateTime(now.year, now.month, now.day);
+    final scheduleDateOnly = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
+    final isFuture = scheduleDateOnly.isAfter(todayOnly);
+    final canFillOrView = !isFuture || matchingJournal != null;
+
     return ScaleTap(
-      onTap: () async {
-        if (matchingJournal != null) {
-          if (matchingJournal.status == 'rejected') {
-            await context.push(
-              '/guru/journal-form?scheduleId=${schedule.id}&journalId=${matchingJournal.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}',
-            );
-          } else {
-            await context.push('/guru/journal/${matchingJournal.id}');
-          }
-        } else {
-          await context.push(
-            '/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}',
-          );
-        }
-        if (mounted) {
-          _refreshData();
-        }
-      },
+      onTap: (isFuture && matchingJournal == null)
+          ? () {
+              AppHelper.showSnackBar(
+                context,
+                'Belum bisa mengisi jurnal mengajar, tunggu sampai hari tersebut tiba.',
+                isError: false,
+              );
+            }
+          : () async {
+              if (matchingJournal != null) {
+                if (matchingJournal.status == 'rejected') {
+                  await context.push(
+                    '/guru/journal-form?scheduleId=${schedule.id}&journalId=${matchingJournal.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}',
+                  );
+                } else {
+                  await context.push('/guru/journal/${matchingJournal.id}');
+                }
+              } else {
+                await context.push(
+                  '/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}',
+                );
+              }
+              if (mounted) {
+                _refreshData();
+              }
+            },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
         decoration: BoxDecoration(
@@ -2040,23 +2054,25 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
               ),
             ),
 
-            SizedBox(width: 8.w),
+            if (canFillOrView) ...[
+              SizedBox(width: 8.w),
 
-            // Compact Right Arrow Button
-            Container(
-              padding: EdgeInsets.all(6.w),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF334155).withValues(alpha: 0.6)
-                    : const Color(0xFFF0F5FF),
-                shape: BoxShape.circle,
+              // Compact Right Arrow Button
+              Container(
+                padding: EdgeInsets.all(6.w),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF334155).withValues(alpha: 0.6)
+                      : const Color(0xFFF0F5FF),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Color(0xFF4F7CFF),
+                  size: 11,
+                ),
               ),
-              child: const Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: Color(0xFF4F7CFF),
-                size: 11,
-              ),
-            ),
+            ],
           ],
         ),
       ),

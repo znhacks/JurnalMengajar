@@ -497,6 +497,21 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
   Future<void> _submitForm(ScheduleModel schedule) async {
     if (_isSaving) return;
+
+    final targetDate = _existingJournal?.date ??
+        (widget.dateStr != null ? (DateTime.tryParse(widget.dateStr!) ?? schedule.date) : schedule.date);
+    final today = DateTime.now();
+    final todayOnly = DateTime(today.year, today.month, today.day);
+    final targetDateOnly = DateTime(targetDate.year, targetDate.month, targetDate.day);
+    if (!_isEditing && targetDateOnly.isAfter(todayOnly)) {
+      AppHelper.showSnackBar(
+        context,
+        'Belum bisa mengisi jurnal mengajar, tunggu sampai hari tersebut tiba.',
+        isError: true,
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
 
     try {

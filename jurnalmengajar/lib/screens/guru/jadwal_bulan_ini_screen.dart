@@ -645,6 +645,17 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
             await context.push('/guru/journal/${matchingJournal.id}');
           }
         } else {
+          final today = DateTime.now();
+          final todayOnly = DateTime(today.year, today.month, today.day);
+          final groupDateOnly = DateTime(group.date.year, group.date.month, group.date.day);
+          if (groupDateOnly.isAfter(todayOnly)) {
+            AppHelper.showSnackBar(
+              context,
+              'Belum bisa mengisi jurnal mengajar, tunggu sampai hari tersebut tiba.',
+              isError: false,
+            );
+            return;
+          }
           await context.push('/guru/journal-form?scheduleId=${schedule.id}&date=$dateStr');
         }
         if (mounted) {
@@ -839,7 +850,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
                       ),
                     ),
                   )
-                else
+                else if (!DateTime(group.date.year, group.date.month, group.date.day).isAfter(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day)))
                   InkWell(
                     onTap: () async {
                       await context.push('/guru/journal-form?scheduleId=${schedule.id}&date=$dateStr');

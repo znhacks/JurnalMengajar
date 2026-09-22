@@ -995,6 +995,17 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                       await context.push('/guru/journal/${matchingJournal.id}');
                     }
                   } else {
+                    final today = DateTime.now();
+                    final todayOnly = DateTime(today.year, today.month, today.day);
+                    final targetDate = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
+                    if (targetDate.isAfter(todayOnly)) {
+                      AppHelper.showSnackBar(
+                        context,
+                        'Belum bisa mengisi jurnal mengajar, tunggu sampai hari tersebut tiba.',
+                        isError: false,
+                      );
+                      return;
+                    }
                     await context.push('/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
                   }
                   if (mounted) {
@@ -1067,18 +1078,28 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(height: 3.h),
-                      Text(
-                        matchingJournal != null
-                            ? 'Jurnal: ${matchingJournal.material}'
-                            : 'Jurnal belum diisi. Ketuk untuk menginput jurnal.',
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 11.5.sp,
-                          color: subtextColor,
-                          fontWeight: FontWeight.w400,
-                          height: 1.3,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      Builder(
+                        builder: (context) {
+                          final today = DateTime.now();
+                          final todayOnly = DateTime(today.year, today.month, today.day);
+                          final targetDate = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
+                          final isFuture = targetDate.isAfter(todayOnly);
+                          return Text(
+                            matchingJournal != null
+                                ? 'Jurnal: ${matchingJournal.material}'
+                                : (isFuture
+                                    ? 'Belum bisa mengisi jurnal sampai hari tersebut tiba.'
+                                    : 'Jurnal belum diisi. Ketuk untuk menginput jurnal.'),
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 11.5.sp,
+                              color: subtextColor,
+                              fontWeight: FontWeight.w400,
+                              height: 1.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          );
+                        },
                       ),
                     ],
                   ),
