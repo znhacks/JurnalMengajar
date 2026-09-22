@@ -334,7 +334,7 @@ class SupabaseAuthRepository implements AuthRepository {
             await _supabase.from('schools').upsert({
               'id': schoolId,
               'name': canonicalSchoolName,
-              'code': targetId.isNotEmpty ? targetId.toUpperCase() : schoolId,
+              'code': targetId.isNotEmpty ? targetId.trim() : schoolId,
               'status': 'active',
               'subscription_plan': detectedPlan,
               'max_teachers': maxTeachers,
@@ -404,7 +404,7 @@ class SupabaseAuthRepository implements AuthRepository {
             'school_id': schoolId,
             'role': user.role,
             'status': user.role == 'pending_guru' ? 'pending' : 'active',
-          }, onConflict: 'user_id, school_id');
+          }, onConflict: 'user_id, school_id, role');
 
           // Multi-tenant membership table
           try {
@@ -542,7 +542,7 @@ class SupabaseAuthRepository implements AuthRepository {
 
       // 1, 2, 3. Fetch school info, user_schools memberships, and primary users in parallel
       String schoolName = '';
-      final Map<String, Map<String, dynamic>> membershipByUser = {};
+      final Map<String, List<Map<String, dynamic>>> membershipsByUser = {};
       final Set<String> targetUserIds = <String>{};
 
       final results = await Future.wait([
@@ -581,7 +581,7 @@ class SupabaseAuthRepository implements AuthRepository {
         final m = Map<String, dynamic>.from(row as Map);
         final uid = m['user_id']?.toString();
         if (uid != null && uid.isNotEmpty) {
-          membershipByUser[uid] = m;
+          membershipsByUser.putIfAbsent(uid, () => []).add(m);
           targetUserIds.add(uid);
         }
       }
@@ -610,34 +610,49 @@ class SupabaseAuthRepository implements AuthRepository {
         try {
           final json = Map<String, dynamic>.from(item as Map);
           final uid = json['id']?.toString() ?? '';
-          final membership = membershipByUser[uid];
+          final userMems = membershipsByUser[uid] ?? [];
 
-          // Determine membership role and status
-          final String? membershipRole = membership?['role']?.toString();
-          final String membershipStatus = (membership?['status']?.toString() ?? 'active').toLowerCase();
+          if (userMems.isEmpty) {
+            final baseRole = json['role']?.toString().toLowerCase() ?? 'guru';
+            final userModel = UserModel.fromJson({
+              ...json,
+              'role': baseRole,
+              'status': baseRole == 'pending_guru' ? 'pending' : 'active',
+              'school_id': cleanSchoolId,
+              'school_name': schoolName.isNotEmpty ? schoolName : json['school_name'],
+            });
+            result.add(userModel);
+            continue;
+          }
 
-          // Effective role in this school context:
-          // If membership has specific role (e.g. 'admin' for Admin Cadangan, or 'guru'), use it!
-          final baseRole = json['role']?.toString().toLowerCase() ?? 'guru';
-          final effectiveRole = (membershipRole != null && membershipRole.isNotEmpty)
-              ? membershipRole
-              : baseRole;
+          // 1. Emit pending memberships (so admin sees join requests for both Guru and Admin Cadangan)
+          final pendingMems = userMems.where((m) => (m['status']?.toString().toLowerCase() == 'pending')).toList();
+          for (final pMem in pendingMems) {
+            final pRole = pMem['role']?.toString() ?? 'guru';
+            result.add(UserModel.fromJson({
+              ...json,
+              'role': pRole,
+              'membership_role': pRole,
+              'status': 'pending',
+              'school_id': cleanSchoolId,
+              'school_name': schoolName.isNotEmpty ? schoolName : json['school_name'],
+            }));
+          }
 
-          // Double check status: if baseRole is pending_guru or membership status is pending, mark as pending
-          final effectiveStatus = (effectiveRole == 'pending_guru' || baseRole == 'pending_guru' || membershipStatus == 'pending')
-              ? 'pending'
-              : membershipStatus;
-
-          final userModel = UserModel.fromJson({
-            ...json,
-            'role': effectiveRole,
-            'status': effectiveStatus,
-            'membership_role': membershipRole,
-            'school_id': cleanSchoolId,
-            'school_name': schoolName.isNotEmpty ? schoolName : json['school_name'],
-          });
-
-          result.add(userModel);
+          // 2. Emit active membership for the active users tab
+          final activeMems = userMems.where((m) => (m['status']?.toString().toLowerCase() == 'active')).toList();
+          if (activeMems.isNotEmpty) {
+            final hasAdmin = activeMems.any((m) => m['role']?.toString().toLowerCase() == 'admin');
+            final effectiveRole = hasAdmin ? 'admin' : (activeMems.first['role']?.toString() ?? 'guru');
+            result.add(UserModel.fromJson({
+              ...json,
+              'role': effectiveRole,
+              'membership_role': effectiveRole,
+              'status': 'active',
+              'school_id': cleanSchoolId,
+              'school_name': schoolName.isNotEmpty ? schoolName : json['school_name'],
+            }));
+          }
         } catch (_) {}
       }
 
@@ -656,42 +671,73 @@ class SupabaseAuthRepository implements AuthRepository {
           ? (AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim())
           : null;
 
-      // If making teacher active ('guru'), ensure membership status is set to 'active'
-      final isApproval = role.toLowerCase() == 'guru';
-
       if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
-        // Multi-tenant safe: update/upsert user_schools for this specific school
-        final updatePayload = <String, dynamic>{
-          'role': role,
-        };
-        if (isApproval) {
-          updatePayload['status'] = 'active';
-        }
+        final normalizedRole = role.toLowerCase();
+        if (normalizedRole == 'admin') {
+          // Promoting or activating as Admin Cadangan in this school
+          final existingAdminList = await _supabase
+              .from('user_schools')
+              .select('id')
+              .eq('user_id', userId)
+              .eq('school_id', cleanSchoolId)
+              .eq('role', 'admin');
 
-        final existing = await _supabase
-            .from('user_schools')
-            .select('id')
-            .eq('user_id', userId)
-            .eq('school_id', cleanSchoolId)
-            .maybeSingle();
+          if ((existingAdminList as List).isNotEmpty) {
+            await _supabase
+                .from('user_schools')
+                .update({
+                  'status': 'active',
+                  'updated_at': DateTime.now().toIso8601String(),
+                })
+                .eq('id', (existingAdminList as List).first['id']);
+          } else {
+            await _supabase.from('user_schools').insert({
+              'user_id': userId,
+              'school_id': cleanSchoolId,
+              'role': 'admin',
+              'status': 'active',
+            });
+          }
+        } else {
+          // Setting or activating as 'guru'
+          final existingGuruList = await _supabase
+              .from('user_schools')
+              .select('id')
+              .eq('user_id', userId)
+              .eq('school_id', cleanSchoolId)
+              .eq('role', 'guru');
 
-        if (existing != null) {
+          if ((existingGuruList as List).isNotEmpty) {
+            await _supabase
+                .from('user_schools')
+                .update({
+                  'status': 'active',
+                  'updated_at': DateTime.now().toIso8601String(),
+                })
+                .eq('id', (existingGuruList as List).first['id']);
+          } else {
+            await _supabase.from('user_schools').insert({
+              'user_id': userId,
+              'school_id': cleanSchoolId,
+              'role': 'guru',
+              'status': 'active',
+            });
+          }
+
+          // If revoking admin role in this school (demoting back to pure guru), deactivate admin membership
           await _supabase
               .from('user_schools')
-              .update(updatePayload)
+              .update({
+                'status': 'inactive',
+                'updated_at': DateTime.now().toIso8601String(),
+              })
               .eq('user_id', userId)
-              .eq('school_id', cleanSchoolId);
-        } else {
-          await _supabase.from('user_schools').insert({
-            'user_id': userId,
-            'school_id': cleanSchoolId,
-            'role': role,
-            'status': 'active',
-          });
+              .eq('school_id', cleanSchoolId)
+              .eq('role', 'admin');
         }
       }
 
-      // Also update base user if user is assigned to this school or if approving pending user
+      // Also update base user if user was pending
       final userRes = await _supabase
           .from('users')
           .select('role, school_id')
@@ -700,11 +746,8 @@ class SupabaseAuthRepository implements AuthRepository {
 
       if (userRes != null) {
         final currentRole = userRes['role']?.toString().toLowerCase();
-        // If user was pending, or user belongs to this school, update base user role
-        if (currentRole == 'pending_guru' || 
-            cleanSchoolId == null || 
-            userRes['school_id'] == cleanSchoolId) {
-          final userUpdate = <String, dynamic>{'role': role};
+        if (currentRole == 'pending_guru') {
+          final userUpdate = <String, dynamic>{'role': 'guru'};
           if (cleanSchoolId != null && (userRes['school_id'] == null || (userRes['school_id'] as String).isEmpty)) {
             userUpdate['school_id'] = cleanSchoolId;
           }
@@ -1002,7 +1045,8 @@ class SupabaseAuthRepository implements AuthRepository {
           .from('user_schools')
           .delete()
           .eq('user_id', userId)
-          .eq('school_id', cleanSchoolId);
+          .eq('school_id', cleanSchoolId)
+          .eq('status', 'pending');
 
       // Multi-tenant membership table cleanup if exists
       try {

@@ -286,9 +286,11 @@ class SupabaseSchoolRepository implements SchoolRepository {
     final String plan = isTenantEnterprise ? 'enterprise' : (isTenantPro ? 'pro' : 'free');
     final int maxTeachers = isTenantEnterprise ? 999 : (isTenantPro ? 50 : 30);
 
+    final String canonicalCode = tenantRes?['school_code'] as String? ?? activationCode.trim().replaceAll(RegExp(r'\s+'), '');
+
     // Update schools table for current_school_id
     final updateData = <String, dynamic>{
-      'code': cleanCode.toUpperCase(),
+      'code': canonicalCode,
       'subscription_plan': plan,
       'max_teachers': maxTeachers,
       'status': 'active',

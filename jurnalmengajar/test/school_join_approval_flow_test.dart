@@ -75,13 +75,23 @@ class MockSchoolJoinAuthRepo implements AuthRepository {
 
   @override
   Future<void> updateUserRole(String userId, String role, [String? schoolId]) async {
-    for (final m in userSchoolsDb) {
-      if (m['user_id'] == userId && (schoolId == null || m['school_id'] == schoolId)) {
-        m['role'] = role;
-        if (role == 'guru') {
-          m['status'] = 'active'; // Approval sets status to active
-        }
+    final existing = userSchoolsDb.where((m) =>
+      m['user_id'] == userId &&
+      (schoolId == null || m['school_id'] == schoolId) &&
+      m['role'] == role
+    ).toList();
+    if (existing.isNotEmpty) {
+      for (final m in existing) {
+        m['status'] = 'active';
       }
+    } else {
+      userSchoolsDb.add({
+        'id': 'us-${DateTime.now().millisecondsSinceEpoch}',
+        'user_id': userId,
+        'school_id': schoolId ?? 'default-school',
+        'role': role,
+        'status': 'active',
+      });
     }
   }
 
@@ -96,7 +106,7 @@ class MockSchoolJoinAuthRepo implements AuthRepository {
     final hasOtherActive = userSchoolsDb.any(
       (m) => m['user_id'] == userId && m['school_id'] != schoolId && m['status'] == 'active'
     );
-    userSchoolsDb.removeWhere((m) => m['user_id'] == userId && m['school_id'] == schoolId);
+    userSchoolsDb.removeWhere((m) => m['user_id'] == userId && m['school_id'] == schoolId && m['status'] == 'pending');
     if (!hasOtherActive) {
       usersDb.removeWhere((u) => u.id == userId && u.isPending);
     }
@@ -553,6 +563,86 @@ void main() {
       expect(activeUserMemberships.length, equals(1));
       expect(activeUserMemberships.first.schoolId, equals('smkn-11'));
       expect(activeUserMemberships.any((m) => m.schoolId == 'smkn-4'), isFalse);
+    });
+
+    test('Active Guru can apply to join the SAME school as Admin Cadangan (dual role support)', () async {
+      const teacherId = 'teacher-cadangan-1';
+      const smkn8Id = 'smkn-8-uuid';
+
+      // 1. User is already an active teacher in SMKN 8
+      mockRepo.userSchoolsDb.add({
+        'id': 'mem-guru-active',
+        'user_id': teacherId,
+        'school_id': smkn8Id,
+        'role': 'guru',
+        'status': 'active',
+      });
+
+      // 2. User joins same school as Admin Sekolah (requested role = 'admin')
+      // Existing membership check scoped to effectiveRole ('admin') finds NO active admin membership
+      final existingAdmin = mockRepo.userSchoolsDb.where(
+        (m) => m['user_id'] == teacherId && m['school_id'] == smkn8Id && m['role'] == 'admin'
+      ).toList();
+
+      expect(existingAdmin.isEmpty, isTrue);
+
+      // Join request creates pending admin membership
+      mockRepo.userSchoolsDb.add({
+        'id': 'mem-admin-pending',
+        'user_id': teacherId,
+        'school_id': smkn8Id,
+        'role': 'admin',
+        'status': 'pending',
+      });
+
+      // Target school admin sees both active guru and pending admin in school users list
+      final schoolUsers = await mockRepo.getAllUsersForSchool(smkn8Id);
+      final activeGuruUsers = schoolUsers.where((u) => u.id == teacherId && u.role == 'guru' && u.status == 'active').toList();
+      final pendingAdminUsers = schoolUsers.where((u) => u.id == teacherId && u.role == 'admin' && u.status == 'pending').toList();
+
+      expect(activeGuruUsers.length, equals(1));
+      expect(pendingAdminUsers.length, equals(1));
+
+      // 3. Admin approves the Admin Cadangan request
+      await mockRepo.updateUserRole(teacherId, 'admin', smkn8Id);
+
+      // 4. Now user has BOTH active roles (guru and admin) in SMKN 8
+      final updatedSchoolUsers = await mockRepo.getAllUsersForSchool(smkn8Id);
+      final hasActiveGuru = updatedSchoolUsers.any((u) => u.id == teacherId && u.role == 'guru' && u.status == 'active');
+      final hasActiveAdmin = updatedSchoolUsers.any((u) => u.id == teacherId && u.role == 'admin' && u.status == 'active');
+
+      expect(hasActiveGuru, isTrue);
+      expect(hasActiveAdmin, isTrue);
+    });
+
+    test('Rejecting pending Admin Cadangan request preserves user active Guru status in that school', () async {
+      const teacherId = 'teacher-cadangan-2';
+      const smkn8Id = 'smkn-8-uuid';
+
+      mockRepo.userSchoolsDb.addAll([
+        {
+          'id': 'mem-guru-active-2',
+          'user_id': teacherId,
+          'school_id': smkn8Id,
+          'role': 'guru',
+          'status': 'active',
+        },
+        {
+          'id': 'mem-admin-pending-2',
+          'user_id': teacherId,
+          'school_id': smkn8Id,
+          'role': 'admin',
+          'status': 'pending',
+        },
+      ]);
+
+      await mockRepo.rejectJoinRequest(teacherId, smkn8Id);
+
+      // Pending admin is removed, active guru remains intact
+      final remainingMemberships = mockRepo.userSchoolsDb.where((m) => m['user_id'] == teacherId && m['school_id'] == smkn8Id).toList();
+      expect(remainingMemberships.length, equals(1));
+      expect(remainingMemberships.first['role'], equals('guru'));
+      expect(remainingMemberships.first['status'], equals('active'));
     });
   });
 }

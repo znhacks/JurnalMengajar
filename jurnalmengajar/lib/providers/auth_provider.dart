@@ -473,32 +473,48 @@ class AuthProvider with ChangeNotifier {
 
       final effectiveRole = role;
 
-      // Check if user is already connected with this school in user_schools
-      final existingMember = await supabase
+      // Check if user is already connected with this school in user_schools for this specific role
+      final existingMemberRoleList = await supabase
           .from('user_schools')
           .select('id, role, status')
           .eq('user_id', _currentUser!.id)
           .eq('school_id', schoolId)
-          .maybeSingle();
+          .eq('role', effectiveRole);
 
-      if (existingMember != null) {
-        final existingStatus = (existingMember['status'] as String? ?? 'active').toLowerCase();
+      Map<String, dynamic>? existingMemberForRole;
+      if ((existingMemberRoleList as List).isNotEmpty) {
+        existingMemberForRole = (existingMemberRoleList as List).first as Map<String, dynamic>;
+      }
+
+      if (existingMemberForRole != null) {
+        final existingStatus = (existingMemberForRole['status'] as String? ?? 'active').toLowerCase();
         if (existingStatus == 'active') {
-          throw Exception('Anda sudah menjadi anggota di sekolah ini.');
+          throw Exception(
+            effectiveRole == 'admin'
+                ? 'Anda sudah terdaftar aktif sebagai Admin Sekolah di sekolah ini.'
+                : 'Anda sudah menjadi anggota di sekolah ini.',
+          );
         } else if (existingStatus == 'pending') {
-          throw Exception('Permintaan bergabung sedang menunggu persetujuan dari Admin sekolah.');
+          throw Exception(
+            effectiveRole == 'admin'
+                ? 'Permintaan bergabung sebagai Admin Cadangan sedang menunggu persetujuan dari Admin sekolah.'
+                : 'Permintaan bergabung sedang menunggu persetujuan dari Admin sekolah.',
+          );
         } else if (existingStatus == 'requested_exit') {
-          throw Exception('Anda memiliki pengajuan keluar yang sedang diproses untuk sekolah ini.');
+          throw Exception(
+            effectiveRole == 'admin'
+                ? 'Anda memiliki pengajuan keluar sebagai Admin Cadangan yang sedang diproses untuk sekolah ini.'
+                : 'Anda memiliki pengajuan keluar yang sedang diproses untuk sekolah ini.',
+          );
         } else if (existingStatus == 'rejected' || existingStatus == 'inactive') {
           // Re-apply: update status to pending
           await supabase
               .from('user_schools')
               .update({
-                'role': effectiveRole,
                 'status': 'pending',
                 'updated_at': DateTime.now().toIso8601String(),
               })
-              .eq('id', existingMember['id']);
+              .eq('id', existingMemberForRole['id']);
         }
       } else {
         // Check max teachers quota for new teacher join (count active teachers)

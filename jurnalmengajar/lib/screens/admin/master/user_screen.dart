@@ -576,12 +576,14 @@ class _MasterUserScreenState extends State<MasterUserScreen>
 
   Future<void> _handleApproveUser(UserModel user) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final targetRole = user.role.toLowerCase() == 'admin' ? 'admin' : 'guru';
+    final targetRoleLabel = targetRole == 'admin' ? 'Admin Cadangan' : 'Guru';
     
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Setujui Pendaftaran Guru'),
-        content: Text('Apakah Anda yakin ingin menyetujui pendaftaran ${user.fullName} sebagai Guru?'),
+        title: Text('Setujui Pendaftaran $targetRoleLabel'),
+        content: Text('Apakah Anda yakin ingin menyetujui pendaftaran ${user.fullName} sebagai $targetRoleLabel?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false), 
@@ -600,7 +602,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
         _isLoading = true;
       });
 
-      final success = await authProvider.updateUserRole(user.id, 'guru', authProvider.activeSchoolId);
+      final success = await authProvider.updateUserRole(user.id, targetRole, authProvider.activeSchoolId);
 
       if (!mounted) return;
 
@@ -610,7 +612,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
           await masterProvider.loadAllData(authProvider.activeSchoolId);
         } catch (_) {}
         if (!mounted) return;
-        AppHelper.showSnackBar(context, 'Akun ${user.fullName} berhasil disetujui sebagai GURU!');
+        AppHelper.showSnackBar(context, 'Akun ${user.fullName} berhasil disetujui sebagai ${targetRoleLabel.toUpperCase()}!');
         _fetchUsers();
       } else {
         AppHelper.showSnackBar(

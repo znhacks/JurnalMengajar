@@ -475,6 +475,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       .select('id')
                       .eq('user_id', userId)
                       .eq('school_id', updatedSchool.id)
+                      .eq('role', 'admin')
                       .maybeSingle();
 
                   if (existing == null) {
@@ -483,7 +484,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       'school_id': updatedSchool.id,
                       'role': 'admin',
                       'status': 'active',
-                    }, onConflict: 'user_id, school_id');
+                    }, onConflict: 'user_id, school_id, role');
                   }
                 }
 
