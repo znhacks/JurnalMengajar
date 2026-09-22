@@ -2,10 +2,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jurnalmengajar/models/schedule_model.dart';
 import 'package:jurnalmengajar/models/journal_model.dart';
+import 'package:jurnalmengajar/models/warning_letter_model.dart';
 import 'package:jurnalmengajar/providers/schedule_provider.dart';
 import 'package:jurnalmengajar/providers/journal_provider.dart';
+import 'package:jurnalmengajar/providers/warning_letter_provider.dart';
 import 'package:jurnalmengajar/repositories/schedule_repository.dart';
 import 'package:jurnalmengajar/repositories/journal_repository.dart';
+import 'package:jurnalmengajar/repositories/warning_letter_repository.dart';
 
 class MockMultiSchoolScheduleRepository implements ScheduleRepository {
   final List<ScheduleModel> allSchedules;
@@ -210,4 +213,81 @@ void main() {
       expect(journalProvider.teacherJournals.first.schoolId, equals(school11));
     });
   });
+
+  group('Multi-School Teacher Warning Letter Isolation', () {
+    final mockWarnings = [
+      WarningLetterModel(
+        id: 'w-11-1',
+        teacherId: teacherId,
+        scheduleId: 's-11-1',
+        issuedAt: testDate,
+        reason: 'Terlambat mengisi jurnal mengajar pada tanggal 21 Sep 2026 untuk kelas: X RPL 1 (Mapel: Pemrograman, Jam ke-1).',
+        status: 'unread',
+        schoolId: school11,
+      ),
+    ];
+
+    test('When active school is SMKN 4 (no warnings), SMKN 11 warning letters must NOT appear', () async {
+      final warningRepo = MockMultiSchoolWarningLetterRepository(mockWarnings);
+      final warningProvider = WarningLetterProvider(warningLetterRepository: warningRepo);
+
+      await warningProvider.loadTeacherWarningLetters(teacherId, school4);
+
+      expect(warningProvider.warningLetters.isEmpty, isTrue,
+          reason: 'SMKN 4 should have 0 warning letters');
+    });
+
+    test('When active school switches to SMKN 11, SMKN 11 warnings appear correctly', () async {
+      final warningRepo = MockMultiSchoolWarningLetterRepository(mockWarnings);
+      final warningProvider = WarningLetterProvider(warningLetterRepository: warningRepo);
+
+      // Load in SMKN 4 first
+      await warningProvider.loadTeacherWarningLetters(teacherId, school4);
+      expect(warningProvider.warningLetters.isEmpty, isTrue);
+
+      // Switch to SMKN 11
+      await warningProvider.loadTeacherWarningLetters(teacherId, school11);
+      expect(warningProvider.warningLetters.length, equals(1));
+      expect(warningProvider.warningLetters.first.schoolId, equals(school11));
+    });
+  });
+}
+
+class MockMultiSchoolWarningLetterRepository implements WarningLetterRepository {
+  final List<WarningLetterModel> allWarnings;
+
+  MockMultiSchoolWarningLetterRepository(this.allWarnings);
+
+  @override
+  Future<List<WarningLetterModel>> getAll([String? schoolId]) async {
+    if (schoolId == null || schoolId.isEmpty) return allWarnings;
+    return allWarnings.where((w) => w.schoolId == schoolId).toList();
+  }
+
+  @override
+  Future<List<WarningLetterModel>> getByTeacherId(String teacherId, [String? schoolId]) async {
+    return allWarnings.where((w) {
+      if (w.teacherId != teacherId) return false;
+      if (schoolId != null && schoolId.isNotEmpty) {
+        return w.schoolId == schoolId;
+      }
+      return true;
+    }).toList();
+  }
+
+  @override
+  Future<void> create(WarningLetterModel model) async {
+    allWarnings.add(model);
+  }
+
+  @override
+  Future<void> update(WarningLetterModel model) async {}
+
+  @override
+  Future<void> delete(String id) async {
+    allWarnings.removeWhere((w) => w.id == id);
+  }
+
+  @override
+  Future<void> markAsRead(String id) async {}
 }

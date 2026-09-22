@@ -52,7 +52,7 @@ class WarningLetterProvider with ChangeNotifier {
       _warningLetters = results.where((w) {
         if (cleanSchoolId == null || cleanSchoolId.isEmpty) return true;
         final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
-        return wSchoolId == null || wSchoolId.isEmpty || wSchoolId == cleanSchoolId;
+        return wSchoolId == cleanSchoolId;
       }).toList();
     } catch (e) {
       if (sequence != _loadSequence) return;
@@ -83,7 +83,7 @@ class WarningLetterProvider with ChangeNotifier {
       _warningLetters = results.where((w) {
         if (cleanSchoolId == null || cleanSchoolId.isEmpty) return true;
         final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
-        return wSchoolId == null || wSchoolId.isEmpty || wSchoolId == cleanSchoolId;
+        return wSchoolId == cleanSchoolId;
       }).toList();
     } catch (e) {
       if (sequence != _loadSequence) return;
@@ -121,15 +121,24 @@ class WarningLetterProvider with ChangeNotifier {
     final today = DateTime.now();
     final todayOnly = DateTime(today.year, today.month, today.day);
 
+    final cleanCurrentSchoolId = AppHelper.parseSingleCleanSchoolId(masterProvider.currentSchoolId);
+
     // Group schedules by teacherId to correctly support multi-teacher and single-teacher contexts
     final Map<String, List<ScheduleModel>> schedulesByTeacher = {};
     for (final s in schedules) {
-      if (s.isActive) {
-        schedulesByTeacher.putIfAbsent(s.teacherId, () => []).add(s);
+      if (!s.isActive) continue;
+      if (cleanCurrentSchoolId != null && cleanCurrentSchoolId.isNotEmpty) {
+        final sSchool = AppHelper.parseSingleCleanSchoolId(s.schoolId);
+        if (sSchool != null && sSchool.isNotEmpty && sSchool != cleanCurrentSchoolId) {
+          continue; // Strict isolation: drop schedules from other schools
+        }
       }
+      schedulesByTeacher.putIfAbsent(s.teacherId, () => []).add(s);
     }
 
-    final currentSchoolId = AppHelper.parseSingleCleanSchoolId(masterProvider.currentSchoolId) ??
+    if (schedulesByTeacher.isEmpty) return;
+
+    final currentSchoolId = cleanCurrentSchoolId ??
         AppHelper.parseSingleCleanSchoolId(schedules.firstOrNull?.schoolId);
 
     // Fetch all existing warning letters for this school in ONE single batch query (eliminates N+1 loop)
@@ -214,6 +223,11 @@ class WarningLetterProvider with ChangeNotifier {
             });
 
             final details = detailStrings.join(' & ');
+            // Never issue a corrupt warning letter if classes or subjects could not be resolved from master data
+            if (details.contains('Kelas--')) {
+              continue;
+            }
+
             final reason = 'Terlambat mengisi jurnal mengajar pada tanggal $dateStr untuk kelas: $details.';
 
             if (existingWarning != null) {
@@ -225,8 +239,8 @@ class WarningLetterProvider with ChangeNotifier {
               }
             } else {
               final representativeGroup = missingJournalGroups.first;
-              final targetSchoolId = AppHelper.parseSingleCleanSchoolId(masterProvider.currentSchoolId) ??
-                  AppHelper.parseSingleCleanSchoolId(teacherSchedules.firstOrNull?.schoolId);
+              final targetSchoolId = AppHelper.parseSingleCleanSchoolId(representativeGroup.primarySchedule.schoolId) ??
+                  cleanCurrentSchoolId;
               final newWarning = WarningLetterModel(
                 id: '',
                 teacherId: representativeGroup.teacherId,

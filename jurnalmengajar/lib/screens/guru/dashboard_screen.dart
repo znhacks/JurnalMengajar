@@ -162,9 +162,24 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     );
     final maxDays = settingsProvider.settings?.maxJournalInputDays ?? 3;
 
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+    final targetSchedules = (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty)
+        ? scheduleProvider.cachedTeacherSchedules.where((s) {
+            final sSchool = AppHelper.parseSingleCleanSchoolId(s.schoolId);
+            return sSchool == null || sSchool.isEmpty || sSchool == cleanActiveSchoolId;
+          }).toList()
+        : scheduleProvider.cachedTeacherSchedules;
+
+    final targetJournals = (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty)
+        ? journalProvider.teacherJournals.where((j) {
+            final jSchool = AppHelper.parseSingleCleanSchoolId(j.schoolId);
+            return jSchool == null || jSchool.isEmpty || jSchool == cleanActiveSchoolId;
+          }).toList()
+        : journalProvider.teacherJournals;
+
     warningProvider.checkAndIssueWarnings(
-      schedules: scheduleProvider.cachedTeacherSchedules,
-      journals: journalProvider.teacherJournals,
+      schedules: targetSchedules,
+      journals: targetJournals,
       maxDays: maxDays,
       masterProvider: masterProvider,
     ).then((_) {

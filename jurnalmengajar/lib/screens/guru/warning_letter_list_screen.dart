@@ -57,9 +57,12 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
     final isLoading = warningProvider.isLoading || scheduleProvider.isLoading;
     final activeSchoolId = AppHelper.parseSingleCleanSchoolId(context.watch<AuthProvider>().activeSchoolId);
     final schoolWarnings = warningProvider.warningLetters.where((w) {
-      if (activeSchoolId == null || activeSchoolId.isEmpty) return true;
-      final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
-      return wSchoolId == null || wSchoolId.isEmpty || wSchoolId == activeSchoolId;
+      if (activeSchoolId != null && activeSchoolId.isNotEmpty) {
+        final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
+        if (wSchoolId != activeSchoolId) return false;
+      }
+      if (w.reason.contains('Kelas--')) return false;
+      return true;
     }).toList();
 
     // Group warnings by schedule date (fallback to issuedAt date)
