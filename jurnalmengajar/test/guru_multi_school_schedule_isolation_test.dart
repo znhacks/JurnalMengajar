@@ -35,11 +35,6 @@ class MockMultiSchoolScheduleRepository implements ScheduleRepository {
   @override
   Future<void> delete(String id) async {}
 
-  @override
-  Future<ScheduleModel?> getById(String id) async => null;
-
-  @override
-  Future<void> bulkCreate(List<ScheduleModel> models) async {}
 
   @override
   Future<void> createMultiple(List<ScheduleModel> models) async {}
@@ -79,17 +74,11 @@ class MockMultiSchoolJournalRepository implements JournalRepository {
   @override
   Future<void> verifyJournal(String journalId, String status, {String? rejectionNote}) async {}
 
-  @override
-  Future<JournalModel?> getById(String id) async => null;
 
   @override
   Future<JournalModel?> getJournalForSchedule(String scheduleId, {DateTime? date}) async => null;
 
-  @override
-  Future<void> approve(String id) async {}
 
-  @override
-  Future<void> reject(String id, String rejectionNote) async {}
 }
 
 void main() {

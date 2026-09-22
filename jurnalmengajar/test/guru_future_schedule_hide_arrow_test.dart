@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:jurnalmengajar/core/theme/app_theme.dart';
 import 'package:jurnalmengajar/models/user_model.dart';
 import 'package:jurnalmengajar/models/journal_model.dart';
 import 'package:jurnalmengajar/models/schedule_model.dart';
@@ -143,7 +142,7 @@ class FakeScheduleRepo implements ScheduleRepository {
 }
 
 class MockScheduleProvider extends ScheduleProvider {
-  List<ScheduleModel> _mockSchedules;
+  final List<ScheduleModel> _mockSchedules;
   MockScheduleProvider(this._mockSchedules) : super(scheduleRepository: FakeScheduleRepo());
   @override List<ScheduleModel> get cachedTeacherSchedules => _mockSchedules;
   @override List<ScheduleModel> get teacherSchedulesForSelectedDate => _mockSchedules;
@@ -152,7 +151,7 @@ class MockScheduleProvider extends ScheduleProvider {
 }
 
 class MockJournalProvider extends JournalProvider {
-  List<JournalModel> _mockJournals;
+  final List<JournalModel> _mockJournals;
   MockJournalProvider(this._mockJournals) : super(journalRepository: FakeJournalRepo());
   @override List<JournalModel> get teacherJournals => _mockJournals;
   @override Future<void> loadTeacherJournals(String teacherId) async {}
