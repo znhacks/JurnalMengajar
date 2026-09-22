@@ -115,19 +115,22 @@ class _MasterUserScreenState extends State<MasterUserScreen>
     });
   }
 
-  Future<void> _handleBatchDeleteUsers() async {
+  Future<void> _handleBatchRemoveUsers() async {
     if (_selectedIds.isEmpty) return;
     final count = _selectedIds.length;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Hapus $count Akun User', style: const TextStyle(color: Colors.red)),
-        content: Text('Apakah Anda yakin ingin menghapus $count akun pengguna yang dipilih secara permanen?'),
+        title: Text('Keluarkan $count Pengguna', style: const TextStyle(color: Colors.red)),
+        content: Text(
+          'Apakah Anda yakin ingin mengeluarkan $count pengguna yang dipilih dari sekolah ini?\n\n'
+          'Akun pengguna tetap aman dan tidak dihapus, namun tidak dapat lagi mengakses data sekolah ini.',
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hapus Massal', style: TextStyle(color: Colors.red)),
+            child: const Text('Keluarkan Massal', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -135,26 +138,33 @@ class _MasterUserScreenState extends State<MasterUserScreen>
 
     if (confirmed == true && mounted) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final activeSchoolId = authProvider.activeSchoolId;
+      if (activeSchoolId == null || activeSchoolId.isEmpty) return;
+
       setState(() {
         _isLoading = true;
       });
-      final idsToDelete = _selectedIds.where((id) {
+      final idsToRemove = _selectedIds.where((id) {
         final u = _allUsers.firstWhere(
           (user) => user.id == id,
           orElse: () => UserModel(id: '', email: '', fullName: '', role: 'admin'),
         );
-        return u.role != 'admin';
+        return u.role != 'admin' && u.role != 'superadmin' && id != authProvider.currentUser?.id;
       }).toList();
-      for (final id in idsToDelete) {
-        await authProvider.deleteAccount(id);
+
+      for (final id in idsToRemove) {
+        await authProvider.removeUserFromSchool(
+          userId: id,
+          schoolId: activeSchoolId,
+        );
       }
       if (!mounted) return;
       try {
         final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-        await masterProvider.loadAllData(authProvider.activeSchoolId);
+        await masterProvider.loadAllData(activeSchoolId);
       } catch (_) {}
       if (!mounted) return;
-      AppHelper.showSnackBar(context, '${idsToDelete.length} akun pengguna berhasil dihapus.');
+      AppHelper.showSnackBar(context, '${idsToRemove.length} pengguna berhasil dikeluarkan dari sekolah.');
       setState(() {
         _selectedIds.clear();
         _isSelectionMode = false;
@@ -508,13 +518,14 @@ class _MasterUserScreenState extends State<MasterUserScreen>
     }
   }
 
-  Future<void> _handleDeleteUser(UserModel user) async {
+  Future<void> _handleRemoveUser(UserModel user) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final activeSchoolId = authProvider.activeSchoolId;
     
-    if (user.role == 'admin') {
+    if (user.role == 'admin' || user.role == 'superadmin') {
       AppHelper.showSnackBar(
         context, 
-        'Akun admin sekolah dilindungi sistem dan tidak dapat dihapus.', 
+        'Akun admin sekolah dilindungi sistem dan tidak dapat dikeluarkan.', 
         isError: true
       );
       return;
@@ -523,22 +534,30 @@ class _MasterUserScreenState extends State<MasterUserScreen>
     if (user.id == authProvider.currentUser?.id) {
       AppHelper.showSnackBar(
         context, 
-        'Untuk menghapus akun Anda sendiri, gunakan menu "Hapus Akun" di Profil Saya.', 
+        'Anda tidak dapat mengeluarkan akun Anda sendiri dari sekolah ini.', 
         isError: true
       );
+      return;
+    }
+
+    if (activeSchoolId == null || activeSchoolId.isEmpty) {
+      AppHelper.showSnackBar(context, 'ID Sekolah tidak valid.', isError: true);
       return;
     }
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hapus Akun Pengguna', style: TextStyle(color: Colors.red)),
-        content: Text('Apakah Anda yakin ingin menghapus akun ${user.fullName}? Tindakan ini bersifat permanen dan tidak bisa dibatalkan.'),
+        title: const Text('Keluarkan dari Sekolah', style: TextStyle(color: Colors.red)),
+        content: Text(
+          'Apakah Anda yakin ingin mengeluarkan ${user.fullName} dari sekolah ini?\n\n'
+          'Akun guru tetap aman dan tidak dihapus, namun tidak dapat lagi mengakses data sekolah ini.',
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hapus Akun', style: TextStyle(color: Colors.red)),
+            child: const Text('Keluarkan', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -549,22 +568,25 @@ class _MasterUserScreenState extends State<MasterUserScreen>
         _isLoading = true;
       });
 
-      final success = await authProvider.deleteAccount(user.id);
+      final success = await authProvider.removeUserFromSchool(
+        userId: user.id,
+        schoolId: activeSchoolId,
+      );
       
       if (!mounted) return;
 
       if (success) {
         try {
           final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-          await masterProvider.loadAllData(authProvider.activeSchoolId);
+          await masterProvider.loadAllData(activeSchoolId);
         } catch (_) {}
         if (!mounted) return;
-        AppHelper.showSnackBar(context, 'Akun ${user.fullName} berhasil dihapus!');
+        AppHelper.showSnackBar(context, '${user.fullName} berhasil dikeluarkan dari sekolah.');
         _fetchUsers();
       } else {
         AppHelper.showSnackBar(
           context, 
-          authProvider.errorMessage ?? 'Gagal menghapus akun.', 
+          authProvider.errorMessage ?? 'Gagal mengeluarkan guru dari sekolah.', 
           isError: true
         );
         setState(() {
@@ -914,10 +936,11 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                     ),
                     if (!isSuperAdmin && !isCurrentUser && !isAdmin) ...[
                       IconButton(
+                        tooltip: 'Keluarkan dari Sekolah',
                         icon: const Icon(Icons.delete_outline, color: Colors.red),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
-                        onPressed: () => _handleDeleteUser(user),
+                        onPressed: () => _handleRemoveUser(user),
                       ),
                     ],
                   ],
@@ -983,9 +1006,9 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                       onPressed: () => _selectAll(_filteredUsers, authProvider),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.redAccent),
-                      tooltip: 'Hapus Massal',
-                      onPressed: _selectedIds.isEmpty ? null : _handleBatchDeleteUsers,
+                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                      tooltip: 'Keluarkan Massal',
+                      onPressed: _selectedIds.isEmpty ? null : _handleBatchRemoveUsers,
                     ),
                   ],
                 )

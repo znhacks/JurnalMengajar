@@ -1436,6 +1436,40 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> removeUserFromSchool({required String userId, required String schoolId}) async {
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
+    if (cleanSchoolId.isEmpty) {
+      _errorMessage = 'ID Sekolah tidak valid.';
+      notifyListeners();
+      return false;
+    }
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _authRepository.leaveSchool(
+        schoolId: cleanSchoolId,
+        userId: userId,
+      );
+
+      // Invalidate caches
+      await CacheService().remove('active_school_$cleanSchoolId');
+      await CacheService().purgePrefix('teachers_');
+      await CacheService().purgePrefix('all_users_');
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> requestExitFromSchool(String? membershipId, {String? schoolId, String? role}) async {
     // Prevent duplicate pending request
     final targetSchoolId = schoolId != null ? (AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId) : null;

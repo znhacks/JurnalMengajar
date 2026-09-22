@@ -1080,17 +1080,22 @@ class SupabaseAuthRepository implements AuthRepository {
     try {
       final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
 
-      // 1. Try atomic PostgreSQL leave_school RPC first
+      final currentAuthUserId = _supabase.auth.currentUser?.id;
+      final isSelf = currentAuthUserId == null || currentAuthUserId == userId;
+
+      // 1. Try atomic PostgreSQL leave_school RPC first (only if self-leaving)
       bool rpcSucceeded = false;
-      try {
-        final rpcRes = await _supabase.rpc('leave_school', params: {
-          'p_school_id': cleanSchoolId,
-        });
-        if (rpcRes != null) {
-          rpcSucceeded = true;
+      if (isSelf) {
+        try {
+          final rpcRes = await _supabase.rpc('leave_school', params: {
+            'p_school_id': cleanSchoolId,
+          });
+          if (rpcRes != null) {
+            rpcSucceeded = true;
+          }
+        } catch (rpcErr) {
+          debugPrint('leave_school RPC note (falling back to direct update): $rpcErr');
         }
-      } catch (rpcErr) {
-        debugPrint('leave_school RPC note (falling back to direct update): $rpcErr');
       }
 
       // 2. Direct fallback update if RPC was not used or failed
