@@ -104,7 +104,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     final schoolId = authProvider.activeSchoolId;
 
     if (currentUser == null || schoolId == null || schoolId.isEmpty) {
-      debugPrint('[RUNTIME_DEBUG:GURU_DASHBOARD] currentUser or activeSchoolId is not ready, postponing _refreshData.');
+      debugPrint(
+        '[RUNTIME_DEBUG:GURU_DASHBOARD] currentUser or activeSchoolId is not ready, postponing _refreshData.',
+      );
       return;
     }
 
@@ -131,7 +133,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
     // 1. Teacher identity is immediately known (user.id is the teacher.id)
     TeacherModel teacher = masterProvider.teachers.firstWhere(
-      (t) => t.id == currentUser.id || t.email.toLowerCase() == currentUser.email.toLowerCase(),
+      (t) =>
+          t.id == currentUser.id ||
+          t.email.toLowerCase() == currentUser.email.toLowerCase(),
       orElse: () => TeacherModel(
         id: currentUser.id,
         name: currentUser.fullName,
@@ -163,32 +167,41 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     final maxDays = settingsProvider.settings?.maxJournalInputDays ?? 3;
 
     final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
-    final targetSchedules = (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty)
+    final targetSchedules =
+        (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty)
         ? scheduleProvider.cachedTeacherSchedules.where((s) {
             final sSchool = AppHelper.parseSingleCleanSchoolId(s.schoolId);
-            return sSchool == null || sSchool.isEmpty || sSchool == cleanActiveSchoolId;
+            return sSchool == null ||
+                sSchool.isEmpty ||
+                sSchool == cleanActiveSchoolId;
           }).toList()
         : scheduleProvider.cachedTeacherSchedules;
 
-    final targetJournals = (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty)
+    final targetJournals =
+        (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty)
         ? journalProvider.teacherJournals.where((j) {
             final jSchool = AppHelper.parseSingleCleanSchoolId(j.schoolId);
-            return jSchool == null || jSchool.isEmpty || jSchool == cleanActiveSchoolId;
+            return jSchool == null ||
+                jSchool.isEmpty ||
+                jSchool == cleanActiveSchoolId;
           }).toList()
         : journalProvider.teacherJournals;
 
-    warningProvider.checkAndIssueWarnings(
-      schedules: targetSchedules,
-      journals: targetJournals,
-      maxDays: maxDays,
-      masterProvider: masterProvider,
-    ).then((_) {
-      if (mounted) {
-        warningProvider.loadTeacherWarningLetters(teacher.id, schoolId);
-      }
-    }).catchError((err) {
-      debugPrint('[GURU_DASHBOARD] Background warning check error: $err');
-    });
+    warningProvider
+        .checkAndIssueWarnings(
+          schedules: targetSchedules,
+          journals: targetJournals,
+          maxDays: maxDays,
+          masterProvider: masterProvider,
+        )
+        .then((_) {
+          if (mounted) {
+            warningProvider.loadTeacherWarningLetters(teacher.id, schoolId);
+          }
+        })
+        .catchError((err) {
+          debugPrint('[GURU_DASHBOARD] Background warning check error: $err');
+        });
 
     if (!_hasCheckedReminder) {
       _hasCheckedReminder = true;
@@ -243,15 +256,20 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   ) {
     final today = DateTime.now();
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
+    final cleanActiveSchoolId =
+        AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
         authProvider.activeSchoolId?.trim();
 
     final activeSchedulesToday = scheduleProvider.cachedTeacherSchedules.where((
       s,
     ) {
       if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
-        final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
-        if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+        final sSchoolId =
+            AppHelper.parseSingleCleanSchoolId(s.schoolId) ??
+            s.schoolId?.trim();
+        if (sSchoolId != null &&
+            sSchoolId.isNotEmpty &&
+            sSchoolId != cleanActiveSchoolId) {
           return false;
         }
       }
@@ -446,13 +464,13 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   String _getTimeGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 11) {
-      return 'Selamat pagi,';
+      return 'Selamat pagi';
     } else if (hour < 15) {
-      return 'Selamat siang,';
+      return 'Selamat siang';
     } else if (hour < 18) {
-      return 'Selamat sore,';
+      return 'Selamat sore';
     } else {
-      return 'Selamat malam,';
+      return 'Selamat malam';
     }
   }
 
@@ -521,13 +539,17 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           final s = group.primarySchedule;
           return journalProvider.teacherJournals.any((j) {
             final sameDate =
-                '${j.date.year}-${j.date.month.toString().padLeft(2, '0')}-${j.date.day.toString().padLeft(2, '0')}' == key;
-            final sameSchedule = j.scheduleId == s.id ||
+                '${j.date.year}-${j.date.month.toString().padLeft(2, '0')}-${j.date.day.toString().padLeft(2, '0')}' ==
+                key;
+            final sameSchedule =
+                j.scheduleId == s.id ||
                 group.scheduleIds.contains(j.scheduleId) ||
                 (j.classId == s.classId && j.subjectId == s.subjectId);
             return sameDate &&
                 sameSchedule &&
-                (j.status == 'pending' || j.status == 'verified' || j.isTeacherAbsence);
+                (j.status == 'pending' ||
+                    j.status == 'verified' ||
+                    j.isTeacherAbsence);
           });
         });
         if (allFilled) {
@@ -639,7 +661,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             padding: EdgeInsets.all(14.w),
                             decoration: BoxDecoration(
                               color: isDark
-                                  ? const Color(0xFF7F1D1D).withValues(alpha: 0.25)
+                                  ? const Color(
+                                      0xFF7F1D1D,
+                                    ).withValues(alpha: 0.25)
                                   : const Color(0xFFFEF2F2),
                               borderRadius: BorderRadius.circular(20.r),
                               border: Border.all(
@@ -902,7 +926,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
           SizedBox(height: 4.h),
 
-          // Big Headline: "Anda memiliki X jadwal bulan ini " (Clickable to open Jadwal Bulan Ini page)
+          // Big Headline: "Ada X jadwal belum diisi" (Clickable to open Jadwal Bulan Ini page)
           InkWell(
             onTap: () async {
               await context.push('/guru/jadwal-bulan-ini');
@@ -922,7 +946,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     fontWeight: FontWeight.w800,
                   ),
                   children: [
-                    const TextSpan(text: 'Anda memiliki '),
+                    const TextSpan(text: 'Ada '),
                     TextSpan(
                       text: '$monthScheduleCount jadwal ',
                       style: const TextStyle(
@@ -930,7 +954,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const TextSpan(text: 'bulan ini'),
+                    const TextSpan(text: 'belum diisi'),
                   ],
                 ),
               ),
@@ -1266,12 +1290,15 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
               final hasSchedule = scheduledDateKeys.contains(dateKey);
               final isAllFilled = completedDateKeys.contains(dateKey);
-              final isHoliday = holidayProvider.getHolidayForDate(date) != null ||
-                  journalProvider.teacherJournals.any((j) =>
-                      j.date.year == date.year &&
-                      j.date.month == date.month &&
-                      j.date.day == date.day &&
-                      j.isTeacherAbsence);
+              final isHoliday =
+                  holidayProvider.getHolidayForDate(date) != null ||
+                  journalProvider.teacherJournals.any(
+                    (j) =>
+                        j.date.year == date.year &&
+                        j.date.month == date.month &&
+                        j.date.day == date.day &&
+                        j.isTeacherAbsence,
+                  );
 
               BoxDecoration circleDecoration;
               Color textColor;
@@ -1336,7 +1363,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
               } else if (isHoliday) {
                 // Libur / cuti: berwarna merah
                 circleDecoration = BoxDecoration(
-                  color: const Color(0xFFDC2626).withValues(alpha: isDark ? 0.22 : 0.15),
+                  color: const Color(
+                    0xFFDC2626,
+                  ).withValues(alpha: isDark ? 0.22 : 0.15),
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: const Color(0xFFEF4444),
@@ -1350,7 +1379,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 if (isAllFilled) {
                   // Selesai semua jadwal diisi: berwarna biru
                   circleDecoration = BoxDecoration(
-                    color: const Color(0xFF3B82F6).withValues(alpha: isDark ? 0.22 : 0.15),
+                    color: const Color(
+                      0xFF3B82F6,
+                    ).withValues(alpha: isDark ? 0.22 : 0.15),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: const Color(0xFF3B82F6),
@@ -1365,7 +1396,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 } else {
                   // Memiliki jadwal: berwarna hijau
                   circleDecoration = BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.22 : 0.15),
+                    color: const Color(
+                      0xFF10B981,
+                    ).withValues(alpha: isDark ? 0.22 : 0.15),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: const Color(0xFF10B981),
@@ -1586,12 +1619,15 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
     final hasSchedule = scheduledDateKeys.contains(dateKey);
     final isAllFilled = completedDateKeys.contains(dateKey);
-    final isHoliday = holidayProvider.getHolidayForDate(day) != null ||
-        journalProvider.teacherJournals.any((j) =>
-            j.date.year == day.year &&
-            j.date.month == day.month &&
-            j.date.day == day.day &&
-            j.isTeacherAbsence);
+    final isHoliday =
+        holidayProvider.getHolidayForDate(day) != null ||
+        journalProvider.teacherJournals.any(
+          (j) =>
+              j.date.year == day.year &&
+              j.date.month == day.month &&
+              j.date.day == day.day &&
+              j.isTeacherAbsence,
+        );
     final isSunday = day.weekday == DateTime.sunday;
 
     Color bgColor = Colors.transparent;
@@ -1622,14 +1658,18 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       border = Border.all(color: const Color(0xFFEF4444), width: 1.5);
     } else if (hasSchedule) {
       if (isAllFilled) {
-        bgColor = const Color(0xFF3B82F6).withValues(alpha: isDark ? 0.22 : 0.15);
+        bgColor = const Color(
+          0xFF3B82F6,
+        ).withValues(alpha: isDark ? 0.22 : 0.15);
         textColor = isOutside
             ? (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
             : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8));
         fontWeight = FontWeight.w700;
         border = Border.all(color: const Color(0xFF3B82F6), width: 1.5);
       } else {
-        bgColor = const Color(0xFF10B981).withValues(alpha: isDark ? 0.22 : 0.15);
+        bgColor = const Color(
+          0xFF10B981,
+        ).withValues(alpha: isDark ? 0.22 : 0.15);
         textColor = isOutside
             ? (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
             : (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF047857));
@@ -1708,13 +1748,18 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     }
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
+    final cleanActiveSchoolId =
+        AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
         authProvider.activeSchoolId?.trim();
 
     var list = scheduleProvider.teacherSchedulesForSelectedDate.where((s) {
       if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
-        final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
-        if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+        final sSchoolId =
+            AppHelper.parseSingleCleanSchoolId(s.schoolId) ??
+            s.schoolId?.trim();
+        if (sSchoolId != null &&
+            sSchoolId.isNotEmpty &&
+            sSchoolId != cleanActiveSchoolId) {
           return false;
         }
       }
@@ -1896,7 +1941,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
     final now = DateTime.now();
     final todayOnly = DateTime(now.year, now.month, now.day);
-    final scheduleDateOnly = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
+    final scheduleDateOnly = DateTime(
+      _selectedDay.year,
+      _selectedDay.month,
+      _selectedDay.day,
+    );
     final isFuture = scheduleDateOnly.isAfter(todayOnly);
     final canFillOrView = !isFuture || matchingJournal != null;
 
@@ -2085,13 +2134,18 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     MasterDataProvider masterProvider,
   ) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
+    final cleanActiveSchoolId =
+        AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
         authProvider.activeSchoolId?.trim();
 
     var journals = journalProvider.teacherJournals.where((j) {
       if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
-        final jSchoolId = AppHelper.parseSingleCleanSchoolId(j.schoolId) ?? j.schoolId?.trim();
-        if (jSchoolId != null && jSchoolId.isNotEmpty && jSchoolId != cleanActiveSchoolId) {
+        final jSchoolId =
+            AppHelper.parseSingleCleanSchoolId(j.schoolId) ??
+            j.schoolId?.trim();
+        if (jSchoolId != null &&
+            jSchoolId.isNotEmpty &&
+            jSchoolId != cleanActiveSchoolId) {
           return false;
         }
       }
