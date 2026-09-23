@@ -269,6 +269,20 @@ class AuthProvider with ChangeNotifier {
   Future<void> switchActiveSchool(String schoolId, String schoolName, String role) async {
     final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
 
+    // SECURITY: NEVER allow switching to a school that is pending approval!
+    final isPending = _pendingMemberships.any((m) => m.schoolId == cleanSchoolId);
+    if (isPending) {
+      debugPrint('[AUTH_PROVIDER] Blocked switch to pending school: $cleanSchoolId');
+      return;
+    }
+
+    // Must have a valid membership in _userMemberships for this school!
+    final hasActiveMembership = _userMemberships.any((m) => m.schoolId == cleanSchoolId && (m.status == null || m.status == 'active' || m.status == 'requested_exit'));
+    if (!hasActiveMembership && !isAdminAsli) {
+      debugPrint('[AUTH_PROVIDER] Blocked switch to non-member school: $cleanSchoolId');
+      return;
+    }
+
     // STRICT ROLE & SCHOOL ENFORCEMENT
     String effectiveRole = role.toLowerCase();
     if (isAdminAsli) {
@@ -877,10 +891,13 @@ class AuthProvider with ChangeNotifier {
           ? ([AppHelper.parseSingleCleanSchoolId(_currentUser!.schoolId)].whereType<String>().toList())
           : _currentUser!.schoolIds;
 
+      final Set<String> pendingSchoolIds = pendingList.map((p) => p.schoolId).toSet();
+
       for (final sId in allowedSchoolIds) {
         final cleanId = AppHelper.parseSingleCleanSchoolId(sId);
         if (cleanId != null && cleanId.isNotEmpty) {
           if (inactiveSchoolIds.contains(cleanId)) continue;
+          if (pendingSchoolIds.contains(cleanId)) continue; // STRICTLY FORBIDDEN: Pending school MUST NOT become an active membership!
 
           final roleForMembership = isAdminAsli ? 'admin' : _currentUser!.role.toLowerCase();
           final key = '${cleanId}_$roleForMembership';
@@ -933,7 +950,7 @@ class AuthProvider with ChangeNotifier {
         try {
           Map<String, dynamic>? schoolData;
           final cleanUserSchoolId = AppHelper.parseSingleCleanSchoolId(_currentUser!.schoolId);
-          if (cleanUserSchoolId != null && cleanUserSchoolId.isNotEmpty && !inactiveSchoolIds.contains(cleanUserSchoolId)) {
+          if (cleanUserSchoolId != null && cleanUserSchoolId.isNotEmpty && !inactiveSchoolIds.contains(cleanUserSchoolId) && !pendingSchoolIds.contains(cleanUserSchoolId)) {
             schoolData = await supabase
                 .from('schools')
                 .select('id, name, code, logo_url')
@@ -950,7 +967,7 @@ class AuthProvider with ChangeNotifier {
                 .timeout(NetworkResilience.defaultQueryTimeout);
             if (schoolData != null) {
               final foundId = AppHelper.parseSingleCleanSchoolId(schoolData['id']);
-              if (foundId != null && inactiveSchoolIds.contains(foundId)) {
+              if (foundId != null && (inactiveSchoolIds.contains(foundId) || pendingSchoolIds.contains(foundId))) {
                 schoolData = null;
               }
             }
