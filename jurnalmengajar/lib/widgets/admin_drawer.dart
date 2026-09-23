@@ -18,7 +18,9 @@ class AdminDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dividerColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final dividerColor = isDark
+        ? const Color(0xFF334155)
+        : const Color(0xFFE2E8F0);
 
     return Drawer(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -42,13 +44,12 @@ class AdminDrawer extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _buildHeader(context, authProvider),
-                  Divider(
-                    height: 1,
-                    color: dividerColor,
-                    thickness: 1,
-                  ),
+                  Divider(height: 1, color: dividerColor, thickness: 1),
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 4.h,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: _buildMenuItems(context, dividerColor),
@@ -67,14 +68,13 @@ class AdminDrawer extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildHeader(context, authProvider),
-              Divider(
-                height: 1,
-                color: dividerColor,
-                thickness: 1,
-              ),
+              Divider(height: 1, color: dividerColor, thickness: 1),
               Expanded(
                 child: ListView(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 4.h,
+                  ),
                   children: _buildMenuItems(context, dividerColor),
                 ),
               ),
@@ -119,11 +119,17 @@ class AdminDrawer extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.business_rounded, color: Color(0xFF4F46E5), size: 16),
+                    const Icon(
+                      Icons.business_rounded,
+                      color: Color(0xFF4F46E5),
+                      size: 16,
+                    ),
                     SizedBox(width: 8.w),
                     Expanded(
                       child: Text(
@@ -138,7 +144,11 @@ class AdminDrawer extends StatelessWidget {
                       ),
                     ),
                     if (!isAdminOnly)
-                      const Icon(Icons.swap_vert_rounded, color: Color(0xFF64748B), size: 18),
+                      const Icon(
+                        Icons.swap_vert_rounded,
+                        color: Color(0xFF64748B),
+                        size: 18,
+                      ),
                   ],
                 ),
               );
@@ -198,21 +208,11 @@ class AdminDrawer extends StatelessWidget {
         'Hari Libur / Cuti',
         '/admin/holidays',
       ),
-      _buildMenuItem(
-        context,
-        Icons.info_rounded,
-        'Tentang Aplikasi',
-        '/about',
-      ),
+      _buildMenuItem(context, Icons.info_rounded, 'Tentang Aplikasi', '/about'),
 
       SizedBox(height: 8.h),
-      Divider(
-        height: 1,
-        color: dividerColor,
-        thickness: 1,
-      ),
+      Divider(height: 1, color: dividerColor, thickness: 1),
       SizedBox(height: 8.h),
-
 
       _buildMenuItem(
         context,
@@ -260,18 +260,18 @@ class AdminDrawer extends StatelessWidget {
   }
 
   // ── Footer (Profil Saya, Mode Gelap, Keluar) ──────────────────────────────
-  Widget _buildFooter(BuildContext context, AuthProvider authProvider, Color dividerColor) {
+  Widget _buildFooter(
+    BuildContext context,
+    AuthProvider authProvider,
+    Color dividerColor,
+  ) {
     return Container(
       color: Theme.of(context).colorScheme.surface,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Divider(
-            height: 1,
-            color: dividerColor,
-            thickness: 1,
-          ),
+          Divider(height: 1, color: dividerColor, thickness: 1),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 2.h),
             child: _buildMenuItem(
@@ -287,8 +287,14 @@ class AdminDrawer extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 2.h),
                 child: ListTile(
                   dense: true,
-                  visualDensity: const VisualDensity(horizontal: -3, vertical: -3),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 0),
+                  visualDensity: const VisualDensity(
+                    horizontal: -3,
+                    vertical: -3,
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 0,
+                  ),
                   leading: Icon(
                     themeProvider.isDarkMode
                         ? Icons.dark_mode_rounded
@@ -317,17 +323,16 @@ class AdminDrawer extends StatelessWidget {
               );
             },
           ),
-          Divider(
-            height: 1,
-            color: dividerColor,
-            thickness: 1,
-          ),
+          Divider(height: 1, color: dividerColor, thickness: 1),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
             child: ListTile(
               dense: true,
               visualDensity: const VisualDensity(horizontal: -3, vertical: -3),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 0),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 12.w,
+                vertical: 0,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10.r),
               ),
@@ -347,7 +352,9 @@ class AdminDrawer extends StatelessWidget {
               onTap: () => _showLogoutDialog(context, authProvider),
             ),
           ),
-          SizedBox(height: math.max(8.h, MediaQuery.of(context).padding.bottom)),
+          SizedBox(
+            height: math.max(8.h, MediaQuery.of(context).padding.bottom),
+          ),
         ],
       ),
     );
@@ -361,25 +368,19 @@ class AdminDrawer extends StatelessWidget {
           borderRadius: BorderRadius.circular(16.r),
         ),
         title: Text(
-          'Konfirmasi Logout',
-          style: GoogleFonts.hankenGrotesk(
-            fontWeight: FontWeight.w700,
-          ),
+          'Konfirmasi Keluar',
+          style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w700),
         ),
         content: Text(
           'Apakah Anda yakin ingin keluar dari halaman Administrator?',
-          style: GoogleFonts.hankenGrotesk(
-            color: AppTheme.onSurfaceVariant,
-          ),
+          style: GoogleFonts.hankenGrotesk(color: AppTheme.onSurfaceVariant),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
             child: Text(
               'Batal',
-              style: GoogleFonts.hankenGrotesk(
-                fontWeight: FontWeight.w600,
-              ),
+              style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w600),
             ),
           ),
           TextButton(
@@ -422,13 +423,17 @@ class AdminDrawer extends StatelessWidget {
         ),
         leading: Icon(
           icon,
-          color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.onSurfaceVariant,
           size: 20,
         ),
         title: Text(
           title,
           style: GoogleFonts.hankenGrotesk(
-            color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onSurface,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             fontSize: 13.sp,
           ),
@@ -449,4 +454,3 @@ class AdminDrawer extends StatelessWidget {
     );
   }
 }
-

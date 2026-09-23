@@ -444,12 +444,14 @@ class AuthProvider with ChangeNotifier {
             if ((existingSchoolList as List).isNotEmpty) {
               res = (existingSchoolList as List).first as Map<String, dynamic>;
             } else {
+              final tenantLogo = tenantRes['logo']?.toString() ?? tenantRes['logo_url']?.toString();
               try {
                 await supabase.from('schools').upsert({
                   'id': tenantId,
                   'name': tenantName,
                   'code': tenantCode,
                   'status': tenantStatus,
+                  if (tenantLogo != null && tenantLogo.isNotEmpty) 'logo_url': tenantLogo,
                 }, onConflict: 'id');
               } catch (_) {}
 
@@ -458,6 +460,7 @@ class AuthProvider with ChangeNotifier {
                 'name': tenantName,
                 'code': tenantCode,
                 'status': tenantStatus,
+                if (tenantLogo != null && tenantLogo.isNotEmpty) 'logo_url': tenantLogo,
               };
             }
           }
@@ -788,6 +791,33 @@ class AuthProvider with ChangeNotifier {
             } catch (_) {}
           }
 
+          // Fallback logo: jika logo_url sekolah kosong, ambil dari foto profil admin sekolah tersebut
+          String? currentLogo;
+          if (m['schools'] != null && m['schools'] is Map) {
+            currentLogo = m['schools']['logo_url']?.toString();
+          }
+          if (currentLogo == null || currentLogo.trim().isEmpty) {
+            try {
+              final adminRes = await supabase
+                  .from('users')
+                  .select('photo_url')
+                  .eq('school_id', sId)
+                  .eq('role', 'admin')
+                  .not('photo_url', 'is', null)
+                  .limit(1)
+                  .maybeSingle()
+                  .timeout(NetworkResilience.defaultQueryTimeout);
+              if (adminRes != null && adminRes['photo_url'] != null && adminRes['photo_url'].toString().trim().isNotEmpty) {
+                final adminPhoto = adminRes['photo_url'].toString().trim();
+                if (m['schools'] != null && m['schools'] is Map) {
+                  m['schools']['logo_url'] = adminPhoto;
+                } else {
+                  m['logo_url'] = adminPhoto;
+                }
+              }
+            } catch (_) {}
+          }
+
           final parsed = UserSchoolModel.fromJson(m);
 
           if (status == 'pending') {
@@ -863,6 +893,23 @@ class AuthProvider with ChangeNotifier {
                   .maybeSingle()
                   .timeout(NetworkResilience.defaultQueryTimeout);
               if (sRes != null) {
+                String? schoolLogo = sRes['logo_url']?.toString();
+                if (schoolLogo == null || schoolLogo.trim().isEmpty) {
+                  try {
+                    final adminRes = await supabase
+                        .from('users')
+                        .select('photo_url')
+                        .eq('school_id', cleanId)
+                        .eq('role', 'admin')
+                        .not('photo_url', 'is', null)
+                        .limit(1)
+                        .maybeSingle()
+                        .timeout(NetworkResilience.defaultQueryTimeout);
+                    if (adminRes != null && adminRes['photo_url'] != null && adminRes['photo_url'].toString().trim().isNotEmpty) {
+                      schoolLogo = adminRes['photo_url'].toString().trim();
+                    }
+                  } catch (_) {}
+                }
                 membershipMap[key] = UserSchoolModel(
                   id: 'us_$cleanId',
                   userId: _currentUser!.id,
@@ -870,7 +917,7 @@ class AuthProvider with ChangeNotifier {
                   role: roleForMembership,
                   schoolName: sRes['name']?.toString() ?? 'Sekolah',
                   schoolCode: sRes['code']?.toString(),
-                  logoUrl: sRes['logo_url']?.toString(),
+                  logoUrl: schoolLogo,
                 );
               }
             } catch (_) {}

@@ -35,16 +35,20 @@ class GuruDrawer extends StatelessWidget {
       final Color activeColor = isDestructive
           ? const Color(0xFFEF4444)
           : Theme.of(context).colorScheme.primary;
-      final Color resolvedTextColor = textColor ??
+      final Color resolvedTextColor =
+          textColor ??
           (isDestructive
               ? const Color(0xFFEF4444)
               : (isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onSurface));
-      final Color resolvedIconColor = iconColor ??
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurface));
+      final Color resolvedIconColor =
+          iconColor ??
           (isSelected
               ? activeColor
-              : (isDestructive ? activeColor : Theme.of(context).colorScheme.onSurfaceVariant));
+              : (isDestructive
+                    ? activeColor
+                    : Theme.of(context).colorScheme.onSurfaceVariant));
 
       return Container(
         margin: EdgeInsets.only(bottom: 4.h),
@@ -58,11 +62,7 @@ class GuruDrawer extends StatelessWidget {
           onTap: onTap,
           dense: true,
           contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.h),
-          leading: Icon(
-            icon,
-            color: resolvedIconColor,
-            size: 22,
-          ),
+          leading: Icon(icon, color: resolvedIconColor, size: 22),
           title: Text(
             label,
             style: GoogleFonts.hankenGrotesk(
@@ -105,16 +105,23 @@ class GuruDrawer extends StatelessWidget {
     final currentUser = authProvider.currentUser;
     final warningProvider = context.watch<WarningLetterProvider>();
 
-    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId);
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(
+      authProvider.activeSchoolId,
+    );
     final unreadWarnings = warningProvider.warningLetters.where((w) {
       if (w.status != 'unread') return false;
-      if (cleanActiveSchoolId == null || cleanActiveSchoolId.isEmpty) return true;
+      if (cleanActiveSchoolId == null || cleanActiveSchoolId.isEmpty)
+        return true;
       final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
-      return wSchoolId == null || wSchoolId.isEmpty || wSchoolId == cleanActiveSchoolId;
+      return wSchoolId == null ||
+          wSchoolId.isEmpty ||
+          wSchoolId == cleanActiveSchoolId;
     }).length;
 
     final name = currentUser?.fullName ?? 'Guru Pengajar';
-    final position = (currentUser?.position != null && currentUser!.position!.trim().isNotEmpty)
+    final position =
+        (currentUser?.position != null &&
+            currentUser!.position!.trim().isNotEmpty)
         ? currentUser.position!.trim()
         : 'Guru Pengajar';
     final photoUrl = currentUser?.photoUrl;
@@ -185,16 +192,19 @@ class GuruDrawer extends StatelessWidget {
                         ? Image.network(
                             photoUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Center(
-                              child: Text(
-                                name.isNotEmpty ? name[0].toUpperCase() : 'G',
-                                style: GoogleFonts.hankenGrotesk(
-                                  color: const Color(0xFF1E1B4B),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 22.sp,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Center(
+                                  child: Text(
+                                    name.isNotEmpty
+                                        ? name[0].toUpperCase()
+                                        : 'G',
+                                    style: GoogleFonts.hankenGrotesk(
+                                      color: const Color(0xFF1E1B4B),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 22.sp,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
                           )
                         : Center(
                             child: Text(
@@ -238,15 +248,24 @@ class GuruDrawer extends StatelessWidget {
               builder: (context) {
                 final isAdminOnly = authProvider.isExclusiveAdmin;
                 final switcherWidget = Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 8.h,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.business_rounded, color: Colors.white, size: 16),
+                      const Icon(
+                        Icons.business_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                       SizedBox(width: 8.w),
                       Expanded(
                         child: Text(
@@ -261,7 +280,11 @@ class GuruDrawer extends StatelessWidget {
                         ),
                       ),
                       if (!isAdminOnly)
-                        const Icon(Icons.swap_vert_rounded, color: Colors.white, size: 18),
+                        const Icon(
+                          Icons.swap_vert_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                     ],
                   ),
                 );
@@ -384,7 +407,8 @@ class GuruDrawer extends StatelessWidget {
         Padding(
           padding: EdgeInsets.symmetric(vertical: 8.h),
           child: Divider(
-            color: Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0),
+            color:
+                Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0),
             height: 1,
           ),
         ),
@@ -399,7 +423,10 @@ class GuruDrawer extends StatelessWidget {
               ),
               child: ListTile(
                 dense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 0),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 14.w,
+                  vertical: 0,
+                ),
                 leading: Icon(
                   themeProvider.isDarkMode
                       ? Icons.dark_mode_rounded
@@ -464,7 +491,9 @@ class GuruDrawer extends StatelessWidget {
                 },
               ),
             ),
-            SizedBox(height: math.max(6.h, MediaQuery.of(context).padding.bottom)),
+            SizedBox(
+              height: math.max(6.h, MediaQuery.of(context).padding.bottom),
+            ),
           ],
         ),
       );
@@ -491,7 +520,10 @@ class GuruDrawer extends StatelessWidget {
                 children: [
                   buildHeaderWidget(),
                   Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
+                    padding: EdgeInsets.symmetric(
+                      vertical: 12.h,
+                      horizontal: 12.w,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: buildMenuItems(),
@@ -509,7 +541,10 @@ class GuruDrawer extends StatelessWidget {
               buildHeaderWidget(),
               Expanded(
                 child: ListView(
-                  padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
+                  padding: EdgeInsets.symmetric(
+                    vertical: 12.h,
+                    horizontal: 12.w,
+                  ),
                   children: buildMenuItems(),
                 ),
               ),
@@ -531,7 +566,7 @@ class GuruDrawer extends StatelessWidget {
           borderRadius: BorderRadius.circular(16.r),
         ),
         title: Text(
-          'Konfirmasi Logout',
+          'Konfirmasi Keluar',
           style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w700),
         ),
         content: Text(
@@ -586,5 +621,4 @@ class GuruDrawer extends StatelessWidget {
       ),
     );
   }
-
 }

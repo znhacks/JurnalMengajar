@@ -40,15 +40,31 @@ class FakeAuthRepo implements AuthRepository {
   @override
   Future<List<UserModel>> getAllUsers([String? schoolId]) async => [];
   @override
-  Future<void> updateUserRole(String userId, String role, [String? schoolId]) async {}
+  Future<void> updateUserRole(
+    String userId,
+    String role, [
+    String? schoolId,
+  ]) async {}
   @override
   Future<void> deleteAccount(String userId) async {}
   @override
-  Future<void> requestExitFromSchool(String membershipId, {String? schoolId, String? role, String? userId}) async {}
+  Future<void> requestExitFromSchool(
+    String membershipId, {
+    String? schoolId,
+    String? role,
+    String? userId,
+  }) async {}
   @override
-  Future<void> cancelExitRequest(String membershipId, {String? schoolId, String? role, String? userId}) async {}
+  Future<void> cancelExitRequest(
+    String membershipId, {
+    String? schoolId,
+    String? role,
+    String? userId,
+  }) async {}
   @override
-  Future<List<Map<String, dynamic>>> getPendingExitRequests(String schoolId) async => [];
+  Future<List<Map<String, dynamic>>> getPendingExitRequests(
+    String schoolId,
+  ) async => [];
   @override
   Future<List<UserModel>> getAllUsersForSchool(String schoolId) async => [];
   @override
@@ -58,14 +74,21 @@ class FakeAuthRepo implements AuthRepository {
   @override
   Future<void> rejectJoinRequest(String userId, String schoolId) async {}
   @override
-  Future<void> leaveSchool({required String schoolId, required String userId, String? membershipId}) async {}
+  Future<void> leaveSchool({
+    required String schoolId,
+    required String userId,
+    String? membershipId,
+  }) async {}
 }
 
 class FakeWarningLetterRepo implements WarningLetterRepository {
   @override
   Future<List<WarningLetterModel>> getAll([String? schoolId]) async => [];
   @override
-  Future<List<WarningLetterModel>> getByTeacherId(String teacherId, [String? schoolId]) async => [];
+  Future<List<WarningLetterModel>> getByTeacherId(
+    String teacherId, [
+    String? schoolId,
+  ]) async => [];
   @override
   Future<void> create(WarningLetterModel model) async {}
   @override
@@ -92,23 +115,17 @@ void main() {
       providers: [
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
         ChangeNotifierProvider<WarningLetterProvider>(
-          create: (_) => WarningLetterProvider(warningLetterRepository: FakeWarningLetterRepo()),
+          create: (_) => WarningLetterProvider(
+            warningLetterRepository: FakeWarningLetterRepo(),
+          ),
         ),
-        ChangeNotifierProvider<ThemeProvider>(
-          create: (_) => ThemeProvider(),
-        ),
+        ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
       ],
       child: ScreenUtilInit(
         designSize: const Size(375, 812),
         builder: (context, _) => MaterialApp(
           theme: theme,
-          home: Scaffold(
-            body: SizedBox(
-              width: 320,
-              height: 800,
-              child: child,
-            ),
-          ),
+          home: Scaffold(body: SizedBox(width: 320, height: 800, child: child)),
         ),
       ),
     );
@@ -127,7 +144,9 @@ void main() {
   }
 
   group('Logout Button "Keluar" Color Consistency Tests', () {
-    testWidgets('AdminDrawer (Left Reference) uses onSurface in Light Mode', (tester) async {
+    testWidgets('AdminDrawer (Left Reference) uses onSurface in Light Mode', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -157,37 +176,44 @@ void main() {
       expect(logoutIcon.color, isNot(equals(const Color(0xFFEF4444))));
     });
 
-    testWidgets('GuruDrawer (Right Target) uses onSurface in Light Mode to match AdminDrawer', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+    testWidgets(
+      'GuruDrawer (Right Target) uses onSurface in Light Mode to match AdminDrawer',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
 
-      final authProvider = createTestAuthProvider();
-      final lightTheme = AppTheme.lightTheme;
-      final expectedColor = lightTheme.colorScheme.onSurface;
+        final authProvider = createTestAuthProvider();
+        final lightTheme = AppTheme.lightTheme;
+        final expectedColor = lightTheme.colorScheme.onSurface;
 
-      await tester.pumpWidget(
-        buildHost(
-          child: const GuruDrawer(),
-          theme: lightTheme,
-          authProvider: authProvider,
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildHost(
+            child: const GuruDrawer(),
+            theme: lightTheme,
+            authProvider: authProvider,
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      final keluarText = tester.widget<Text>(find.text('Keluar'));
-      expect(keluarText.style?.color, equals(expectedColor));
-      expect(keluarText.style?.color, isNot(equals(const Color(0xFFEF4444))));
+        final keluarText = tester.widget<Text>(find.text('Keluar'));
+        expect(keluarText.style?.color, equals(expectedColor));
+        expect(keluarText.style?.color, isNot(equals(const Color(0xFFEF4444))));
 
-      final logoutIcon = tester.widget<Icon>(find.byIcon(Icons.logout_rounded));
-      expect(logoutIcon.color, equals(expectedColor));
-      expect(logoutIcon.color, isNot(equals(const Color(0xFFEF4444))));
-    });
+        final logoutIcon = tester.widget<Icon>(
+          find.byIcon(Icons.logout_rounded),
+        );
+        expect(logoutIcon.color, equals(expectedColor));
+        expect(logoutIcon.color, isNot(equals(const Color(0xFFEF4444))));
+      },
+    );
 
-    testWidgets('AdminDrawer (Left Reference) uses onSurface in Dark Mode', (tester) async {
+    testWidgets('AdminDrawer (Left Reference) uses onSurface in Dark Mode', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -217,68 +243,79 @@ void main() {
       expect(logoutIcon.color, isNot(equals(const Color(0xFFEF4444))));
     });
 
-    testWidgets('GuruDrawer (Right Target) uses onSurface in Dark Mode to match AdminDrawer', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+    testWidgets(
+      'GuruDrawer (Right Target) uses onSurface in Dark Mode to match AdminDrawer',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
 
-      final authProvider = createTestAuthProvider();
-      final darkTheme = AppTheme.darkTheme;
-      final expectedColor = darkTheme.colorScheme.onSurface;
+        final authProvider = createTestAuthProvider();
+        final darkTheme = AppTheme.darkTheme;
+        final expectedColor = darkTheme.colorScheme.onSurface;
 
-      await tester.pumpWidget(
-        buildHost(
-          child: const GuruDrawer(),
-          theme: darkTheme,
-          authProvider: authProvider,
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildHost(
+            child: const GuruDrawer(),
+            theme: darkTheme,
+            authProvider: authProvider,
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      final keluarText = tester.widget<Text>(find.text('Keluar'));
-      expect(keluarText.style?.color, equals(expectedColor));
-      expect(keluarText.style?.color, isNot(equals(const Color(0xFFEF4444))));
+        final keluarText = tester.widget<Text>(find.text('Keluar'));
+        expect(keluarText.style?.color, equals(expectedColor));
+        expect(keluarText.style?.color, isNot(equals(const Color(0xFFEF4444))));
 
-      final logoutIcon = tester.widget<Icon>(find.byIcon(Icons.logout_rounded));
-      expect(logoutIcon.color, equals(expectedColor));
-      expect(logoutIcon.color, isNot(equals(const Color(0xFFEF4444))));
-    });
+        final logoutIcon = tester.widget<Icon>(
+          find.byIcon(Icons.logout_rounded),
+        );
+        expect(logoutIcon.color, equals(expectedColor));
+        expect(logoutIcon.color, isNot(equals(const Color(0xFFEF4444))));
+      },
+    );
 
-    testWidgets('Tapping "Keluar" in GuruDrawer opens confirmation dialog properly', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+    testWidgets(
+      'Tapping "Keluar" in GuruDrawer opens confirmation dialog properly',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
 
-      final authProvider = createTestAuthProvider();
+        final authProvider = createTestAuthProvider();
 
-      await tester.pumpWidget(
-        buildHost(
-          child: const GuruDrawer(),
-          theme: AppTheme.lightTheme,
-          authProvider: authProvider,
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildHost(
+            child: const GuruDrawer(),
+            theme: AppTheme.lightTheme,
+            authProvider: authProvider,
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      // Tap Keluar
-      await tester.tap(find.text('Keluar'));
-      await tester.pumpAndSettle();
+        // Tap Keluar
+        await tester.tap(find.text('Keluar'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Konfirmasi Logout'), findsOneWidget);
-      expect(find.text('Apakah Anda yakin ingin keluar dari aplikasi?'), findsOneWidget);
-      expect(find.text('Batal'), findsOneWidget);
-      expect(find.text('Logout'), findsOneWidget);
+        expect(find.text('Konfirmasi Keluar'), findsOneWidget);
+        expect(
+          find.text('Apakah Anda yakin ingin keluar dari aplikasi?'),
+          findsOneWidget,
+        );
+        expect(find.text('Batal'), findsOneWidget);
+        expect(find.text('Logout'), findsOneWidget);
 
-      await tester.tap(find.text('Batal'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Batal'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Konfirmasi Logout'), findsNothing);
-    });
+        expect(find.text('Konfirmasi Keluar'), findsNothing);
+      },
+    );
   });
 }

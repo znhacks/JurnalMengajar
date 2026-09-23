@@ -52,7 +52,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       ),
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          Future<void> pickDialogImage({ImageSource source = ImageSource.gallery}) async {
+          Future<void> pickDialogImage({
+            ImageSource source = ImageSource.gallery,
+          }) async {
             final result = await pickAndCropImage(
               context: context,
               source: source,
@@ -81,7 +83,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                       width: 40.w,
                       height: 4.h,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF475569) : Colors.grey[300],
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF475569)
+                            : Colors.grey[300],
                         borderRadius: BorderRadius.circular(2.r),
                       ),
                     ),
@@ -98,11 +102,16 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                     ListTile(
                       leading: const CircleAvatar(
                         backgroundColor: Color(0xFFE0F2F1),
-                        child: Icon(Icons.photo_library_outlined, color: Color(0xFF2563EB)),
+                        child: Icon(
+                          Icons.photo_library_outlined,
+                          color: Color(0xFF2563EB),
+                        ),
                       ),
                       title: Text(
                         'Galeri Foto',
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                       onTap: () {
                         Navigator.pop(sheetCtx);
@@ -112,11 +121,16 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                     ListTile(
                       leading: const CircleAvatar(
                         backgroundColor: Color(0xFFE0F2F1),
-                        child: Icon(Icons.camera_alt_outlined, color: Color(0xFF2563EB)),
+                        child: Icon(
+                          Icons.camera_alt_outlined,
+                          color: Color(0xFF2563EB),
+                        ),
                       ),
                       title: Text(
                         'Kamera',
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                       onTap: () {
                         Navigator.pop(sheetCtx);
@@ -147,7 +161,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                       width: 40.w,
                       height: 4.h,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF475569) : Colors.grey[300],
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF475569)
+                            : Colors.grey[300],
                         borderRadius: BorderRadius.circular(2.r),
                       ),
                     ),
@@ -183,10 +199,13 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                 ? MemoryImage(tempImageBytes!)
                                 : (user.photoUrl != null &&
                                               user.photoUrl!.startsWith('http')
-                                          ? CachedNetworkImageProvider(user.photoUrl!)
+                                          ? CachedNetworkImageProvider(
+                                              user.photoUrl!,
+                                            )
                                           : null)
                                       as ImageProvider?,
-                            child: tempImageBytes == null &&
+                            child:
+                                tempImageBytes == null &&
                                     (user.photoUrl == null ||
                                         !user.photoUrl!.startsWith('http'))
                                 ? Icon(
@@ -305,10 +324,11 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                               context,
                               listen: false,
                             );
-                            final masterProvider = Provider.of<MasterDataProvider>(
-                              context,
-                              listen: false,
-                            );
+                            final masterProvider =
+                                Provider.of<MasterDataProvider>(
+                                  context,
+                                  listen: false,
+                                );
 
                             // Upload foto profil jika ada (web-compatible)
                             String? uploadedPhotoUrl = user.photoUrl;
@@ -354,14 +374,20 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                             );
                             if (success) {
                               bool emailSuccess = true;
-                              final isEmailChanged = newEmail.toLowerCase() != user.email.toLowerCase();
-                              
+                              final isEmailChanged =
+                                  newEmail.toLowerCase() !=
+                                  user.email.toLowerCase();
+
                               if (isEmailChanged) {
-                                emailSuccess = await authProvider.changeEmail(newEmail);
+                                emailSuccess = await authProvider.changeEmail(
+                                  newEmail,
+                                );
                               }
 
-                              await masterProvider.loadAllData(authProvider.activeSchoolId);
-                              
+                              await masterProvider.loadAllData(
+                                authProvider.activeSchoolId,
+                              );
+
                               if (context.mounted) {
                                 if (isEmailChanged && emailSuccess) {
                                   AppHelper.showSnackBar(
@@ -423,7 +449,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     final authProvider = context.watch<AuthProvider>();
     final masterProvider = context.watch<MasterDataProvider>();
     final journalProvider = context.watch<JournalProvider>();
-    
+
     final currentUser = authProvider.currentUser;
 
     if (currentUser == null) {
@@ -434,16 +460,14 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     }
 
     final isLoading = masterProvider.isLoading || journalProvider.isLoading;
-    final errorMessage = masterProvider.errorMessage ?? journalProvider.errorMessage;
+    final errorMessage =
+        masterProvider.errorMessage ?? journalProvider.errorMessage;
 
-    final hasNoData = masterProvider.teachers.isEmpty && masterProvider.classes.isEmpty;
+    final hasNoData =
+        masterProvider.teachers.isEmpty && masterProvider.classes.isEmpty;
 
     if (hasNoData && isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (hasNoData && errorMessage != null) {
@@ -458,7 +482,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                 SizedBox(height: 16.h),
                 Text(
                   'Gagal Memuat Profil Admin',
-                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 SizedBox(height: 8.h),
                 Text(
@@ -511,8 +538,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-                  title: const Text('Konfirmasi Logout'),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  title: const Text('Konfirmasi Keluar'),
                   content: const Text(
                     'Apakah Anda yakin ingin keluar dari halaman Administrator?',
                   ),
@@ -573,7 +602,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                       alignment: Alignment.center,
                       children: [
                         GestureDetector(
-                          onTap: currentUser.photoUrl != null &&
+                          onTap:
+                              currentUser.photoUrl != null &&
                                   currentUser.photoUrl!.startsWith('http')
                               ? () {
                                   FullScreenImageViewer.show(
@@ -586,19 +616,30 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                           child: Container(
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2.5.r),
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2.5.r,
+                              ),
                             ),
                             child: Hero(
                               tag: 'admin_profile_avatar',
                               child: CircleAvatar(
                                 radius: 36.r,
-                                backgroundColor: Colors.white.withValues(alpha: 0.2),
-                                backgroundImage: currentUser.photoUrl != null &&
+                                backgroundColor: Colors.white.withValues(
+                                  alpha: 0.2,
+                                ),
+                                backgroundImage:
+                                    currentUser.photoUrl != null &&
                                         currentUser.photoUrl!.startsWith('http')
-                                    ? CachedNetworkImageProvider(currentUser.photoUrl!)
+                                    ? CachedNetworkImageProvider(
+                                        currentUser.photoUrl!,
+                                      )
                                     : null,
-                                child: (currentUser.photoUrl == null ||
-                                        !currentUser.photoUrl!.startsWith('http'))
+                                child:
+                                    (currentUser.photoUrl == null ||
+                                        !currentUser.photoUrl!.startsWith(
+                                          'http',
+                                        ))
                                     ? Icon(
                                         Icons.person,
                                         size: 36.r,
@@ -644,7 +685,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                             child: Text(
                               currentUser.fullName,
                               maxLines: _showFullName ? null : 1,
-                              overflow: _showFullName ? TextOverflow.visible : TextOverflow.ellipsis,
+                              overflow: _showFullName
+                                  ? TextOverflow.visible
+                                  : TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 18.sp,
                                 fontWeight: FontWeight.bold,
@@ -672,7 +715,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                               borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: Text(
-                               'ROLE: ADMIN SEKOLAH (${authProvider.activeSchoolName.toUpperCase()})',
+                              'ROLE: ADMIN SEKOLAH (${authProvider.activeSchoolName.toUpperCase()})',
                               style: TextStyle(
                                 fontSize: 9.sp,
                                 fontWeight: FontWeight.bold,
@@ -701,7 +744,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
               // Quick Stats Section (New Hub Widget)
               Builder(
                 builder: (context) {
-                  final pendingCount = journalProvider.journals.where((j) => j.status == 'pending').length;
+                  final pendingCount = journalProvider.journals
+                      .where((j) => j.status == 'pending')
+                      .length;
 
                   return Row(
                     children: [
@@ -712,7 +757,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                           value: '${masterProvider.teachers.length}',
                           icon: Icons.people_alt_outlined,
                           color: const Color(0xFF0F172A),
-                          onTap: () => context.push('/admin/master-data/teachers'),
+                          onTap: () =>
+                              context.push('/admin/master-data/teachers'),
                         ),
                       ),
                       SizedBox(width: 12.w),
@@ -723,7 +769,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                           value: '${masterProvider.classes.length}',
                           icon: Icons.class_outlined,
                           color: const Color(0xFF2563EB),
-                          onTap: () => context.push('/admin/master-data/classes'),
+                          onTap: () =>
+                              context.push('/admin/master-data/classes'),
                         ),
                       ),
                       SizedBox(width: 12.w),
@@ -746,13 +793,16 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
               // Detail List Section
               Builder(
                 builder: (context) {
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  final isDark =
+                      Theme.of(context).brightness == Brightness.dark;
                   return Text(
                     'INFORMASI AKUN',
                     style: TextStyle(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF64748B),
                       letterSpacing: 1.2,
                     ),
                   );
@@ -761,17 +811,24 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
               SizedBox(height: 6.h),
               Builder(
                 builder: (context) {
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
-                  final dividerColor = isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9);
+                  final isDark =
+                      Theme.of(context).brightness == Brightness.dark;
+                  final dividerColor = isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFF1F5F9);
 
                   return Card(
                     margin: EdgeInsets.zero,
                     elevation: 0,
-                    color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+                    color:
+                        Theme.of(context).cardTheme.color ??
+                        Theme.of(context).colorScheme.surface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16.r),
                       side: BorderSide(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0),
                         width: 1,
                       ),
                     ),
@@ -813,13 +870,16 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
               SizedBox(height: 20.h),
               Builder(
                 builder: (context) {
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  final isDark =
+                      Theme.of(context).brightness == Brightness.dark;
                   return Text(
                     'PENGATURAN AKUN',
                     style: TextStyle(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF64748B),
                       letterSpacing: 1.2,
                     ),
                   );
@@ -856,11 +916,16 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                     width: 1,
                   ),
                 ),
-                color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+                color:
+                    Theme.of(context).cardTheme.color ??
+                    Theme.of(context).colorScheme.surface,
                 child: Consumer<ThemeProvider>(
                   builder: (context, themeProvider, child) {
                     return ListTile(
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 2.h),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 2.h,
+                      ),
                       leading: Icon(
                         themeProvider.isDarkMode
                             ? Icons.dark_mode_rounded
@@ -902,7 +967,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
               // Danger Zone Panel (Compact & Elegant - Locked for Admin)
               Builder(
                 builder: (context) {
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  final isDark =
+                      Theme.of(context).brightness == Brightness.dark;
 
                   return Container(
                     decoration: BoxDecoration(
@@ -911,12 +977,17 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                           : const Color(0xFFFFF5F5),
                       borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(
-                        color: Colors.red.withValues(alpha: isDark ? 0.3 : 0.15),
+                        color: Colors.red.withValues(
+                          alpha: isDark ? 0.3 : 0.15,
+                        ),
                         width: 1.r,
                       ),
                     ),
                     child: ListTile(
-                      contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 14.w,
+                        vertical: 4.h,
+                      ),
                       leading: Container(
                         padding: EdgeInsets.all(6.w),
                         decoration: BoxDecoration(
@@ -934,24 +1005,39 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         style: TextStyle(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? const Color(0xFFFCA5A5) : Colors.red[800],
+                          color: isDark
+                              ? const Color(0xFFFCA5A5)
+                              : Colors.red[800],
                         ),
                       ),
                       subtitle: Text(
                         'Akun admin sekolah dilindungi sistem',
                         style: TextStyle(
                           fontSize: 11.sp,
-                          color: isDark ? const Color(0xFFF87171) : Colors.red[700],
+                          color: isDark
+                              ? const Color(0xFFF87171)
+                              : Colors.red[700],
                         ),
                       ),
                       trailing: TextButton.icon(
                         onPressed: null,
                         style: TextButton.styleFrom(
-                          foregroundColor: isDark ? const Color(0xFF94A3B8) : Colors.grey[500],
-                          backgroundColor: isDark ? const Color(0xFF334155) : Colors.grey[200],
-                          disabledBackgroundColor: isDark ? const Color(0xFF334155) : Colors.grey[200],
-                          disabledForegroundColor: isDark ? const Color(0xFF94A3B8) : Colors.grey[500],
-                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                          foregroundColor: isDark
+                              ? const Color(0xFF94A3B8)
+                              : Colors.grey[500],
+                          backgroundColor: isDark
+                              ? const Color(0xFF334155)
+                              : Colors.grey[200],
+                          disabledBackgroundColor: isDark
+                              ? const Color(0xFF334155)
+                              : Colors.grey[200],
+                          disabledForegroundColor: isDark
+                              ? const Color(0xFF94A3B8)
+                              : Colors.grey[500],
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 8.h,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8.r),
                           ),
@@ -959,14 +1045,18 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         icon: Icon(
                           Icons.lock_rounded,
                           size: 13.r,
-                          color: isDark ? const Color(0xFF94A3B8) : Colors.grey[500],
+                          color: isDark
+                              ? const Color(0xFF94A3B8)
+                              : Colors.grey[500],
                         ),
                         label: Text(
                           'Terkunci',
                           style: TextStyle(
                             fontSize: 11.sp,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? const Color(0xFF94A3B8) : Colors.grey[500],
+                            color: isDark
+                                ? const Color(0xFF94A3B8)
+                                : Colors.grey[500],
                           ),
                         ),
                       ),
@@ -994,7 +1084,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     return Card(
       elevation: 0,
       margin: EdgeInsets.zero,
-      color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+      color:
+          Theme.of(context).cardTheme.color ??
+          Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12.r),
         side: BorderSide(
@@ -1076,7 +1168,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
           Container(
             padding: EdgeInsets.all(6.w),
             decoration: BoxDecoration(
-              color: const Color(0xFF2563EB).withValues(alpha: isDark ? 0.2 : 0.08),
+              color: const Color(
+                0xFF2563EB,
+              ).withValues(alpha: isDark ? 0.2 : 0.08),
               borderRadius: BorderRadius.circular(8.r),
             ),
             child: Icon(
@@ -1125,14 +1219,18 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   Icon(
                     Icons.verified,
                     size: 10.r,
-                    color: isDark ? const Color(0xFF34D399) : const Color(0xFF10B981),
+                    color: isDark
+                        ? const Color(0xFF34D399)
+                        : const Color(0xFF10B981),
                   ),
                   SizedBox(width: 3.w),
                   Text(
                     'Aktif',
                     style: TextStyle(
                       fontSize: 9.sp,
-                      color: isDark ? const Color(0xFF34D399) : const Color(0xFF10B981),
+                      color: isDark
+                          ? const Color(0xFF34D399)
+                          : const Color(0xFF10B981),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
