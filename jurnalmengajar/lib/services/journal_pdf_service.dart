@@ -96,7 +96,7 @@ class JournalPdfService {
             // Document Title
             pw.Center(
               child: pw.Text(
-                'LAPORAN JURNAL',
+                'LAPORAN JURNAL MENGAJAR',
                 style: pw.TextStyle(
                   font: ttfBold,
                   fontSize: 12,

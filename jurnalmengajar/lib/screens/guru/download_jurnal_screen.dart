@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/class_model.dart';
 import '../../models/journal_model.dart';
@@ -38,40 +37,16 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
   String? _selectedSubjectId;
   String? _selectedSchoolId;
 
-  final TextEditingController _supervisorNameController =
-      TextEditingController();
-  final TextEditingController _supervisorNipController =
-      TextEditingController();
-  final TextEditingController _teacherNipController = TextEditingController();
   final TextEditingController _schoolNameController = TextEditingController(
     text: 'SMP NEGERI 1 SATU ATAP MEMPURA',
   );
 
   String _presetRange = 'Bulan Ini';
 
-  List<String> _supervisorNameHistory = [];
-  List<String> _supervisorNipHistory = [];
-  List<String> _teacherNipHistory = [];
-
-  final LayerLink _supervisorNameLink = LayerLink();
-  final LayerLink _supervisorNipLink = LayerLink();
-  final LayerLink _teacherNipLink = LayerLink();
-
-  final FocusNode _supervisorNameFocusNode = FocusNode();
-  final FocusNode _supervisorNipFocusNode = FocusNode();
-  final FocusNode _teacherNipFocusNode = FocusNode();
-
-  OverlayEntry? _activeOverlayEntry;
-
   @override
   void initState() {
     super.initState();
     _loadInitialData();
-    _loadHistory();
-
-    _supervisorNameFocusNode.addListener(_onSupervisorNameFocusChange);
-    _supervisorNipFocusNode.addListener(_onSupervisorNipFocusChange);
-    _teacherNipFocusNode.addListener(_onTeacherNipFocusChange);
   }
 
   AuthProvider? _authProvider;
@@ -86,19 +61,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
   @override
   void dispose() {
-    _supervisorNameController.dispose();
-    _supervisorNipController.dispose();
-    _teacherNipController.dispose();
     _schoolNameController.dispose();
-
-    _supervisorNameFocusNode.removeListener(_onSupervisorNameFocusChange);
-    _supervisorNameFocusNode.dispose();
-    _supervisorNipFocusNode.removeListener(_onSupervisorNipFocusChange);
-    _supervisorNipFocusNode.dispose();
-    _teacherNipFocusNode.removeListener(_onTeacherNipFocusChange);
-    _teacherNipFocusNode.dispose();
-
-    _hideActiveOverlay();
 
     // Restore active school's master data when leaving the download page
     if (_masterProvider != null && _authProvider != null) {
@@ -155,307 +118,6 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
             activeSchool?.name ?? authProvider.activeSchoolName;
       });
     }
-  }
-
-  Future<void> _loadHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _supervisorNameHistory =
-          prefs.getStringList('history_supervisor_name') ?? [];
-      _supervisorNipHistory =
-          prefs.getStringList('history_supervisor_nip') ?? [];
-      _teacherNipHistory = prefs.getStringList('history_teacher_nip') ?? [];
-    });
-  }
-
-  Future<void> _saveToHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final name = _supervisorNameController.text.trim();
-    final supervisorNip = _supervisorNipController.text.trim();
-    final teacherNip = _teacherNipController.text.trim();
-
-    if (name.isNotEmpty) {
-      _supervisorNameHistory.remove(name);
-      _supervisorNameHistory.insert(0, name);
-      if (_supervisorNameHistory.length > 5) {
-        _supervisorNameHistory = _supervisorNameHistory.sublist(0, 5);
-      }
-      await prefs.setStringList(
-        'history_supervisor_name',
-        _supervisorNameHistory,
-      );
-    }
-
-    if (supervisorNip.isNotEmpty) {
-      _supervisorNipHistory.remove(supervisorNip);
-      _supervisorNipHistory.insert(0, supervisorNip);
-      if (_supervisorNipHistory.length > 5) {
-        _supervisorNipHistory = _supervisorNipHistory.sublist(0, 5);
-      }
-      await prefs.setStringList(
-        'history_supervisor_nip',
-        _supervisorNipHistory,
-      );
-    }
-
-    if (teacherNip.isNotEmpty) {
-      _teacherNipHistory.remove(teacherNip);
-      _teacherNipHistory.insert(0, teacherNip);
-      if (_teacherNipHistory.length > 5) {
-        _teacherNipHistory = _teacherNipHistory.sublist(0, 5);
-      }
-      await prefs.setStringList('history_teacher_nip', _teacherNipHistory);
-    }
-
-    setState(() {});
-  }
-
-  void _onSupervisorNameFocusChange() {
-    if (_supervisorNameFocusNode.hasFocus) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted && _supervisorNameFocusNode.hasFocus) {
-          _showSavedInfoOverlay(
-            context: context,
-            layerLink: _supervisorNameLink,
-            controller: _supervisorNameController,
-            history: _supervisorNameHistory,
-            focusNode: _supervisorNameFocusNode,
-          );
-        }
-      });
-    } else {
-      _hideActiveOverlay();
-    }
-  }
-
-  void _onSupervisorNipFocusChange() {
-    if (_supervisorNipFocusNode.hasFocus) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted && _supervisorNipFocusNode.hasFocus) {
-          _showSavedInfoOverlay(
-            context: context,
-            layerLink: _supervisorNipLink,
-            controller: _supervisorNipController,
-            history: _supervisorNipHistory,
-            focusNode: _supervisorNipFocusNode,
-          );
-        }
-      });
-    } else {
-      _hideActiveOverlay();
-    }
-  }
-
-  void _onTeacherNipFocusChange() {
-    if (_teacherNipFocusNode.hasFocus) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted && _teacherNipFocusNode.hasFocus) {
-          _showSavedInfoOverlay(
-            context: context,
-            layerLink: _teacherNipLink,
-            controller: _teacherNipController,
-            history: _teacherNipHistory,
-            focusNode: _teacherNipFocusNode,
-          );
-        }
-      });
-    } else {
-      _hideActiveOverlay();
-    }
-  }
-
-  void _showSavedInfoOverlay({
-    required BuildContext context,
-    required LayerLink layerLink,
-    required TextEditingController controller,
-    required List<String> history,
-    required FocusNode focusNode,
-  }) {
-    _hideActiveOverlay();
-
-    if (history.isEmpty) return;
-
-    _activeOverlayEntry = OverlayEntry(
-      builder: (context) {
-        return Stack(
-          children: [
-            // Tap outside to close
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: _hideActiveOverlay,
-              ),
-            ),
-            Positioned(
-              width: 320.w,
-              child: CompositedTransformFollower(
-                link: layerLink,
-                showWhenUnlinked: false,
-                targetAnchor: Alignment.bottomLeft,
-                followerAnchor: Alignment.topLeft,
-                offset: Offset(0, 4.h),
-                child: Material(
-                  color: Colors.transparent,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      // Arrow pointing up
-                      Positioned(
-                        top: -6.h,
-                        left: 24.w,
-                        child: RotationTransition(
-                          turns: const AlwaysStoppedAnimation(45 / 360),
-                          child: Container(
-                            width: 12.w,
-                            height: 12.w,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface, // Dark background matching browser Saved Info
-                          borderRadius: BorderRadius.circular(8.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.3),
-                              blurRadius: 12,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Header "Saved info"
-                            Padding(
-                              padding: EdgeInsets.fromLTRB(
-                                14.w,
-                                10.h,
-                                10.w,
-                                6.h,
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Saved info',
-                                    style: GoogleFonts.hankenGrotesk(
-                                      color: const Color(0xFF94A3B8),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12.sp,
-                                    ),
-                                  ),
-                                  Material(
-                                    color: Colors.transparent,
-                                    child: IconButton(
-                                      icon: Icon(
-                                        Icons.close_rounded,
-                                        color: const Color(0xFF94A3B8),
-                                        size: 16.sp,
-                                      ),
-                                      onPressed: _hideActiveOverlay,
-                                      constraints: const BoxConstraints(),
-                                      padding: EdgeInsets.all(4.w),
-                                      splashRadius: 16.r,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Divider(height: 1, color: Color(0xFF334155)),
-
-                            // History items list
-                            Flexible(
-                              child: ListView.builder(
-                                padding: EdgeInsets.zero,
-                                shrinkWrap: true,
-                                itemCount: history.length,
-                                itemBuilder: (context, index) {
-                                  final item = history[index];
-                                  return _HistoryItemRow(
-                                    item: item,
-                                    controller: controller,
-                                    focusNode: focusNode,
-                                    onDelete: () async {
-                                      await _deleteHistoryItem(
-                                        item,
-                                        history,
-                                        controller,
-                                      );
-                                    },
-                                    onSelected: () {
-                                      setState(() {
-                                        controller.text = item;
-                                        controller.selection =
-                                            TextSelection.fromPosition(
-                                              TextPosition(offset: item.length),
-                                            );
-                                      });
-                                      _hideActiveOverlay();
-                                      focusNode.unfocus();
-                                    },
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    Overlay.of(context).insert(_activeOverlayEntry!);
-  }
-
-  void _hideActiveOverlay() {
-    _activeOverlayEntry?.remove();
-    _activeOverlayEntry = null;
-  }
-
-  Future<void> _deleteHistoryItem(
-    String item,
-    List<String> history,
-    TextEditingController controller,
-  ) async {
-    final prefs = await SharedPreferences.getInstance();
-    history.remove(item);
-
-    String prefKey = '';
-    if (controller == _supervisorNameController) {
-      prefKey = 'history_supervisor_name';
-    } else if (controller == _supervisorNipController) {
-      prefKey = 'history_supervisor_nip';
-    } else if (controller == _teacherNipController) {
-      prefKey = 'history_teacher_nip';
-    }
-
-    if (prefKey.isNotEmpty) {
-      await prefs.setStringList(prefKey, history);
-    }
-
-    if (history.isEmpty) {
-      _hideActiveOverlay();
-    } else {
-      if (_activeOverlayEntry != null) {
-        _activeOverlayEntry!.markNeedsBuild();
-      }
-    }
-    setState(() {});
   }
 
   void _applyPresetRange(String preset) {
@@ -641,8 +303,6 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       return;
     }
 
-    _saveToHistory();
-
     final selectedClassName = _selectedClassId != null
         ? classes
               .firstWhere(
@@ -692,9 +352,6 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
               classes: classes,
               subjects: subjects,
               school: selectedSchool,
-              supervisorName: _supervisorNameController.text.trim(),
-              supervisorNip: _supervisorNipController.text.trim(),
-              teacherNip: _teacherNipController.text.trim(),
               statusFilter: _selectedStatus,
               selectedClassName: selectedClassName,
               selectedSubjectName: selectedSubjectName,
@@ -741,8 +398,6 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       return;
     }
 
-    _saveToHistory();
-
     final selectedClassName = _selectedClassId != null
         ? classes
               .firstWhere(
@@ -782,9 +437,6 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       classes: classes,
       subjects: subjects,
       school: selectedSchool,
-      supervisorName: _supervisorNameController.text.trim(),
-      supervisorNip: _supervisorNipController.text.trim(),
-      teacherNip: _teacherNipController.text.trim(),
       statusFilter: _selectedStatus,
       selectedClassName: selectedClassName,
       selectedSubjectName: selectedSubjectName,
@@ -1572,88 +1224,6 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                 ),
               ),
 
-              SizedBox(height: 16.h),
-
-              // Section 4: Informasi Penandatangan (Supervisor / Kepala Sekolah & Guru)
-              _buildSectionCard(
-                title: '4. Penandatangan laporan',
-                icon: Icons.draw_rounded,
-                child: Column(
-                  children: [
-                    CompositedTransformTarget(
-                      link: _supervisorNameLink,
-                      child: TextField(
-                        controller: _supervisorNameController,
-                        focusNode: _supervisorNameFocusNode,
-                        decoration: InputDecoration(
-                          labelText: 'Nama Supervisor',
-                          hintText: 'Misal: Dr. H. Ahmad Dahlan, M.Pd.',
-                          prefixIcon: const Icon(
-                            Icons.person_outline_rounded,
-                            size: 20,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12.w,
-                            vertical: 10.h,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.r),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 12.h),
-                    CompositedTransformTarget(
-                      link: _supervisorNipLink,
-                      child: TextField(
-                        controller: _supervisorNipController,
-                        focusNode: _supervisorNipFocusNode,
-                        decoration: InputDecoration(
-                          labelText: 'NIP / ID Supervisor',
-                          hintText: 'Misal: 19780512 200312 1 002',
-                          prefixIcon: const Icon(
-                            Icons.badge_outlined,
-                            size: 20,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12.w,
-                            vertical: 10.h,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.r),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 16.h),
-                    const Divider(height: 1, color: Color(0xFFE2E8F0)),
-                    SizedBox(height: 16.h),
-                    CompositedTransformTarget(
-                      link: _teacherNipLink,
-                      child: TextField(
-                        controller: _teacherNipController,
-                        focusNode: _teacherNipFocusNode,
-                        decoration: InputDecoration(
-                          labelText: 'NIP Guru Pengajar',
-                          hintText: 'Misal: 19850315 200904 2 003',
-                          prefixIcon: const Icon(
-                            Icons.badge_outlined,
-                            size: 20,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12.w,
-                            vertical: 10.h,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.r),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
               SizedBox(height: 20.h),
 
               // Summary Result Card
@@ -1887,76 +1457,6 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _HistoryItemRow extends StatefulWidget {
-  final String item;
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final VoidCallback onDelete;
-  final VoidCallback onSelected;
-
-  const _HistoryItemRow({
-    required this.item,
-    required this.controller,
-    required this.focusNode,
-    required this.onDelete,
-    required this.onSelected,
-  });
-
-  @override
-  State<_HistoryItemRow> createState() => _HistoryItemRowState();
-}
-
-class _HistoryItemRowState extends State<_HistoryItemRow> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: widget.onSelected,
-        child: Container(
-          width: double.infinity,
-          color: _isHovered ? const Color(0xFF334155) : Colors.transparent,
-          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
-          child: Row(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4.w),
-                  child: Text(
-                    widget.item,
-                    style: GoogleFonts.hankenGrotesk(
-                      color: Colors.white,
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 8.w),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: widget.onDelete,
-                child: Padding(
-                  padding: EdgeInsets.all(4.w),
-                  child: Icon(
-                    Icons.close_rounded,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    size: 16.sp,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
