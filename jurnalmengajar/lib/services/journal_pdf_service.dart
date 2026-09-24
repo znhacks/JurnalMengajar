@@ -691,6 +691,8 @@ class JournalPdfService {
         color: PdfColors.grey900,
       ),
       cellHeight: 20,
+      cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      headerPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 5),
       cellAlignments: {
         0: pw.Alignment.center,
         1: pw.Alignment.center,
@@ -704,12 +706,12 @@ class JournalPdfService {
       },
       columnWidths: {
         0: const pw.FixedColumnWidth(22), // No
-        1: const pw.FixedColumnWidth(55), // Tanggal
+        1: const pw.FixedColumnWidth(65), // Tanggal (cukup lebar untuk dd-MM-yyyy tanpa wrap)
         2: const pw.FixedColumnWidth(48), // Jam
         3: const pw.FixedColumnWidth(60), // Kelas
         4: const pw.FixedColumnWidth(85), // Mapel
         5: const pw.FlexColumnWidth(3), // Materi
-        6: const pw.FixedColumnWidth(70), // Absensi
+        6: const pw.FixedColumnWidth(65), // Absensi
         7: const pw.FlexColumnWidth(2), // Catatan
         8: const pw.FixedColumnWidth(55), // Status
       },
