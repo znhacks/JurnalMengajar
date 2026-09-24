@@ -1150,68 +1150,6 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Banner Card
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(18.w),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF4F46E5), Color(0xFF3730A3)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF4F46E5).withValues(alpha: 0.25),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(12.w),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.picture_as_pdf_rounded,
-                        color: Colors.white,
-                        size: 28.sp,
-                      ),
-                    ),
-                    SizedBox(width: 14.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Laporan Setor Supervisor',
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 4.h),
-                          Text(
-                            'Unduh laporan jurnal mengajar resmi dalam format PDF lengkap dengan tabel & kolom tanda tangan.',
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 11.5.sp,
-                              color: Colors.white.withValues(alpha: 0.85),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 20.h),
 
               // Section 1: Rentang Tanggal
               _buildSectionCard(
@@ -1413,9 +1351,108 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
               SizedBox(height: 16.h),
 
-              // Section 2: Filter Data
+              // Section 2: Identitas Sekolah Tempat Cetak Jurnal
               _buildSectionCard(
-                title: '2. Filter Status & Kelas',
+                title: '2. Identitas Sekolah Untuk Kop Dokumen',
+                icon: Icons.school_rounded,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      initialValue: _selectedSchoolId,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(
+                          Icons.account_balance_rounded,
+                          size: 20,
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 10.h,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                      ),
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 14.sp,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      items: () {
+                        final items = authProvider.userMemberships.map((m) {
+                          return DropdownMenuItem<String>(
+                            value: m.schoolId,
+                            child: Text(
+                              m.schoolName,
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 14.sp,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          );
+                        }).toList();
+
+                        final hasSelected = items.any(
+                          (item) => item.value == _selectedSchoolId,
+                        );
+                        if (!hasSelected && _selectedSchoolId != null) {
+                          items.add(
+                            DropdownMenuItem<String>(
+                              value: _selectedSchoolId,
+                              child: Text(
+                                _schoolNameController.text,
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 14.sp,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                        return items;
+                      }(),
+                      onChanged: (val) async {
+                        if (val != null) {
+                          String selectedName = _schoolNameController.text;
+                          for (final m in authProvider.userMemberships) {
+                            if (m.schoolId == val) {
+                              selectedName = m.schoolName;
+                              break;
+                            }
+                          }
+                          setState(() {
+                            _selectedSchoolId = val;
+                            _schoolNameController.text = selectedName;
+                            // Reset class and subject filters when school changes
+                            _selectedClassId = null;
+                            _selectedSubjectId = null;
+                          });
+
+                          // Load data for the selected school
+                          await masterProvider.loadAllData(val);
+                        }
+                      },
+                    ),
+                    SizedBox(height: 10.h),
+                    Text(
+                      'Kop dokumen PDF akan menggunakan format resmi instansi sesuai sekolah aktif guru.',
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 11.sp,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 16.h),
+
+              // Section 3: Filter Data
+              _buildSectionCard(
+                title: '3. Filter Status & Kelas',
                 icon: Icons.filter_alt_rounded,
                 child: Column(
                   children: [
@@ -1525,105 +1562,6 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       ],
                       onChanged: (val) =>
                           setState(() => _selectedSubjectId = val),
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 16.h),
-
-              // Section 3: Identitas Sekolah Tempat Cetak Jurnal
-              _buildSectionCard(
-                title: '3. Identitas Sekolah Untuk Kop Dokumen',
-                icon: Icons.school_rounded,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    DropdownButtonFormField<String>(
-                      initialValue: _selectedSchoolId,
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(
-                          Icons.account_balance_rounded,
-                          size: 20,
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 10.h,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.r),
-                        ),
-                      ),
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 14.sp,
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      items: () {
-                        final items = authProvider.userMemberships.map((m) {
-                          return DropdownMenuItem<String>(
-                            value: m.schoolId,
-                            child: Text(
-                              m.schoolName,
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 14.sp,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                          );
-                        }).toList();
-
-                        final hasSelected = items.any(
-                          (item) => item.value == _selectedSchoolId,
-                        );
-                        if (!hasSelected && _selectedSchoolId != null) {
-                          items.add(
-                            DropdownMenuItem<String>(
-                              value: _selectedSchoolId,
-                              child: Text(
-                                _schoolNameController.text,
-                                style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 14.sp,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface,
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-                        return items;
-                      }(),
-                      onChanged: (val) async {
-                        if (val != null) {
-                          String selectedName = _schoolNameController.text;
-                          for (final m in authProvider.userMemberships) {
-                            if (m.schoolId == val) {
-                              selectedName = m.schoolName;
-                              break;
-                            }
-                          }
-                          setState(() {
-                            _selectedSchoolId = val;
-                            _schoolNameController.text = selectedName;
-                            // Reset class and subject filters when school changes
-                            _selectedClassId = null;
-                            _selectedSubjectId = null;
-                          });
-
-                          // Load data for the selected school
-                          await masterProvider.loadAllData(val);
-                        }
-                      },
-                    ),
-                    SizedBox(height: 10.h),
-                    Text(
-                      'Kop dokumen PDF akan menggunakan format resmi instansi sesuai sekolah aktif guru.',
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 11.sp,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontStyle: FontStyle.italic,
-                      ),
                     ),
                   ],
                 ),
