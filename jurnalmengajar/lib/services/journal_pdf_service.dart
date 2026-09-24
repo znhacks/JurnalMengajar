@@ -41,10 +41,10 @@ class JournalPdfService {
 
     // Setup Indonesian Date Formatters
     final dateFormat = DateFormat('dd/MM/yyyy');
+    final periodDateFormat = DateFormat('dd-MM-yyyy');
     final fullDateFormat = DateFormat('d MMMM yyyy', 'id_ID');
     final printDateStr = fullDateFormat.format(DateTime.now());
-    final periodStr =
-        '${dateFormat.format(startDate)} s/d ${dateFormat.format(endDate)}';
+    final periodStr = '${periodDateFormat.format(startDate)} - ${periodDateFormat.format(endDate)}';
 
     // Map helpers for quick lookups
     final classMap = {for (var c in classes) c.id: c.name};
@@ -52,23 +52,20 @@ class JournalPdfService {
 
     // Calculate Summary Statistics
     final totalJournals = journals.length;
-    final verifiedCount = journals
-        .where((j) => j.status == 'verified' || j.status == 'approved')
-        .length;
+    final verifiedCount = journals.where((j) => j.status == 'verified' || j.status == 'approved').length;
     final pendingCount = journals.where((j) => j.status == 'pending').length;
     final totalSick = journals.fold<int>(0, (sum, j) => sum + j.sickCount);
-    final totalPermission = journals.fold<int>(
-      0,
-      (sum, j) => sum + j.permissionCount,
-    );
+    final totalPermission = journals.fold<int>(0, (sum, j) => sum + j.permissionCount);
     final totalAlpha = journals.fold<int>(0, (sum, j) => sum + j.alphaCount);
 
     // Font setup using Printing Google Fonts for clean Indonesian typography
     final ttfRegular = await PdfGoogleFonts.interRegular();
     final ttfBold = await PdfGoogleFonts.interBold();
-    final ttfMedium = await PdfGoogleFonts.interMedium();
 
-    final theme = pw.ThemeData.withFont(base: ttfRegular, bold: ttfBold);
+    final theme = pw.ThemeData.withFont(
+      base: ttfRegular,
+      bold: ttfBold,
+    );
 
     // Add Page to Document (Landscape mode for spacious table columns)
     pdf.addPage(
@@ -87,8 +84,10 @@ class JournalPdfService {
           totalPages: context.pagesCount,
           logoImage: logoImage,
         ),
-        footer: (pw.Context context) =>
-            _buildFooter(context: context, ttfRegular: ttfRegular),
+        footer: (pw.Context context) => _buildFooter(
+          context: context,
+          ttfRegular: ttfRegular,
+        ),
         build: (pw.Context context) {
           return [
             pw.SizedBox(height: 8),
@@ -96,7 +95,7 @@ class JournalPdfService {
             // Document Title
             pw.Center(
               child: pw.Text(
-                'LAPORAN JURNAL',
+                'LAPORAN JURNAL MENGAJAR GURU',
                 style: pw.TextStyle(
                   font: ttfBold,
                   fontSize: 12,
@@ -114,20 +113,6 @@ class JournalPdfService {
                   color: PdfColors.grey800,
                 ),
               ),
-            ),
-
-            pw.SizedBox(height: 10),
-
-            // Teacher Metadata Box & Filter Badges
-            _buildTeacherInfoBox(
-              teacher: teacher,
-              printDateStr: printDateStr,
-              selectedClassName: selectedClassName,
-              selectedSubjectName: selectedSubjectName,
-              statusFilter: statusFilter,
-              ttfBold: ttfBold,
-              ttfRegular: ttfRegular,
-              ttfMedium: ttfMedium,
             ),
 
             pw.SizedBox(height: 12),
@@ -208,14 +193,10 @@ class JournalPdfService {
     required int totalPages,
     pw.ImageProvider? logoImage,
   }) {
-    final gov =
-        (school?.governmentHeader != null &&
-            school!.governmentHeader!.isNotEmpty)
+    final gov = (school?.governmentHeader != null && school!.governmentHeader!.isNotEmpty)
         ? school.governmentHeader!
         : '';
-    final dept =
-        (school?.departmentHeader != null &&
-            school!.departmentHeader!.isNotEmpty)
+    final dept = (school?.departmentHeader != null && school!.departmentHeader!.isNotEmpty)
         ? school.departmentHeader!
         : '';
     final sName = (school?.name != null && school!.name.isNotEmpty)
@@ -224,36 +205,20 @@ class JournalPdfService {
     final addr = (school?.address != null && school!.address!.isNotEmpty)
         ? school.address!
         : '-';
-    final postCode =
-        (school?.postalCode != null && school!.postalCode!.isNotEmpty)
+    final postCode = (school?.postalCode != null && school!.postalCode!.isNotEmpty)
         ? school.postalCode!
         : '-';
     final phone = (school?.phone != null && school!.phone!.isNotEmpty)
         ? school.phone!
         : '-';
-
+    
     // Website & Email Sanitization & Validation - Conditionally rendered
     final List<pw.Widget> webEmailRowChildren = [];
     final website = school?.website;
     if (website != null && website.isNotEmpty) {
       webEmailRowChildren.addAll([
-        pw.Text(
-          'Website: ',
-          style: pw.TextStyle(
-            font: ttfRegular,
-            fontSize: 8,
-            color: PdfColors.black,
-          ),
-        ),
-        pw.Text(
-          website,
-          style: pw.TextStyle(
-            font: ttfRegular,
-            fontSize: 8,
-            color: PdfColors.blue900,
-            decoration: pw.TextDecoration.underline,
-          ),
-        ),
+        pw.Text('Website: ', style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.black)),
+        pw.Text(website, style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.blue900, decoration: pw.TextDecoration.underline)),
       ]);
     }
     final email = school?.email;
@@ -262,32 +227,13 @@ class JournalPdfService {
         webEmailRowChildren.add(pw.SizedBox(width: 10));
       }
       webEmailRowChildren.addAll([
-        pw.Text(
-          'Email: ',
-          style: pw.TextStyle(
-            font: ttfRegular,
-            fontSize: 8,
-            color: PdfColors.black,
-          ),
-        ),
-        pw.Text(
-          email,
-          style: pw.TextStyle(
-            font: ttfRegular,
-            fontSize: 8,
-            color: PdfColors.blue900,
-            decoration: pw.TextDecoration.underline,
-          ),
-        ),
+        pw.Text('Email: ', style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.black)),
+        pw.Text(email, style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.blue900, decoration: pw.TextDecoration.underline)),
       ]);
     }
 
-    final nss = (school?.nss != null && school!.nss!.isNotEmpty)
-        ? school.nss!
-        : '-';
-    final npsn = (school?.npsn != null && school!.npsn!.isNotEmpty)
-        ? school.npsn!
-        : '-';
+    final nss = (school?.nss != null && school!.nss!.isNotEmpty) ? school.nss! : '-';
+    final npsn = (school?.npsn != null && school!.npsn!.isNotEmpty) ? school.npsn! : '-';
 
     return pw.Column(
       children: [
@@ -319,11 +265,7 @@ class JournalPdfService {
                   child: pw.Text(
                     'LOGO',
                     textAlign: pw.TextAlign.center,
-                    style: pw.TextStyle(
-                      font: ttfBold,
-                      fontSize: 10,
-                      color: PdfColors.black,
-                    ),
+                    style: pw.TextStyle(font: ttfBold, fontSize: 10, color: PdfColors.black),
                   ),
                 ),
               ),
@@ -337,40 +279,21 @@ class JournalPdfService {
                   if (gov.isNotEmpty)
                     pw.Text(
                       gov.toUpperCase(),
-                      style: pw.TextStyle(
-                        font: ttfBold,
-                        fontSize: 11,
-                        letterSpacing: 0.5,
-                        color: PdfColors.black,
-                      ),
+                      style: pw.TextStyle(font: ttfBold, fontSize: 11, letterSpacing: 0.5, color: PdfColors.black),
                     ),
                   if (dept.isNotEmpty)
                     pw.Text(
                       dept.toUpperCase(),
-                      style: pw.TextStyle(
-                        font: ttfBold,
-                        fontSize: 12,
-                        letterSpacing: 0.5,
-                        color: PdfColors.black,
-                      ),
+                      style: pw.TextStyle(font: ttfBold, fontSize: 12, letterSpacing: 0.5, color: PdfColors.black),
                     ),
                   pw.Text(
                     sName.toUpperCase(),
-                    style: pw.TextStyle(
-                      font: ttfBold,
-                      fontSize: 14,
-                      letterSpacing: 0.8,
-                      color: PdfColors.black,
-                    ),
+                    style: pw.TextStyle(font: ttfBold, fontSize: 14, letterSpacing: 0.8, color: PdfColors.black),
                   ),
                   pw.SizedBox(height: 2),
                   pw.Text(
                     '$addr Kode Pos: $postCode Telp. $phone',
-                    style: pw.TextStyle(
-                      font: ttfRegular,
-                      fontSize: 8,
-                      color: PdfColors.black,
-                    ),
+                    style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.black),
                     textAlign: pw.TextAlign.center,
                   ),
                   if (webEmailRowChildren.isNotEmpty) ...[
@@ -384,23 +307,9 @@ class JournalPdfService {
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.center,
                     children: [
-                      pw.Text(
-                        'NSS: $nss',
-                        style: pw.TextStyle(
-                          font: ttfRegular,
-                          fontSize: 8,
-                          color: PdfColors.black,
-                        ),
-                      ),
+                      pw.Text('NSS: $nss', style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.black)),
                       pw.SizedBox(width: 40),
-                      pw.Text(
-                        'NPSN: $npsn',
-                        style: pw.TextStyle(
-                          font: ttfRegular,
-                          fontSize: 8,
-                          color: PdfColors.black,
-                        ),
-                      ),
+                      pw.Text('NPSN: $npsn', style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.black)),
                     ],
                   ),
                 ],
@@ -414,11 +323,7 @@ class JournalPdfService {
               alignment: pw.Alignment.topRight,
               child: pw.Text(
                 'Hal. $pageNumber/$totalPages',
-                style: pw.TextStyle(
-                  font: ttfRegular,
-                  fontSize: 8,
-                  color: PdfColors.grey700,
-                ),
+                style: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.grey700),
               ),
             ),
           ],
@@ -426,9 +331,15 @@ class JournalPdfService {
         pw.SizedBox(height: 6),
 
         // Double Horizontal Line (Kop Divider line - 1 thick line, 1 thin line)
-        pw.Container(height: 2.2, color: PdfColors.black),
+        pw.Container(
+          height: 2.2,
+          color: PdfColors.black,
+        ),
         pw.SizedBox(height: 1.2),
-        pw.Container(height: 0.7, color: PdfColors.black),
+        pw.Container(
+          height: 0.7,
+          color: PdfColors.black,
+        ),
       ],
     );
   }
@@ -475,40 +386,14 @@ class JournalPdfService {
         children: [
           pw.Row(
             children: [
-              pw.Text(
-                'Nama Guru : ',
-                style: pw.TextStyle(font: ttfBold, fontSize: 9),
-              ),
-              pw.Text(
-                teacher.name.isNotEmpty ? teacher.name : 'Guru Pengajar',
-                style: pw.TextStyle(font: ttfRegular, fontSize: 9),
-              ),
+              pw.Text('Nama Guru : ', style: pw.TextStyle(font: ttfBold, fontSize: 9)),
+              pw.Text(teacher.name.isNotEmpty ? teacher.name : 'Guru Pengajar', style: pw.TextStyle(font: ttfRegular, fontSize: 9)),
             ],
           ),
           pw.Row(
             children: [
-              pw.Text(
-                'Jabatan / Posisi : ',
-                style: pw.TextStyle(font: ttfBold, fontSize: 9),
-              ),
-              pw.Text(
-                teacher.position.isNotEmpty
-                    ? teacher.position
-                    : 'Guru Mata Pelajaran',
-                style: pw.TextStyle(font: ttfRegular, fontSize: 9),
-              ),
-            ],
-          ),
-          pw.Row(
-            children: [
-              pw.Text(
-                'Email / Kontak : ',
-                style: pw.TextStyle(font: ttfBold, fontSize: 9),
-              ),
-              pw.Text(
-                teacher.email.isNotEmpty ? teacher.email : '-',
-                style: pw.TextStyle(font: ttfRegular, fontSize: 9),
-              ),
+              pw.Text('Guru Mapel : ', style: pw.TextStyle(font: ttfBold, fontSize: 9)),
+              pw.Text(teacher.position.isNotEmpty ? teacher.position : 'Guru Mapel', style: pw.TextStyle(font: ttfRegular, fontSize: 9)),
             ],
           ),
         ],
@@ -529,53 +414,17 @@ class JournalPdfService {
   }) {
     return pw.Row(
       children: [
-        _buildStatCard(
-          'Total Jurnal',
-          '$totalJournals',
-          PdfColors.blue800,
-          ttfBold,
-          ttfRegular,
-        ),
+        _buildStatCard('Total Jurnal', '$totalJournals', PdfColors.blue800, ttfBold, ttfRegular),
         pw.SizedBox(width: 8),
-        _buildStatCard(
-          'Terverifikasi',
-          '$verifiedCount',
-          PdfColors.green800,
-          ttfBold,
-          ttfRegular,
-        ),
+        _buildStatCard('Terverifikasi', '$verifiedCount', PdfColors.green800, ttfBold, ttfRegular),
         pw.SizedBox(width: 8),
-        _buildStatCard(
-          'Menunggu',
-          '$pendingCount',
-          PdfColors.orange800,
-          ttfBold,
-          ttfRegular,
-        ),
+        _buildStatCard('Menunggu', '$pendingCount', PdfColors.orange800, ttfBold, ttfRegular),
         pw.SizedBox(width: 8),
-        _buildStatCard(
-          'Sakit (S)',
-          '$totalSick',
-          PdfColors.purple800,
-          ttfBold,
-          ttfRegular,
-        ),
+        _buildStatCard('Sakit (S)', '$totalSick', PdfColors.purple800, ttfBold, ttfRegular),
         pw.SizedBox(width: 8),
-        _buildStatCard(
-          'Izin (I)',
-          '$totalPermission',
-          PdfColors.amber900,
-          ttfBold,
-          ttfRegular,
-        ),
+        _buildStatCard('Izin (I)', '$totalPermission', PdfColors.amber900, ttfBold, ttfRegular),
         pw.SizedBox(width: 8),
-        _buildStatCard(
-          'Alpha (A)',
-          '$totalAlpha',
-          PdfColors.red800,
-          ttfBold,
-          ttfRegular,
-        ),
+        _buildStatCard('Alpha (A)', '$totalAlpha', PdfColors.red800, ttfBold, ttfRegular),
       ],
     );
   }
@@ -605,11 +454,7 @@ class JournalPdfService {
             pw.SizedBox(height: 1),
             pw.Text(
               label,
-              style: pw.TextStyle(
-                font: ttfRegular,
-                fontSize: 7.5,
-                color: PdfColors.grey700,
-              ),
+              style: pw.TextStyle(font: ttfRegular, fontSize: 7.5, color: PdfColors.grey700),
             ),
           ],
         ),
@@ -645,8 +490,7 @@ class JournalPdfService {
       final className = classMap[j.classId] ?? j.classId;
       final subjectName = subjectMap[j.subjectId] ?? j.subjectId;
       final dateStr = dateFormat.format(j.date);
-      final attendanceStr =
-          'S:${j.sickCount} | I:${j.permissionCount} | A:${j.alphaCount}';
+      final attendanceStr = 'S:${j.sickCount} | I:${j.permissionCount} | A:${j.alphaCount}';
 
       String statusText = 'Pending';
       if (j.status == 'verified' || j.status == 'approved') {
@@ -656,20 +500,16 @@ class JournalPdfService {
       }
 
       // Find matching schedules on the same day, class, subject, and teacher to build hour range
-      final matching = schedules
-          .where(
-            (s) =>
-                s.date.year == j.date.year &&
-                s.date.month == j.date.month &&
-                s.date.day == j.date.day &&
-                s.classId == j.classId &&
-                s.subjectId == j.subjectId &&
-                s.teacherId == j.teacherId,
-          )
-          .toList();
+      final matching = schedules.where((s) =>
+          s.date.year == j.date.year &&
+          s.date.month == j.date.month &&
+          s.date.day == j.date.day &&
+          s.classId == j.classId &&
+          s.subjectId == j.subjectId &&
+          s.teacherId == j.teacherId
+      ).toList();
 
-      final hours = matching.map((s) => s.teachingHour).toSet().toList()
-        ..sort();
+      final hours = matching.map((s) => s.teachingHour).toSet().toList()..sort();
       final String hourText;
       if (hours.isEmpty) {
         hourText = 'Ke-${j.teachingHour}';
@@ -696,17 +536,9 @@ class JournalPdfService {
       headers: headers,
       data: data,
       border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
-      headerStyle: pw.TextStyle(
-        font: ttfBold,
-        fontSize: 8.5,
-        color: PdfColors.white,
-      ),
+      headerStyle: pw.TextStyle(font: ttfBold, fontSize: 8.5, color: PdfColors.white),
       headerDecoration: const pw.BoxDecoration(color: PdfColors.indigo800),
-      cellStyle: pw.TextStyle(
-        font: ttfRegular,
-        fontSize: 8,
-        color: PdfColors.grey900,
-      ),
+      cellStyle: pw.TextStyle(font: ttfRegular, fontSize: 8, color: PdfColors.grey900),
       cellHeight: 20,
       cellAlignments: {
         0: pw.Alignment.center,
@@ -720,15 +552,15 @@ class JournalPdfService {
         8: pw.Alignment.center,
       },
       columnWidths: {
-        0: const pw.FixedColumnWidth(22), // No
-        1: const pw.FixedColumnWidth(55), // Tanggal
-        2: const pw.FixedColumnWidth(48), // Jam
-        3: const pw.FixedColumnWidth(60), // Kelas
-        4: const pw.FixedColumnWidth(85), // Mapel
-        5: const pw.FlexColumnWidth(3), // Materi
-        6: const pw.FixedColumnWidth(70), // Absensi
-        7: const pw.FlexColumnWidth(2), // Catatan
-        8: const pw.FixedColumnWidth(55), // Status
+        0: const pw.FixedColumnWidth(22),  // No
+        1: const pw.FixedColumnWidth(55),  // Tanggal
+        2: const pw.FixedColumnWidth(48),  // Jam
+        3: const pw.FixedColumnWidth(60),  // Kelas
+        4: const pw.FixedColumnWidth(85),  // Mapel
+        5: const pw.FlexColumnWidth(3),    // Materi
+        6: const pw.FixedColumnWidth(70),  // Absensi
+        7: const pw.FlexColumnWidth(2),    // Catatan
+        8: const pw.FixedColumnWidth(55),  // Status
       },
     );
   }
@@ -767,8 +599,7 @@ class JournalPdfService {
                 style: pw.TextStyle(
                   font: ttfBold,
                   fontSize: 9.5,
-                  decoration:
-                      (supervisorName != null && supervisorName.isNotEmpty)
+                  decoration: (supervisorName != null && supervisorName.isNotEmpty)
                       ? pw.TextDecoration.underline
                       : null,
                 ),
@@ -798,11 +629,7 @@ class JournalPdfService {
               pw.SizedBox(height: 45), // Space for physical signature
               pw.Text(
                 teacher.name.isNotEmpty ? teacher.name : '( Nama Guru )',
-                style: pw.TextStyle(
-                  font: ttfBold,
-                  fontSize: 9.5,
-                  decoration: pw.TextDecoration.underline,
-                ),
+                style: pw.TextStyle(font: ttfBold, fontSize: 9.5, decoration: pw.TextDecoration.underline),
               ),
               pw.SizedBox(height: 2),
               pw.Text(
