@@ -325,6 +325,18 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                       ),
                       textAlign: TextAlign.center,
                     ),
+                    if (teacher.nip != null && teacher.nip!.isNotEmpty) ...[
+                      SizedBox(height: 2.h),
+                      Text(
+                        'NIP. ${teacher.nip}',
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 11.sp,
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                     Divider(
                       height: 16,
                       color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),

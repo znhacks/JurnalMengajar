@@ -6,6 +6,7 @@ class TeacherModel {
   final String phoneNumber;
   final String email;
   final String? photoUrl;
+  final String? nip;
 
   TeacherModel({
     required this.id,
@@ -15,6 +16,7 @@ class TeacherModel {
     required this.phoneNumber,
     required this.email,
     this.photoUrl,
+    this.nip,
   });
 
   factory TeacherModel.fromJson(Map<String, dynamic> json) {
@@ -47,6 +49,7 @@ class TeacherModel {
           '',
       email: json['email']?.toString() ?? '',
       photoUrl: json['photoUrl']?.toString() ?? json['photo_url']?.toString(),
+      nip: json['nip']?.toString(),
     );
   }
 
@@ -59,6 +62,7 @@ class TeacherModel {
       'phoneNumber': phoneNumber,
       'email': email,
       'photoUrl': photoUrl,
+      'nip': nip,
     };
   }
 
@@ -70,6 +74,8 @@ class TeacherModel {
     String? phoneNumber,
     String? email,
     String? photoUrl,
+    String? nip,
+    bool clearNip = false,
   }) {
     return TeacherModel(
       id: id ?? this.id,
@@ -79,6 +85,7 @@ class TeacherModel {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,
       photoUrl: photoUrl ?? this.photoUrl,
+      nip: clearNip ? null : (nip ?? this.nip),
     );
   }
 }

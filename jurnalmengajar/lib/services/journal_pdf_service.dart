@@ -745,7 +745,9 @@ class JournalPdfService {
               pw.Text(
                 (teacherNip != null && teacherNip.isNotEmpty)
                     ? 'NIP. $teacherNip'
-                    : 'NIP. ........................................',
+                    : ((teacher.nip != null && teacher.nip!.isNotEmpty)
+                        ? 'NIP. ${teacher.nip}'
+                        : 'NIP. ........................................'),
                 style: pw.TextStyle(font: ttfRegular, fontSize: 8.5),
               ),
             ],

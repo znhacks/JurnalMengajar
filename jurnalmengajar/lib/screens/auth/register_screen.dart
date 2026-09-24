@@ -30,10 +30,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   final _schoolCodeController = TextEditingController();
   final _schoolNameController = TextEditingController();
+  final _nipController = TextEditingController();
 
   final _schoolCodeFocusNode = FocusNode();
   final _schoolNameFocusNode = FocusNode();
   final _fullNameFocusNode = FocusNode();
+  final _nipFocusNode = FocusNode();
   final _phoneNumberFocusNode = FocusNode();
   final _addressFocusNode = FocusNode();
   final _emailFocusNode = FocusNode();
@@ -67,10 +69,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _confirmPasswordController.dispose();
     _schoolCodeController.dispose();
     _schoolNameController.dispose();
+    _nipController.dispose();
 
     _schoolCodeFocusNode.dispose();
     _schoolNameFocusNode.dispose();
     _fullNameFocusNode.dispose();
+    _nipFocusNode.dispose();
     _phoneNumberFocusNode.dispose();
     _addressFocusNode.dispose();
     _emailFocusNode.dispose();
@@ -215,6 +219,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         photoUrl: null,
         schoolName: schoolName,
         schoolId: schoolId,
+        nip: isTeacherRegister
+            ? (_nipController.text.trim().isEmpty ? null : _nipController.text.trim())
+            : null,
       );
 
       if (success && mounted) {
@@ -855,7 +862,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                _buildTextField(
                                  controller: _fullNameController,
                                  focusNode: _fullNameFocusNode,
-                                 nextFocusNode: _phoneNumberFocusNode,
+                                 nextFocusNode: _registerType == 'guru' ? _nipFocusNode : _phoneNumberFocusNode,
                                  hintText: 'Nama lengkap beserta gelar',
                                  icon: Icons.person_outline,
                                  validator: (value) {
@@ -866,6 +873,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                  },
                                ),
                                SizedBox(height: 16.h),
+
+                               // NIP (khusus guru)
+                               if (_registerType == 'guru') ...[
+                                 _buildFieldLabel('NIP (NOMOR INDUK PEGAWAI)'),
+                                 _buildTextField(
+                                   controller: _nipController,
+                                   focusNode: _nipFocusNode,
+                                   nextFocusNode: _phoneNumberFocusNode,
+                                   hintText: 'Contoh: 198507202010011005 (Kosongkan jika belum ada)',
+                                   icon: Icons.badge_outlined,
+                                   keyboardType: TextInputType.number,
+                                   validator: (value) => null,
+                                 ),
+                                 SizedBox(height: 16.h),
+                               ],
 
                                // Jabatan (khusus guru)
                                if (_registerType == 'guru') ...[

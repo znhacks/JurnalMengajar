@@ -33,6 +33,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
 
   void _showEditProfileDialog(UserModel user) {
     final nameController = TextEditingController(text: user.fullName);
+    final nipController = TextEditingController(text: user.nip ?? '');
     final emailController = TextEditingController(text: user.email);
     final posController = TextEditingController(
       text: user.position ?? 'Administrator',
@@ -252,6 +253,17 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   ),
                   SizedBox(height: 16.h),
                   TextField(
+                    controller: nipController,
+                    enabled: !isSaving,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'NIP (Nomor Induk Pegawai)',
+                      hintText: 'Masukkan NIP (kosongkan jika belum ada)',
+                      prefixIcon: Icon(Icons.badge_outlined),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  TextField(
                     controller: emailController,
                     enabled: !isSaving,
                     keyboardType: TextInputType.emailAddress,
@@ -363,6 +375,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
 
                             final updatedUser = user.copyWith(
                               fullName: nameController.text.trim(),
+                              nip: nipController.text.trim().isEmpty
+                                  ? null
+                                  : nipController.text.trim(),
+                              clearNip: nipController.text.trim().isEmpty,
                               position: posController.text.trim(),
                               phoneNumber: phoneController.text.trim(),
                               address: addrController.text.trim(),
@@ -840,6 +856,15 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                           'Jabatan / Posisi',
                           currentUser.position ?? 'Administrator',
                         ),
+                        if (currentUser.nip != null && currentUser.nip!.isNotEmpty) ...[
+                          Divider(height: 1, color: dividerColor),
+                          _buildProfileDetailItem(
+                            context,
+                            Icons.assignment_ind_outlined,
+                            'NIP',
+                            currentUser.nip!,
+                          ),
+                        ],
                         Divider(height: 1, color: dividerColor),
                         _buildProfileDetailItem(
                           context,

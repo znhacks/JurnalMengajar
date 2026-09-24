@@ -361,6 +361,7 @@ class SupabaseAuthRepository implements AuthRepository {
           'school': canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
           'school_id': schoolId.isNotEmpty ? schoolId : null,
           'schoolId': schoolId.isNotEmpty ? schoolId : null,
+          'nip': user.nip,
         },
       );
 
@@ -396,6 +397,7 @@ class SupabaseAuthRepository implements AuthRepository {
           await _supabase.from('users').update({
             'school_id': schoolId,
             'school_name': canonicalSchoolName,
+            if (user.nip != null && user.nip!.isNotEmpty) 'nip': user.nip,
           }).eq('id', userId);
 
           // Connect user to school in user_schools table
@@ -488,6 +490,7 @@ class SupabaseAuthRepository implements AuthRepository {
         'position': user.position,
         'address': user.address,
         'photo_url': validPhotoUrl,
+        'nip': user.nip,
       };
 
       if (user.schoolName != null && user.schoolName!.isNotEmpty) {

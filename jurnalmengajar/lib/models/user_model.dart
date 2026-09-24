@@ -14,6 +14,7 @@ class UserModel {
   final List<String> schoolIds;
   final String? status; // 'active' | 'pending' | 'inactive' | 'requested_exit'
   final String? membershipRole; // role assigned within active school membership
+  final String? nip;
 
   bool get isPending =>
       (status != null && status!.toLowerCase() == 'pending') ||
@@ -39,6 +40,7 @@ class UserModel {
     this.schoolIds = const [],
     this.status,
     this.membershipRole,
+    this.nip,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -74,6 +76,7 @@ class UserModel {
       schoolIds: allSchoolIds,
       status: json['status']?.toString() ?? json['membership_status']?.toString(),
       membershipRole: json['membership_role']?.toString() ?? json['membershipRole']?.toString(),
+      nip: json['nip']?.toString(),
     );
   }
 
@@ -91,6 +94,9 @@ class UserModel {
       'school_name': schoolName,
       'school_ids': schoolIds,
     };
+    if (nip != null && nip!.isNotEmpty) {
+      map['nip'] = nip;
+    }
     if (schoolId != null && schoolId!.isNotEmpty) {
       map['school_id'] = schoolId;
     }
@@ -124,6 +130,8 @@ class UserModel {
     List<String>? schoolIds,
     String? status,
     String? membershipRole,
+    String? nip,
+    bool clearNip = false,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -139,6 +147,7 @@ class UserModel {
       schoolIds: schoolIds ?? this.schoolIds,
       status: status ?? this.status,
       membershipRole: membershipRole ?? this.membershipRole,
+      nip: clearNip ? null : (nip ?? this.nip),
     );
   }
 }

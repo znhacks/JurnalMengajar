@@ -79,6 +79,7 @@ class MockAuthRepository implements AuthRepository {
         phoneNumber: newUser.phoneNumber ?? 'Belum Diisi',
         email: newUser.email,
         photoUrl: newUser.photoUrl,
+        nip: newUser.nip,
       );
       _db.teachers.add(newTeacher);
     }

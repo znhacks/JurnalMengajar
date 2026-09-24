@@ -216,6 +216,7 @@ class SupabaseTeacherRepository implements TeacherRepository {
             'address': model.address,
             'phone': model.phoneNumber,
             'photo_url': model.photoUrl,
+            'nip': model.nip,
           })
           .eq('id', model.id);
     } catch (e) {

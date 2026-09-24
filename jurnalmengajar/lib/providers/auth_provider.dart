@@ -1179,6 +1179,7 @@ class AuthProvider with ChangeNotifier {
     String? photoUrl,
     String? schoolName,
     String? schoolId,
+    String? nip,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -1195,6 +1196,7 @@ class AuthProvider with ChangeNotifier {
         photoUrl: photoUrl,
         schoolName: schoolName,
         schoolId: schoolId,
+        nip: nip,
       );
       await authRepository.register(user, password);
       _isLoading = false;

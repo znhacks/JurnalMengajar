@@ -609,6 +609,8 @@ class MasterDataProvider with ChangeNotifier {
     if (index != -1) {
       _teachers[index] = _teachers[index].copyWith(
         name: user.fullName,
+        nip: user.nip,
+        clearNip: user.nip == null || user.nip!.isEmpty,
         position: user.position ?? _teachers[index].position,
         address: user.address ?? _teachers[index].address,
         phoneNumber: user.phoneNumber ?? _teachers[index].phoneNumber,

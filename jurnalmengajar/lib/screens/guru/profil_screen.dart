@@ -168,6 +168,11 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
   void _showEditProfileDialog(UserModel user, TeacherModel teacher) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final nameController = TextEditingController(text: user.fullName);
+    final nipController = TextEditingController(
+      text: (user.nip != null && user.nip!.isNotEmpty)
+          ? user.nip
+          : (teacher.nip ?? ''),
+    );
     final emailController = TextEditingController(text: user.email);
     final posController = TextEditingController(
       text: user.position ?? teacher.position,
@@ -386,6 +391,17 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   ),
                   SizedBox(height: 16.h),
                   TextField(
+                    controller: nipController,
+                    enabled: !isSaving,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'NIP (Nomor Induk Pegawai)',
+                      hintText: 'Masukkan NIP (kosongkan jika belum ada)',
+                      prefixIcon: Icon(Icons.badge_outlined),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  TextField(
                     controller: emailController,
                     enabled: !isSaving,
                     keyboardType: TextInputType.emailAddress,
@@ -533,6 +549,10 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
 
                             final updatedUser = user.copyWith(
                               fullName: nameController.text.trim(),
+                              nip: nipController.text.trim().isEmpty
+                                  ? null
+                                  : nipController.text.trim(),
+                              clearNip: nipController.text.trim().isEmpty,
                               position: posController.text.trim(),
                               phoneNumber: phoneController.text.trim(),
                               address: addrController.text.trim(),
@@ -1255,6 +1275,18 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                          if ((currentUser.nip != null && currentUser.nip!.isNotEmpty) ||
+                              (teacher.nip != null && teacher.nip!.isNotEmpty)) ...[
+                            SizedBox(height: 2.h),
+                            Text(
+                              'NIP. ${(currentUser.nip != null && currentUser.nip!.isNotEmpty) ? currentUser.nip : teacher.nip}',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: Colors.white.withValues(alpha: 0.9),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                           SizedBox(height: 6.h),
                           Container(
                             padding: EdgeInsets.symmetric(
@@ -1820,6 +1852,16 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                           Icons.badge_outlined,
                           'Jabatan',
                           teacher.position.isNotEmpty ? teacher.position : (currentUser.position ?? 'Guru'),
+                        ),
+                        Divider(height: 1, color: dividerColor),
+                        _buildProfileDetailItem(
+                          Icons.assignment_ind_outlined,
+                          'NIP',
+                          (currentUser.nip != null && currentUser.nip!.isNotEmpty)
+                              ? currentUser.nip!
+                              : ((teacher.nip != null && teacher.nip!.isNotEmpty)
+                                  ? teacher.nip!
+                                  : 'Belum Diisi'),
                         ),
                         Divider(height: 1, color: dividerColor),
                         _buildProfileDetailItem(
