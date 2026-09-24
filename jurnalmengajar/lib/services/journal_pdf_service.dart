@@ -169,8 +169,12 @@ class JournalPdfService {
             _buildSignatureBlock(
               teacher: teacher,
               teacherNip: teacherNip,
-              supervisorName: supervisorName,
-              supervisorNip: supervisorNip,
+              supervisorName: (supervisorName != null && supervisorName.isNotEmpty)
+                  ? supervisorName
+                  : (school?.supervisorName ?? school?.headmasterName),
+              supervisorNip: (supervisorNip != null && supervisorNip.isNotEmpty)
+                  ? supervisorNip
+                  : (school?.supervisorNip ?? school?.headmasterNip),
               printDateStr: printDateStr,
               ttfBold: ttfBold,
               ttfRegular: ttfRegular,

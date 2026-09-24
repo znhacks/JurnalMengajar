@@ -17,6 +17,11 @@ class SchoolModel {
   final String? activationCode;
   final int maxTeachers;
   final DateTime? subscriptionUntil;
+  final String? supervisorName;
+  final String? supervisorNip;
+
+  String? get headmasterName => supervisorName;
+  String? get headmasterNip => supervisorNip;
 
   SchoolModel({
     required this.id,
@@ -37,6 +42,8 @@ class SchoolModel {
     this.activationCode,
     this.maxTeachers = 30,
     this.subscriptionUntil,
+    this.supervisorName,
+    this.supervisorNip,
   });
 
   bool get isActive => status.toLowerCase() == 'active';
@@ -90,6 +97,8 @@ class SchoolModel {
       activationCode: json['code'] as String? ?? json['activation_code'] as String? ?? json['activationCode'] as String?,
       maxTeachers: json['max_teachers'] as int? ?? defaultMax,
       subscriptionUntil: parsedSubscriptionUntil,
+      supervisorName: json['supervisor_name'] as String? ?? json['headmaster_name'] as String? ?? json['supervisorName'] as String?,
+      supervisorNip: json['supervisor_nip'] as String? ?? json['headmaster_nip'] as String? ?? json['supervisorNip'] as String?,
     );
   }
 
@@ -112,6 +121,10 @@ class SchoolModel {
       'subscription_plan': plan,
       'max_teachers': maxTeachers,
       'subscription_until': subscriptionUntil?.toIso8601String(),
+      'supervisor_name': supervisorName,
+      'supervisor_nip': supervisorNip,
+      'headmaster_name': supervisorName,
+      'headmaster_nip': supervisorNip,
     };
   }
 
@@ -134,6 +147,9 @@ class SchoolModel {
     String? activationCode,
     int? maxTeachers,
     DateTime? subscriptionUntil,
+    String? supervisorName,
+    String? supervisorNip,
+    bool clearSupervisor = false,
   }) {
     return SchoolModel(
       id: id ?? this.id,
@@ -154,6 +170,8 @@ class SchoolModel {
       activationCode: activationCode ?? this.activationCode,
       maxTeachers: maxTeachers ?? this.maxTeachers,
       subscriptionUntil: subscriptionUntil ?? this.subscriptionUntil,
+      supervisorName: clearSupervisor ? null : (supervisorName ?? this.supervisorName),
+      supervisorNip: clearSupervisor ? null : (supervisorNip ?? this.supervisorNip),
     );
   }
 }

@@ -6,11 +6,13 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/school_model.dart';
+import '../../models/settings_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../core/utils/helper.dart';
+import '../../core/services/cache_service.dart';
 
 class AdminSettingsScreen extends StatefulWidget {
   const AdminSettingsScreen({super.key});
@@ -22,6 +24,11 @@ class AdminSettingsScreen extends StatefulWidget {
 class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _daysController = TextEditingController();
+
+  final _supervisorFormKey = GlobalKey<FormState>();
+  final _supervisorNameController = TextEditingController();
+  final _supervisorNipController = TextEditingController();
+  bool _isSavingSupervisor = false;
 
   final _noboxApiKeyController = TextEditingController();
   bool _obscureApiKey = true;
@@ -43,10 +50,29 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       context,
       listen: false,
     );
+    final authProvider = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    );
     await settingsProvider.loadSettings();
     if (settingsProvider.settings != null) {
       _daysController.text =
           '${settingsProvider.settings!.maxJournalInputDays}';
+      if (_supervisorNameController.text.isEmpty && settingsProvider.settings!.supervisorName != null) {
+        _supervisorNameController.text = settingsProvider.settings!.supervisorName!;
+      }
+      if (_supervisorNipController.text.isEmpty && settingsProvider.settings!.supervisorNip != null) {
+        _supervisorNipController.text = settingsProvider.settings!.supervisorNip!;
+      }
+    }
+    final activeSchool = authProvider.activeSchool;
+    if (activeSchool != null) {
+      if (activeSchool.supervisorName != null && activeSchool.supervisorName!.isNotEmpty) {
+        _supervisorNameController.text = activeSchool.supervisorName!;
+      }
+      if (activeSchool.supervisorNip != null && activeSchool.supervisorNip!.isNotEmpty) {
+        _supervisorNipController.text = activeSchool.supervisorNip!;
+      }
     }
   }
 
@@ -135,6 +161,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   void dispose() {
     _daysController.dispose();
     _noboxApiKeyController.dispose();
+    _supervisorNameController.dispose();
+    _supervisorNipController.dispose();
     super.dispose();
   }
 
@@ -171,6 +199,68 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             isError: true,
           );
         }
+      }
+    }
+  }
+
+  Future<void> _handleSaveSupervisor() async {
+    final name = _supervisorNameController.text.trim();
+    final nip = _supervisorNipController.text.trim();
+
+    setState(() {
+      _isSavingSupervisor = true;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+
+      final activeSchoolId = authProvider.activeSchoolId ?? authProvider.activeSchool?.id;
+
+      // 1. Save to settings table
+      final currentSettings = settingsProvider.settings ?? SettingsModel(id: 'default', maxJournalInputDays: 3);
+      final updatedSettings = currentSettings.copyWith(
+        supervisorName: name.isNotEmpty ? name : null,
+        supervisorNip: nip.isNotEmpty ? nip : null,
+        clearSupervisor: name.isEmpty && nip.isEmpty,
+      );
+      await settingsProvider.saveSettings(updatedSettings);
+
+      // 2. Update schools table if activeSchoolId exists
+      if (activeSchoolId != null && activeSchoolId.isNotEmpty) {
+        await Supabase.instance.client.from('schools').update({
+          'supervisor_name': name.isNotEmpty ? name : null,
+          'supervisor_nip': nip.isNotEmpty ? nip : null,
+          'headmaster_name': name.isNotEmpty ? name : null,
+          'headmaster_nip': nip.isNotEmpty ? nip : null,
+        }).eq('id', activeSchoolId);
+
+        // Invalidate cache and reload school details
+        await CacheService().remove('active_school_$activeSchoolId');
+        await authProvider.fetchActiveSchoolDetails();
+        await masterProvider.loadAllData(activeSchoolId);
+      }
+
+      if (mounted) {
+        AppHelper.showSnackBar(
+          context,
+          'Data Supervisor / Kepala Sekolah berhasil disimpan!',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AppHelper.showSnackBar(
+          context,
+          'Gagal menyimpan data supervisor: $e',
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingSupervisor = false;
+        });
       }
     }
   }
@@ -1059,7 +1149,140 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     ),
                     SizedBox(height: 20.h),
 
-                    // ─── 3. INTEGRASI NOTIFIKASI ORANG TUA (NOBOX.AI) ───────────────
+                    // ─── 3. PENGATURAN SUPERVISOR / KEPALA SEKOLAH ───────────────────
+                    Form(
+                      key: _supervisorFormKey,
+                      child: Card(
+                        margin: EdgeInsets.zero,
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18.r),
+                          side: BorderSide(
+                            color: Colors.grey.withValues(alpha: 0.25),
+                            width: 1,
+                          ),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(18.w),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(8.w),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(10.r),
+                                    ),
+                                    child: const Icon(
+                                      Icons.assignment_ind_rounded,
+                                      color: Color(0xFF0D9488),
+                                      size: 20,
+                                    ),
+                                  ),
+                                  SizedBox(width: 10.w),
+                                  Expanded(
+                                    child: Text(
+                                      'Supervisor / Kepala Sekolah',
+                                      style: GoogleFonts.hankenGrotesk(
+                                        fontSize: 15.5.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 10.h),
+                              Text(
+                                'Nama dan NIP Supervisor atau Kepala Sekolah yang akan otomatis tertera pada kolom tanda tangan lembar laporan cetak (PDF) jurnal mengajar guru.',
+                                style: TextStyle(
+                                  fontSize: 12.5.sp,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  height: 1.4,
+                                ),
+                              ),
+                              const Divider(height: 24),
+
+                              Text(
+                                'Nama Supervisor / Kepala Sekolah',
+                                style: TextStyle(
+                                  fontSize: 13.5.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 8.h),
+                              TextFormField(
+                                controller: _supervisorNameController,
+                                decoration: InputDecoration(
+                                  hintText: 'Contoh: Dr. H. Ahmad Dahlan, M.Pd.',
+                                  prefixIcon: const Icon(Icons.person_outline),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12.r),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 16.h),
+
+                              Text(
+                                'NIP Supervisor / Kepala Sekolah',
+                                style: TextStyle(
+                                  fontSize: 13.5.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 8.h),
+                              TextFormField(
+                                controller: _supervisorNipController,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  hintText: 'Contoh: 197508151999031002 (Kosongkan jika belum ada)',
+                                  prefixIcon: const Icon(Icons.badge_outlined),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12.r),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 18.h),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: (_isSavingSupervisor || isLoading) ? null : _handleSaveSupervisor,
+                                  icon: _isSavingSupervisor
+                                      ? SizedBox(
+                                          width: 18.w,
+                                          height: 18.w,
+                                          child: const CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Icon(Icons.save_rounded),
+                                  label: Text(
+                                    _isSavingSupervisor
+                                        ? 'Menyimpan...'
+                                        : 'Simpan Data Supervisor',
+                                    style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF0D9488),
+                                    foregroundColor: Colors.white,
+                                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12.r),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20.h),
+
+                    // ─── 4. INTEGRASI NOTIFIKASI ORANG TUA (NOBOX.AI) ───────────────
                     Card(
                       margin: EdgeInsets.zero,
                       elevation: 2,
