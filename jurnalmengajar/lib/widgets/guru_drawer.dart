@@ -109,9 +109,12 @@ class GuruDrawer extends StatelessWidget {
       authProvider.activeSchoolId,
     );
     final unreadWarnings = warningProvider.warningLetters.where((w) {
-      if (w.status != 'unread') return false;
-      if (cleanActiveSchoolId == null || cleanActiveSchoolId.isEmpty)
+      if (w.status != 'unread') {
+        return false;
+      }
+      if (cleanActiveSchoolId == null || cleanActiveSchoolId.isEmpty) {
         return true;
+      }
       final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
       return wSchoolId == null ||
           wSchoolId.isEmpty ||

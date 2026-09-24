@@ -438,56 +438,6 @@ class JournalPdfService {
     );
   }
 
-  /// Teacher Meta Info Block (Compact)
-  static pw.Widget _buildTeacherInfoBox({
-    required TeacherModel teacher,
-    required String printDateStr,
-    String? selectedClassName,
-    String? selectedSubjectName,
-    required String statusFilter,
-    required pw.Font ttfBold,
-    required pw.Font ttfRegular,
-    required pw.Font ttfMedium,
-  }) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-      decoration: pw.BoxDecoration(
-        color: PdfColors.indigo50,
-        borderRadius: pw.BorderRadius.circular(6),
-        border: pw.Border.all(color: PdfColors.indigo200, width: 0.8),
-      ),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Row(
-            children: [
-              pw.Text(
-                'Nama Guru : ',
-                style: pw.TextStyle(font: ttfBold, fontSize: 9),
-              ),
-              pw.Text(
-                teacher.name.isNotEmpty ? teacher.name : 'Guru Pengajar',
-                style: pw.TextStyle(font: ttfRegular, fontSize: 9),
-              ),
-            ],
-          ),
-          pw.Row(
-            children: [
-              pw.Text(
-                'Guru Mapel : ',
-                style: pw.TextStyle(font: ttfBold, fontSize: 9),
-              ),
-              pw.Text(
-                teacher.position.isNotEmpty ? teacher.position : 'Guru Mapel',
-                style: pw.TextStyle(font: ttfRegular, fontSize: 9),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   /// Summary Statistics Boxes
   static pw.Widget _buildSummaryStats({
     required int totalJournals,
@@ -706,7 +656,9 @@ class JournalPdfService {
       },
       columnWidths: {
         0: const pw.FixedColumnWidth(22), // No
-        1: const pw.FixedColumnWidth(65), // Tanggal (cukup lebar untuk dd-MM-yyyy tanpa wrap)
+        1: const pw.FixedColumnWidth(
+          65,
+        ), // Tanggal (cukup lebar untuk dd-MM-yyyy tanpa wrap)
         2: const pw.FixedColumnWidth(48), // Jam
         3: const pw.FixedColumnWidth(60), // Kelas
         4: const pw.FixedColumnWidth(85), // Mapel
@@ -742,7 +694,7 @@ class JournalPdfService {
               ),
               pw.Text(
                 'Supervisor / Kepala Sekolah',
-                style: pw.TextStyle(font: ttfBold, fontSize: 9.5),
+                style: pw.TextStyle(font: ttfRegular, fontSize: 9.5),
               ),
               pw.SizedBox(height: 45), // Space for physical signature & stamp
               pw.Text(
@@ -777,8 +729,8 @@ class JournalPdfService {
                 style: pw.TextStyle(font: ttfRegular, fontSize: 9),
               ),
               pw.Text(
-                'Guru Pengajar,',
-                style: pw.TextStyle(font: ttfBold, fontSize: 9.5),
+                'Guru Pengajar',
+                style: pw.TextStyle(font: ttfRegular, fontSize: 9.5),
               ),
               pw.SizedBox(height: 45), // Space for physical signature
               pw.Text(
