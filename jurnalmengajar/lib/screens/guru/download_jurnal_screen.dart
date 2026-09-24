@@ -573,13 +573,19 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     );
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final targetSchoolId = AppHelper.parseSingleCleanSchoolId(_selectedSchoolId ?? authProvider.activeSchoolId);
+    final targetSchoolId = AppHelper.parseSingleCleanSchoolId(
+      _selectedSchoolId ?? authProvider.activeSchoolId,
+    );
 
     return allTeacherJournals.where((j) {
       // School Filter
       if (targetSchoolId != null && targetSchoolId.isNotEmpty) {
-        final jSchoolId = AppHelper.parseSingleCleanSchoolId(j.schoolId) ?? j.schoolId?.trim();
-        if (jSchoolId != null && jSchoolId.isNotEmpty && jSchoolId != targetSchoolId) {
+        final jSchoolId =
+            AppHelper.parseSingleCleanSchoolId(j.schoolId) ??
+            j.schoolId?.trim();
+        if (jSchoolId != null &&
+            jSchoolId.isNotEmpty &&
+            jSchoolId != targetSchoolId) {
           return false;
         }
       }
@@ -1150,7 +1156,6 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // Section 1: Rentang Tanggal
               _buildSectionCard(
                 title: '1. Rentang Tanggal Laporan',
@@ -1353,7 +1358,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
               // Section 2: Identitas Sekolah Tempat Cetak Jurnal
               _buildSectionCard(
-                title: '2. Identitas Sekolah Untuk Kop Dokumen',
+                title: '2. Sekolah',
                 icon: Icons.school_rounded,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1452,7 +1457,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
 
               // Section 3: Filter Data
               _buildSectionCard(
-                title: '3. Filter Status & Kelas',
+                title: '3. Status & Kelas',
                 icon: Icons.filter_alt_rounded,
                 child: Column(
                   children: [
