@@ -13,7 +13,14 @@ import '../../core/utils/image_crop_helper.dart';
 import '../../widgets/wave_clipper.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final List<String>? initialSelectedSchools;
+  final String? initialSchoolId;
+
+  const RegisterScreen({
+    super.key,
+    this.initialSelectedSchools,
+    this.initialSchoolId,
+  });
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -53,8 +60,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialSelectedSchools != null && widget.initialSelectedSchools!.isNotEmpty) {
+      _selectedSchools.addAll(widget.initialSelectedSchools!);
+      _resolvedSchoolId = widget.initialSchoolId;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<MasterDataProvider>(context, listen: false).loadAllData();
+      if (_resolvedSchoolId != null && _resolvedSchoolId!.isNotEmpty) {
+        Provider.of<MasterDataProvider>(context, listen: false).loadAllData(_resolvedSchoolId);
+      } else {
+        Provider.of<MasterDataProvider>(context, listen: false).loadAllData();
+      }
     });
   }
 
@@ -753,6 +768,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               setState(() {
                                                 _schoolCodeController.clear();
                                                 _selectedSchools.clear();
+                                                _resolvedSchoolId = null;
+                                                _positionController.clear();
                                               });
                                             },
                                           ),
@@ -813,6 +830,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     if (_selectedSchools.isNotEmpty) {
                                       setState(() {
                                         _selectedSchools.clear();
+                                        _resolvedSchoolId = null;
+                                        _positionController.clear();
                                       });
                                     }
                                   },
@@ -892,64 +911,107 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                // Jabatan (khusus guru)
                                if (_registerType == 'guru') ...[
                                  _buildFieldLabel('JABATAN'),
-                                 GestureDetector(
-                                   behavior: HitTestBehavior.opaque,
-                                   onTap: () async {
-                                     List<String> subjectNames = masterProvider.subjects
-                                         .where((s) => s.isActive)
-                                         .map((s) => s.name)
-                                         .toList();
+                                 if (_selectedSchools.isNotEmpty) ...[
+                                   GestureDetector(
+                                     behavior: HitTestBehavior.opaque,
+                                     onTap: () async {
+                                       final effectiveSchoolId = _resolvedSchoolId;
+                                       List<String> subjectNames = [];
 
-                                     // Jika data subjects di provider masih kosong, muat langsung dari database tabel subjects
-                                     if (subjectNames.isEmpty) {
                                        try {
-                                         final effectiveSchoolId = _resolvedSchoolId;
-                                         var fetched = await masterProvider.subjectRepository.getAll(effectiveSchoolId);
-                                         if (fetched.isEmpty && effectiveSchoolId != null) {
-                                           fetched = await masterProvider.subjectRepository.getAll(null);
-                                         }
-                                         if (fetched.isNotEmpty) {
-                                           subjectNames = fetched
-                                               .where((s) => s.isActive)
-                                               .map((s) => s.name)
-                                               .toList();
+                                         if (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty) {
+                                           final fetched = await masterProvider.subjectRepository.getAll(effectiveSchoolId);
+                                           if (fetched.isNotEmpty) {
+                                             subjectNames = fetched
+                                                 .where((s) => s.isActive)
+                                                 .map((s) => s.name)
+                                                 .toList();
+                                           }
                                          }
                                        } catch (e) {
                                          debugPrint('[REGISTER] Error fetching subjects from DB: $e');
                                        }
-                                     }
 
-                                     if (!context.mounted) return;
+                                       // Fallback ke masterProvider.subjects jika terfilter untuk sekolah yang sama
+                                       if (subjectNames.isEmpty &&
+                                           (effectiveSchoolId == null || masterProvider.currentSchoolId == effectiveSchoolId)) {
+                                         subjectNames = masterProvider.subjects
+                                             .where((s) => s.isActive)
+                                             .map((s) => s.name)
+                                             .toList();
+                                       }
 
-                                     _showPositionSelector(
-                                       context,
-                                       subjectNames,
-                                       _positionController.text,
-                                       (selected) {
-                                         setState(() {
-                                           _positionController.text = selected;
-                                         });
-                                       },
-                                     );
-                                   },
-                                   child: AbsorbPointer(
-                                     child: _buildTextField(
-                                       controller: _positionController,
-                                       hintText: 'Ketuk untuk memilih jabatan / guru mapel...',
-                                       icon: Icons.work_outline,
-                                       suffixIcon: const Icon(
-                                         Icons.arrow_drop_down,
-                                         color: Color.fromARGB(255, 37, 99, 235),
+                                       if (!context.mounted) return;
+
+                                       _showPositionSelector(
+                                         context,
+                                         subjectNames,
+                                         _positionController.text,
+                                         (selected) {
+                                           setState(() {
+                                             _positionController.text = selected;
+                                           });
+                                         },
+                                       );
+                                     },
+                                     child: AbsorbPointer(
+                                       child: _buildTextField(
+                                         controller: _positionController,
+                                         hintText: 'Ketuk untuk memilih jabatan / guru mapel...',
+                                         icon: Icons.work_outline,
+                                         suffixIcon: const Icon(
+                                           Icons.arrow_drop_down,
+                                           color: Color.fromARGB(255, 37, 99, 235),
+                                         ),
+                                         validator: (value) {
+                                           if (_registerType == 'guru' && (value == null || value.isEmpty)) {
+                                             return 'Jabatan tidak boleh kosong';
+                                           }
+                                           return null;
+                                         },
                                        ),
-                                       validator: (value) {
-                                         if (_registerType == 'guru' && (value == null || value.isEmpty)) {
-                                           return 'Jabatan tidak boleh kosong';
-                                         }
-                                         return null;
-                                       },
                                      ),
                                    ),
-                                 ),
+                                 ] else ...[
+                                   Container(
+                                     padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                                     decoration: BoxDecoration(
+                                       color: Theme.of(context).brightness == Brightness.dark
+                                           ? Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
+                                           : const Color(0xFFF1F5F9),
+                                       borderRadius: BorderRadius.circular(16.r),
+                                       border: Border.all(
+                                         color: Theme.of(context).brightness == Brightness.dark
+                                             ? const Color(0xFF334155)
+                                             : const Color(0xFFCBD5E1),
+                                       ),
+                                     ),
+                                     child: Row(
+                                       children: [
+                                         Icon(
+                                           Icons.info_outline_rounded,
+                                           size: 18.sp,
+                                           color: Theme.of(context).brightness == Brightness.dark
+                                               ? const Color(0xFF94A3B8)
+                                               : const Color(0xFF64748B),
+                                         ),
+                                         SizedBox(width: 10.w),
+                                         Expanded(
+                                           child: Text(
+                                             'Masukkan dan verifikasi Kode Sekolah di atas terlebih dahulu untuk menampilkan pilihan jabatan / mata pelajaran sekolah.',
+                                             style: TextStyle(
+                                               fontSize: 12.sp,
+                                               color: Theme.of(context).brightness == Brightness.dark
+                                                   ? const Color(0xFF94A3B8)
+                                                   : const Color(0xFF64748B),
+                                               height: 1.3,
+                                             ),
+                                           ),
+                                         ),
+                                       ],
+                                     ),
+                                   ),
+                                 ],
                                  SizedBox(height: 16.h),
                                ],
 
@@ -1508,6 +1570,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             _selectedSchools.add(schoolName);
             _resolvedSchoolId = remoteMatched.id;
             _detectedPlan = null;
+            _positionController.clear();
           });
           if (remoteMatched.id.isNotEmpty) {
             masterProvider.loadAllData(remoteMatched.id);
@@ -1593,6 +1656,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           _selectedSchools.add(validSchoolName);
           _resolvedSchoolId = matchedSchool?.id;
           _detectedPlan = null;
+          _positionController.clear();
         });
         if (matchedSchool != null && matchedSchool.id.isNotEmpty) {
           masterProvider.loadAllData(matchedSchool.id);

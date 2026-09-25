@@ -145,6 +145,8 @@ void main() {
     required AuthProvider authProvider,
     required MasterDataProvider masterProvider,
     required ThemeProvider themeProvider,
+    List<String>? initialSelectedSchools = const ['SMKN 11 Malang'],
+    String? initialSchoolId = 'school-1',
   }) {
     return MultiProvider(
       providers: [
@@ -161,8 +163,11 @@ void main() {
                 : const Size(360, 690),
             minTextAdapt: true,
             splitScreenMode: true,
-            builder: (context, child) => const MaterialApp(
-              home: RegisterScreen(),
+            builder: (context, child) => MaterialApp(
+              home: RegisterScreen(
+                initialSelectedSchools: initialSelectedSchools,
+                initialSchoolId: initialSchoolId,
+              ),
             ),
           );
         },
@@ -324,6 +329,52 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Guru Mekatronika'), findsOneWidget);
+    });
+
+    testWidgets('Jabatan selector is hidden until school is verified, showing verification notice', (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final authProvider = AuthProvider(authRepository: FakeAuthRepo());
+      final fakeSubjectRepo = FakeSubjectRepo();
+      fakeSubjectRepo.mockSubjects = [
+        SubjectModel(id: 's1', name: 'Matematika', isActive: true),
+      ];
+
+      final masterProvider = MasterDataProvider(
+        periodRepository: FakePeriodRepo(),
+        subjectRepository: fakeSubjectRepo,
+        hourRepository: FakeHourRepo(),
+        classRepository: FakeClassRepo(),
+        teacherRepository: FakeTeacherRepo(),
+        studentRepository: FakeStudentRepo(),
+      );
+      await masterProvider.loadAllData();
+
+      final themeProvider = ThemeProvider();
+
+      // Pump widget with NO school verified (empty initialSelectedSchools)
+      await tester.pumpWidget(createTestWidget(
+        authProvider: authProvider,
+        masterProvider: masterProvider,
+        themeProvider: themeProvider,
+        initialSelectedSchools: [],
+        initialSchoolId: null,
+      ));
+      await tester.pumpAndSettle();
+
+      // Verify that the prompt notice is visible
+      expect(
+        find.text('Masukkan dan verifikasi Kode Sekolah di atas terlebih dahulu untuk menampilkan pilihan jabatan / mata pelajaran sekolah.'),
+        findsOneWidget,
+      );
+
+      // Verify that the interactive Jabatan field is NOT displayed
+      expect(
+        find.widgetWithText(TextFormField, 'Ketuk untuk memilih jabatan / guru mapel...'),
+        findsNothing,
+      );
     });
   });
 }
