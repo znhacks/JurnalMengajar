@@ -20,7 +20,32 @@ import 'package:jurnalmengajar/repositories/hour_repository.dart';
 import 'package:jurnalmengajar/repositories/class_repository.dart';
 import 'package:jurnalmengajar/repositories/teacher_repository.dart';
 import 'package:jurnalmengajar/repositories/student_repository.dart';
+import 'package:jurnalmengajar/models/school_model.dart';
+import 'package:jurnalmengajar/repositories/school_repository.dart';
 import 'package:jurnalmengajar/screens/auth/register_screen.dart';
+
+class FakeSchoolRepo implements SchoolRepository {
+  List<SchoolModel> mockSchools = [];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+
+  @override
+  Future<List<SchoolModel>> getAll() async => mockSchools;
+
+  @override
+  Future<SchoolModel?> validateActivationCode(String code) async {
+    final clean = code.trim().toUpperCase();
+    if (clean == 'SMKN1MALANG') {
+      return SchoolModel(
+        id: 'school-smkn1',
+        name: 'SMKN 1 Malang',
+        code: 'SMKN1MALANG',
+      );
+    }
+    return null;
+  }
+}
 
 class FakeAuthRepo implements AuthRepository {
   @override
@@ -374,6 +399,125 @@ void main() {
       expect(
         find.widgetWithText(TextFormField, 'Ketuk untuk memilih jabatan / guru mapel...'),
         findsNothing,
+      );
+    });
+
+    testWidgets('Entering unregistered school code or name (e.g. SMKN4Malang) displays error and keeps jabatan selector hidden', (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final authProvider = AuthProvider(authRepository: FakeAuthRepo());
+      final fakeSubjectRepo = FakeSubjectRepo();
+      final fakeSchoolRepo = FakeSchoolRepo();
+      // Sekolah terdaftar bernama "SMKN 4 Malang" tapi kodenya di JM Panel adalah "SMKN4MLG"
+      fakeSchoolRepo.mockSchools = [
+        SchoolModel(
+          id: 'school-smkn4',
+          name: 'SMKN 4 Malang',
+          code: 'SMKN4MLG',
+          status: 'active',
+        ),
+      ];
+      final masterProvider = MasterDataProvider(
+        periodRepository: FakePeriodRepo(),
+        subjectRepository: fakeSubjectRepo,
+        hourRepository: FakeHourRepo(),
+        classRepository: FakeClassRepo(),
+        teacherRepository: FakeTeacherRepo(),
+        studentRepository: FakeStudentRepo(),
+        schoolRepository: fakeSchoolRepo,
+      );
+      await masterProvider.loadAllData();
+
+      final themeProvider = ThemeProvider();
+
+      await tester.pumpWidget(createTestWidget(
+        authProvider: authProvider,
+        masterProvider: masterProvider,
+        themeProvider: themeProvider,
+        initialSelectedSchools: [],
+        initialSchoolId: null,
+      ));
+      await tester.pumpAndSettle();
+
+      // User memasukkan "SMKN4Malang" (mirip nama sekolah, tapi BUKAN kode JM Panel SMKN4MLG)
+      final schoolCodeField = find.widgetWithText(TextFormField, 'Masukkan Kode Sekolah tempat mengajar...');
+      expect(schoolCodeField, findsOneWidget);
+      await tester.enterText(schoolCodeField, 'SMKN4Malang');
+      await tester.pumpAndSettle();
+
+      // Ketuk tombol verifikasi (centang biru)
+      final checkmarkBtn = find.widgetWithIcon(IconButton, Icons.check_circle);
+      expect(checkmarkBtn, findsOneWidget);
+      await tester.tap(checkmarkBtn);
+      await tester.pumpAndSettle();
+
+      // Harus tampil error bahwa sekolah tidak ditemukan karena kodenya tidak sesuai JM Panel (tampil di banner error dan snackbar)
+      expect(
+        find.text('Sekolah tidak ditemukan. Pastikan Kode Sekolah sesuai dengan yang ada di JM Panel.'),
+        findsAtLeastNWidgets(1),
+      );
+
+      // Badge hijau Terverifikasi TIDAK BOLEH tampil
+      expect(find.textContaining('Terverifikasi:'), findsNothing);
+
+      // Kolom Jabatan harus tetap disembunyikan
+      expect(
+        find.widgetWithText(TextFormField, 'Ketuk untuk memilih jabatan / guru mapel...'),
+        findsNothing,
+      );
+    });
+
+    testWidgets('Entering registered school code displays verified school name and reveals jabatan selector', (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final authProvider = AuthProvider(authRepository: FakeAuthRepo());
+      final fakeSubjectRepo = FakeSubjectRepo();
+      fakeSubjectRepo.mockSubjects = [
+        SubjectModel(id: 's1', name: 'Matematika', isActive: true),
+      ];
+      final masterProvider = MasterDataProvider(
+        periodRepository: FakePeriodRepo(),
+        subjectRepository: fakeSubjectRepo,
+        hourRepository: FakeHourRepo(),
+        classRepository: FakeClassRepo(),
+        teacherRepository: FakeTeacherRepo(),
+        studentRepository: FakeStudentRepo(),
+        schoolRepository: FakeSchoolRepo(),
+      );
+      await masterProvider.loadAllData();
+
+      final themeProvider = ThemeProvider();
+
+      await tester.pumpWidget(createTestWidget(
+        authProvider: authProvider,
+        masterProvider: masterProvider,
+        themeProvider: themeProvider,
+        initialSelectedSchools: [],
+        initialSchoolId: null,
+      ));
+      await tester.pumpAndSettle();
+
+      // Masukkan kode yang valid sesuai database/JM Panel
+      final schoolCodeField = find.widgetWithText(TextFormField, 'Masukkan Kode Sekolah tempat mengajar...');
+      await tester.enterText(schoolCodeField, 'SMKN1Malang');
+      await tester.pumpAndSettle();
+
+      // Ketuk centang biru
+      final checkmarkBtn = find.widgetWithIcon(IconButton, Icons.check_circle);
+      await tester.tap(checkmarkBtn);
+      await tester.pumpAndSettle();
+
+      // Menampilkan nama sekolah terverifikasi
+      expect(find.text('Terverifikasi: SMKN 1 Malang'), findsOneWidget);
+
+      // Kolom jabatan terbuka
+      expect(
+        find.widgetWithText(TextFormField, 'Ketuk untuk memilih jabatan / guru mapel...'),
+        findsOneWidget,
       );
     });
   });

@@ -27,7 +27,10 @@ class SupabaseSchoolRepository implements SchoolRepository {
   @override
   Future<SchoolModel?> validateActivationCode(String code) async {
     try {
-      final cleanCode = code.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '');
+      final cleanCode = code.trim().toLowerCase().replaceAll(
+        RegExp(r'\s+'),
+        '',
+      );
       if (cleanCode.isEmpty) return null;
 
       // 1. Direct query on schools table: WHERE code = :cleanCode AND status = 'active'
@@ -53,7 +56,9 @@ class SupabaseSchoolRepository implements SchoolRepository {
         if ((existingSchool as List).isNotEmpty) {
           final school = SchoolModel.fromJson((existingSchool as List).first);
           if (school.isInactive) {
-            throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).');
+            throw Exception(
+              'Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).',
+            );
           }
           return school;
         }
@@ -66,18 +71,19 @@ class SupabaseSchoolRepository implements SchoolRepository {
       try {
         final tList = await _supabase
             .from('tenants')
-            .select('id, name, school_code, status')
-            .ilike('school_code', '%$cleanCode%');
+            .select('id, name, school_code, status');
 
-        if ((tList as List).isNotEmpty) {
-          tenantRes = (tList as List).first as Map<String, dynamic>;
-        } else {
-          final tUuidList = await _supabase
-              .from('tenants')
-              .select('id, name, school_code, status')
-              .eq('id', cleanCode);
-          if ((tUuidList as List).isNotEmpty) {
-            tenantRes = (tUuidList as List).first as Map<String, dynamic>;
+        for (final item in (tList as List)) {
+          final scRaw = (item['school_code'] as String? ?? '').toLowerCase();
+          final idRaw = (item['id'] as String? ?? '').toLowerCase();
+          final scCodes = scRaw
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
+          if (scCodes.contains(cleanCode) || idRaw == cleanCode) {
+            tenantRes = item as Map<String, dynamic>;
+            break;
           }
         }
       } catch (e) {
@@ -87,10 +93,13 @@ class SupabaseSchoolRepository implements SchoolRepository {
       if (tenantRes != null) {
         final tenantId = tenantRes['id'] as String;
         final tenantName = tenantRes['name'] as String? ?? 'Sekolah';
-        final tenantStatus = (tenantRes['status'] as String? ?? 'active').toLowerCase();
+        final tenantStatus = (tenantRes['status'] as String? ?? 'active')
+            .toLowerCase();
 
         if (tenantStatus == 'inactive') {
-          throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).');
+          throw Exception(
+            'Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).',
+          );
         }
 
         // Check active subscription in subscriptions table
@@ -111,7 +120,8 @@ class SupabaseSchoolRepository implements SchoolRepository {
             if (rawEndsAt != null) {
               endsAt = DateTime.tryParse(rawEndsAt.toString());
             }
-            final planId = (firstSub['plan_id'] as String? ?? 'free').toLowerCase();
+            final planId = (firstSub['plan_id'] as String? ?? 'free')
+                .toLowerCase();
             final isActive = endsAt == null || DateTime.now().isBefore(endsAt);
             if (isActive && (planId == 'pro' || planId == 'enterprise')) {
               isTenantPro = true;
@@ -151,7 +161,9 @@ class SupabaseSchoolRepository implements SchoolRepository {
         if (fallbackResponse != null) {
           final school = SchoolModel.fromJson(fallbackResponse);
           if (school.isInactive) {
-            throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).');
+            throw Exception(
+              'Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).',
+            );
           }
           return school;
         }
@@ -168,10 +180,14 @@ class SupabaseSchoolRepository implements SchoolRepository {
             .maybeSingle();
 
         if (inviteRes != null && inviteRes['schools'] != null) {
-          final schoolJson = Map<String, dynamic>.from(inviteRes['schools'] as Map);
+          final schoolJson = Map<String, dynamic>.from(
+            inviteRes['schools'] as Map,
+          );
           final school = SchoolModel.fromJson(schoolJson);
           if (school.isInactive) {
-            throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).');
+            throw Exception(
+              'Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).',
+            );
           }
           return school;
         }
@@ -184,11 +200,21 @@ class SupabaseSchoolRepository implements SchoolRepository {
       final isProPlan = upper.contains('PRO');
       final isEnterprisePlan = upper.contains('ENTERPRISE');
       final isFreePlan = upper.contains('FREE') || upper.contains('GRATIS');
-      final isJMCode = upper.startsWith('JM') || upper.startsWith('SCH') || upper.startsWith('PLAN');
+      final isJMCode =
+          upper.startsWith('JM') ||
+          upper.startsWith('SCH') ||
+          upper.startsWith('PLAN');
 
-      if (isProPlan || isEnterprisePlan || isFreePlan || isJMCode || cleanCode.length >= 4) {
-        final detectedPlan = isEnterprisePlan ? 'enterprise' : (isProPlan ? 'pro' : 'free');
-        final maxTeachers = detectedPlan == 'enterprise' ? 999 : (detectedPlan == 'pro' ? 50 : 30);
+      if (isProPlan ||
+          isEnterprisePlan ||
+          isFreePlan ||
+          isJMCode) {
+        final detectedPlan = isEnterprisePlan
+            ? 'enterprise'
+            : (isProPlan ? 'pro' : 'free');
+        final maxTeachers = detectedPlan == 'enterprise'
+            ? 999
+            : (detectedPlan == 'pro' ? 50 : 30);
         return SchoolModel(
           id: cleanCode,
           name: '',
@@ -213,7 +239,10 @@ class SupabaseSchoolRepository implements SchoolRepository {
     required String currentSchoolId,
     required String activationCode,
   }) async {
-    final cleanCode = activationCode.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '');
+    final cleanCode = activationCode.trim().toLowerCase().replaceAll(
+      RegExp(r'\s+'),
+      '',
+    );
     if (cleanCode.isEmpty) {
       throw Exception('Kode aktivasi tidak valid');
     }
@@ -240,10 +269,13 @@ class SupabaseSchoolRepository implements SchoolRepository {
 
     if (tenantRes != null) {
       final tenantId = tenantRes['id'] as String;
-      final tenantStatus = (tenantRes['status'] as String? ?? 'active').toLowerCase();
+      final tenantStatus = (tenantRes['status'] as String? ?? 'active')
+          .toLowerCase();
 
       if (tenantStatus == 'inactive') {
-        throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).');
+        throw Exception(
+          'Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).',
+        );
       }
 
       // Check active subscription in subscriptions table
@@ -283,10 +315,14 @@ class SupabaseSchoolRepository implements SchoolRepository {
       }
     }
 
-    final String plan = isTenantEnterprise ? 'enterprise' : (isTenantPro ? 'pro' : 'free');
+    final String plan = isTenantEnterprise
+        ? 'enterprise'
+        : (isTenantPro ? 'pro' : 'free');
     final int maxTeachers = isTenantEnterprise ? 999 : (isTenantPro ? 50 : 30);
 
-    final String canonicalCode = tenantRes?['school_code'] as String? ?? activationCode.trim().replaceAll(RegExp(r'\s+'), '');
+    final String canonicalCode =
+        tenantRes?['school_code'] as String? ??
+        activationCode.trim().replaceAll(RegExp(r'\s+'), '');
 
     final updateData = <String, dynamic>{
       'code': canonicalCode,
@@ -348,15 +384,13 @@ class SupabaseSchoolRepository implements SchoolRepository {
       if ((updateRes as List).isNotEmpty) {
         updatedRow = (updateRes as List).first as Map<String, dynamic>;
       } else {
-        updatedRow = {
-          ...existingSchool,
-          ...updateData,
-        };
+        updatedRow = {...existingSchool, ...updateData};
       }
     } else {
       // School does NOT exist in schools table yet:
       // Mobile app responsibility: create/upsert it so the mobile app has the school registered
-      final targetSchoolId = (currentSchoolId.isNotEmpty && currentSchoolId != tenantRes?['id'])
+      final targetSchoolId =
+          (currentSchoolId.isNotEmpty && currentSchoolId != tenantRes?['id'])
           ? currentSchoolId
           : (tenantRes?['id'] as String? ?? currentSchoolId);
       final schoolName = tenantRes?['name'] as String? ?? 'Sekolah';
@@ -387,16 +421,25 @@ class SupabaseSchoolRepository implements SchoolRepository {
   }
 
   @override
-  Future<bool> updateSchoolPlan(String schoolId, String plan, String activationCode) async {
+  Future<bool> updateSchoolPlan(
+    String schoolId,
+    String plan,
+    String activationCode,
+  ) async {
     try {
       final normalizedPlan = plan.toLowerCase().trim();
-      final maxTeachers = normalizedPlan == 'pro' ? 50 : (normalizedPlan == 'enterprise' ? 999 : 30);
-      
-      await _supabase.from('schools').update({
-        'subscription_plan': normalizedPlan,
-        'code': activationCode,
-        'max_teachers': maxTeachers,
-      }).eq('id', schoolId);
+      final maxTeachers = normalizedPlan == 'pro'
+          ? 50
+          : (normalizedPlan == 'enterprise' ? 999 : 30);
+
+      await _supabase
+          .from('schools')
+          .update({
+            'subscription_plan': normalizedPlan,
+            'code': activationCode,
+            'max_teachers': maxTeachers,
+          })
+          .eq('id', schoolId);
       return true;
     } catch (e) {
       throw Exception('Gagal memperbarui paket langganan: $e');

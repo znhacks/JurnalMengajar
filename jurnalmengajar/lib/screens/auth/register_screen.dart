@@ -56,17 +56,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final List<String> _selectedSchools = [];
   String? _resolvedSchoolId;
   String? _detectedPlan;
+  String? _schoolErrorMessage;
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialSelectedSchools != null && widget.initialSelectedSchools!.isNotEmpty) {
+    if (widget.initialSelectedSchools != null &&
+        widget.initialSelectedSchools!.isNotEmpty) {
       _selectedSchools.addAll(widget.initialSelectedSchools!);
       _resolvedSchoolId = widget.initialSchoolId;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_resolvedSchoolId != null && _resolvedSchoolId!.isNotEmpty) {
-        Provider.of<MasterDataProvider>(context, listen: false).loadAllData(_resolvedSchoolId);
+        Provider.of<MasterDataProvider>(
+          context,
+          listen: false,
+        ).loadAllData(_resolvedSchoolId);
       } else {
         Provider.of<MasterDataProvider>(context, listen: false).loadAllData();
       }
@@ -100,10 +105,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _pickImage(ImageSource source) async {
     try {
-      final result = await pickAndCropImage(
-        context: context,
-        source: source,
-      );
+      final result = await pickAndCropImage(context: context, source: source);
       if (result != null) {
         setState(() {
           _profileImageBytes = result.bytes;
@@ -142,10 +144,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             SizedBox(height: 12.h),
             Text(
               'Pilih Sumber Foto',
-              style: TextStyle(
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600),
             ),
             SizedBox(height: 8.h),
             ListTile(
@@ -235,7 +234,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         schoolName: schoolName,
         schoolId: schoolId,
         nip: isTeacherRegister
-            ? (_nipController.text.trim().isEmpty ? null : _nipController.text.trim())
+            ? (_nipController.text.trim().isEmpty
+                  ? null
+                  : _nipController.text.trim())
             : null,
       );
 
@@ -311,7 +312,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24.r),
                   ),
-                  color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+                  color:
+                      Theme.of(context).cardTheme.color ??
+                      Theme.of(context).colorScheme.surface,
                   clipBehavior: Clip.antiAlias,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -391,7 +394,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       ? 'Mode Gelap'
                                       : 'Mode Terang',
                                   onPressed: () {
-                                    themeProvider.toggleTheme(!themeProvider.isDarkMode);
+                                    themeProvider.toggleTheme(
+                                      !themeProvider.isDarkMode,
+                                    );
                                   },
                                 );
                               },
@@ -410,20 +415,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         child: CallbackShortcuts(
                           bindings: {
-                            const SingleActivator(LogicalKeyboardKey.enter): () {
+                            const SingleActivator(
+                              LogicalKeyboardKey.enter,
+                            ): () {
                               if (_schoolCodeFocusNode.hasFocus) {
-                                _resolveSchoolCode(_schoolCodeController.text.trim(), masterProvider, showSnackBar: true);
-                                FocusScope.of(context).requestFocus(_fullNameFocusNode);
+                                _resolveSchoolCode(
+                                  _schoolCodeController.text.trim(),
+                                  masterProvider,
+                                  showSnackBar: true,
+                                );
+                                FocusScope.of(
+                                  context,
+                                ).requestFocus(_fullNameFocusNode);
                               } else {
                                 if (!isLoading) {
                                   _handleRegister();
                                 }
                               }
                             },
-                            const SingleActivator(LogicalKeyboardKey.numpadEnter): () {
+                            const SingleActivator(
+                              LogicalKeyboardKey.numpadEnter,
+                            ): () {
                               if (_schoolCodeFocusNode.hasFocus) {
-                                _resolveSchoolCode(_schoolCodeController.text.trim(), masterProvider, showSnackBar: true);
-                                FocusScope.of(context).requestFocus(_fullNameFocusNode);
+                                _resolveSchoolCode(
+                                  _schoolCodeController.text.trim(),
+                                  masterProvider,
+                                  showSnackBar: true,
+                                );
+                                FocusScope.of(
+                                  context,
+                                ).requestFocus(_fullNameFocusNode);
                               } else {
                                 if (!isLoading) {
                                   _handleRegister();
@@ -434,800 +455,1118 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: Form(
                             key: _formKey,
                             child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Toggle Switch Opsi Pendaftaran (Guru vs Admin Sekolah)
-                              _buildFieldLabel('TIPE PENDAFTARAN'),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).brightness == Brightness.dark
-                                      ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                      : const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(16.r),
-                                ),
-                                padding: EdgeInsets.all(4.w),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: () => setState(() => _registerType = 'guru'),
-                                        child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 200),
-                                          padding: EdgeInsets.symmetric(vertical: 10.h),
-                                          decoration: BoxDecoration(
-                                            color: _registerType == 'guru'
-                                                ? const Color.fromARGB(255, 37, 99, 235)
-                                                : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(12.r),
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.school_rounded,
-                                                size: 16.r,
-                                                color: _registerType == 'guru'
-                                                    ? Colors.white
-                                                    : Theme.of(context).colorScheme.onSurfaceVariant,
-                                              ),
-                                              SizedBox(width: 6.w),
-                                              Text(
-                                                'Register Guru',
-                                                style: TextStyle(
-                                                  fontSize: kIsWeb ? 13 : 13.5.sp,
-                                                  fontWeight: FontWeight.bold,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // Toggle Switch Opsi Pendaftaran (Guru vs Admin Sekolah)
+                                _buildFieldLabel('TIPE PENDAFTARAN'),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Theme.of(
+                                            context,
+                                          ).colorScheme.surfaceContainerHighest
+                                        : const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(16.r),
+                                  ),
+                                  padding: EdgeInsets.all(4.w),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () => setState(() {
+                                            _registerType = 'guru';
+                                            _schoolErrorMessage = null;
+                                          }),
+                                          child: AnimatedContainer(
+                                            duration: const Duration(
+                                              milliseconds: 200,
+                                            ),
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: 10.h,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: _registerType == 'guru'
+                                                  ? const Color.fromARGB(
+                                                      255,
+                                                      37,
+                                                      99,
+                                                      235,
+                                                    )
+                                                  : Colors.transparent,
+                                              borderRadius:
+                                                  BorderRadius.circular(12.r),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.school_rounded,
+                                                  size: 16.r,
                                                   color: _registerType == 'guru'
                                                       ? Colors.white
-                                                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                                                      : Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurfaceVariant,
                                                 ),
-                                              ),
-                                            ],
+                                                SizedBox(width: 6.w),
+                                                Text(
+                                                  'Register Guru',
+                                                  style: TextStyle(
+                                                    fontSize: kIsWeb
+                                                        ? 13
+                                                        : 13.5.sp,
+                                                    fontWeight: FontWeight.bold,
+                                                    color:
+                                                        _registerType == 'guru'
+                                                        ? Colors.white
+                                                        : Theme.of(context)
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: () => setState(() => _registerType = 'admin'),
-                                        child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 200),
-                                          padding: EdgeInsets.symmetric(vertical: 10.h),
-                                          decoration: BoxDecoration(
-                                            color: _registerType == 'admin'
-                                                ? const Color.fromARGB(255, 37, 99, 235)
-                                                : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(12.r),
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.admin_panel_settings_rounded,
-                                                size: 16.r,
-                                                color: _registerType == 'admin'
-                                                    ? Colors.white
-                                                    : Theme.of(context).colorScheme.onSurfaceVariant,
-                                              ),
-                                              SizedBox(width: 6.w),
-                                              Text(
-                                                'Admin Sekolah',
-                                                style: TextStyle(
-                                                  fontSize: kIsWeb ? 13 : 13.5.sp,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: _registerType == 'admin'
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () => setState(() {
+                                            _registerType = 'admin';
+                                            _schoolErrorMessage = null;
+                                          }),
+                                          child: AnimatedContainer(
+                                            duration: const Duration(
+                                              milliseconds: 200,
+                                            ),
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: 10.h,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: _registerType == 'admin'
+                                                  ? const Color.fromARGB(
+                                                      255,
+                                                      37,
+                                                      99,
+                                                      235,
+                                                    )
+                                                  : Colors.transparent,
+                                              borderRadius:
+                                                  BorderRadius.circular(12.r),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons
+                                                      .admin_panel_settings_rounded,
+                                                  size: 16.r,
+                                                  color:
+                                                      _registerType == 'admin'
                                                       ? Colors.white
-                                                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                                                      : Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurfaceVariant,
                                                 ),
+                                                SizedBox(width: 6.w),
+                                                Text(
+                                                  'Admin Sekolah',
+                                                  style: TextStyle(
+                                                    fontSize: kIsWeb
+                                                        ? 13
+                                                        : 13.5.sp,
+                                                    fontWeight: FontWeight.bold,
+                                                    color:
+                                                        _registerType == 'admin'
+                                                        ? Colors.white
+                                                        : Theme.of(context)
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(height: 8.h),
+                                Text(
+                                  _registerType == 'guru'
+                                      ? '* Pendaftaran akun Guru memerlukan persetujuan dari Admin Sekolah yang bersangkutan.'
+                                      : '* Pendaftaran Admin Sekolah memerlukan Kode Sekolah resmi dari Superadmin untuk aktivasi.',
+                                  style: TextStyle(
+                                    fontSize: 11.5.sp,
+                                    color: const Color(0xFF2563EB),
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                                SizedBox(height: 20.h),
+
+                                // Profile image picker
+                                Center(
+                                  child: Stack(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 46.r,
+                                        backgroundColor: const Color(
+                                          0xFFF1F5F9,
+                                        ),
+                                        backgroundImage:
+                                            _profileImageBytes != null
+                                            ? MemoryImage(_profileImageBytes!)
+                                            : null,
+                                        child: _profileImageBytes == null
+                                            ? Icon(
+                                                Icons.person_outline_rounded,
+                                                size: 46.r,
+                                                color: Colors.grey[400],
+                                              )
+                                            : null,
+                                      ),
+                                      Positioned(
+                                        bottom: 0,
+                                        right: 0,
+                                        child: GestureDetector(
+                                          onTap: _showImageSourceSheet,
+                                          child: Container(
+                                            padding: EdgeInsets.all(6.w),
+                                            decoration: const BoxDecoration(
+                                              color: Color.fromARGB(
+                                                255,
+                                                37,
+                                                99,
+                                                235,
                                               ),
-                                            ],
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              Icons.camera_alt,
+                                              size: 16.r,
+                                              color: Colors.white,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 8.h),
-                              Text(
-                                _registerType == 'guru'
-                                    ? '* Pendaftaran akun Guru memerlukan persetujuan dari Admin Sekolah yang bersangkutan.'
-                                    : '* Pendaftaran Admin Sekolah memerlukan Kode Sekolah resmi dari Superadmin untuk aktivasi.',
-                                style: TextStyle(
-                                  fontSize: 11.5.sp,
-                                  color: const Color(0xFF2563EB),
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                              SizedBox(height: 20.h),
+                                SizedBox(height: 24.h),
 
-                              // Profile image picker
-                              Center(
-                                child: Stack(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 46.r,
-                                      backgroundColor: const Color(0xFFF1F5F9),
-                                      backgroundImage: _profileImageBytes != null
-                                          ? MemoryImage(_profileImageBytes!)
-                                          : null,
-                                      child: _profileImageBytes == null
-                                          ? Icon(
-                                              Icons.person_outline_rounded,
-                                              size: 46.r,
-                                              color: Colors.grey[400],
-                                            )
-                                          : null,
+                                // Sekolah Tempat Mengajar / Mengelola (Wajib)
+                                if (_registerType == 'admin') ...[
+                                  _buildFieldLabel(
+                                    'NAMA SEKOLAH YANG DIKELOLA',
+                                  ),
+                                  _buildTextField(
+                                    controller: _schoolNameController,
+                                    focusNode: _schoolNameFocusNode,
+                                    nextFocusNode: _schoolCodeFocusNode,
+                                    hintText: 'Contoh: SMK Negeri 11 Malang',
+                                    icon: Icons.domain_rounded,
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return 'Nama sekolah tidak boleh kosong';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  SizedBox(height: 16.h),
+                                  _buildFieldLabel(
+                                    'KODE PAKET / AKTIVASI DARI JM-PANEL',
+                                  ),
+                                  TextFormField(
+                                    controller: _schoolCodeController,
+                                    focusNode: _schoolCodeFocusNode,
+                                    style: TextStyle(
+                                      fontSize: kIsWeb ? 14.5 : 15.sp,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
                                     ),
-                                    Positioned(
-                                      bottom: 0,
-                                      right: 0,
-                                      child: GestureDetector(
-                                        onTap: _showImageSourceSheet,
-                                        child: Container(
-                                          padding: EdgeInsets.all(6.w),
-                                          decoration: const BoxDecoration(
-                                            color: Color.fromARGB(255, 37, 99, 235),
-                                            shape: BoxShape.circle,
+                                    decoration: InputDecoration(
+                                      hintText:
+                                          'Contoh: FREE, PRO, atau Kode Voucher...',
+                                      hintStyle: TextStyle(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? const Color(0xFF64748B)
+                                            : Colors.grey[400],
+                                        fontSize: kIsWeb ? 14 : 14.5.sp,
+                                        fontWeight: FontWeight.normal,
+                                      ),
+                                      prefixIcon: Icon(
+                                        Icons.key_rounded,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? const Color(0xFF60A5FA)
+                                            : const Color.fromARGB(
+                                                255,
+                                                37,
+                                                99,
+                                                235,
+                                              ),
+                                      ),
+                                      suffixIcon: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          if (_schoolCodeController
+                                                  .text
+                                                  .isNotEmpty ||
+                                              _selectedSchools.isNotEmpty)
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.clear_rounded,
+                                                color: Colors.grey,
+                                              ),
+                                              onPressed: () {
+                                                setState(() {
+                                                  _schoolCodeController.clear();
+                                                  _selectedSchools.clear();
+                                                  _detectedPlan = null;
+                                                });
+                                              },
+                                            ),
+                                          IconButton(
+                                            icon: Icon(
+                                              Icons.check_circle,
+                                              color:
+                                                  Theme.of(
+                                                        context,
+                                                      ).brightness ==
+                                                      Brightness.dark
+                                                  ? const Color(0xFF60A5FA)
+                                                  : const Color.fromARGB(
+                                                      255,
+                                                      37,
+                                                      99,
+                                                      235,
+                                                    ),
+                                            ),
+                                            onPressed: () {
+                                              _resolveSchoolCode(
+                                                _schoolCodeController.text
+                                                    .trim(),
+                                                masterProvider,
+                                              );
+                                            },
                                           ),
-                                          child: Icon(
-                                            Icons.camera_alt,
-                                            size: 16.r,
-                                            color: Colors.white,
-                                          ),
+                                        ],
+                                      ),
+                                      filled: true,
+                                      fillColor:
+                                          Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest
+                                          : const Color(
+                                              0xFFEFF6FF,
+                                            ).withValues(alpha: 0.5),
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 14.w,
+                                        vertical: kIsWeb ? 10 : 12.h,
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          16.r,
+                                        ),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          16.r,
+                                        ),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          16.r,
+                                        ),
+                                        borderSide: BorderSide(
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? const Color(0xFF60A5FA)
+                                              : const Color.fromARGB(
+                                                  255,
+                                                  37,
+                                                  99,
+                                                  235,
+                                                ),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      errorBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          16.r,
+                                        ),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFFEF4444),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      focusedErrorBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          16.r,
+                                        ),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFFEF4444),
+                                          width: 2,
                                         ),
                                       ),
                                     ),
+                                    onChanged: (val) {
+                                      if (_detectedPlan != null) {
+                                        setState(() {
+                                          _detectedPlan = null;
+                                        });
+                                      }
+                                    },
+                                    onFieldSubmitted: (val) {
+                                      _resolveSchoolCode(
+                                        val.trim(),
+                                        masterProvider,
+                                        showSnackBar: true,
+                                      );
+                                      FocusScope.of(
+                                        context,
+                                      ).requestFocus(_fullNameFocusNode);
+                                    },
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return 'Kode aktivasi / paket tidak boleh kosong';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  if (_detectedPlan != null ||
+                                      _selectedSchools.isNotEmpty) ...[
+                                    SizedBox(height: 8.h),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 14.w,
+                                        vertical: 8.h,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF0FDF4),
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
+                                        border: Border.all(
+                                          color: const Color(0xFF86EFAC),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.check_circle_rounded,
+                                            color: Color(0xFF166534),
+                                            size: 18,
+                                          ),
+                                          SizedBox(width: 8.w),
+                                          Expanded(
+                                            child: Text(
+                                              'Paket Terverifikasi: ${_detectedPlan ?? 'AKTIF'}',
+                                              style: TextStyle(
+                                                fontSize: 12.sp,
+                                                fontWeight: FontWeight.bold,
+                                                color: const Color(0xFF166534),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ],
-                                ),
-                              ),
-                              SizedBox(height: 24.h),
+                                ] else ...[
+                                  _buildFieldLabel(
+                                    'SEKOLAH TEMPAT MENGAJAR (KODE SEKOLAH / UUID)',
+                                  ),
+                                  TextFormField(
+                                    controller: _schoolCodeController,
+                                    focusNode: _schoolCodeFocusNode,
+                                    style: TextStyle(
+                                      fontSize: kIsWeb ? 14.5 : 15.sp,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText:
+                                          'Masukkan Kode Sekolah tempat mengajar...',
+                                      hintStyle: TextStyle(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? const Color(0xFF64748B)
+                                            : Colors.grey[400],
+                                        fontSize: kIsWeb ? 14 : 14.5.sp,
+                                        fontWeight: FontWeight.normal,
+                                      ),
+                                      prefixIcon: Icon(
+                                        Icons.key_rounded,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? const Color(0xFF60A5FA)
+                                            : const Color.fromARGB(
+                                                255,
+                                                37,
+                                                99,
+                                                235,
+                                              ),
+                                      ),
+                                      suffixIcon: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          if (_schoolCodeController
+                                                  .text
+                                                  .isNotEmpty ||
+                                              _selectedSchools.isNotEmpty ||
+                                              _schoolErrorMessage != null)
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.clear_rounded,
+                                                color: Colors.grey,
+                                              ),
+                                              onPressed: () {
+                                                setState(() {
+                                                  _schoolCodeController.clear();
+                                                  _selectedSchools.clear();
+                                                  _resolvedSchoolId = null;
+                                                  _schoolErrorMessage = null;
+                                                  _positionController.clear();
+                                                });
+                                              },
+                                            ),
+                                          IconButton(
+                                            icon: Icon(
+                                              Icons.check_circle,
+                                              color:
+                                                  Theme.of(
+                                                        context,
+                                                      ).brightness ==
+                                                      Brightness.dark
+                                                  ? const Color(0xFF60A5FA)
+                                                  : const Color.fromARGB(
+                                                      255,
+                                                      37,
+                                                      99,
+                                                      235,
+                                                    ),
+                                            ),
+                                            onPressed: () {
+                                              _resolveSchoolCode(
+                                                _schoolCodeController.text
+                                                    .trim(),
+                                                masterProvider,
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      filled: true,
+                                      fillColor:
+                                          Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest
+                                          : const Color(
+                                              0xFFEFF6FF,
+                                            ).withValues(alpha: 0.5),
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 14.w,
+                                        vertical: kIsWeb ? 10 : 12.h,
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          16.r,
+                                        ),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          16.r,
+                                        ),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          16.r,
+                                        ),
+                                        borderSide: BorderSide(
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? const Color(0xFF60A5FA)
+                                              : const Color.fromARGB(
+                                                  255,
+                                                  37,
+                                                  99,
+                                                  235,
+                                                ),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      errorBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          16.r,
+                                        ),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFFEF4444),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      focusedErrorBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          16.r,
+                                        ),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFFEF4444),
+                                          width: 2,
+                                        ),
+                                      ),
+                                    ),
+                                    onChanged: (val) {
+                                      if (_selectedSchools.isNotEmpty ||
+                                          _schoolErrorMessage != null) {
+                                        setState(() {
+                                          _selectedSchools.clear();
+                                          _resolvedSchoolId = null;
+                                          _schoolErrorMessage = null;
+                                          _positionController.clear();
+                                        });
+                                      }
+                                    },
+                                    onFieldSubmitted: (val) {
+                                      _resolveSchoolCode(
+                                        val.trim(),
+                                        masterProvider,
+                                        showSnackBar: true,
+                                      );
+                                      FocusScope.of(
+                                        context,
+                                      ).requestFocus(_fullNameFocusNode);
+                                    },
+                                    validator: (value) {
+                                      if (_selectedSchools.isEmpty) {
+                                        if (_schoolErrorMessage != null) {
+                                          return _schoolErrorMessage;
+                                        }
+                                        return 'Tekan tombol centang biru untuk verifikasi Kode Sekolah';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  if (_selectedSchools.isNotEmpty) ...[
+                                    SizedBox(height: 8.h),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 14.w,
+                                        vertical: 8.h,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF0FDF4),
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
+                                        border: Border.all(
+                                          color: const Color(0xFF86EFAC),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.check_circle_rounded,
+                                            color: Color(0xFF166534),
+                                            size: 18,
+                                          ),
+                                          SizedBox(width: 8.w),
+                                          Expanded(
+                                            child: Text(
+                                              'Terverifikasi: ${_selectedSchools.join(', ')}',
+                                              style: TextStyle(
+                                                fontSize: 12.sp,
+                                                fontWeight: FontWeight.bold,
+                                                color: const Color(0xFF166534),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ] else if (_schoolErrorMessage != null) ...[
+                                    SizedBox(height: 8.h),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 14.w,
+                                        vertical: 8.h,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFEF2F2),
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
+                                        border: Border.all(
+                                          color: const Color(0xFFFCA5A5),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.cancel_rounded,
+                                            color: Color(0xFFB91C1C),
+                                            size: 18,
+                                          ),
+                                          SizedBox(width: 8.w),
+                                          Expanded(
+                                            child: Text(
+                                              _schoolErrorMessage!,
+                                              style: TextStyle(
+                                                fontSize: 12.sp,
+                                                fontWeight: FontWeight.w600,
+                                                color: const Color(0xFFB91C1C),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                                SizedBox(height: 16.h),
 
-                              // Sekolah Tempat Mengajar / Mengelola (Wajib)
-                              if (_registerType == 'admin') ...[
-                                _buildFieldLabel('NAMA SEKOLAH YANG DIKELOLA'),
+                                // Nama Lengkap
+                                _buildFieldLabel('NAMA LENGKAP'),
                                 _buildTextField(
-                                  controller: _schoolNameController,
-                                  focusNode: _schoolNameFocusNode,
-                                  nextFocusNode: _schoolCodeFocusNode,
-                                  hintText: 'Contoh: SMK Negeri 11 Malang',
-                                  icon: Icons.domain_rounded,
+                                  controller: _fullNameController,
+                                  focusNode: _fullNameFocusNode,
+                                  nextFocusNode: _registerType == 'guru'
+                                      ? _nipFocusNode
+                                      : _phoneNumberFocusNode,
+                                  hintText: 'Nama lengkap beserta gelar',
+                                  icon: Icons.person_outline,
                                   validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Nama sekolah tidak boleh kosong';
+                                    if (value == null || value.isEmpty) {
+                                      return 'Nama lengkap tidak boleh kosong';
                                     }
                                     return null;
                                   },
                                 ),
                                 SizedBox(height: 16.h),
-                                _buildFieldLabel('KODE PAKET / AKTIVASI DARI JM-PANEL'),
-                                TextFormField(
-                                  controller: _schoolCodeController,
-                                  focusNode: _schoolCodeFocusNode,
-                                  style: TextStyle(
-                                    fontSize: kIsWeb ? 14.5 : 15.sp,
-                                    color: Theme.of(context).colorScheme.onSurface,
+
+                                // NIP (khusus guru)
+                                if (_registerType == 'guru') ...[
+                                  _buildFieldLabel('NIP (NOMOR INDUK PEGAWAI)'),
+                                  _buildTextField(
+                                    controller: _nipController,
+                                    focusNode: _nipFocusNode,
+                                    nextFocusNode: _phoneNumberFocusNode,
+                                    hintText:
+                                        'Contoh: 198507202010011005 (Kosongkan jika belum ada)',
+                                    icon: Icons.badge_outlined,
+                                    keyboardType: TextInputType.number,
+                                    validator: (value) => null,
                                   ),
-                                  decoration: InputDecoration(
-                                    hintText: 'Contoh: FREE, PRO, atau Kode Voucher...',
-                                    hintStyle: TextStyle(
-                                      color: Theme.of(context).brightness == Brightness.dark
-                                          ? const Color(0xFF64748B)
-                                          : Colors.grey[400],
-                                      fontSize: kIsWeb ? 14 : 14.5.sp,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                    prefixIcon: Icon(
-                                      Icons.key_rounded,
-                                      color: Theme.of(context).brightness == Brightness.dark
-                                          ? const Color(0xFF60A5FA)
-                                          : const Color.fromARGB(255, 37, 99, 235),
-                                    ),
-                                    suffixIcon: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        if (_schoolCodeController.text.isNotEmpty || _selectedSchools.isNotEmpty)
-                                          IconButton(
-                                            icon: const Icon(Icons.clear_rounded, color: Colors.grey),
-                                            onPressed: () {
-                                              setState(() {
-                                                _schoolCodeController.clear();
-                                                _selectedSchools.clear();
-                                                _detectedPlan = null;
-                                              });
-                                            },
-                                          ),
-                                        IconButton(
-                                          icon: Icon(
-                                            Icons.check_circle,
-                                            color: Theme.of(context).brightness == Brightness.dark
-                                                ? const Color(0xFF60A5FA)
-                                                : const Color.fromARGB(255, 37, 99, 235),
-                                          ),
-                                          onPressed: () {
-                                            _resolveSchoolCode(_schoolCodeController.text.trim(), masterProvider);
+                                  SizedBox(height: 16.h),
+                                ],
+
+                                // Jabatan (khusus guru)
+                                if (_registerType == 'guru') ...[
+                                  _buildFieldLabel('JABATAN'),
+                                  if (_selectedSchools.isNotEmpty) ...[
+                                    GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () async {
+                                        final effectiveSchoolId =
+                                            _resolvedSchoolId;
+                                        List<String> subjectNames = [];
+
+                                        try {
+                                          if (effectiveSchoolId != null &&
+                                              effectiveSchoolId.isNotEmpty) {
+                                            final fetched = await masterProvider
+                                                .subjectRepository
+                                                .getAll(effectiveSchoolId);
+                                            if (fetched.isNotEmpty) {
+                                              subjectNames = fetched
+                                                  .where((s) => s.isActive)
+                                                  .map((s) => s.name)
+                                                  .toList();
+                                            }
+                                          }
+                                        } catch (e) {
+                                          debugPrint(
+                                            '[REGISTER] Error fetching subjects from DB: $e',
+                                          );
+                                        }
+
+                                        // Fallback ke masterProvider.subjects jika terfilter untuk sekolah yang sama
+                                        if (subjectNames.isEmpty &&
+                                            (effectiveSchoolId == null ||
+                                                masterProvider
+                                                        .currentSchoolId ==
+                                                    effectiveSchoolId)) {
+                                          subjectNames = masterProvider.subjects
+                                              .where((s) => s.isActive)
+                                              .map((s) => s.name)
+                                              .toList();
+                                        }
+
+                                        if (!context.mounted) return;
+
+                                        _showPositionSelector(
+                                          context,
+                                          subjectNames,
+                                          _positionController.text,
+                                          (selected) {
+                                            setState(() {
+                                              _positionController.text =
+                                                  selected;
+                                            });
                                           },
-                                        ),
-                                      ],
-                                    ),
-                                    filled: true,
-                                    fillColor: Theme.of(context).brightness == Brightness.dark
-                                        ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                        : const Color(0xFFEFF6FF).withValues(alpha: 0.5),
-                                    contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 14.w,
-                                      vertical: kIsWeb ? 10 : 12.h,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      borderSide: BorderSide(
-                                        color: Theme.of(context).brightness == Brightness.dark
-                                            ? const Color(0xFF60A5FA)
-                                            : const Color.fromARGB(255, 37, 99, 235),
-                                        width: 2,
-                                      ),
-                                    ),
-                                    errorBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFFEF4444),
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    focusedErrorBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFFEF4444),
-                                        width: 2,
-                                      ),
-                                    ),
-                                  ),
-                                  onChanged: (val) {
-                                    if (_detectedPlan != null) {
-                                      setState(() {
-                                        _detectedPlan = null;
-                                      });
-                                    }
-                                  },
-                                  onFieldSubmitted: (val) {
-                                    _resolveSchoolCode(val.trim(), masterProvider, showSnackBar: true);
-                                    FocusScope.of(context).requestFocus(_fullNameFocusNode);
-                                  },
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Kode aktivasi / paket tidak boleh kosong';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                if (_detectedPlan != null || _selectedSchools.isNotEmpty) ...[
-                                  SizedBox(height: 8.h),
-                                  Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF0FDF4),
-                                      borderRadius: BorderRadius.circular(12.r),
-                                      border: Border.all(color: const Color(0xFF86EFAC)),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.check_circle_rounded, color: Color(0xFF166534), size: 18),
-                                        SizedBox(width: 8.w),
-                                        Expanded(
-                                          child: Text(
-                                            'Paket Terverifikasi: ${_detectedPlan ?? 'AKTIF'}',
-                                            style: TextStyle(
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.bold,
-                                              color: const Color(0xFF166534),
+                                        );
+                                      },
+                                      child: AbsorbPointer(
+                                        child: _buildTextField(
+                                          controller: _positionController,
+                                          hintText:
+                                              'Ketuk untuk memilih jabatan / guru mapel...',
+                                          icon: Icons.work_outline,
+                                          suffixIcon: const Icon(
+                                            Icons.arrow_drop_down,
+                                            color: Color.fromARGB(
+                                              255,
+                                              37,
+                                              99,
+                                              235,
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ] else ...[
-                                _buildFieldLabel('SEKOLAH TEMPAT MENGAJAR (KODE SEKOLAH / UUID)'),
-                                TextFormField(
-                                  controller: _schoolCodeController,
-                                  focusNode: _schoolCodeFocusNode,
-                                  style: TextStyle(
-                                    fontSize: kIsWeb ? 14.5 : 15.sp,
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText: 'Masukkan Kode Sekolah tempat mengajar...',
-                                    hintStyle: TextStyle(
-                                      color: Theme.of(context).brightness == Brightness.dark
-                                          ? const Color(0xFF64748B)
-                                          : Colors.grey[400],
-                                      fontSize: kIsWeb ? 14 : 14.5.sp,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                    prefixIcon: Icon(
-                                      Icons.key_rounded,
-                                      color: Theme.of(context).brightness == Brightness.dark
-                                          ? const Color(0xFF60A5FA)
-                                          : const Color.fromARGB(255, 37, 99, 235),
-                                    ),
-                                    suffixIcon: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        if (_schoolCodeController.text.isNotEmpty || _selectedSchools.isNotEmpty)
-                                          IconButton(
-                                            icon: const Icon(Icons.clear_rounded, color: Colors.grey),
-                                            onPressed: () {
-                                              setState(() {
-                                                _schoolCodeController.clear();
-                                                _selectedSchools.clear();
-                                                _resolvedSchoolId = null;
-                                                _positionController.clear();
-                                              });
-                                            },
-                                          ),
-                                        IconButton(
-                                          icon: Icon(
-                                            Icons.check_circle,
-                                            color: Theme.of(context).brightness == Brightness.dark
-                                                ? const Color(0xFF60A5FA)
-                                                : const Color.fromARGB(255, 37, 99, 235),
-                                          ),
-                                          onPressed: () {
-                                            _resolveSchoolCode(_schoolCodeController.text.trim(), masterProvider);
+                                          validator: (value) {
+                                            if (_registerType == 'guru' &&
+                                                (value == null ||
+                                                    value.isEmpty)) {
+                                              return 'Jabatan tidak boleh kosong';
+                                            }
+                                            return null;
                                           },
                                         ),
-                                      ],
-                                    ),
-                                    filled: true,
-                                    fillColor: Theme.of(context).brightness == Brightness.dark
-                                        ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                        : const Color(0xFFEFF6FF).withValues(alpha: 0.5),
-                                    contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 14.w,
-                                      vertical: kIsWeb ? 10 : 12.h,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      borderSide: BorderSide(
-                                        color: Theme.of(context).brightness == Brightness.dark
-                                            ? const Color(0xFF60A5FA)
-                                            : const Color.fromARGB(255, 37, 99, 235),
-                                        width: 2,
                                       ),
                                     ),
-                                    errorBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFFEF4444),
-                                        width: 1.5,
+                                  ] else ...[
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 14.w,
+                                        vertical: 12.h,
                                       ),
-                                    ),
-                                    focusedErrorBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFFEF4444),
-                                        width: 2,
-                                      ),
-                                    ),
-                                  ),
-                                  onChanged: (val) {
-                                    if (_selectedSchools.isNotEmpty) {
-                                      setState(() {
-                                        _selectedSchools.clear();
-                                        _resolvedSchoolId = null;
-                                        _positionController.clear();
-                                      });
-                                    }
-                                  },
-                                  onFieldSubmitted: (val) {
-                                    _resolveSchoolCode(val.trim(), masterProvider, showSnackBar: true);
-                                    FocusScope.of(context).requestFocus(_fullNameFocusNode);
-                                  },
-                                  validator: (value) {
-                                    if (_selectedSchools.isEmpty) {
-                                      return 'Tekan tombol centang biru untuk verifikasi Kode Sekolah';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                if (_selectedSchools.isNotEmpty) ...[
-                                  SizedBox(height: 8.h),
-                                  Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF0FDF4),
-                                      borderRadius: BorderRadius.circular(12.r),
-                                      border: Border.all(color: const Color(0xFF86EFAC)),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.check_circle_rounded, color: Color(0xFF166534), size: 18),
-                                        SizedBox(width: 8.w),
-                                        Expanded(
-                                          child: Text(
-                                            'Terverifikasi: ${_selectedSchools.join(', ')}',
-                                            style: TextStyle(
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.bold,
-                                              color: const Color(0xFF166534),
-                                            ),
-                                          ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Theme.of(context)
+                                                  .colorScheme
+                                                  .surfaceContainerHighest
+                                                  .withValues(alpha: 0.5)
+                                            : const Color(0xFFF1F5F9),
+                                        borderRadius: BorderRadius.circular(
+                                          16.r,
                                         ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ],
-                              SizedBox(height: 16.h),
-
-                               // Nama Lengkap
-                               _buildFieldLabel('NAMA LENGKAP'),
-                               _buildTextField(
-                                 controller: _fullNameController,
-                                 focusNode: _fullNameFocusNode,
-                                 nextFocusNode: _registerType == 'guru' ? _nipFocusNode : _phoneNumberFocusNode,
-                                 hintText: 'Nama lengkap beserta gelar',
-                                 icon: Icons.person_outline,
-                                 validator: (value) {
-                                   if (value == null || value.isEmpty) {
-                                     return 'Nama lengkap tidak boleh kosong';
-                                   }
-                                   return null;
-                                 },
-                               ),
-                               SizedBox(height: 16.h),
-
-                               // NIP (khusus guru)
-                               if (_registerType == 'guru') ...[
-                                 _buildFieldLabel('NIP (NOMOR INDUK PEGAWAI)'),
-                                 _buildTextField(
-                                   controller: _nipController,
-                                   focusNode: _nipFocusNode,
-                                   nextFocusNode: _phoneNumberFocusNode,
-                                   hintText: 'Contoh: 198507202010011005 (Kosongkan jika belum ada)',
-                                   icon: Icons.badge_outlined,
-                                   keyboardType: TextInputType.number,
-                                   validator: (value) => null,
-                                 ),
-                                 SizedBox(height: 16.h),
-                               ],
-
-                               // Jabatan (khusus guru)
-                               if (_registerType == 'guru') ...[
-                                 _buildFieldLabel('JABATAN'),
-                                 if (_selectedSchools.isNotEmpty) ...[
-                                   GestureDetector(
-                                     behavior: HitTestBehavior.opaque,
-                                     onTap: () async {
-                                       final effectiveSchoolId = _resolvedSchoolId;
-                                       List<String> subjectNames = [];
-
-                                       try {
-                                         if (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty) {
-                                           final fetched = await masterProvider.subjectRepository.getAll(effectiveSchoolId);
-                                           if (fetched.isNotEmpty) {
-                                             subjectNames = fetched
-                                                 .where((s) => s.isActive)
-                                                 .map((s) => s.name)
-                                                 .toList();
-                                           }
-                                         }
-                                       } catch (e) {
-                                         debugPrint('[REGISTER] Error fetching subjects from DB: $e');
-                                       }
-
-                                       // Fallback ke masterProvider.subjects jika terfilter untuk sekolah yang sama
-                                       if (subjectNames.isEmpty &&
-                                           (effectiveSchoolId == null || masterProvider.currentSchoolId == effectiveSchoolId)) {
-                                         subjectNames = masterProvider.subjects
-                                             .where((s) => s.isActive)
-                                             .map((s) => s.name)
-                                             .toList();
-                                       }
-
-                                       if (!context.mounted) return;
-
-                                       _showPositionSelector(
-                                         context,
-                                         subjectNames,
-                                         _positionController.text,
-                                         (selected) {
-                                           setState(() {
-                                             _positionController.text = selected;
-                                           });
-                                         },
-                                       );
-                                     },
-                                     child: AbsorbPointer(
-                                       child: _buildTextField(
-                                         controller: _positionController,
-                                         hintText: 'Ketuk untuk memilih jabatan / guru mapel...',
-                                         icon: Icons.work_outline,
-                                         suffixIcon: const Icon(
-                                           Icons.arrow_drop_down,
-                                           color: Color.fromARGB(255, 37, 99, 235),
-                                         ),
-                                         validator: (value) {
-                                           if (_registerType == 'guru' && (value == null || value.isEmpty)) {
-                                             return 'Jabatan tidak boleh kosong';
-                                           }
-                                           return null;
-                                         },
-                                       ),
-                                     ),
-                                   ),
-                                 ] else ...[
-                                   Container(
-                                     padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-                                     decoration: BoxDecoration(
-                                       color: Theme.of(context).brightness == Brightness.dark
-                                           ? Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
-                                           : const Color(0xFFF1F5F9),
-                                       borderRadius: BorderRadius.circular(16.r),
-                                       border: Border.all(
-                                         color: Theme.of(context).brightness == Brightness.dark
-                                             ? const Color(0xFF334155)
-                                             : const Color(0xFFCBD5E1),
-                                       ),
-                                     ),
-                                     child: Row(
-                                       children: [
-                                         Icon(
-                                           Icons.info_outline_rounded,
-                                           size: 18.sp,
-                                           color: Theme.of(context).brightness == Brightness.dark
-                                               ? const Color(0xFF94A3B8)
-                                               : const Color(0xFF64748B),
-                                         ),
-                                         SizedBox(width: 10.w),
-                                         Expanded(
-                                           child: Text(
-                                             'Masukkan dan verifikasi Kode Sekolah di atas terlebih dahulu untuk menampilkan pilihan jabatan / mata pelajaran sekolah.',
-                                             style: TextStyle(
-                                               fontSize: 12.sp,
-                                               color: Theme.of(context).brightness == Brightness.dark
-                                                   ? const Color(0xFF94A3B8)
-                                                   : const Color(0xFF64748B),
-                                               height: 1.3,
-                                             ),
-                                           ),
-                                         ),
-                                       ],
-                                     ),
-                                   ),
-                                 ],
-                                 SizedBox(height: 16.h),
-                               ],
-
-                              // Nomor Telepon
-                              _buildFieldLabel('NOMOR TELEPON'),
-                              _buildTextField(
-                                controller: _phoneNumberController,
-                                focusNode: _phoneNumberFocusNode,
-                                nextFocusNode: _addressFocusNode,
-                                hintText: 'Contoh: 08123456789',
-                                icon: Icons.phone_outlined,
-                                keyboardType: TextInputType.phone,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Nomor telepon tidak boleh kosong';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              SizedBox(height: 16.h),
-
-                              // Alamat
-                              _buildFieldLabel('ALAMAT'),
-                              _buildTextField(
-                                controller: _addressController,
-                                focusNode: _addressFocusNode,
-                                nextFocusNode: _emailFocusNode,
-                                hintText: 'Alamat tempat tinggal',
-                                icon: Icons.home_outlined,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Alamat tidak boleh kosong';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              SizedBox(height: 16.h),
-
-                              // Email
-                              _buildFieldLabel('EMAIL'),
-                              _buildTextField(
-                                controller: _emailController,
-                                focusNode: _emailFocusNode,
-                                nextFocusNode: _passwordFocusNode,
-                                hintText: 'guru@sekolah.id',
-                                icon: Icons.email_outlined,
-                                keyboardType: TextInputType.emailAddress,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Email tidak boleh kosong';
-                                  }
-                                  if (!RegExp(
-                                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                                  ).hasMatch(value)) {
-                                    return 'Format email tidak valid';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              SizedBox(height: 16.h),
-
-                              // Password
-                              _buildFieldLabel('KATA SANDI'),
-                              TextFormField(
-                                controller: _passwordController,
-                                focusNode: _passwordFocusNode,
-                                obscureText: _obscurePassword,
-                                textInputAction: TextInputAction.next,
-                                onFieldSubmitted: (_) {
-                                  FocusScope.of(context).requestFocus(_confirmPasswordFocusNode);
-                                },
-                                style: TextStyle(
-                                  fontSize: kIsWeb ? 14.5 : 15.sp,
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Password tidak boleh kosong';
-                                  }
-                                  if (value.length < 6) {
-                                    return 'Password minimal 6 karakter';
-                                  }
-                                  return null;
-                                },
-                                decoration: _getInputDecoration(
-                                  hintText: 'Password minimal 6 karakter',
-                                  prefixIcon: Icons.lock_outline,
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _obscurePassword
-                                          ? Icons.visibility_off_outlined
-                                          : Icons.visibility_outlined,
-                                      color: Colors.grey,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _obscurePassword = !_obscurePassword;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 16.h),
-
-                              // Confirm Password
-                              _buildFieldLabel('KONFIRMASI KATA SANDI'),
-                              TextFormField(
-                                controller: _confirmPasswordController,
-                                focusNode: _confirmPasswordFocusNode,
-                                obscureText: _obscureConfirmPassword,
-                                textInputAction: TextInputAction.done,
-                                onFieldSubmitted: (_) => _handleRegister(),
-                                style: TextStyle(
-                                  fontSize: kIsWeb ? 14.5 : 15.sp,
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Konfirmasi password tidak boleh kosong';
-                                  }
-                                  return null;
-                                },
-                                decoration: _getInputDecoration(
-                                  hintText: 'Ulangi password',
-                                  prefixIcon: Icons.lock_clock_outlined,
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _obscureConfirmPassword
-                                          ? Icons.visibility_off_outlined
-                                          : Icons.visibility_outlined,
-                                      color: Colors.grey,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _obscureConfirmPassword =
-                                            !_obscureConfirmPassword;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 32.h),
-
-                              // Register Button
-                              ElevatedButton(
-                                onPressed: isLoading ? null : _handleRegister,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color.fromARGB(255, 37, 99, 235),
-                                  foregroundColor: Colors.white,
-                                  elevation: 4,
-                                  shadowColor: const Color.fromARGB(255, 37, 99, 235).withValues(alpha: 0.4),
-                                  padding: EdgeInsets.symmetric(vertical: kIsWeb ? 10 : 13.h),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16.r),
-                                  ),
-                                ),
-                                child: isLoading
-                                    ? SizedBox(
-                                        height: 20.w,
-                                        width: 20.w,
-                                        child: const CircularProgressIndicator(
-                                          strokeWidth: 2.5,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                Colors.white,
+                                        border: Border.all(
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? const Color(0xFF334155)
+                                              : const Color(0xFFCBD5E1),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.info_outline_rounded,
+                                            size: 18.sp,
+                                            color:
+                                                Theme.of(context).brightness ==
+                                                    Brightness.dark
+                                                ? const Color(0xFF94A3B8)
+                                                : const Color(0xFF64748B),
+                                          ),
+                                          SizedBox(width: 10.w),
+                                          Expanded(
+                                            child: Text(
+                                              'Masukkan dan verifikasi Kode Sekolah di atas terlebih dahulu untuk menampilkan pilihan jabatan / mata pelajaran sekolah.',
+                                              style: TextStyle(
+                                                fontSize: 12.sp,
+                                                color:
+                                                    Theme.of(
+                                                          context,
+                                                        ).brightness ==
+                                                        Brightness.dark
+                                                    ? const Color(0xFF94A3B8)
+                                                    : const Color(0xFF64748B),
+                                                height: 1.3,
                                               ),
-                                        ),
-                                      )
-                                    : Text(
-                                        'Daftar Sekarang',
-                                        style: TextStyle(
-                                          fontSize: kIsWeb ? 15 : 16.sp,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                              ),
-                              SizedBox(height: 24.h),
+                                    ),
+                                  ],
+                                  SizedBox(height: 16.h),
+                                ],
 
-                              // Login Link
-                              Wrap(
-                                alignment: WrapAlignment.center,
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                children: [
-                                  Text(
-                                    'Sudah punya akun? ',
-                                    style: TextStyle(
-                                      fontSize: kIsWeb ? 13.5 : 14.sp,
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                // Nomor Telepon
+                                _buildFieldLabel('NOMOR TELEPON'),
+                                _buildTextField(
+                                  controller: _phoneNumberController,
+                                  focusNode: _phoneNumberFocusNode,
+                                  nextFocusNode: _addressFocusNode,
+                                  hintText: 'Contoh: 08123456789',
+                                  icon: Icons.phone_outlined,
+                                  keyboardType: TextInputType.phone,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Nomor telepon tidak boleh kosong';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                SizedBox(height: 16.h),
+
+                                // Alamat
+                                _buildFieldLabel('ALAMAT'),
+                                _buildTextField(
+                                  controller: _addressController,
+                                  focusNode: _addressFocusNode,
+                                  nextFocusNode: _emailFocusNode,
+                                  hintText: 'Alamat tempat tinggal',
+                                  icon: Icons.home_outlined,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Alamat tidak boleh kosong';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                SizedBox(height: 16.h),
+
+                                // Email
+                                _buildFieldLabel('EMAIL'),
+                                _buildTextField(
+                                  controller: _emailController,
+                                  focusNode: _emailFocusNode,
+                                  nextFocusNode: _passwordFocusNode,
+                                  hintText: 'guru@sekolah.id',
+                                  icon: Icons.email_outlined,
+                                  keyboardType: TextInputType.emailAddress,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Email tidak boleh kosong';
+                                    }
+                                    if (!RegExp(
+                                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                    ).hasMatch(value)) {
+                                      return 'Format email tidak valid';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                SizedBox(height: 16.h),
+
+                                // Password
+                                _buildFieldLabel('KATA SANDI'),
+                                TextFormField(
+                                  controller: _passwordController,
+                                  focusNode: _passwordFocusNode,
+                                  obscureText: _obscurePassword,
+                                  textInputAction: TextInputAction.next,
+                                  onFieldSubmitted: (_) {
+                                    FocusScope.of(
+                                      context,
+                                    ).requestFocus(_confirmPasswordFocusNode);
+                                  },
+                                  style: TextStyle(
+                                    fontSize: kIsWeb ? 14.5 : 15.sp,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Password tidak boleh kosong';
+                                    }
+                                    if (value.length < 6) {
+                                      return 'Password minimal 6 karakter';
+                                    }
+                                    return null;
+                                  },
+                                  decoration: _getInputDecoration(
+                                    hintText: 'Password minimal 6 karakter',
+                                    prefixIcon: Icons.lock_outline,
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscurePassword
+                                            ? Icons.visibility_off_outlined
+                                            : Icons.visibility_outlined,
+                                        color: Colors.grey,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _obscurePassword = !_obscurePassword;
+                                        });
+                                      },
                                     ),
                                   ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      if (context.canPop()) {
-                                        context.pop();
-                                      } else {
-                                        context.go('/login');
-                                      }
-                                    },
-                                    child: Text(
-                                      'Masuk Sekarang',
+                                ),
+                                SizedBox(height: 16.h),
+
+                                // Confirm Password
+                                _buildFieldLabel('KONFIRMASI KATA SANDI'),
+                                TextFormField(
+                                  controller: _confirmPasswordController,
+                                  focusNode: _confirmPasswordFocusNode,
+                                  obscureText: _obscureConfirmPassword,
+                                  textInputAction: TextInputAction.done,
+                                  onFieldSubmitted: (_) => _handleRegister(),
+                                  style: TextStyle(
+                                    fontSize: kIsWeb ? 14.5 : 15.sp,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Konfirmasi password tidak boleh kosong';
+                                    }
+                                    return null;
+                                  },
+                                  decoration: _getInputDecoration(
+                                    hintText: 'Ulangi password',
+                                    prefixIcon: Icons.lock_clock_outlined,
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscureConfirmPassword
+                                            ? Icons.visibility_off_outlined
+                                            : Icons.visibility_outlined,
+                                        color: Colors.grey,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _obscureConfirmPassword =
+                                              !_obscureConfirmPassword;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 32.h),
+
+                                // Register Button
+                                ElevatedButton(
+                                  onPressed: isLoading ? null : _handleRegister,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color.fromARGB(
+                                      255,
+                                      37,
+                                      99,
+                                      235,
+                                    ),
+                                    foregroundColor: Colors.white,
+                                    elevation: 4,
+                                    shadowColor: const Color.fromARGB(
+                                      255,
+                                      37,
+                                      99,
+                                      235,
+                                    ).withValues(alpha: 0.4),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: kIsWeb ? 10 : 13.h,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                    ),
+                                  ),
+                                  child: isLoading
+                                      ? SizedBox(
+                                          height: 20.w,
+                                          width: 20.w,
+                                          child:
+                                              const CircularProgressIndicator(
+                                                strokeWidth: 2.5,
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(Colors.white),
+                                              ),
+                                        )
+                                      : Text(
+                                          'Daftar Sekarang',
+                                          style: TextStyle(
+                                            fontSize: kIsWeb ? 15 : 16.sp,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                ),
+                                SizedBox(height: 24.h),
+
+                                // Login Link
+                                Wrap(
+                                  alignment: WrapAlignment.center,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Sudah punya akun? ',
                                       style: TextStyle(
                                         fontSize: kIsWeb ? 13.5 : 14.sp,
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).brightness == Brightness.dark
-                                            ? const Color(0xFF60A5FA)
-                                            : const Color.fromARGB(255, 37, 99, 235),
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                    GestureDetector(
+                                      onTap: () {
+                                        if (context.canPop()) {
+                                          context.pop();
+                                        } else {
+                                          context.go('/login');
+                                        }
+                                      },
+                                      child: Text(
+                                        'Masuk Sekarang',
+                                        style: TextStyle(
+                                          fontSize: kIsWeb ? 13.5 : 14.sp,
+                                          fontWeight: FontWeight.bold,
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? const Color(0xFF60A5FA)
+                                              : const Color.fromARGB(
+                                                  255,
+                                                  37,
+                                                  99,
+                                                  235,
+                                                ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
                     ],
                   ),
                 ),
@@ -1275,7 +1614,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           FocusScope.of(context).requestFocus(nextFocusNode);
         }
       },
-      style: TextStyle(fontSize: kIsWeb ? 14.5 : 15.sp, color: Theme.of(context).colorScheme.onSurface),
+      style: TextStyle(
+        fontSize: kIsWeb ? 14.5 : 15.sp,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
       validator: validator,
       decoration: _getInputDecoration(
         hintText: hintText,
@@ -1311,7 +1653,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       allOptionsSet.add(currentPosition.trim());
     }
 
-    final List<String> options = allOptionsSet.toList()..sort((a, b) => a.compareTo(b));
+    final List<String> options = allOptionsSet.toList()
+      ..sort((a, b) => a.compareTo(b));
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark
         ? const Color(0xFF60A5FA)
@@ -1320,7 +1663,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+      backgroundColor:
+          Theme.of(context).cardTheme.color ??
+          Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
@@ -1378,7 +1723,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       hintText: 'Cari mata pelajaran / jabatan...',
                       hintStyle: TextStyle(
                         fontSize: 13.5.sp,
-                        color: isDark ? const Color(0xFF64748B) : Colors.grey[400],
+                        color: isDark
+                            ? const Color(0xFF64748B)
+                            : Colors.grey[400],
                       ),
                       prefixIcon: Icon(Icons.search, color: primaryColor),
                       suffixIcon: rawQuery.isNotEmpty
@@ -1392,13 +1739,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           : null,
                       filled: true,
                       fillColor: isDark
-                          ? Theme.of(context).colorScheme.surfaceContainerHighest
+                          ? Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest
                           : const Color(0xFFF1F5F9),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.r),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 14.w,
+                        vertical: 10.h,
+                      ),
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
@@ -1411,15 +1763,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                       borderRadius: BorderRadius.circular(12.r),
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 10.h,
+                        ),
                         decoration: BoxDecoration(
                           color: primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12.r),
-                          border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
+                          border: Border.all(
+                            color: primaryColor.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.add_circle_outline, color: primaryColor, size: 18.r),
+                            Icon(
+                              Icons.add_circle_outline,
+                              color: primaryColor,
+                              size: 18.r,
+                            ),
                             SizedBox(width: 8.w),
                             Expanded(
                               child: Text(
@@ -1431,7 +1792,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ),
                             ),
-                            Icon(Icons.arrow_forward_ios, size: 12.r, color: primaryColor),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              size: 12.r,
+                              color: primaryColor,
+                            ),
                           ],
                         ),
                       ),
@@ -1447,7 +1812,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 Icon(
                                   Icons.search_off_rounded,
                                   size: 40.r,
-                                  color: isDark ? Colors.grey[600] : Colors.grey[400],
+                                  color: isDark
+                                      ? Colors.grey[600]
+                                      : Colors.grey[400],
                                 ),
                                 SizedBox(height: 8.h),
                                 Text(
@@ -1456,7 +1823,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       : 'Jabatan tidak ditemukan di daftar',
                                   style: TextStyle(
                                     fontSize: 13.5.sp,
-                                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
                                   ),
                                 ),
                                 if (rawQuery.isNotEmpty) ...[
@@ -1471,9 +1840,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: primaryColor,
                                       foregroundColor: Colors.white,
-                                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 16.w,
+                                        vertical: 8.h,
+                                      ),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10.r),
+                                        borderRadius: BorderRadius.circular(
+                                          10.r,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1492,22 +1866,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             itemBuilder: (context, index) {
                               final opt = filteredOptions[index];
-                              final isSelected = opt.toLowerCase() == currentPosition.toLowerCase();
+                              final isSelected =
+                                  opt.toLowerCase() ==
+                                  currentPosition.toLowerCase();
                               return ListTile(
                                 dense: true,
-                                contentPadding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 8.w,
+                                  vertical: 2.h,
+                                ),
                                 title: Text(
                                   opt,
                                   style: TextStyle(
                                     fontSize: 14.sp,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
                                     color: isSelected
                                         ? primaryColor
-                                        : Theme.of(context).colorScheme.onSurface,
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
                                   ),
                                 ),
                                 trailing: isSelected
-                                    ? Icon(Icons.check_circle_rounded, color: primaryColor, size: 20.r)
+                                    ? Icon(
+                                        Icons.check_circle_rounded,
+                                        color: primaryColor,
+                                        size: 20.r,
+                                      )
                                     : null,
                                 onTap: () {
                                   onSelect(opt);
@@ -1525,13 +1912,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-  Future<void> _resolveSchoolCode(String inputCode, MasterDataProvider masterProvider, {bool showSnackBar = true}) async {
+
+  Future<void> _resolveSchoolCode(
+    String inputCode,
+    MasterDataProvider masterProvider, {
+    bool showSnackBar = true,
+  }) async {
     if (inputCode.trim().isEmpty) return;
 
     final cleanCode = inputCode.trim();
 
     try {
-      final remoteMatched = await masterProvider.validateActivationCode(cleanCode);
+      final remoteMatched = await masterProvider.validateActivationCode(
+        cleanCode,
+      );
       if (remoteMatched != null) {
         if (remoteMatched.isInactive) {
           setState(() {
@@ -1540,45 +1934,65 @@ class _RegisterScreenState extends State<RegisterScreen> {
             _detectedPlan = null;
           });
           if (showSnackBar && mounted) {
-            AppHelper.showSnackBar(context, 'Aktivasi sekolah sedang dinonaktifkan oleh administrator.', isError: true);
+            AppHelper.showSnackBar(
+              context,
+              'Aktivasi sekolah sedang dinonaktifkan oleh administrator.',
+              isError: true,
+            );
           }
           return;
         }
 
         if (_registerType == 'admin') {
-          if (_schoolNameController.text.trim().isEmpty && remoteMatched.name.isNotEmpty && remoteMatched.name != 'Sekolah') {
+          if (_schoolNameController.text.trim().isEmpty &&
+              remoteMatched.name.isNotEmpty &&
+              remoteMatched.name != 'Sekolah') {
             _schoolNameController.text = remoteMatched.name;
           }
-          final effectiveSchoolName = _schoolNameController.text.trim().isNotEmpty 
-              ? _schoolNameController.text.trim() 
-              : (remoteMatched.name.isNotEmpty ? remoteMatched.name : 'Sekolah');
+          final effectiveSchoolName =
+              _schoolNameController.text.trim().isNotEmpty
+              ? _schoolNameController.text.trim()
+              : (remoteMatched.name.isNotEmpty
+                    ? remoteMatched.name
+                    : 'Sekolah');
           setState(() {
             _selectedSchools.clear();
             _selectedSchools.add(effectiveSchoolName);
-            _resolvedSchoolId = remoteMatched.id.isNotEmpty ? remoteMatched.id : null;
-            _detectedPlan = '${remoteMatched.plan.toUpperCase()} PLAN (${remoteMatched.maxTeachers} Guru)';
+            _resolvedSchoolId = remoteMatched.id.isNotEmpty
+                ? remoteMatched.id
+                : null;
+            _detectedPlan =
+                '${remoteMatched.plan.toUpperCase()} PLAN (${remoteMatched.maxTeachers} Guru)';
           });
           if (showSnackBar && mounted) {
-            AppHelper.showSnackBar(context, 'Kode terverifikasi! Paket: ${remoteMatched.plan.toUpperCase()}');
+            AppHelper.showSnackBar(
+              context,
+              'Kode terverifikasi! Paket: ${remoteMatched.plan.toUpperCase()}',
+            );
           }
           return;
         } else {
-          // Guru
-          final schoolName = remoteMatched.name.isNotEmpty ? remoteMatched.name : 'Sekolah';
-          setState(() {
-            _selectedSchools.clear();
-            _selectedSchools.add(schoolName);
-            _resolvedSchoolId = remoteMatched.id;
-            _detectedPlan = null;
-            _positionController.clear();
-          });
-          if (remoteMatched.id.isNotEmpty) {
-            masterProvider.loadAllData(remoteMatched.id);
+          // Guru: HANYA jika memiliki nama sekolah riil (bukan dummy voucher tanpa nama)
+          final isRealSchool = remoteMatched.name.trim().isNotEmpty &&
+              remoteMatched.name.trim().toLowerCase() != 'sekolah';
+          if (isRealSchool) {
+            final schoolName = remoteMatched.name.trim();
+            setState(() {
+              _selectedSchools.clear();
+              _selectedSchools.add(schoolName);
+              _resolvedSchoolId = remoteMatched.id;
+              _detectedPlan = null;
+              _schoolErrorMessage = null;
+              _positionController.clear();
+            });
+            if (remoteMatched.id.isNotEmpty) {
+              masterProvider.loadAllData(remoteMatched.id);
+            }
+            if (showSnackBar && mounted) {
+              AppHelper.showSnackBar(context, 'Sekolah ditemukan: $schoolName');
+            }
+            return;
           }
-          if (showSnackBar && mounted) {
-            AppHelper.showSnackBar(context, 'Sekolah ditemukan: $schoolName');
-          }
-          return;
         }
       }
     } catch (e) {
@@ -1589,7 +2003,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           _detectedPlan = null;
         });
         if (showSnackBar && mounted) {
-          AppHelper.showSnackBar(context, 'Aktivasi sekolah sedang dinonaktifkan oleh administrator.', isError: true);
+          AppHelper.showSnackBar(
+            context,
+            'Aktivasi sekolah sedang dinonaktifkan oleh administrator.',
+            isError: true,
+          );
         }
         return;
       }
@@ -1604,12 +2022,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final sId = s.id.toUpperCase().replaceAll(RegExp(r'\s+'), '');
       final sName = s.name.toUpperCase().replaceAll(RegExp(r'\s+'), '');
 
-      // Strict exact match for Code, NPSN, NSS, ID, or exact School Name
-      if ((sCode.isNotEmpty && sCode == searchCode) ||
+      // Strict exact match for Code, NPSN, NSS, ID
+      // Untuk pendaftaran Guru: HANYA kode sekolah resmi (JM Panel), NPSN, NSS, atau ID!
+      // JANGAN mencocokkan nama sekolah jika kodenya tidak sesuai dengan JM Panel.
+      final isCodeMatch = (sCode.isNotEmpty && sCode == searchCode) ||
           (sNpsn.isNotEmpty && sNpsn == searchCode) ||
           (sNss.isNotEmpty && sNss == searchCode) ||
-          (sId.isNotEmpty && sId == searchCode) ||
-          (sName.isNotEmpty && sName == searchCode)) {
+          (sId.isNotEmpty && sId == searchCode);
+      final isNameMatch = _registerType == 'admin' &&
+          (sName.isNotEmpty && sName == searchCode);
+
+      if (isCodeMatch || isNameMatch) {
         matchedSchool = s;
         break;
       }
@@ -1622,9 +2045,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _selectedSchools.clear();
         _resolvedSchoolId = null;
         _detectedPlan = null;
+        _schoolErrorMessage =
+            'Aktivasi sekolah sedang dinonaktifkan oleh administrator.';
       });
       if (showSnackBar && mounted) {
-        AppHelper.showSnackBar(context, 'Aktivasi sekolah sedang dinonaktifkan oleh administrator.', isError: true);
+        AppHelper.showSnackBar(
+          context,
+          'Aktivasi sekolah sedang dinonaktifkan oleh administrator.',
+          isError: true,
+        );
       }
       return;
     }
@@ -1632,9 +2061,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_registerType == 'admin') {
       final isPro = searchCode.contains('PRO');
       final isEnt = searchCode.contains('ENTERPRISE');
-      final planName = isEnt ? 'ENTERPRISE PLAN (999 Guru)' : (isPro ? 'PRO PLAN (50 Guru)' : 'FREE PLAN (30 Guru)');
-      
-      final schoolName = foundName ?? (_schoolNameController.text.trim().isNotEmpty ? _schoolNameController.text.trim() : 'Sekolah');
+      final planName = isEnt
+          ? 'ENTERPRISE PLAN (999 Guru)'
+          : (isPro ? 'PRO PLAN (50 Guru)' : 'FREE PLAN (30 Guru)');
+
+      final schoolName =
+          foundName ??
+          (_schoolNameController.text.trim().isNotEmpty
+              ? _schoolNameController.text.trim()
+              : 'Sekolah');
       if (foundName != null && _schoolNameController.text.trim().isEmpty) {
         _schoolNameController.text = foundName;
       }
@@ -1644,34 +2079,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _selectedSchools.add(schoolName);
         _resolvedSchoolId = matchedSchool?.id;
         _detectedPlan = planName;
+        _schoolErrorMessage = null;
       });
       if (showSnackBar && mounted) {
         AppHelper.showSnackBar(context, 'Kode aktivasi diterima: $planName');
       }
     } else {
-      if (foundName != null && foundName.isNotEmpty) {
-        final validSchoolName = foundName;
+      if (foundName != null &&
+          foundName.trim().isNotEmpty &&
+          foundName.trim().toLowerCase() != 'sekolah') {
+        final validSchoolName = foundName.trim();
         setState(() {
           _selectedSchools.clear();
           _selectedSchools.add(validSchoolName);
           _resolvedSchoolId = matchedSchool?.id;
           _detectedPlan = null;
           _positionController.clear();
+          _schoolErrorMessage = null;
         });
         if (matchedSchool != null && matchedSchool.id.isNotEmpty) {
           masterProvider.loadAllData(matchedSchool.id);
         }
         if (showSnackBar && mounted) {
-          AppHelper.showSnackBar(context, 'Sekolah ditemukan: $validSchoolName');
+          AppHelper.showSnackBar(
+            context,
+            'Sekolah ditemukan: $validSchoolName',
+          );
         }
       } else {
         setState(() {
           _selectedSchools.clear();
           _resolvedSchoolId = null;
           _detectedPlan = null;
+          _positionController.clear();
+          _schoolErrorMessage =
+              'Sekolah tidak ditemukan. Pastikan Kode Sekolah sesuai dengan yang ada di JM Panel.';
         });
         if (showSnackBar && mounted) {
-          AppHelper.showSnackBar(context, 'Kode sekolah tidak ditemukan. Silakan minta kode sekolah dari Admin Sekolah Anda.', isError: true);
+          AppHelper.showSnackBar(
+            context,
+            'Sekolah tidak ditemukan. Pastikan Kode Sekolah sesuai dengan yang ada di JM Panel.',
+            isError: true,
+          );
         }
       }
     }
@@ -1691,7 +2140,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       prefixIcon: Icon(
         prefixIcon,
-        color: isDark ? const Color(0xFF60A5FA) : const Color.fromARGB(255, 37, 99, 235),
+        color: isDark
+            ? const Color(0xFF60A5FA)
+            : const Color.fromARGB(255, 37, 99, 235),
       ),
       suffixIcon: suffixIcon,
       filled: true,
@@ -1705,7 +2156,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16.r),
         borderSide: BorderSide(
-          color: isDark ? const Color(0xFF60A5FA) : const Color.fromARGB(255, 37, 99, 235),
+          color: isDark
+              ? const Color(0xFF60A5FA)
+              : const Color.fromARGB(255, 37, 99, 235),
           width: 2,
         ),
       ),
