@@ -109,26 +109,28 @@ class SchoolSwitcherModal extends StatelessWidget {
                 ),
               ),
               SizedBox(width: 12.w),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Pilih Sekolah Aktif',
-                    style: GoogleFonts.hankenGrotesk(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w800,
-                      color: Theme.of(context).colorScheme.onSurface,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Pilih Sekolah Aktif',
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w800,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'Pindah konteks sekolah & hak akses',
-                    style: GoogleFonts.hankenGrotesk(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    Text(
+                      'Pindah konteks sekolah & hak akses',
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -187,8 +189,9 @@ class SchoolSwitcherModal extends StatelessWidget {
                       ),
                     ),
                     child: ListTile(
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: item.status == 'requested_exit' ? 8.h : 4.h),
                       onTap: () {
                         if (isSelected) {
                           Navigator.pop(context);
@@ -241,64 +244,81 @@ class SchoolSwitcherModal extends StatelessWidget {
                                 : Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
-                        subtitle: Row(
-                          children: [
-                            Container(
-                              margin: EdgeInsets.only(top: 4.h),
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 8.w, vertical: 2.h),
-                              decoration: BoxDecoration(
-                                color: isAdmin
-                                    ? (isDark
-                                        ? const Color(0xFF7F1D1D).withValues(alpha: 0.35)
-                                        : const Color(0xFFFEF2F2))
-                                    : (isDark
-                                        ? const Color(0xFF14532D).withValues(alpha: 0.35)
-                                        : const Color(0xFFF0FDF4)),
-                                borderRadius: BorderRadius.circular(6.r),
-                                border: Border.all(
-                                  color: isAdmin
-                                      ? (isDark ? const Color(0xFFEF4444).withValues(alpha: 0.5) : const Color(0xFFFCA5A5))
-                                      : (isDark ? const Color(0xFF22C55E).withValues(alpha: 0.5) : const Color(0xFF86EFAC)),
-                                ),
-                              ),
-                              child: Text(
-                                isAdmin ? 'ADMIN' : 'GURU',
-                                style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.w800,
-                                  color: isAdmin
-                                      ? (isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B))
-                                      : (isDark ? const Color(0xFF86EFAC) : const Color(0xFF166534)),
-                                ),
-                              ),
-                            ),
-                            if (item.status == 'requested_exit') ...[
-                              SizedBox(width: 6.w),
+                        subtitle: Padding(
+                          padding: EdgeInsets.only(top: 4.h),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
                               Container(
-                                margin: EdgeInsets.only(top: 4.h),
                                 padding: EdgeInsets.symmetric(
                                     horizontal: 8.w, vertical: 2.h),
                                 decoration: BoxDecoration(
-                                  color: isDark
-                                      ? const Color(0xFF78350F).withValues(alpha: 0.35)
-                                      : const Color(0xFFFEF3C7),
+                                  color: isAdmin
+                                      ? (isDark
+                                          ? const Color(0xFF7F1D1D).withValues(alpha: 0.35)
+                                          : const Color(0xFFFEF2F2))
+                                      : (isDark
+                                          ? const Color(0xFF14532D).withValues(alpha: 0.35)
+                                          : const Color(0xFFF0FDF4)),
                                   borderRadius: BorderRadius.circular(6.r),
                                   border: Border.all(
-                                    color: isDark ? const Color(0xFFF59E0B).withValues(alpha: 0.5) : const Color(0xFFFCD34D),
+                                    color: isAdmin
+                                        ? (isDark ? const Color(0xFFEF4444).withValues(alpha: 0.5) : const Color(0xFFFCA5A5))
+                                        : (isDark ? const Color(0xFF22C55E).withValues(alpha: 0.5) : const Color(0xFF86EFAC)),
                                   ),
                                 ),
                                 child: Text(
-                                  '⏳ MENUNGGU PERSETUJUAN ADMIN',
+                                  isAdmin ? 'ADMIN' : 'GURU',
                                   style: GoogleFonts.hankenGrotesk(
                                     fontSize: 10.sp,
                                     fontWeight: FontWeight.w800,
-                                    color: isDark ? const Color(0xFFFDE68A) : const Color(0xFFB45309),
+                                    color: isAdmin
+                                        ? (isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B))
+                                        : (isDark ? const Color(0xFF86EFAC) : const Color(0xFF166534)),
                                   ),
                                 ),
                               ),
+                              if (item.status == 'requested_exit') ...[
+                                SizedBox(height: 6.h),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8.w, vertical: 3.h),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? const Color(0xFF78350F).withValues(alpha: 0.35)
+                                        : const Color(0xFFFEF3C7),
+                                    borderRadius: BorderRadius.circular(6.r),
+                                    border: Border.all(
+                                      color: isDark ? const Color(0xFFF59E0B).withValues(alpha: 0.5) : const Color(0xFFFCD34D),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        '⏳',
+                                        style: TextStyle(fontSize: 10.sp),
+                                      ),
+                                      SizedBox(width: 4.w),
+                                      Flexible(
+                                        child: Text(
+                                          'MENUNGGU PERSETUJUAN ADMIN',
+                                          style: GoogleFonts.hankenGrotesk(
+                                            fontSize: 9.5.sp,
+                                            fontWeight: FontWeight.w800,
+                                            color: isDark ? const Color(0xFFFDE68A) : const Color(0xFFB45309),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                         trailing: isSelected
                             ? Container(
