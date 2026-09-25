@@ -40,6 +40,10 @@ class _TestAuthProvider extends AuthProvider {
   final String _mockActiveSchoolId;
   final String _mockActiveRole;
 
+  String? switchedSchoolId;
+  String? switchedSchoolName;
+  String? switchedRole;
+
   _TestAuthProvider({
     required List<UserSchoolModel> memberships,
     required String activeSchoolId,
@@ -63,6 +67,13 @@ class _TestAuthProvider extends AuthProvider {
 
   @override
   bool get isAdminCadangan => true;
+
+  @override
+  Future<void> switchActiveSchool(String schoolId, String schoolName, String role) async {
+    switchedSchoolId = schoolId;
+    switchedSchoolName = schoolName;
+    switchedRole = role;
+  }
 }
 
 class _FakeJournalRepo implements JournalRepository {
@@ -94,41 +105,43 @@ void main() {
   Widget buildTestModal({
     required Size screenSize,
     bool isDark = false,
+    _TestAuthProvider? authProvider,
   }) {
-    final authProvider = _TestAuthProvider(
-      activeSchoolId: 'school-1',
-      activeRole: 'guru',
-      memberships: [
-        UserSchoolModel(
-          id: 'mem-1',
-          userId: 'guru-1',
-          schoolId: 'school-1',
-          role: 'admin',
-          schoolName: 'SMKN 11 Malang',
-          status: 'active',
-        ),
-        UserSchoolModel(
-          id: 'mem-2',
-          userId: 'guru-1',
-          schoolId: 'school-1',
-          role: 'guru',
-          schoolName: 'SMKN 11 Malang',
-          status: 'active',
-        ),
-        UserSchoolModel(
-          id: 'mem-3',
-          userId: 'guru-1',
-          schoolId: 'school-2',
-          role: 'guru',
-          schoolName: 'SMKN 4 Malang',
-          status: 'requested_exit',
-        ),
-      ],
-    );
+    final provider = authProvider ??
+        _TestAuthProvider(
+          activeSchoolId: 'school-1',
+          activeRole: 'guru',
+          memberships: [
+            UserSchoolModel(
+              id: 'mem-1',
+              userId: 'guru-1',
+              schoolId: 'school-1',
+              role: 'admin',
+              schoolName: 'SMKN 11 Malang',
+              status: 'active',
+            ),
+            UserSchoolModel(
+              id: 'mem-2',
+              userId: 'guru-1',
+              schoolId: 'school-1',
+              role: 'guru',
+              schoolName: 'SMKN 11 Malang',
+              status: 'active',
+            ),
+            UserSchoolModel(
+              id: 'mem-3',
+              userId: 'guru-1',
+              schoolId: 'school-2',
+              role: 'guru',
+              schoolName: 'SMKN 4 Malang',
+              status: 'requested_exit',
+            ),
+          ],
+        );
 
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+        ChangeNotifierProvider<AuthProvider>.value(value: provider),
         ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
         ChangeNotifierProvider<ScheduleProvider>(
           create: (_) => ScheduleProvider(scheduleRepository: _FakeScheduleRepo()),
@@ -191,5 +204,52 @@ void main() {
 
     expect(find.text('MENUNGGU PERSETUJUAN ADMIN'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('SchoolSwitcherModal allows switching to school with requested_exit status', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final testAuth = _TestAuthProvider(
+      activeSchoolId: 'school-1',
+      activeRole: 'guru',
+      memberships: [
+        UserSchoolModel(
+          id: 'mem-1',
+          userId: 'guru-1',
+          schoolId: 'school-1',
+          role: 'guru',
+          schoolName: 'SMKN 11 Malang',
+          status: 'active',
+        ),
+        UserSchoolModel(
+          id: 'mem-2',
+          userId: 'guru-1',
+          schoolId: 'school-2',
+          role: 'guru',
+          schoolName: 'SMKN 4 Malang',
+          status: 'requested_exit',
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(buildTestModal(
+      screenSize: const Size(360, 800),
+      authProvider: testAuth,
+    ));
+    await tester.pumpAndSettle();
+
+    // Tap on SMKN 4 Malang which is in requested_exit state
+    await tester.tap(find.text('SMKN 4 Malang'));
+    await tester.pumpAndSettle();
+
+    // Verify it switched successfully to school-2 (SMKN 4 Malang)
+    expect(testAuth.switchedSchoolId, equals('school-2'));
+    expect(testAuth.switchedSchoolName, equals('SMKN 4 Malang'));
+    expect(testAuth.switchedRole, equals('guru'));
   });
 }

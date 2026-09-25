@@ -1478,7 +1478,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                 final status = item.status;
                                 final isPendingJoin = status == 'pending';
                                 final isPendingExit = status == 'requested_exit';
-                                final isActive = !isPendingJoin && !isPendingExit && sId == authProvider.activeSchoolId &&
+                                final isActive = !isPendingJoin && sId == authProvider.activeSchoolId &&
                                     sRole.toLowerCase() == authProvider.activeRole.toLowerCase();
 
                                 return InkWell(
@@ -1487,13 +1487,6 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                       AppHelper.showSnackBar(
                                         context,
                                         'Permintaan bergabung ke $sName sedang menunggu persetujuan dari Admin sekolah.',
-                                      );
-                                      return;
-                                    }
-                                    if (isPendingExit) {
-                                      AppHelper.showSnackBar(
-                                        context,
-                                        'Permintaan keluar dari $sName sedang menunggu persetujuan Admin sekolah.',
                                       );
                                       return;
                                     }
@@ -1524,23 +1517,23 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                     margin: EdgeInsets.only(bottom: 8.h),
                                     padding: EdgeInsets.all(12.w),
                                     decoration: BoxDecoration(
-                                      color: isPendingExit
+                                      color: isActive
                                           ? (isDark
-                                              ? const Color(0xFF78350F).withValues(alpha: 0.2)
-                                              : const Color(0xFFFFFBEB))
-                                          : isActive
+                                              ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
+                                              : const Color(0xFFEFF6FF))
+                                          : isPendingExit
                                               ? (isDark
-                                                  ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
-                                                  : const Color(0xFFEFF6FF))
+                                                  ? const Color(0xFF78350F).withValues(alpha: 0.2)
+                                                  : const Color(0xFFFFFBEB))
                                               : (isDark
                                                   ? Theme.of(context).colorScheme.surfaceContainerHighest
                                                   : const Color(0xFFF8FAFC)),
                                       borderRadius: BorderRadius.circular(12.r),
                                       border: Border.all(
-                                        color: isPendingExit
-                                            ? (isDark ? const Color(0xFFD97706) : const Color(0xFFFCD34D))
-                                            : isActive
-                                                ? const Color(0xFF3B82F6)
+                                        color: isActive
+                                            ? const Color(0xFF3B82F6)
+                                            : isPendingExit
+                                                ? (isDark ? const Color(0xFFD97706) : const Color(0xFFFCD34D))
                                                 : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
                                         width: (isActive || isPendingExit) ? 1.5.r : 1.r,
                                       ),
@@ -1591,7 +1584,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               )
-                                            else if (!isPendingExit) ...[
+                                            else ...[
                                               if (isActive)
                                                 Chip(
                                                   avatar: const Text('✓', style: TextStyle(fontSize: 11, color: Color(0xFF166534), fontWeight: FontWeight.bold)),
@@ -1611,7 +1604,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                                 ),
-                                              if (!(authProvider.isAdminAsli && sId == authProvider.currentUser?.schoolId)) ...[
+                                              if (!isPendingExit && !(authProvider.isAdminAsli && sId == authProvider.currentUser?.schoolId)) ...[
                                                 SizedBox(width: 8.w),
                                                 IconButton(
                                                   icon: const Icon(Icons.exit_to_app_rounded, color: Colors.redAccent),

@@ -197,15 +197,8 @@ class SchoolSwitcherModal extends StatelessWidget {
                           Navigator.pop(context);
                           return;
                         }
-                        if (item.status == 'requested_exit') {
-                          AppHelper.showSnackBar(
-                            context,
-                            'Permintaan keluar dari ${item.schoolName} sedang menunggu persetujuan Admin sekolah.',
-                          );
-                          return;
-                        }
 
-                          final scheduleProvider =
+                        final scheduleProvider =
                               Provider.of<ScheduleProvider>(context, listen: false);
                           final journalProvider =
                               Provider.of<JournalProvider>(context, listen: false);
