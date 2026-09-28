@@ -169,7 +169,8 @@ class JournalPdfService {
             _buildSignatureBlock(
               teacher: teacher,
               teacherNip: teacherNip,
-              supervisorName: (supervisorName != null && supervisorName.isNotEmpty)
+              supervisorName:
+                  (supervisorName != null && supervisorName.isNotEmpty)
                   ? supervisorName
                   : (school?.supervisorName ?? school?.headmasterName),
               supervisorNip: (supervisorNip != null && supervisorNip.isNotEmpty)
@@ -456,7 +457,7 @@ class JournalPdfService {
     return pw.Row(
       children: [
         _buildStatCard(
-          'Total Jurnal',
+          'Jurnal',
           '$totalJournals',
           PdfColors.blue800,
           ttfBold,
@@ -750,8 +751,8 @@ class JournalPdfService {
                 (teacherNip != null && teacherNip.isNotEmpty)
                     ? 'NIP. $teacherNip'
                     : ((teacher.nip != null && teacher.nip!.isNotEmpty)
-                        ? 'NIP. ${teacher.nip}'
-                        : 'NIP. ........................................'),
+                          ? 'NIP. ${teacher.nip}'
+                          : 'NIP. ........................................'),
                 style: pw.TextStyle(font: ttfRegular, fontSize: 8.5),
               ),
             ],

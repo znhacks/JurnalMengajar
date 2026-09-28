@@ -409,7 +409,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
       children: [
         Expanded(
           child: _buildMetricTile(
-            label: 'Total Jadwal',
+            label: 'Jadwal',
             count: total,
             icon: Icons.calendar_today_rounded,
             color: const Color(0xFF4F7CFF),
@@ -729,23 +729,19 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
               '/guru/journal-form?scheduleId=${schedule.id}&journalId=${matchingJournal.id}&date=$dateStr',
             );
           } else {
-            await context.push(
-              '/guru/journal/${matchingJournal.id}',
-            );
+            await context.push('/guru/journal/${matchingJournal.id}');
           }
           if (mounted) _loadData();
         },
         borderRadius: BorderRadius.circular(8.r),
         child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: 10.w,
-            vertical: 6.h,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
           decoration: BoxDecoration(
-            color: (matchingJournal.status == 'rejected'
-                    ? Colors.red
-                    : const Color(0xFF4F7CFF))
-                .withValues(alpha: isDark ? 0.2 : 0.1),
+            color:
+                (matchingJournal.status == 'rejected'
+                        ? Colors.red
+                        : const Color(0xFF4F7CFF))
+                    .withValues(alpha: isDark ? 0.2 : 0.1),
             borderRadius: BorderRadius.circular(8.r),
           ),
           child: Row(
@@ -795,10 +791,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
           },
           borderRadius: BorderRadius.circular(8.r),
           child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: 11.w,
-              vertical: 6.h,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: 11.w, vertical: 6.h),
             decoration: BoxDecoration(
               color: const Color(0xFF4F7CFF),
               borderRadius: BorderRadius.circular(8.r),
@@ -813,11 +806,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.add_task_rounded,
-                  size: 13.sp,
-                  color: Colors.white,
-                ),
+                Icon(Icons.add_task_rounded, size: 13.sp, color: Colors.white),
                 SizedBox(width: 4.w),
                 Text(
                   'Isi Jurnal',
@@ -974,8 +963,9 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
                             Icon(
                               Icons.access_time_rounded,
                               size: 12.sp,
-                              color:
-                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                             SizedBox(width: 4.w),
                             Text(

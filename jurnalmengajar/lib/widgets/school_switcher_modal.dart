@@ -6,7 +6,6 @@ import '../providers/auth_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../providers/journal_provider.dart';
 import '../providers/warning_letter_provider.dart';
-import '../core/utils/helper.dart';
 import 'school_avatar.dart';
 
 class SchoolSwitcherModal extends StatelessWidget {

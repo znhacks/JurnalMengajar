@@ -421,7 +421,7 @@ void main() {
       expect(find.text('Jadwal Mengajar'), findsOneWidget);
 
       // Verify Summary Cards
-      expect(find.text('Total Jadwal'), findsOneWidget);
+      expect(find.text('Jadwal'), findsOneWidget);
       expect(find.text('Belum Diisi'), findsWidgets);
       expect(find.text('Sudah Terisi'), findsOneWidget);
 

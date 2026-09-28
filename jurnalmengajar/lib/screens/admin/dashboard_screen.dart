@@ -97,7 +97,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final schoolId = authProvider.activeSchoolId;
     if (schoolId == null || schoolId.isEmpty) {
-      debugPrint('[RUNTIME_DEBUG:ADMIN_DASHBOARD] activeSchoolId is not ready yet, postponing _refreshData.');
+      debugPrint(
+        '[RUNTIME_DEBUG:ADMIN_DASHBOARD] activeSchoolId is not ready yet, postponing _refreshData.',
+      );
       return;
     }
 
@@ -158,18 +160,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       );
       final maxDays = settingsProvider.settings?.maxJournalInputDays ?? 3;
 
-      warningProvider.checkAndIssueWarnings(
-        schedules: scheduleProvider.schedules,
-        journals: journalProvider.journals,
-        maxDays: maxDays,
-        masterProvider: masterProvider,
-      ).then((_) {
-        if (mounted) {
-          warningProvider.loadAllWarningLetters(authProvider.activeSchoolId);
-        }
-      }).catchError((err) {
-        debugPrint('[ADMIN_DASHBOARD] Background warning check error: $err');
-      });
+      warningProvider
+          .checkAndIssueWarnings(
+            schedules: scheduleProvider.schedules,
+            journals: journalProvider.journals,
+            maxDays: maxDays,
+            masterProvider: masterProvider,
+          )
+          .then((_) {
+            if (mounted) {
+              warningProvider.loadAllWarningLetters(
+                authProvider.activeSchoolId,
+              );
+            }
+          })
+          .catchError((err) {
+            debugPrint(
+              '[ADMIN_DASHBOARD] Background warning check error: $err',
+            );
+          });
     }
   }
 
@@ -180,10 +189,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     if (!authProvider.initialized || authProvider.activeSchoolId == null) {
       return Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        backgroundColor: isDark
+            ? const Color(0xFF0F172A)
+            : const Color(0xFFF8FAFC),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -272,7 +281,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final groupedSchedulesForDay = groupDailySchedules(filteredSchedulesForDay);
     final unsubmittedCount = groupedSchedulesForDay.where((group) {
       final hasCompletedJournal = journalProvider.journals.any(
-        (j) => group.scheduleIds.contains(j.scheduleId) && j.status != 'rejected',
+        (j) =>
+            group.scheduleIds.contains(j.scheduleId) && j.status != 'rejected',
       );
       return !hasCompletedJournal;
     }).length;
@@ -443,7 +453,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               children: [
                                 Expanded(
                                   child: _buildStatCard(
-                                    'Total Jadwal',
+                                    'Jadwal',
                                     '${groupedSchedulesForDay.length}',
                                     Icons.calendar_month_rounded,
                                     accentColor: const Color(0xFF2563EB),
@@ -456,7 +466,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 SizedBox(width: 8.w),
                                 Expanded(
                                   child: _buildStatCard(
-                                    'Total Jurnal',
+                                    'Jurnal',
                                     '$totalJournals',
                                     Icons.assignment_rounded,
                                     accentColor: const Color(0xFF0284C7),
@@ -843,10 +853,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return grouped.every((group) {
       final s = group.primarySchedule;
       return journals.any((j) {
-        final sameDate = j.date.year == day.year &&
+        final sameDate =
+            j.date.year == day.year &&
             j.date.month == day.month &&
             j.date.day == day.day;
-        final sameSchedule = j.scheduleId == s.id ||
+        final sameSchedule =
+            j.scheduleId == s.id ||
             group.scheduleIds.contains(j.scheduleId) ||
             (j.classId == s.classId &&
                 j.subjectId == s.subjectId &&
@@ -878,15 +890,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       listen: false,
     );
     final holiday = holidayProvider.getHolidayForDate(day);
-    final isHoliday = holiday != null ||
+    final isHoliday =
+        holiday != null ||
         (_selectedTeacherId != null
-            ? journals.any((j) =>
-                j.teacherId == _selectedTeacherId &&
-                j.date.year == day.year &&
-                j.date.month == day.month &&
-                j.date.day == day.day &&
-                j.isTeacherAbsence &&
-                j.status != 'rejected')
+            ? journals.any(
+                (j) =>
+                    j.teacherId == _selectedTeacherId &&
+                    j.date.year == day.year &&
+                    j.date.month == day.month &&
+                    j.date.day == day.day &&
+                    j.isTeacherAbsence &&
+                    j.status != 'rejected',
+              )
             : false);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSunday = day.weekday == DateTime.sunday;
@@ -906,51 +921,40 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         bgColor = const Color(0xFFDC2626);
         textColor = Colors.white;
         fontWeight = FontWeight.w700;
-        border = Border.all(
-          color: const Color(0xFFEF4444),
-          width: 2.0,
-        );
+        border = Border.all(color: const Color(0xFFEF4444), width: 2.0);
       } else {
         bgColor = AppTheme.primaryColor;
         textColor = Colors.white;
         fontWeight = FontWeight.w700;
-        border = Border.all(
-          color: const Color(0xFF60A5FA),
-          width: 2.0,
-        );
+        border = Border.all(color: const Color(0xFF60A5FA), width: 2.0);
       }
     } else if (isHoliday) {
       // Libur / cuti: berwarna merah
       bgColor = const Color(0xFFDC2626).withValues(alpha: isDark ? 0.22 : 0.15);
       textColor = const Color(0xFFEF4444);
       fontWeight = FontWeight.w700;
-      border = Border.all(
-        color: const Color(0xFFEF4444),
-        width: 1.5,
-      );
+      border = Border.all(color: const Color(0xFFEF4444), width: 1.5);
     } else if (hasSchedule) {
       if (isAllFilled) {
         // Selesai semua jadwal diisi: berwarna biru
-        bgColor = const Color(0xFF3B82F6).withValues(alpha: isDark ? 0.22 : 0.15);
+        bgColor = const Color(
+          0xFF3B82F6,
+        ).withValues(alpha: isDark ? 0.22 : 0.15);
         textColor = isOutside
             ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
             : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8));
         fontWeight = FontWeight.w700;
-        border = Border.all(
-          color: const Color(0xFF3B82F6),
-          width: 1.5,
-        );
+        border = Border.all(color: const Color(0xFF3B82F6), width: 1.5);
       } else {
         // Memiliki jadwal tetapi belum semua mengisi jurnal: berwarna hijau
-        bgColor = const Color(0xFF10B981).withValues(alpha: isDark ? 0.22 : 0.15);
+        bgColor = const Color(
+          0xFF10B981,
+        ).withValues(alpha: isDark ? 0.22 : 0.15);
         textColor = isOutside
             ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
             : (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF047857));
         fontWeight = FontWeight.w700;
-        border = Border.all(
-          color: const Color(0xFF10B981),
-          width: 1.5,
-        );
+        border = Border.all(color: const Color(0xFF10B981), width: 1.5);
       }
     } else if (isToday) {
       bgColor = AppTheme.primaryColor.withValues(alpha: isDark ? 0.25 : 0.15);
@@ -1035,7 +1039,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             _focusedDay = focusedDay;
           });
         },
-        onHeaderTapped: (_) => _showFullCalendarDialog(context, schedules, journals),
+        onHeaderTapped: (_) =>
+            _showFullCalendarDialog(context, schedules, journals),
         calendarBuilders: CalendarBuilders(
           dowBuilder: (context, day) {
             final dayName = DateFormat.E('id_ID').format(day);
@@ -1056,16 +1061,44 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             );
           },
           defaultBuilder: (context, day, focusedDay) {
-            return _buildScheduledDayCell(day, false, false, false, schedules, journals);
+            return _buildScheduledDayCell(
+              day,
+              false,
+              false,
+              false,
+              schedules,
+              journals,
+            );
           },
           outsideBuilder: (context, day, focusedDay) {
-            return _buildScheduledDayCell(day, false, false, true, schedules, journals);
+            return _buildScheduledDayCell(
+              day,
+              false,
+              false,
+              true,
+              schedules,
+              journals,
+            );
           },
           todayBuilder: (context, day, focusedDay) {
-            return _buildScheduledDayCell(day, false, true, false, schedules, journals);
+            return _buildScheduledDayCell(
+              day,
+              false,
+              true,
+              false,
+              schedules,
+              journals,
+            );
           },
           selectedBuilder: (context, day, focusedDay) {
-            return _buildScheduledDayCell(day, true, false, false, schedules, journals);
+            return _buildScheduledDayCell(
+              day,
+              true,
+              false,
+              false,
+              schedules,
+              journals,
+            );
           },
         ),
       ),
@@ -1277,79 +1310,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildTeacherSelectorCompact(List<TeacherModel> teachers) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return DropdownButtonFormField<String>(
-      key: ValueKey(_selectedTeacherId),
-      initialValue: _selectedTeacherId,
-      isExpanded: true,
-      hint: Text(
-        'Filter guru...',
-        style: GoogleFonts.hankenGrotesk(
-          fontSize: 12.sp,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-      ),
-      decoration: InputDecoration(
-        isDense: true,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: 14.w,
-          vertical: 9.h,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: const BorderSide(
-            color: Color(0xFF2563EB),
-            width: 1.5,
-          ),
-        ),
-        filled: true,
-        fillColor: isDark
-            ? Theme.of(context).colorScheme.surfaceContainerHighest
-            : Colors.white,
-      ),
-      style: GoogleFonts.hankenGrotesk(
-        fontSize: 13.sp,
-        color: Theme.of(context).colorScheme.onSurface,
-        fontWeight: FontWeight.w600,
-      ),
-      dropdownColor: Theme.of(context).colorScheme.surface,
-      items: [
-        DropdownMenuItem<String>(
-          value: null,
-          child: Text(
-            'Semua Guru',
-            style: GoogleFonts.hankenGrotesk(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        ...teachers.map(
-          (teacher) => DropdownMenuItem<String>(
-            value: teacher.id,
-            child: Text(
-              teacher.name,
-              style: GoogleFonts.hankenGrotesk(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ),
-        ),
-      ],
-      onChanged: (value) => setState(() => _selectedTeacherId = value),
+    return AdminTeacherSearchSelector(
+      teachers: teachers,
+      selectedTeacherId: _selectedTeacherId,
+      onTeacherSelected: (value) => setState(() => _selectedTeacherId = value),
     );
   }
 
@@ -1377,9 +1341,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 : const Color(0xFFFEF2F2),
             borderRadius: BorderRadius.circular(14.r),
             border: Border.all(
-              color: isDark
-                  ? const Color(0xFF991B1B)
-                  : const Color(0xFFFCA5A5),
+              color: isDark ? const Color(0xFF991B1B) : const Color(0xFFFCA5A5),
             ),
           ),
           child: Row(
@@ -1519,187 +1481,792 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
         ],
         ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: groupedSchedules.length,
-      separatorBuilder: (context, _) => SizedBox(height: 8.h),
-      itemBuilder: (context, index) {
-        final scheduleGroup = groupedSchedules[index];
-        final sched = scheduleGroup.primarySchedule;
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: groupedSchedules.length,
+          separatorBuilder: (context, _) => SizedBox(height: 8.h),
+          itemBuilder: (context, index) {
+            final scheduleGroup = groupedSchedules[index];
+            final sched = scheduleGroup.primarySchedule;
 
-        final cls = masterProvider.classes.firstWhere(
-          (c) => c.id == sched.classId,
-          orElse: () => ClassModel(
-            id: '',
-            name: 'Kelas--',
-            periodId: '',
-            studentCount: 0,
-          ),
-        );
-        final subj = masterProvider.subjects.firstWhere(
-          (s) => s.id == sched.subjectId,
-          orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
-        );
-        final teacher = masterProvider.teachers.firstWhere(
-          (t) => t.id == sched.teacherId,
-          orElse: () => TeacherModel(
-            id: '',
-            name: 'Guru--',
-            position: '',
-            address: '',
-            phoneNumber: '',
-            email: '',
-          ),
-        );
+            final cls = masterProvider.classes.firstWhere(
+              (c) => c.id == sched.classId,
+              orElse: () => ClassModel(
+                id: '',
+                name: 'Kelas--',
+                periodId: '',
+                studentCount: 0,
+              ),
+            );
+            final subj = masterProvider.subjects.firstWhere(
+              (s) => s.id == sched.subjectId,
+              orElse: () =>
+                  SubjectModel(id: '', name: 'Mapel--', isActive: false),
+            );
+            final teacher = masterProvider.teachers.firstWhere(
+              (t) => t.id == sched.teacherId,
+              orElse: () => TeacherModel(
+                id: '',
+                name: 'Guru--',
+                position: '',
+                address: '',
+                phoneNumber: '',
+                email: '',
+              ),
+            );
 
-        final matchingJournal = journalProvider.journals.cast<JournalModel?>().firstWhere(
-          (j) => scheduleGroup.scheduleIds.contains(j?.scheduleId),
-          orElse: () => null,
-        );
-        final isRejected = matchingJournal != null && matchingJournal.status == 'rejected';
-        final isCompleted = matchingJournal != null && !isRejected;
-        final hoursStr = AppHelper.formatTeachingHours(
-          scheduleGroup.teachingHours,
-        );
+            final matchingJournal = journalProvider.journals
+                .cast<JournalModel?>()
+                .firstWhere(
+                  (j) => scheduleGroup.scheduleIds.contains(j?.scheduleId),
+                  orElse: () => null,
+                );
+            final isRejected =
+                matchingJournal != null && matchingJournal.status == 'rejected';
+            final isCompleted = matchingJournal != null && !isRejected;
+            final hoursStr = AppHelper.formatTeachingHours(
+              scheduleGroup.teachingHours,
+            );
 
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              if (matchingJournal != null) {
-                context.push('/admin/journal/${matchingJournal.id}');
-              } else {
-                context.push('/admin/schedule/${sched.id}');
-              }
-            },
-            borderRadius: BorderRadius.circular(14.r),
-            child: Ink(
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Theme.of(context).colorScheme.surface
-                    : Colors.white,
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  if (matchingJournal != null) {
+                    context.push('/admin/journal/${matchingJournal.id}');
+                  } else {
+                    context.push('/admin/schedule/${sched.id}');
+                  }
+                },
                 borderRadius: BorderRadius.circular(14.r),
-                border: Border.all(
-                  color: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFF1F5F9),
-                  width: 1.2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 9.h),
-                child: Row(
-                  children: [
-                    // Clean Teacher Avatar Frame
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isDark
-                              ? const Color(0xFF334155)
-                              : const Color(0xFFE2E8F0),
-                          width: 1.2,
+                child: Ink(
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Theme.of(context).colorScheme.surface
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(14.r),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFF1F5F9),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: isDark ? 0.2 : 0.03,
                         ),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                      child: CircleAvatar(
-                        radius: 18.r,
-                        backgroundColor: isDark
-                            ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
-                            : const Color(0xFFEEF2FF),
-                        backgroundImage:
-                            teacher.photoUrl != null &&
-                                teacher.photoUrl!.startsWith('http')
-                            ? NetworkImage(teacher.photoUrl!)
-                            : null,
-                        child:
-                            teacher.photoUrl == null ||
-                                !teacher.photoUrl!.startsWith('http')
-                            ? Icon(
-                                Icons.person_rounded,
-                                color: isDark
-                                    ? const Color(0xFF818CF8)
-                                    : const Color(0xFF4F46E5),
-                                size: 18.r,
-                              )
-                            : null,
-                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 9.h,
                     ),
-                    SizedBox(width: 11.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '${cls.name} • ${subj.name} (Jam $hoursStr)',
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w800,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                          SizedBox(height: 2.h),
-                          Text(
-                            'Guru: ${teacher.name}',
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 11.5.sp,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Modern Soft Status Icon from Ref B
-                    isCompleted
-                        ? Container(
-                            padding: EdgeInsets.all(2.w),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF2563EB),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.check_rounded,
-                              color: Colors.white,
-                              size: 16.w,
-                            ),
-                          )
-                        : Container(
-                            padding: EdgeInsets.all(5.w),
-                            decoration: BoxDecoration(
+                    child: Row(
+                      children: [
+                        // Clean Teacher Avatar Frame
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
                               color: isDark
-                                  ? const Color(
-                                      0xFF7F1D1D,
-                                    ).withValues(alpha: 0.35)
-                                  : const Color(0xFFFFE4E6),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.access_time_filled_rounded,
-                              color: const Color(0xFFE11D48),
-                              size: 15.w,
+                                  ? const Color(0xFF334155)
+                                  : const Color(0xFFE2E8F0),
+                              width: 1.2,
                             ),
                           ),
-                  ],
+                          child: CircleAvatar(
+                            radius: 18.r,
+                            backgroundColor: isDark
+                                ? const Color(
+                                    0xFF1E3A8A,
+                                  ).withValues(alpha: 0.35)
+                                : const Color(0xFFEEF2FF),
+                            backgroundImage:
+                                teacher.photoUrl != null &&
+                                    teacher.photoUrl!.startsWith('http')
+                                ? NetworkImage(teacher.photoUrl!)
+                                : null,
+                            child:
+                                teacher.photoUrl == null ||
+                                    !teacher.photoUrl!.startsWith('http')
+                                ? Icon(
+                                    Icons.person_rounded,
+                                    color: isDark
+                                        ? const Color(0xFF818CF8)
+                                        : const Color(0xFF4F46E5),
+                                    size: 18.r,
+                                  )
+                                : null,
+                          ),
+                        ),
+                        SizedBox(width: 11.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '${cls.name} • ${subj.name} (Jam $hoursStr)',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w800,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                              ),
+                              SizedBox(height: 2.h),
+                              Text(
+                                'Guru: ${teacher.name}',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 11.5.sp,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Modern Soft Status Icon from Ref B
+                        isCompleted
+                            ? Container(
+                                padding: EdgeInsets.all(2.w),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF2563EB),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.check_rounded,
+                                  color: Colors.white,
+                                  size: 16.w,
+                                ),
+                              )
+                            : Container(
+                                padding: EdgeInsets.all(5.w),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(
+                                          0xFF7F1D1D,
+                                        ).withValues(alpha: 0.35)
+                                      : const Color(0xFFFFE4E6),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.access_time_filled_rounded,
+                                  color: const Color(0xFFE11D48),
+                                  size: 15.w,
+                                ),
+                              ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-        );
-      },
-    ),
-  ],
-);
+            );
+          },
+        ),
+      ],
+    );
   }
 }
 
+class AdminTeacherSearchSelector extends StatefulWidget {
+  final List<TeacherModel> teachers;
+  final String? selectedTeacherId;
+  final ValueChanged<String?> onTeacherSelected;
+
+  const AdminTeacherSearchSelector({
+    super.key,
+    required this.teachers,
+    required this.selectedTeacherId,
+    required this.onTeacherSelected,
+  });
+
+  @override
+  State<AdminTeacherSearchSelector> createState() =>
+      _AdminTeacherSearchSelectorState();
+}
+
+class _AdminTeacherSearchSelectorState
+    extends State<AdminTeacherSearchSelector> {
+  late final TextEditingController _controller;
+  late final FocusNode _focusNode;
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
+  bool _isOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialName = _getTeacherName(widget.selectedTeacherId);
+    _controller = TextEditingController(text: initialName);
+    _focusNode = FocusNode();
+
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus) {
+        _controller.selection = TextSelection(
+          baseOffset: 0,
+          extentOffset: _controller.text.length,
+        );
+        _openDropdown();
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant AdminTeacherSearchSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedTeacherId != oldWidget.selectedTeacherId ||
+        widget.teachers != oldWidget.teachers) {
+      if (!_focusNode.hasFocus) {
+        _syncTextWithSelection();
+      }
+      if (_isOpen) {
+        _overlayEntry?.markNeedsBuild();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _closeDropdown();
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  String _getTeacherName(String? id) {
+    if (id == null) return '';
+    try {
+      return widget.teachers.firstWhere((t) => t.id == id).name;
+    } catch (_) {
+      return '';
+    }
+  }
+
+  void _syncTextWithSelection() {
+    if (widget.selectedTeacherId == null) {
+      if (_controller.text.isNotEmpty) {
+        _controller.clear();
+      }
+    } else {
+      final name = _getTeacherName(widget.selectedTeacherId);
+      if (_controller.text != name) {
+        _controller.text = name;
+      }
+    }
+  }
+
+  List<TeacherModel> _getFilteredTeachers() {
+    final query = _controller.text.trim().toLowerCase();
+    final selectedName = _getTeacherName(
+      widget.selectedTeacherId,
+    ).toLowerCase();
+
+    // If query matches the currently selected teacher's full name or is empty, show all teachers
+    if (query.isEmpty ||
+        (widget.selectedTeacherId != null && query == selectedName)) {
+      return widget.teachers;
+    }
+
+    return widget.teachers.where((t) {
+      final nameMatches = t.name.toLowerCase().contains(query);
+      final posMatches = t.position.toLowerCase().contains(query);
+      final nipMatches = t.nip != null && t.nip!.contains(query);
+      return nameMatches || posMatches || nipMatches;
+    }).toList();
+  }
+
+  void _openDropdown() {
+    if (_isOpen || !mounted) return;
+    final overlay = Overlay.maybeOf(context);
+    if (overlay == null) return;
+    _overlayEntry = _createOverlayEntry();
+    overlay.insert(_overlayEntry!);
+    setState(() {
+      _isOpen = true;
+    });
+  }
+
+  void _closeDropdown() {
+    if (!_isOpen && _overlayEntry == null) return;
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    if (mounted) {
+      setState(() {
+        _isOpen = false;
+      });
+    }
+  }
+
+  void _selectTeacher(String? teacherId) {
+    if (teacherId == null) {
+      _controller.clear();
+    } else {
+      _controller.text = _getTeacherName(teacherId);
+    }
+    widget.onTeacherSelected(teacherId);
+    _closeDropdown();
+    _focusNode.unfocus();
+    setState(() {});
+  }
+
+  void _clearInput() {
+    _controller.clear();
+    widget.onTeacherSelected(null);
+    if (_isOpen) {
+      _overlayEntry?.markNeedsBuild();
+    }
+    setState(() {});
+  }
+
+  void _handleSubmitted(String val) {
+    final q = val.trim().toLowerCase();
+    if (q.isEmpty || q == 'semua' || q == 'semua guru') {
+      _selectTeacher(null);
+      return;
+    }
+    try {
+      final exact = widget.teachers.firstWhere(
+        (t) => t.name.toLowerCase() == q,
+      );
+      _selectTeacher(exact.id);
+      return;
+    } catch (_) {}
+
+    try {
+      final partial = widget.teachers.firstWhere(
+        (t) => t.name.toLowerCase().contains(q),
+      );
+      _selectTeacher(partial.id);
+      return;
+    } catch (_) {}
+
+    _syncTextWithSelection();
+    _closeDropdown();
+    _focusNode.unfocus();
+  }
+
+  OverlayEntry _createOverlayEntry() {
+    return OverlayEntry(
+      builder: (overlayContext) {
+        final renderBox = context.findRenderObject() as RenderBox?;
+        final size = renderBox?.size ?? Size(300.w, 42.h);
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final query = _controller.text.trim().toLowerCase();
+        final selectedName = _getTeacherName(
+          widget.selectedTeacherId,
+        ).toLowerCase();
+        final filteredTeachers = _getFilteredTeachers();
+        final showSemuaOption =
+            query.isEmpty ||
+            'semua guru'.contains(query) ||
+            (widget.selectedTeacherId != null && query == selectedName);
+
+        return Stack(
+          children: [
+            // Barrier to dismiss when tapping outside
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () {
+                  _closeDropdown();
+                  _focusNode.unfocus();
+                  _syncTextWithSelection();
+                },
+                child: Container(color: Colors.transparent),
+              ),
+            ),
+            // Floating dropdown menu
+            Positioned(
+              width: size.width,
+              child: CompositedTransformFollower(
+                link: _layerLink,
+                showWhenUnlinked: false,
+                offset: Offset(0, size.height + 4.h),
+                child: Material(
+                  elevation: 8,
+                  shadowColor: Colors.black38,
+                  borderRadius: BorderRadius.circular(12.r),
+                  color: isDark
+                      ? Theme.of(context).colorScheme.surfaceContainerHighest
+                      : Colors.white,
+                  clipBehavior: Clip.antiAlias,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12.r),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    constraints: BoxConstraints(maxHeight: 280.h),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (showSemuaOption) ...[
+                          InkWell(
+                            onTap: () => _selectTeacher(null),
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 14.w,
+                                vertical: 10.h,
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 30.w,
+                                    height: 30.w,
+                                    decoration: BoxDecoration(
+                                      color: widget.selectedTeacherId == null
+                                          ? const Color(
+                                              0xFF2563EB,
+                                            ).withValues(alpha: 0.15)
+                                          : (isDark
+                                                ? const Color(0xFF334155)
+                                                : const Color(0xFFF1F5F9)),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.groups_rounded,
+                                      size: 16.sp,
+                                      color: widget.selectedTeacherId == null
+                                          ? const Color(0xFF2563EB)
+                                          : Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  SizedBox(width: 10.w),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Semua Guru',
+                                          style: GoogleFonts.hankenGrotesk(
+                                            fontSize: 13.sp,
+                                            fontWeight:
+                                                widget.selectedTeacherId == null
+                                                ? FontWeight.w700
+                                                : FontWeight.w600,
+                                            color:
+                                                widget.selectedTeacherId == null
+                                                ? const Color(0xFF2563EB)
+                                                : Theme.of(
+                                                    context,
+                                                  ).colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Tampilkan jadwal & jurnal seluruh guru',
+                                          style: GoogleFonts.hankenGrotesk(
+                                            fontSize: 11.sp,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (widget.selectedTeacherId == null)
+                                    Icon(
+                                      Icons.check_circle_rounded,
+                                      color: const Color(0xFF2563EB),
+                                      size: 18.sp,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          if (filteredTeachers.isNotEmpty)
+                            Divider(
+                              height: 1,
+                              thickness: 1,
+                              color: isDark
+                                  ? const Color(0xFF334155)
+                                  : const Color(0xFFE2E8F0),
+                            ),
+                        ],
+                        if (filteredTeachers.isEmpty && !showSemuaOption)
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 14.w,
+                              vertical: 16.h,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off_rounded,
+                                  size: 18.sp,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                                SizedBox(width: 8.w),
+                                Text(
+                                  'Guru tidak ditemukan',
+                                  style: GoogleFonts.hankenGrotesk(
+                                    fontSize: 12.sp,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Flexible(
+                            child: ListView.separated(
+                              padding: EdgeInsets.zero,
+                              shrinkWrap: true,
+                              itemCount: filteredTeachers.length,
+                              separatorBuilder: (context, index) => Divider(
+                                height: 1,
+                                thickness: 0.5,
+                                color: isDark
+                                    ? const Color(
+                                        0xFF334155,
+                                      ).withValues(alpha: 0.5)
+                                    : const Color(0xFFF1F5F9),
+                              ),
+                              itemBuilder: (context, index) {
+                                final teacher = filteredTeachers[index];
+                                final isSelected =
+                                    teacher.id == widget.selectedTeacherId;
+                                return InkWell(
+                                  onTap: () => _selectTeacher(teacher.id),
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 14.w,
+                                      vertical: 9.h,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 30.w,
+                                          height: 30.w,
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? const Color(
+                                                    0xFF2563EB,
+                                                  ).withValues(alpha: 0.15)
+                                                : (isDark
+                                                      ? const Color(0xFF334155)
+                                                      : const Color(
+                                                          0xFFF1F5F9,
+                                                        )),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            teacher.name.isNotEmpty
+                                                ? teacher.name[0].toUpperCase()
+                                                : 'G',
+                                            style: GoogleFonts.hankenGrotesk(
+                                              fontSize: 13.sp,
+                                              fontWeight: FontWeight.w700,
+                                              color: isSelected
+                                                  ? const Color(0xFF2563EB)
+                                                  : Theme.of(
+                                                      context,
+                                                    ).colorScheme.onSurface,
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 10.w),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                teacher.name,
+                                                style:
+                                                    GoogleFonts.hankenGrotesk(
+                                                      fontSize: 13.sp,
+                                                      fontWeight: isSelected
+                                                          ? FontWeight.w700
+                                                          : FontWeight.w500,
+                                                      color: isSelected
+                                                          ? const Color(
+                                                              0xFF2563EB,
+                                                            )
+                                                          : Theme.of(context)
+                                                                .colorScheme
+                                                                .onSurface,
+                                                    ),
+                                              ),
+                                              if (teacher.position.isNotEmpty ||
+                                                  (teacher.nip != null &&
+                                                      teacher.nip!.isNotEmpty))
+                                                Text(
+                                                  teacher.nip != null &&
+                                                          teacher
+                                                              .nip!
+                                                              .isNotEmpty
+                                                      ? '${teacher.position} • NIP: ${teacher.nip}'
+                                                      : teacher.position,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style:
+                                                      GoogleFonts.hankenGrotesk(
+                                                        fontSize: 11.sp,
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurfaceVariant,
+                                                      ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (isSelected)
+                                          Icon(
+                                            Icons.check_circle_rounded,
+                                            color: const Color(0xFF2563EB),
+                                            size: 18.sp,
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasSelection = widget.selectedTeacherId != null;
+    final hasText = _controller.text.isNotEmpty;
+
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: TextField(
+        controller: _controller,
+        focusNode: _focusNode,
+        textInputAction: TextInputAction.search,
+        onSubmitted: _handleSubmitted,
+        onChanged: (val) {
+          if (!_isOpen) {
+            _openDropdown();
+          } else {
+            _overlayEntry?.markNeedsBuild();
+          }
+          setState(() {});
+        },
+        style: GoogleFonts.hankenGrotesk(
+          fontSize: 13.sp,
+          color: Theme.of(context).colorScheme.onSurface,
+          fontWeight: FontWeight.w600,
+        ),
+        decoration: InputDecoration(
+          isDense: true,
+          contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 9.h),
+          hintText: 'Semua Guru',
+          hintStyle: GoogleFonts.hankenGrotesk(
+            fontSize: 13.sp,
+            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+            fontWeight: FontWeight.w600,
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            size: 19.sp,
+            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+          ),
+          prefixIconConstraints: BoxConstraints(
+            minWidth: 38.w,
+            minHeight: 20.h,
+          ),
+          suffixIcon: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (hasSelection || hasText)
+                GestureDetector(
+                  onTap: _clearInput,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 6.w),
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 18.sp,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              GestureDetector(
+                onTap: () {
+                  if (_isOpen) {
+                    _closeDropdown();
+                    _focusNode.unfocus();
+                  } else {
+                    _focusNode.requestFocus();
+                    _openDropdown();
+                  }
+                },
+                child: Padding(
+                  padding: EdgeInsets.only(right: 12.w, left: 4.w),
+                  child: Icon(
+                    _isOpen
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    size: 20.sp,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          suffixIconConstraints: BoxConstraints(
+            minWidth: 40.w,
+            minHeight: 20.h,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.r),
+            borderSide: BorderSide(
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.r),
+            borderSide: BorderSide(
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.r),
+            borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+          ),
+          filled: true,
+          fillColor: isDark
+              ? Theme.of(context).colorScheme.surfaceContainerHighest
+              : Colors.white,
+        ),
+      ),
+    );
+  }
+}
