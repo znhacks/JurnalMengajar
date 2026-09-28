@@ -2169,6 +2169,32 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
             j.material.toLowerCase().contains(_searchQuery);
       }).toList();
     }
+    journals.sort((a, b) => b.date.compareTo(a.date));
+
+    // Filter batas hari:
+    // Cukup tampilkan jadwal/jurnal terbaru dan kemarin saja (jangan kemarin lusa atau sebelumnya tampil).
+    if (journals.isNotEmpty) {
+      final now = DateTime.now();
+      final nowDate = DateTime(now.year, now.month, now.day);
+      final yesterdayDate = nowDate.subtract(const Duration(days: 1));
+
+      final latestJournalDate = journals
+          .map((j) => DateTime(j.date.year, j.date.month, j.date.day))
+          .reduce((a, b) => a.isAfter(b) ? a : b);
+
+      final DateTime cutoffDate;
+      if (latestJournalDate.isAtSameMomentAs(nowDate) ||
+          latestJournalDate.isAtSameMomentAs(yesterdayDate)) {
+        cutoffDate = yesterdayDate;
+      } else {
+        cutoffDate = latestJournalDate.subtract(const Duration(days: 1));
+      }
+
+      journals = journals.where((j) {
+        final jDate = DateTime(j.date.year, j.date.month, j.date.day);
+        return !jDate.isBefore(cutoffDate);
+      }).toList();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2276,8 +2302,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         else ...[
           Builder(
             builder: (context) {
-              final list = journals.length > 5
-                  ? journals.sublist(0, 5)
+              // Cukup tampilkan 3 item
+              final list = journals.length > 3
+                  ? journals.sublist(0, 3)
                   : journals;
               return Column(
                 children: List.generate(list.length, (index) {
@@ -2286,9 +2313,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
                   return Padding(
                     padding: EdgeInsets.only(bottom: isLast ? 0 : 8.h),
-                    child: index == 0
-                        ? _buildLatestTimelineCard(journal, masterProvider)
-                        : _buildHistoryTimelineCard(journal, masterProvider),
+                    child: _buildLatestTimelineCard(journal, masterProvider),
                   );
                 }),
               );
@@ -2508,138 +2533,6 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   ),
                 ],
               ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ─── History Journal Card (Compact) ───────────────────────────────────────
-  Widget _buildHistoryTimelineCard(
-    JournalModel journal,
-    MasterDataProvider master,
-  ) {
-    final cls = master.classes.firstWhere(
-      (c) => c.id == journal.classId,
-      orElse: () =>
-          ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
-    );
-    final subject = master.subjects.firstWhere(
-      (s) => s.id == journal.subjectId,
-      orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
-    );
-
-    final statusColor = AppHelper.getStatusColor(journal.status);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(10.r),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(10.r),
-        child: InkWell(
-          onTap: () => context.push('/guru/journal/${journal.id}'),
-          borderRadius: BorderRadius.circular(10.r),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_today_rounded,
-                          size: 11.sp,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        SizedBox(width: 4.w),
-                        Text(
-                          AppHelper.formatDateShort(journal.date),
-                          style: GoogleFonts.hankenGrotesk(
-                            fontSize: 11.sp,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (journal.isTeacherAbsence) ...[
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 7.w,
-                              vertical: 2.h,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  (journal.isTeacherSick
-                                          ? const Color(0xFFEF4444)
-                                          : const Color(0xFFF59E0B))
-                                      .withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(5.r),
-                            ),
-                            child: Text(
-                              journal.isTeacherSick
-                                  ? 'Surat Sakit'
-                                  : 'Surat Izin',
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 9.sp,
-                                fontWeight: FontWeight.w700,
-                                color: journal.isTeacherSick
-                                    ? const Color(0xFFEF4444)
-                                    : const Color(0xFFD97706),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 4.w),
-                        ],
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 7.w,
-                            vertical: 2.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.10),
-                            borderRadius: BorderRadius.circular(5.r),
-                          ),
-                          child: Text(
-                            AppHelper.getStatusLabel(journal.status),
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 9.sp,
-                              color: statusColor,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  journal.material.isNotEmpty
-                      ? '${cls.name} • ${subject.name} — ${journal.material}'
-                      : '${cls.name} • ${subject.name}',
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
             ),
           ),
         ),
