@@ -201,92 +201,50 @@ class AuthProvider with ChangeNotifier {
       }
 
       if (res != null) {
-        // Sync real-time subscription status with JM-Panel (tenants & subscriptions)
-        try {
-          final schoolId = _activeSchoolId!;
-          final schoolCode = (res['code'] as String? ?? '').trim();
+        // Source of truth for school package/plan is the school's own record (associated with the code),
+        // not the logged-in user's account.
+        final rawPlan = (res['subscription_plan'] as String? ?? 'free').toLowerCase().trim();
+        final effectivePlan = rawPlan.isEmpty ? 'free' : rawPlan;
+        res['subscription_plan'] = effectivePlan;
 
-          // 1. Find tenant matching this school
-          Map<String, dynamic>? tenantMatch;
-          try {
-            final tList = await supabase
-                .from('tenants')
-                .select('id, name, school_code, status')
-                .timeout(NetworkResilience.defaultQueryTimeout);
+        if (effectivePlan == 'free') {
+          // Walaupun belum saatnya free (ada sisa tanggal), ketika diubah menjadi free langsung free sesuai kodenya
+          final hadUntil = res['subscription_until'] != null;
+          final currentMax = res['max_teachers'] as int? ?? 30;
+          res['subscription_until'] = null;
+          res['max_teachers'] = 30;
 
-            for (final t in (tList as List)) {
-              final tId = (t['id'] as String? ?? '').toLowerCase();
-              final scRaw = (t['school_code'] as String? ?? '').toLowerCase();
-              final scCodes = scRaw.split(',').map((e) => e.trim().toLowerCase()).toList();
-
-              if (tId == schoolId.toLowerCase() ||
-                  (schoolCode.isNotEmpty && (scCodes.contains(schoolCode.toLowerCase()) || scRaw.contains(schoolCode.toLowerCase())))) {
-                tenantMatch = Map<String, dynamic>.from(t as Map);
-                break;
-              }
-            }
-          } catch (_) {}
-
-          if (tenantMatch != null) {
-            final tenantId = tenantMatch['id'] as String;
-            final tenantStatus = (tenantMatch['status'] as String? ?? 'active').toLowerCase();
-
-            // Check latest subscription in subscriptions table
-            final subList = await supabase
-                .from('subscriptions')
-                .select('id, plan_id, status, ends_at')
-                .eq('tenant_id', tenantId)
-                .order('ends_at', ascending: false)
-                .limit(1)
-                .timeout(NetworkResilience.defaultQueryTimeout);
-
-            String resolvedPlan = 'free';
-            DateTime? resolvedEndsAt;
-            int resolvedMaxTeachers = 30;
-
-            if (tenantStatus != 'inactive' && (subList as List).isNotEmpty) {
-              final firstSub = (subList as List).first as Map<String, dynamic>;
-              final subStatus = (firstSub['status'] as String? ?? 'active').toLowerCase();
-              final rawPlanId = (firstSub['plan_id'] as String? ?? 'free').toLowerCase().trim();
-              final rawEndsAt = firstSub['ends_at'];
-              if (rawEndsAt != null) {
-                resolvedEndsAt = DateTime.tryParse(rawEndsAt.toString());
-              }
-
-              final isDateActive = resolvedEndsAt == null || DateTime.now().isBefore(resolvedEndsAt);
-
-              if (subStatus == 'active' && isDateActive && rawPlanId != 'free') {
-                resolvedPlan = rawPlanId;
-                if (resolvedPlan == 'ultra') {
-                  resolvedMaxTeachers = 150;
-                } else if (resolvedPlan == 'enterprise') {
-                  resolvedMaxTeachers = 999;
-                } else if (resolvedPlan == 'pro') {
-                  resolvedMaxTeachers = 50;
-                }
-              } else {
-                resolvedPlan = 'free';
-                resolvedMaxTeachers = 30;
-                resolvedEndsAt = null;
-              }
-            }
-
-            final currentDbPlan = (res['subscription_plan'] as String? ?? 'free').toLowerCase();
-            if (currentDbPlan != resolvedPlan || (res['max_teachers'] as int? ?? 30) != resolvedMaxTeachers) {
-              res['subscription_plan'] = resolvedPlan;
-              res['max_teachers'] = resolvedMaxTeachers;
-              res['subscription_until'] = resolvedEndsAt?.toIso8601String();
-
-              // Sync back to schools table asynchronously
-              supabase.from('schools').update({
-                'subscription_plan': resolvedPlan,
-                'max_teachers': resolvedMaxTeachers,
-                'subscription_until': resolvedEndsAt?.toIso8601String(),
-              }).eq('id', res['id'] ?? _activeSchoolId!).then((_) {}, onError: (_) {});
-            }
+          if (hadUntil || currentMax != 30) {
+            supabase.from('schools').update({
+              'subscription_plan': 'free',
+              'subscription_until': null,
+              'max_teachers': 30,
+            }).eq('id', res['id'] ?? _activeSchoolId!).then((_) {}, onError: (_) {});
           }
-        } catch (jmSyncErr) {
-          debugPrint('Note: JM Panel subscription sync: $jmSyncErr');
+        } else if (effectivePlan == 'ultra') {
+          final currentMax = res['max_teachers'] as int? ?? 0;
+          if (currentMax < 150) {
+            res['max_teachers'] = 150;
+            supabase.from('schools').update({
+              'max_teachers': 150,
+            }).eq('id', res['id'] ?? _activeSchoolId!).then((_) {}, onError: (_) {});
+          }
+        } else if (effectivePlan == 'enterprise') {
+          final currentMax = res['max_teachers'] as int? ?? 0;
+          if (currentMax < 999) {
+            res['max_teachers'] = 999;
+            supabase.from('schools').update({
+              'max_teachers': 999,
+            }).eq('id', res['id'] ?? _activeSchoolId!).then((_) {}, onError: (_) {});
+          }
+        } else if (effectivePlan == 'pro') {
+          final currentMax = res['max_teachers'] as int? ?? 0;
+          if (currentMax < 50) {
+            res['max_teachers'] = 50;
+            supabase.from('schools').update({
+              'max_teachers': 50,
+            }).eq('id', res['id'] ?? _activeSchoolId!).then((_) {}, onError: (_) {});
+          }
         }
 
         var schoolModel = SchoolModel.fromJson(res);
