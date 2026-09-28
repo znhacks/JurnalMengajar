@@ -50,18 +50,27 @@ class SchoolModel {
   bool get isInactive => status.toLowerCase() == 'inactive';
 
   bool get isSubscriptionActive {
+    if (plan.toLowerCase() == 'free') return false;
     if (subscriptionUntil == null) return true;
     return DateTime.now().isBefore(subscriptionUntil!);
   }
 
-  bool get isPro => (plan.toLowerCase() == 'pro' || plan.toLowerCase() == 'enterprise') && isSubscriptionActive;
   bool get isEnterprise => plan.toLowerCase() == 'enterprise' && isSubscriptionActive;
-  bool get isFree => !isPro && !isEnterprise;
+  bool get isUltra => plan.toLowerCase() == 'ultra' && isSubscriptionActive;
+  bool get isPro => plan.toLowerCase() == 'pro' && isSubscriptionActive;
+  bool get isFree => !isEnterprise && !isUltra && !isPro;
+
+  /// True jika sekolah memiliki fitur minimal Pro (Pro, Ultra, Enterprise)
+  bool get hasProFeatures => isPro || isUltra || isEnterprise;
 
   factory SchoolModel.fromJson(Map<String, dynamic> json) {
     final rawPlan = json['subscription_plan'] as String? ?? json['plan'] as String? ?? 'free';
     final parsedPlan = rawPlan.toLowerCase().trim();
-    final defaultMax = parsedPlan == 'pro' ? 50 : (parsedPlan == 'enterprise' ? 999 : 30);
+    final defaultMax = parsedPlan == 'ultra'
+        ? 150
+        : (parsedPlan == 'pro'
+            ? 50
+            : (parsedPlan == 'enterprise' ? 999 : 30));
 
     DateTime? parsedSubscriptionUntil;
     if (json['subscription_until'] != null) {
@@ -77,6 +86,9 @@ class SchoolModel {
         parsedSubscriptionUntil = json['subscriptionUntil'] as DateTime;
       }
     }
+
+    // Jika di JM Panel diubah menjadi 'free', masa aktif langganan langsung tidak berlaku (null)
+    final effectiveSubscriptionUntil = parsedPlan == 'free' ? null : parsedSubscriptionUntil;
 
     return SchoolModel(
       id: json['id'] as String? ?? '',
@@ -96,7 +108,7 @@ class SchoolModel {
       plan: parsedPlan,
       activationCode: json['code'] as String? ?? json['activation_code'] as String? ?? json['activationCode'] as String?,
       maxTeachers: json['max_teachers'] as int? ?? defaultMax,
-      subscriptionUntil: parsedSubscriptionUntil,
+      subscriptionUntil: effectiveSubscriptionUntil,
       supervisorName: json['supervisor_name'] as String? ?? json['headmaster_name'] as String? ?? json['supervisorName'] as String?,
       supervisorNip: json['supervisor_nip'] as String? ?? json['headmaster_nip'] as String? ?? json['supervisorNip'] as String?,
     );

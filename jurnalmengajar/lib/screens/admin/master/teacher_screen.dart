@@ -186,7 +186,11 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
 
       if (school != null) {
         final plan = school.plan.toUpperCase();
-        final maxLimit = school.maxTeachers > 0 ? school.maxTeachers : (school.isPro ? 50 : 30);
+        final maxLimit = school.maxTeachers > 0
+            ? school.maxTeachers
+            : (school.isEnterprise
+                ? 999
+                : (school.isUltra ? 150 : (school.isPro ? 50 : 30)));
         if (masterProvider.teachers.length >= maxLimit) {
           AppHelper.showSnackBar(
             context,

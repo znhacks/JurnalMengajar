@@ -2059,11 +2059,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (_registerType == 'admin') {
+      final isUltra = searchCode.contains('ULTRA');
       final isPro = searchCode.contains('PRO');
       final isEnt = searchCode.contains('ENTERPRISE');
       final planName = isEnt
           ? 'ENTERPRISE PLAN (999 Guru)'
-          : (isPro ? 'PRO PLAN (50 Guru)' : 'FREE PLAN (30 Guru)');
+          : (isUltra
+              ? 'ULTRA PLAN (150 Guru)'
+              : (isPro ? 'PRO PLAN (50 Guru)' : 'FREE PLAN (30 Guru)'));
 
       final schoolName =
           foundName ??

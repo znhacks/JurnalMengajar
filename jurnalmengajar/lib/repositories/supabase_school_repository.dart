@@ -103,7 +103,7 @@ class SupabaseSchoolRepository implements SchoolRepository {
         }
 
         // Check active subscription in subscriptions table
-        bool isTenantPro = false;
+        String tenantPlan = 'free';
         DateTime? endsAt;
         try {
           final subRes = await _supabase
@@ -123,11 +123,17 @@ class SupabaseSchoolRepository implements SchoolRepository {
             final planId = (firstSub['plan_id'] as String? ?? 'free')
                 .toLowerCase();
             final isActive = endsAt == null || DateTime.now().isBefore(endsAt);
-            if (isActive && (planId == 'pro' || planId == 'enterprise')) {
-              isTenantPro = true;
+            if (isActive && planId != 'free') {
+              tenantPlan = planId;
             }
           }
         } catch (_) {}
+
+        final maxTeachers = tenantPlan == 'ultra'
+            ? 150
+            : (tenantPlan == 'enterprise'
+                ? 999
+                : (tenantPlan == 'pro' ? 50 : 30));
 
         // Check if school already exists by code in schools table before upserting
         final existingByCode = await _supabase
@@ -143,10 +149,10 @@ class SupabaseSchoolRepository implements SchoolRepository {
           id: tenantId,
           name: tenantName,
           code: cleanCode,
-          plan: isTenantPro ? 'pro' : 'free',
-          maxTeachers: isTenantPro ? 50 : 30,
+          plan: tenantPlan,
+          maxTeachers: maxTeachers,
           status: 'active',
-          subscriptionUntil: endsAt,
+          subscriptionUntil: tenantPlan == 'free' ? null : endsAt,
         );
       }
 
@@ -197,24 +203,30 @@ class SupabaseSchoolRepository implements SchoolRepository {
 
       // 6. Check if code is a JM-Panel plan voucher / activation code
       final upper = cleanCode.toUpperCase();
-      final isProPlan = upper.contains('PRO');
+      final isUltraPlan = upper.contains('ULTRA');
       final isEnterprisePlan = upper.contains('ENTERPRISE');
+      final isProPlan = upper.contains('PRO');
       final isFreePlan = upper.contains('FREE') || upper.contains('GRATIS');
       final isJMCode =
           upper.startsWith('JM') ||
           upper.startsWith('SCH') ||
           upper.startsWith('PLAN');
 
-      if (isProPlan ||
+      if (isUltraPlan ||
           isEnterprisePlan ||
+          isProPlan ||
           isFreePlan ||
           isJMCode) {
         final detectedPlan = isEnterprisePlan
             ? 'enterprise'
-            : (isProPlan ? 'pro' : 'free');
+            : (isUltraPlan
+                ? 'ultra'
+                : (isProPlan ? 'pro' : 'free'));
         final maxTeachers = detectedPlan == 'enterprise'
             ? 999
-            : (detectedPlan == 'pro' ? 50 : 30);
+            : (detectedPlan == 'ultra'
+                ? 150
+                : (detectedPlan == 'pro' ? 50 : 30));
         return SchoolModel(
           id: cleanCode,
           name: '',
@@ -263,8 +275,9 @@ class SupabaseSchoolRepository implements SchoolRepository {
           .maybeSingle();
     } catch (_) {}
 
-    bool isTenantPro = false;
+    bool isTenantUltra = false;
     bool isTenantEnterprise = false;
+    bool isTenantPro = false;
     DateTime? endsAt;
 
     if (tenantRes != null) {
@@ -299,6 +312,8 @@ class SupabaseSchoolRepository implements SchoolRepository {
           if (isActive) {
             if (planId == 'enterprise') {
               isTenantEnterprise = true;
+            } else if (planId == 'ultra') {
+              isTenantUltra = true;
             } else if (planId == 'pro') {
               isTenantPro = true;
             }
@@ -310,6 +325,8 @@ class SupabaseSchoolRepository implements SchoolRepository {
       final upper = cleanCode.toUpperCase();
       if (upper.contains('ENTERPRISE')) {
         isTenantEnterprise = true;
+      } else if (upper.contains('ULTRA')) {
+        isTenantUltra = true;
       } else if (upper.contains('PRO')) {
         isTenantPro = true;
       }
@@ -317,8 +334,12 @@ class SupabaseSchoolRepository implements SchoolRepository {
 
     final String plan = isTenantEnterprise
         ? 'enterprise'
-        : (isTenantPro ? 'pro' : 'free');
-    final int maxTeachers = isTenantEnterprise ? 999 : (isTenantPro ? 50 : 30);
+        : (isTenantUltra
+            ? 'ultra'
+            : (isTenantPro ? 'pro' : 'free'));
+    final int maxTeachers = isTenantEnterprise
+        ? 999
+        : (isTenantUltra ? 150 : (isTenantPro ? 50 : 30));
 
     final String canonicalCode =
         tenantRes?['school_code'] as String? ??
@@ -329,7 +350,7 @@ class SupabaseSchoolRepository implements SchoolRepository {
       'subscription_plan': plan,
       'max_teachers': maxTeachers,
       'status': 'active',
-      if (endsAt != null) 'subscription_until': endsAt.toIso8601String(),
+      'subscription_until': plan == 'free' ? null : endsAt?.toIso8601String(),
     };
 
     // 1. Check if school exists in schools table by currentSchoolId
@@ -428,9 +449,11 @@ class SupabaseSchoolRepository implements SchoolRepository {
   ) async {
     try {
       final normalizedPlan = plan.toLowerCase().trim();
-      final maxTeachers = normalizedPlan == 'pro'
-          ? 50
-          : (normalizedPlan == 'enterprise' ? 999 : 30);
+      final maxTeachers = normalizedPlan == 'ultra'
+          ? 150
+          : (normalizedPlan == 'pro'
+              ? 50
+              : (normalizedPlan == 'enterprise' ? 999 : 30));
 
       await _supabase
           .from('schools')
@@ -438,6 +461,7 @@ class SupabaseSchoolRepository implements SchoolRepository {
             'subscription_plan': normalizedPlan,
             'code': activationCode,
             'max_teachers': maxTeachers,
+            if (normalizedPlan == 'free') 'subscription_until': null,
           })
           .eq('id', schoolId);
       return true;

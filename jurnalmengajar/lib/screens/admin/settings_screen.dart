@@ -396,9 +396,17 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   }
 
   void _showConfirmationDialog(SchoolModel matchedSchool, String code) {
+    final isUltra = matchedSchool.isUltra;
+    final isEnterprise = matchedSchool.isEnterprise;
     final isPro = matchedSchool.isPro;
     final planName = matchedSchool.plan.toUpperCase();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final themeColor = isUltra
+        ? const Color(0xFF7C3AED)
+        : (isEnterprise
+            ? const Color(0xFF0284C7)
+            : (isPro ? const Color(0xFFD97706) : const Color(0xFF2563EB)));
 
     showDialog(
       context: context,
@@ -409,8 +417,12 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         title: Row(
           children: [
             Icon(
-              isPro ? Icons.stars_rounded : Icons.verified_rounded,
-              color: isPro ? const Color(0xFFD97706) : const Color(0xFF2563EB),
+              isUltra
+                  ? Icons.auto_awesome_rounded
+                  : (isEnterprise
+                      ? Icons.business_center_rounded
+                      : (isPro ? Icons.stars_rounded : Icons.verified_rounded)),
+              color: themeColor,
               size: 28,
             ),
             SizedBox(width: 10.w),
@@ -441,14 +453,17 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             Container(
               padding: EdgeInsets.all(14.w),
               decoration: BoxDecoration(
-                color: isPro
-                    ? (isDark ? const Color(0xFF78350F).withValues(alpha: 0.35) : const Color(0xFFFFFBEB))
-                    : (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEFF6FF)),
+                color: isUltra
+                    ? (isDark ? const Color(0xFF581C87).withValues(alpha: 0.35) : const Color(0xFFF5F3FF))
+                    : (isEnterprise
+                        ? (isDark ? const Color(0xFF0C4A6E).withValues(alpha: 0.35) : const Color(0xFFF0F9FF))
+                        : (isPro
+                            ? (isDark ? const Color(0xFF78350F).withValues(alpha: 0.35) : const Color(0xFFFFFBEB))
+                            : (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEFF6FF)))),
                 borderRadius: BorderRadius.circular(14.r),
                 border: Border.all(
-                  color: isPro
-                      ? (isDark ? const Color(0xFF92400E) : const Color(0xFFFDE68A))
-                      : (isDark ? const Color(0xFF1E40AF) : const Color(0xFFBFDBFE)),
+                  color: themeColor.withValues(alpha: 0.5),
+                  width: 1.5,
                 ),
               ),
               child: Column(
@@ -459,18 +474,20 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          matchedSchool.name,
+                          matchedSchool.name.isNotEmpty ? matchedSchool.name : 'Sekolah Anda',
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 15.sp,
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
                         decoration: BoxDecoration(
-                          color: isPro ? const Color(0xFFD97706) : const Color(0xFF2563EB),
+                          color: themeColor,
                           borderRadius: BorderRadius.circular(12.r),
                         ),
                         child: Text(
@@ -489,9 +506,13 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     'Kode: ${matchedSchool.code ?? code}',
                     style: TextStyle(
                       fontSize: 12.sp,
-                      color: isPro
-                          ? (isDark ? const Color(0xFFFED7AA) : const Color(0xFF92400E))
-                          : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E40AF)),
+                      color: isUltra
+                          ? (isDark ? const Color(0xFFDDD6FE) : const Color(0xFF6D28D9))
+                          : (isEnterprise
+                              ? (isDark ? const Color(0xFFBAE6FD) : const Color(0xFF0369A1))
+                              : (isPro
+                                  ? (isDark ? const Color(0xFFFED7AA) : const Color(0xFF92400E))
+                                  : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E40AF)))),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -519,7 +540,11 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       Icon(Icons.check_circle_outline_rounded, size: 16.sp, color: Colors.green[600]),
                       SizedBox(width: 6.w),
                       Text(
-                        isPro ? 'Perks: Prioritas & Multi-Sekolah' : 'Perks: Fitur Standar Sekolah',
+                        isUltra
+                            ? 'Perks: Prioritas Khusus & Kapasitas 150 Guru'
+                            : (isEnterprise
+                                ? 'Perks: Akses Penuh Enterprise & Tak Terbatas'
+                                : (isPro ? 'Perks: Prioritas & Multi-Sekolah' : 'Perks: Fitur Standar Sekolah')),
                         style: TextStyle(
                           fontSize: 12.sp,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -605,7 +630,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: isPro ? const Color(0xFFD97706) : const Color(0xFF2563EB),
+              backgroundColor: themeColor,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10.r),
@@ -703,9 +728,11 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     }
     school ??= masterProvider.schools.isNotEmpty ? masterProvider.schools.first : null;
 
-    final isPro = school?.isPro ?? false;
     final isEnterprise = school?.isEnterprise ?? false;
-    final maxTeachers = school?.maxTeachers ?? (isPro ? 50 : 30);
+    final isUltra = school?.isUltra ?? false;
+    final isPro = school?.isPro ?? false;
+    final isFree = school?.isFree ?? (!isEnterprise && !isUltra && !isPro);
+    final maxTeachers = school?.maxTeachers ?? (isEnterprise ? 999 : (isUltra ? 150 : (isPro ? 50 : 30)));
     final currentTeacherCount = masterProvider.teachers.length;
     final usagePercent = maxTeachers > 0 ? (currentTeacherCount / maxTeachers).clamp(0.0, 1.0) : 0.0;
 
@@ -744,9 +771,13 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18.r),
                         side: BorderSide(
-                          color: isPro
-                              ? const Color(0xFFF59E0B).withValues(alpha: 0.5)
-                              : Colors.grey.withValues(alpha: 0.25),
+                          color: isUltra
+                              ? const Color(0xFF8B5CF6).withValues(alpha: 0.6)
+                              : (isEnterprise
+                                  ? const Color(0xFF0EA5E9).withValues(alpha: 0.6)
+                                  : (isPro
+                                      ? const Color(0xFFF59E0B).withValues(alpha: 0.5)
+                                      : Colors.grey.withValues(alpha: 0.25))),
                           width: 1.5,
                         ),
                       ),
@@ -764,21 +795,37 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                       Container(
                                         padding: EdgeInsets.all(10.w),
                                         decoration: BoxDecoration(
-                                          gradient: isPro
+                                          gradient: isUltra
                                               ? const LinearGradient(
-                                                  colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                                                  colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
                                                   begin: Alignment.topLeft,
                                                   end: Alignment.bottomRight,
                                                 )
-                                              : const LinearGradient(
-                                                  colors: [Color(0xFF64748B), Color(0xFF475569)],
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
-                                                ),
+                                              : (isEnterprise
+                                                  ? const LinearGradient(
+                                                      colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
+                                                      begin: Alignment.topLeft,
+                                                      end: Alignment.bottomRight,
+                                                    )
+                                                  : (isPro
+                                                      ? const LinearGradient(
+                                                          colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                                                          begin: Alignment.topLeft,
+                                                          end: Alignment.bottomRight,
+                                                        )
+                                                      : const LinearGradient(
+                                                          colors: [Color(0xFF64748B), Color(0xFF475569)],
+                                                          begin: Alignment.topLeft,
+                                                          end: Alignment.bottomRight,
+                                                        ))),
                                           borderRadius: BorderRadius.circular(14.r),
                                         ),
                                         child: Icon(
-                                          isPro ? Icons.workspace_premium_rounded : Icons.school_rounded,
+                                          isUltra
+                                              ? Icons.auto_awesome_rounded
+                                              : (isEnterprise
+                                                  ? Icons.business_center_rounded
+                                                  : (isPro ? Icons.workspace_premium_rounded : Icons.school_rounded)),
                                           color: Colors.white,
                                           size: 24,
                                         ),
@@ -797,15 +844,21 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                               ),
                                             ),
                                             Text(
-                                              isPro
-                                                  ? 'PRO PLAN'
-                                                  : (isEnterprise ? 'ENTERPRISE' : 'FREE PLAN'),
+                                              isUltra
+                                                  ? 'ULTRA PLAN'
+                                                  : (isEnterprise
+                                                      ? 'ENTERPRISE'
+                                                      : (isPro ? 'PRO PLAN' : 'FREE PLAN')),
                                               style: GoogleFonts.hankenGrotesk(
                                                 fontSize: 18.sp,
                                                 fontWeight: FontWeight.w900,
-                                                color: isPro
-                                                    ? const Color(0xFFD97706)
-                                                    : Theme.of(context).colorScheme.onSurface,
+                                                color: isUltra
+                                                    ? const Color(0xFF7C3AED)
+                                                    : (isEnterprise
+                                                        ? const Color(0xFF0284C7)
+                                                        : (isPro
+                                                            ? const Color(0xFFD97706)
+                                                            : Theme.of(context).colorScheme.onSurface)),
                                                 letterSpacing: 0.5,
                                               ),
                                             ),
@@ -819,22 +872,30 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                 Container(
                                   padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
                                   decoration: BoxDecoration(
-                                    color: isPro
-                                        ? const Color(0xFFD97706)
-                                        : const Color(0xFF64748B),
+                                    color: isUltra
+                                        ? const Color(0xFF7C3AED)
+                                        : (isEnterprise
+                                            ? const Color(0xFF0284C7)
+                                            : (isPro
+                                                ? const Color(0xFFD97706)
+                                                : const Color(0xFF64748B))),
                                     borderRadius: BorderRadius.circular(20.r),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(
-                                        isPro ? Icons.star_rounded : Icons.check_rounded,
+                                        isUltra
+                                            ? Icons.auto_awesome_rounded
+                                            : (isEnterprise
+                                                ? Icons.verified_rounded
+                                                : (isPro ? Icons.star_rounded : Icons.check_rounded)),
                                         size: 14.sp,
                                         color: Colors.white,
                                       ),
                                       SizedBox(width: 4.w),
                                       Text(
-                                        isPro ? 'AKTIF' : 'GRATIS',
+                                        isFree ? 'GRATIS' : 'AKTIF',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
@@ -879,13 +940,21 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
-                                        if (school?.subscriptionUntil != null && isPro) ...[
+                                        if (school?.subscriptionUntil != null && !isFree) ...[
                                           SizedBox(height: 3.h),
                                           Text(
-                                            'Masa Aktif Pro: s/d ${AppHelper.formatDate(school!.subscriptionUntil!)}',
+                                            isUltra
+                                                ? 'Masa Aktif Ultra: s/d ${AppHelper.formatDate(school!.subscriptionUntil!)}'
+                                                : (isEnterprise
+                                                    ? 'Masa Aktif Enterprise: s/d ${AppHelper.formatDate(school!.subscriptionUntil!)}'
+                                                    : 'Masa Aktif Pro: s/d ${AppHelper.formatDate(school!.subscriptionUntil!)}'),
                                             style: TextStyle(
                                               fontSize: 11.5.sp,
-                                              color: const Color(0xFFD97706),
+                                              color: isUltra
+                                                  ? const Color(0xFF7C3AED)
+                                                  : (isEnterprise
+                                                      ? const Color(0xFF0284C7)
+                                                      : const Color(0xFFD97706)),
                                               fontWeight: FontWeight.w600,
                                             ),
                                           ),
@@ -927,7 +996,11 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                     fontWeight: FontWeight.bold,
                                     color: currentTeacherCount >= maxTeachers
                                         ? Colors.red
-                                        : const Color(0xFF2563EB),
+                                        : (isUltra
+                                            ? const Color(0xFF7C3AED)
+                                            : (isEnterprise
+                                                ? const Color(0xFF0284C7)
+                                                : const Color(0xFF2563EB))),
                                   ),
                                 ),
                               ],
@@ -942,7 +1015,11 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   currentTeacherCount >= maxTeachers
                                       ? Colors.red
-                                      : (isPro ? const Color(0xFFD97706) : const Color(0xFF2563EB)),
+                                      : (isUltra
+                                          ? const Color(0xFF7C3AED)
+                                          : (isEnterprise
+                                              ? const Color(0xFF0284C7)
+                                              : (isPro ? const Color(0xFFD97706) : const Color(0xFF2563EB)))),
                                 ),
                               ),
                             ),
@@ -961,35 +1038,67 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
                             _buildPerkItem(
                               icon: Icons.groups_rounded,
-                              title: isPro ? 'Maksimal 50 Guru' : 'Maksimal 30 Guru',
-                              subtitle: isPro
-                                  ? 'Kapasitas Pro hingga 50 guru di aplikasi Jurnal Mengajar'
-                                  : 'Kapasitas Free plan maksimal 30 guru (Upgrade ke Pro untuk 50 guru)',
-                              isHighlighted: isPro,
+                              title: isUltra
+                                  ? 'Maksimal 150 Guru'
+                                  : (isEnterprise
+                                      ? 'Maksimal 999 Guru'
+                                      : (isPro ? 'Maksimal 50 Guru' : 'Maksimal 30 Guru')),
+                              subtitle: isUltra
+                                  ? 'Kapasitas Ultra hingga 150 guru di aplikasi Jurnal Mengajar'
+                                  : (isEnterprise
+                                      ? 'Kapasitas penuh hingga 999 guru di aplikasi Jurnal Mengajar'
+                                      : (isPro
+                                          ? 'Kapasitas Pro hingga 50 guru di aplikasi Jurnal Mengajar'
+                                          : 'Kapasitas Free plan maksimal 30 guru (Upgrade ke Pro/Ultra untuk lebih)')),
+                              isHighlighted: !isFree,
                             ),
                             _buildPerkItem(
                               icon: Icons.domain_rounded,
-                              title: isPro ? 'Kontrol 2 Sekolah di JM-Panel' : 'Kontrol 1 Sekolah',
-                              subtitle: isPro
-                                  ? 'Dapat mengelola hingga 2 instansi/sekolah sekaligus'
-                                  : 'Hanya dapat mengelola 1 instansi sekolah',
-                              isHighlighted: isPro,
+                              title: isUltra
+                                  ? 'Kontrol Banyak Sekolah di JM-Panel'
+                                  : (isEnterprise
+                                      ? 'Kontrol Sekolah Tanpa Batas'
+                                      : (isPro ? 'Kontrol 2 Sekolah di JM-Panel' : 'Kontrol 1 Sekolah')),
+                              subtitle: isUltra
+                                  ? 'Dapat mengelola hingga 10 instansi/sekolah di JM-Panel'
+                                  : (isEnterprise
+                                      ? 'Dapat mengelola multi-sekolah tanpa batasan cabang'
+                                      : (isPro
+                                          ? 'Dapat mengelola hingga 2 instansi/sekolah sekaligus'
+                                          : 'Hanya dapat mengelola 1 instansi sekolah')),
+                              isHighlighted: !isFree,
                             ),
                             _buildPerkItem(
                               icon: Icons.support_agent_rounded,
-                              title: isPro ? 'Dukungan Prioritas (Priority Support)' : 'Dukungan Komunitas',
-                              subtitle: isPro
-                                  ? 'Respon cepat dan penanganan langsung untuk admin Pro'
-                                  : 'Dukungan standar aplikasi',
-                              isHighlighted: isPro,
+                              title: isUltra
+                                  ? 'Dukungan Prioritas Khusus'
+                                  : (isEnterprise
+                                      ? 'Dukungan Prioritas 24/7 Dedicated'
+                                      : (isPro ? 'Dukungan Prioritas (Priority Support)' : 'Dukungan Komunitas')),
+                              subtitle: isUltra
+                                  ? 'Respon secepat kilat dan penanganan prioritas khusus admin Ultra'
+                                  : (isEnterprise
+                                      ? 'Dedicated account manager dan penanganan prioritas 24 jam'
+                                      : (isPro
+                                          ? 'Respon cepat dan penanganan langsung untuk admin Pro'
+                                          : 'Dukungan standar aplikasi')),
+                              isHighlighted: !isFree,
                             ),
                             _buildPerkItem(
-                              icon: Icons.manage_accounts_rounded,
-                              title: isPro ? '2 Pengguna di Organisasi' : '1 Pengguna di Organisasi',
-                              subtitle: isPro
-                                  ? 'Akses multi-admin untuk pengelolaan sekolah'
-                                  : '1 akun pengelola organisasi',
-                              isHighlighted: isPro,
+                              icon: isUltra ? Icons.analytics_rounded : Icons.manage_accounts_rounded,
+                              title: isUltra
+                                  ? 'Laporan & Rekap Lengkap'
+                                  : (isEnterprise
+                                      ? 'Akses Multi-Admin Organisasi'
+                                      : (isPro ? '2 Pengguna di Organisasi' : '1 Pengguna di Organisasi')),
+                              subtitle: isUltra
+                                  ? 'Akses analitik mendalam, ekspor data, dan rekap lengkap data jurnal'
+                                  : (isEnterprise
+                                      ? 'Multi-user tak terbatas dan fitur organisasi lengkap'
+                                      : (isPro
+                                          ? 'Akses multi-admin untuk pengelolaan sekolah'
+                                          : '1 akun pengelola organisasi')),
+                              isHighlighted: !isFree,
                             ),
 
                             SizedBox(height: 18.h),

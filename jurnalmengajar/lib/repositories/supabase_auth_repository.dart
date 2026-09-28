@@ -294,12 +294,15 @@ class SupabaseAuthRepository implements AuthRepository {
           // If Admin is registering with a new JM-Panel plan code for an existing school, upgrade the plan
           if (user.role == 'admin' && targetId.isNotEmpty) {
             final upperCode = targetId.toUpperCase();
-            if (upperCode.contains('ENTERPRISE') || upperCode.contains('PRO')) {
+            if (upperCode.contains('ENTERPRISE') || upperCode.contains('ULTRA') || upperCode.contains('PRO')) {
               final isEnt = upperCode.contains('ENTERPRISE');
+              final isUltra = upperCode.contains('ULTRA');
+              final detectedPlan = isEnt ? 'enterprise' : (isUltra ? 'ultra' : 'pro');
+              final maxTeachers = isEnt ? 999 : (isUltra ? 150 : 50);
               try {
                 await _supabase.from('schools').update({
-                  'subscription_plan': isEnt ? 'enterprise' : 'pro',
-                  'max_teachers': isEnt ? 999 : 50,
+                  'subscription_plan': detectedPlan,
+                  'max_teachers': maxTeachers,
                   'status': 'active',
                 }).eq('id', schoolId);
               } catch (_) {}
@@ -314,9 +317,10 @@ class SupabaseAuthRepository implements AuthRepository {
           // Scenario 1: Admin creates (INSERT) a new school with the JM-Panel license code
           final upperCode = targetId.toUpperCase();
           final isEntPlan = upperCode.contains('ENTERPRISE');
+          final isUltraPlan = upperCode.contains('ULTRA');
           final isProPlan = upperCode.contains('PRO');
-          final detectedPlan = isEntPlan ? 'enterprise' : (isProPlan ? 'pro' : 'free');
-          final maxTeachers = isEntPlan ? 999 : (isProPlan ? 50 : 30);
+          final detectedPlan = isEntPlan ? 'enterprise' : (isUltraPlan ? 'ultra' : (isProPlan ? 'pro' : 'free'));
+          final maxTeachers = isEntPlan ? 999 : (isUltraPlan ? 150 : (isProPlan ? 50 : 30));
 
           // Check if targetId is already a valid UUID, otherwise generate one
           final uuidPattern = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
