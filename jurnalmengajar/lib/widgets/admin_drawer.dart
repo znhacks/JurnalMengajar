@@ -393,7 +393,7 @@ class AdminDrawer extends StatelessWidget {
               }
             },
             child: Text(
-              'Logout',
+              'Keluar',
               style: GoogleFonts.hankenGrotesk(
                 color: AppTheme.errorColor,
                 fontWeight: FontWeight.w700,

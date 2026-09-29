@@ -309,7 +309,7 @@ void main() {
           findsOneWidget,
         );
         expect(find.text('Batal'), findsOneWidget);
-        expect(find.text('Logout'), findsOneWidget);
+        expect(find.widgetWithText(TextButton, 'Keluar'), findsOneWidget);
 
         await tester.tap(find.text('Batal'));
         await tester.pumpAndSettle();

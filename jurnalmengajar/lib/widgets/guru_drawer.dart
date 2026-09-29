@@ -598,7 +598,7 @@ class GuruDrawer extends StatelessWidget {
               }
             },
             child: Text(
-              'Logout',
+              'Keluar',
               style: GoogleFonts.hankenGrotesk(
                 color: const Color(0xFFEF4444),
                 fontWeight: FontWeight.w700,

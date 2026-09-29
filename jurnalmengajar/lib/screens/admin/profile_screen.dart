@@ -572,7 +572,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         _handleLogout();
                       },
                       child: const Text(
-                        'Logout',
+                        'Keluar',
                         style: TextStyle(color: Colors.red),
                       ),
                     ),
