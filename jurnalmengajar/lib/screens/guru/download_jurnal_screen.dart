@@ -11,6 +11,7 @@ import '../../models/journal_model.dart';
 import '../../models/subject_model.dart';
 import '../../models/teacher_model.dart';
 import '../../models/school_model.dart';
+import '../../models/user_school_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/journal_provider.dart';
 import '../../providers/master_data_provider.dart';
@@ -112,10 +113,46 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       // Auto match teacher's school from active school provider
       final activeId = authProvider.activeSchoolId;
       final activeSchool = authProvider.activeSchool;
+
+      // Filter guru memberships only (exclude admin) and deduplicate
+      final guruMembers = <UserSchoolModel>[];
+      final seenIds = <String>{};
+      final seenNames = <String>{};
+      for (final m in authProvider.userMemberships) {
+        final r = m.role.toLowerCase().trim();
+        final isAdmin = r == 'admin' || r == 'superadmin';
+        final isGuru = r == 'guru' || r == 'teacher';
+        if (isGuru && !isAdmin) {
+          final normName = m.schoolName.trim().toLowerCase();
+          if (!seenIds.contains(m.schoolId) && !seenNames.contains(normName)) {
+            seenIds.add(m.schoolId);
+            seenNames.add(normName);
+            guruMembers.add(m);
+          }
+        }
+      }
+
+      String? targetSchoolId = activeId;
+      String targetSchoolName =
+          activeSchool?.name ?? authProvider.activeSchoolName;
+
+      if (guruMembers.isNotEmpty) {
+        final matched = guruMembers.firstWhere(
+          (m) => m.schoolId == activeId,
+          orElse: () => guruMembers.firstWhere(
+            (m) =>
+                m.schoolName.trim().toLowerCase() ==
+                targetSchoolName.trim().toLowerCase(),
+            orElse: () => guruMembers.first,
+          ),
+        );
+        targetSchoolId = matched.schoolId;
+        targetSchoolName = matched.schoolName;
+      }
+
       setState(() {
-        _selectedSchoolId = activeId;
-        _schoolNameController.text =
-            activeSchool?.name ?? authProvider.activeSchoolName;
+        _selectedSchoolId = targetSchoolId;
+        _schoolNameController.text = targetSchoolName;
       });
     }
   }
@@ -747,7 +784,42 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
 
-    if (_selectedSchoolId == null) {
+    // Filter sekolah: hanya tampilkan sekolah di mana user menjadi guru,
+    // tidak menampilkan jika menjadi admin, dan pastikan hanya 1 entri per sekolah (unik).
+    final List<UserSchoolModel> guruMemberships = [];
+    final Set<String> seenSchoolIds = {};
+    final Set<String> seenSchoolNames = {};
+
+    for (final m in authProvider.userMemberships) {
+      final role = m.role.toLowerCase().trim();
+      final isAdmin = role == 'admin' || role == 'superadmin';
+      final isGuru = role == 'guru' || role == 'teacher';
+
+      if (isGuru && !isAdmin) {
+        final normName = m.schoolName.trim().toLowerCase();
+        if (!seenSchoolIds.contains(m.schoolId) &&
+            !seenSchoolNames.contains(normName)) {
+          seenSchoolIds.add(m.schoolId);
+          seenSchoolNames.add(normName);
+          guruMemberships.add(m);
+        }
+      }
+    }
+
+    if (guruMemberships.isNotEmpty) {
+      final isSelectedValid =
+          guruMemberships.any((m) => m.schoolId == _selectedSchoolId);
+      if (!isSelectedValid) {
+        final matchedByName = guruMemberships.firstWhere(
+          (m) =>
+              m.schoolName.trim().toLowerCase() ==
+              _schoolNameController.text.trim().toLowerCase(),
+          orElse: () => guruMemberships.first,
+        );
+        _selectedSchoolId = matchedByName.schoolId;
+        _schoolNameController.text = matchedByName.schoolName;
+      }
+    } else if (_selectedSchoolId == null) {
       _selectedSchoolId = authProvider.activeSchoolId;
       _schoolNameController.text =
           authProvider.activeSchool?.name ?? authProvider.activeSchoolName;
@@ -1040,7 +1112,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                       items: () {
-                        final items = authProvider.userMemberships.map((m) {
+                        final items = guruMemberships.map((m) {
                           return DropdownMenuItem<String>(
                             value: m.schoolId,
                             child: Text(
@@ -1056,7 +1128,10 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         final hasSelected = items.any(
                           (item) => item.value == _selectedSchoolId,
                         );
-                        if (!hasSelected && _selectedSchoolId != null) {
+                        if (!hasSelected &&
+                            _selectedSchoolId != null &&
+                            items.isEmpty &&
+                            authProvider.activeRole.toLowerCase() != 'admin') {
                           items.add(
                             DropdownMenuItem<String>(
                               value: _selectedSchoolId,
@@ -1077,7 +1152,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       onChanged: (val) async {
                         if (val != null) {
                           String selectedName = _schoolNameController.text;
-                          for (final m in authProvider.userMemberships) {
+                          for (final m in guruMemberships) {
                             if (m.schoolId == val) {
                               selectedName = m.schoolName;
                               break;

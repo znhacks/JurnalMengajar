@@ -513,7 +513,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                 ),
                                                 SizedBox(width: 6.w),
                                                 Text(
-                                                  'Register Guru',
+                                                  'Pendaftaran Guru',
                                                   style: TextStyle(
                                                     fontSize: kIsWeb
                                                         ? 13
@@ -692,8 +692,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       ).colorScheme.onSurface,
                                     ),
                                     decoration: InputDecoration(
-                                      hintText:
-                                          'Contoh: FREE, PRO, atau Kode Voucher...',
+                                      hintText: 'Contoh : kode aktivasi',
                                       hintStyle: TextStyle(
                                         color:
                                             Theme.of(context).brightness ==
@@ -1973,7 +1972,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           return;
         } else {
           // Guru: HANYA jika memiliki nama sekolah riil (bukan dummy voucher tanpa nama)
-          final isRealSchool = remoteMatched.name.trim().isNotEmpty &&
+          final isRealSchool =
+              remoteMatched.name.trim().isNotEmpty &&
               remoteMatched.name.trim().toLowerCase() != 'sekolah';
           if (isRealSchool) {
             final schoolName = remoteMatched.name.trim();
@@ -2025,12 +2025,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       // Strict exact match for Code, NPSN, NSS, ID
       // Untuk pendaftaran Guru: HANYA kode sekolah resmi (JM Panel), NPSN, NSS, atau ID!
       // JANGAN mencocokkan nama sekolah jika kodenya tidak sesuai dengan JM Panel.
-      final isCodeMatch = (sCode.isNotEmpty && sCode == searchCode) ||
+      final isCodeMatch =
+          (sCode.isNotEmpty && sCode == searchCode) ||
           (sNpsn.isNotEmpty && sNpsn == searchCode) ||
           (sNss.isNotEmpty && sNss == searchCode) ||
           (sId.isNotEmpty && sId == searchCode);
-      final isNameMatch = _registerType == 'admin' &&
-          (sName.isNotEmpty && sName == searchCode);
+      final isNameMatch =
+          _registerType == 'admin' && (sName.isNotEmpty && sName == searchCode);
 
       if (isCodeMatch || isNameMatch) {
         matchedSchool = s;
@@ -2065,8 +2066,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final planName = isEnt
           ? 'ENTERPRISE PLAN (999 Guru)'
           : (isUltra
-              ? 'ULTRA PLAN (150 Guru)'
-              : (isPro ? 'PRO PLAN (50 Guru)' : 'FREE PLAN (30 Guru)'));
+                ? 'ULTRA PLAN (150 Guru)'
+                : (isPro ? 'PRO PLAN (50 Guru)' : 'FREE PLAN (30 Guru)'));
 
       final schoolName =
           foundName ??
