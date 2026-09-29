@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../providers/journal_provider.dart';
 import '../providers/warning_letter_provider.dart';
+import '../core/utils/helper.dart';
 import 'school_avatar.dart';
 
 class SchoolSwitcherModal extends StatelessWidget {
@@ -91,6 +92,37 @@ class SchoolSwitcherModal extends StatelessWidget {
           logoUrl: authProvider.activeSchool?.logoUrl,
           status: 'active',
         ));
+      }
+    }
+
+    if (isAdminAsli) {
+      final primarySchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.currentUser?.schoolId);
+      if (primarySchoolId != null && primarySchoolId.isNotEmpty) {
+        final adminKey = '${primarySchoolId}_admin';
+        final guruKey = '${primarySchoolId}_guru';
+        final pSchoolName = (authProvider.currentUser?.schoolName != null && authProvider.currentUser!.schoolName!.isNotEmpty)
+            ? authProvider.currentUser!.schoolName!
+            : authProvider.activeSchoolName;
+        if (!seen.contains(adminKey)) {
+          seen.add(adminKey);
+          options.add(SchoolRoleOption(
+            schoolId: primarySchoolId,
+            schoolName: pSchoolName,
+            role: 'admin',
+            logoUrl: authProvider.activeSchool?.logoUrl,
+            status: 'active',
+          ));
+        }
+        if (!seen.contains(guruKey)) {
+          seen.add(guruKey);
+          options.add(SchoolRoleOption(
+            schoolId: primarySchoolId,
+            schoolName: pSchoolName,
+            role: 'guru',
+            logoUrl: authProvider.activeSchool?.logoUrl,
+            status: 'active',
+          ));
+        }
       }
     }
 

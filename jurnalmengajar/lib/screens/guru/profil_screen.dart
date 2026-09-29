@@ -1439,7 +1439,14 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                 final Set<String> seen = {};
 
                                 for (final m in authProvider.userMemberships) {
-                                  final baseKey = '${m.schoolId}_${m.role.toLowerCase()}';
+                                  final mRole = m.role.toLowerCase();
+
+                                  // RULE: Pure Guru (non-admin) can NEVER see or select ADMIN context!
+                                  if (!authProvider.isAdminAsli && !authProvider.isAdminCadangan && (mRole == 'admin' || mRole == 'superadmin')) {
+                                    continue;
+                                  }
+
+                                  final baseKey = '${m.schoolId}_$mRole';
                                   if (!seen.contains(baseKey)) {
                                     seen.add(baseKey);
                                     list.add(SchoolRoleOption(
@@ -1450,6 +1457,80 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                       status: m.status ?? 'active',
                                       logoUrl: m.logoUrl,
                                     ));
+                                  }
+
+                                  // Akun admin dapat selalu mengakses konteks GURU pada sekolah yang dikelolanya
+                                  if (mRole == 'admin' || mRole == 'superadmin') {
+                                    final guruKey = '${m.schoolId}_guru';
+                                    if (!seen.contains(guruKey)) {
+                                      seen.add(guruKey);
+                                      list.add(SchoolRoleOption(
+                                        schoolId: m.schoolId,
+                                        schoolName: m.schoolName,
+                                        role: 'guru',
+                                        membershipId: m.id,
+                                        status: m.status ?? 'active',
+                                        logoUrl: m.logoUrl,
+                                      ));
+                                    }
+                                  }
+                                }
+
+                                // Jika akun admin aktif (atau Admin Asli / Admin Cadangan), pastikan kedua opsi tersedia untuk sekolah aktif
+                                final activeSchoolId = authProvider.activeSchoolId;
+                                if ((authProvider.isAdminAsli || authProvider.isAdminCadangan) && activeSchoolId != null && activeSchoolId.isNotEmpty) {
+                                  final adminKey = '${activeSchoolId}_admin';
+                                  final guruKey = '${activeSchoolId}_guru';
+                                  if (!seen.contains(adminKey)) {
+                                    seen.add(adminKey);
+                                    list.add(SchoolRoleOption(
+                                      schoolId: activeSchoolId,
+                                      schoolName: authProvider.activeSchoolName,
+                                      role: 'admin',
+                                      logoUrl: authProvider.activeSchool?.logoUrl,
+                                      status: 'active',
+                                    ));
+                                  }
+                                  if (!seen.contains(guruKey)) {
+                                    seen.add(guruKey);
+                                    list.add(SchoolRoleOption(
+                                      schoolId: activeSchoolId,
+                                      schoolName: authProvider.activeSchoolName,
+                                      role: 'guru',
+                                      logoUrl: authProvider.activeSchool?.logoUrl,
+                                      status: 'active',
+                                    ));
+                                  }
+                                }
+
+                                if (authProvider.isAdminAsli) {
+                                  final primarySchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.currentUser?.schoolId);
+                                  if (primarySchoolId != null && primarySchoolId.isNotEmpty) {
+                                    final adminKey = '${primarySchoolId}_admin';
+                                    final guruKey = '${primarySchoolId}_guru';
+                                    final pSchoolName = (authProvider.currentUser?.schoolName != null && authProvider.currentUser!.schoolName!.isNotEmpty)
+                                        ? authProvider.currentUser!.schoolName!
+                                        : authProvider.activeSchoolName;
+                                    if (!seen.contains(adminKey)) {
+                                      seen.add(adminKey);
+                                      list.add(SchoolRoleOption(
+                                        schoolId: primarySchoolId,
+                                        schoolName: pSchoolName,
+                                        role: 'admin',
+                                        logoUrl: authProvider.activeSchool?.logoUrl,
+                                        status: 'active',
+                                      ));
+                                    }
+                                    if (!seen.contains(guruKey)) {
+                                      seen.add(guruKey);
+                                      list.add(SchoolRoleOption(
+                                        schoolId: primarySchoolId,
+                                        schoolName: pSchoolName,
+                                        role: 'guru',
+                                        logoUrl: authProvider.activeSchool?.logoUrl,
+                                        status: 'active',
+                                      ));
+                                    }
                                   }
                                 }
 
@@ -1509,8 +1590,14 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
 
                                     authProvider.switchActiveSchool(sId, sName, sRole);
                                     masterProvider.loadAllData(sId);
-                                    scheduleProvider.loadAllSchedules(sId);
-                                    journalProvider.loadAllJournals(sId);
+                                    if (sRole.toLowerCase() == 'admin' || sRole.toLowerCase() == 'superadmin') {
+                                      if (context.mounted) {
+                                        context.go('/admin/dashboard');
+                                      }
+                                    } else {
+                                      scheduleProvider.loadAllSchedules(sId);
+                                      journalProvider.loadAllJournals(sId);
+                                    }
                                   },
                                   borderRadius: BorderRadius.circular(12.r),
                                   child: Container(
@@ -1604,7 +1691,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                                 ),
-                                              if (!isPendingExit && !(authProvider.isAdminAsli && sId == authProvider.currentUser?.schoolId)) ...[
+                                              if (!isPendingExit && sRole.toLowerCase() != 'admin' && sRole.toLowerCase() != 'superadmin' && !(authProvider.isAdminAsli && sId == authProvider.currentUser?.schoolId)) ...[
                                                 SizedBox(width: 8.w),
                                                 IconButton(
                                                   icon: const Icon(Icons.exit_to_app_rounded, color: Colors.redAccent),

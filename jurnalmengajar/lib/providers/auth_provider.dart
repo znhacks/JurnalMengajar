@@ -896,10 +896,17 @@ class AuthProvider with ChangeNotifier {
             pendingList.add(parsed);
           } else if (status == 'inactive') {
             inactiveList.add(parsed);
-            inactiveSchoolIds.add(sId);
           } else if (status == 'active' || status == 'requested_exit') {
             final key = '${parsed.schoolId}_$mRole';
             membershipMap[key] = parsed;
+          }
+        }
+
+        // Only mark schoolId as inactive if user does not have any active memberships in that school
+        final activeSchoolIds = membershipMap.values.map((m) => m.schoolId).toSet();
+        for (final inact in inactiveList) {
+          if (!activeSchoolIds.contains(inact.schoolId)) {
+            inactiveSchoolIds.add(inact.schoolId);
           }
         }
       } catch (err) {
