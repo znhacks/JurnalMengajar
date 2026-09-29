@@ -35,12 +35,7 @@ class SchoolSwitcherModal extends StatelessWidget {
     for (final m in userMemberships) {
       final mRole = m.role.toLowerCase();
 
-      // RULE 1: Admin Asli can NEVER see or select GURU context!
-      if (isAdminAsli && (mRole == 'guru' || mRole == 'teacher')) {
-        continue;
-      }
-
-      // RULE 2: Pure Guru (non-admin) can NEVER see or select ADMIN context!
+      // RULE: Pure Guru (non-admin) can NEVER see or select ADMIN context!
       if (!isAdminAsli && !isAdminCadangan && (mRole == 'admin' || mRole == 'superadmin')) {
         continue;
       }
@@ -51,9 +46,50 @@ class SchoolSwitcherModal extends StatelessWidget {
         options.add(SchoolRoleOption(
           schoolId: m.schoolId,
           schoolName: m.schoolName,
-          role: isAdminAsli ? 'admin' : m.role,
+          role: m.role,
           logoUrl: m.logoUrl,
           status: m.status ?? 'active',
+        ));
+      }
+
+      // Akun admin dapat selalu mengakses konteks GURU pada sekolah yang dikelolanya
+      if (mRole == 'admin' || mRole == 'superadmin') {
+        final guruKey = '${m.schoolId}_guru';
+        if (!seen.contains(guruKey)) {
+          seen.add(guruKey);
+          options.add(SchoolRoleOption(
+            schoolId: m.schoolId,
+            schoolName: m.schoolName,
+            role: 'guru',
+            logoUrl: m.logoUrl,
+            status: m.status ?? 'active',
+          ));
+        }
+      }
+    }
+
+    // Jika akun admin aktif tapi belum memiliki entri di userMemberships, pastikan kedua opsi tersedia
+    if (isAdminAsli && activeSchoolId != null && activeSchoolId.isNotEmpty) {
+      final adminKey = '${activeSchoolId}_admin';
+      final guruKey = '${activeSchoolId}_guru';
+      if (!seen.contains(adminKey)) {
+        seen.add(adminKey);
+        options.add(SchoolRoleOption(
+          schoolId: activeSchoolId,
+          schoolName: authProvider.activeSchoolName,
+          role: 'admin',
+          logoUrl: authProvider.activeSchool?.logoUrl,
+          status: 'active',
+        ));
+      }
+      if (!seen.contains(guruKey)) {
+        seen.add(guruKey);
+        options.add(SchoolRoleOption(
+          schoolId: activeSchoolId,
+          schoolName: authProvider.activeSchoolName,
+          role: 'guru',
+          logoUrl: authProvider.activeSchool?.logoUrl,
+          status: 'active',
         ));
       }
     }

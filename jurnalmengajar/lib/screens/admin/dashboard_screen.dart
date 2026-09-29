@@ -349,7 +349,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           scrolledUnderElevation: 0,
           title: Builder(
             builder: (context) {
-              final isAdminOnly = authProvider.isExclusiveAdmin;
               final titleWidget = Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                 child: Column(
@@ -373,23 +372,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             color: const Color(0xFF2563EB),
                           ),
                         ),
-                        if (!isAdminOnly) ...[
-                          SizedBox(width: 4.w),
-                          Icon(
-                            Icons.unfold_more_rounded,
-                            size: 14.sp,
-                            color: const Color(0xFF2563EB),
-                          ),
-                        ],
+                        SizedBox(width: 4.w),
+                        Icon(
+                          Icons.unfold_more_rounded,
+                          size: 14.sp,
+                          color: const Color(0xFF2563EB),
+                        ),
                       ],
                     ),
                   ],
                 ),
               );
-
-              if (isAdminOnly) {
-                return titleWidget;
-              }
 
               return InkWell(
                 onTap: () => SchoolSwitcherModal.show(context),
@@ -404,9 +397,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               child: RoleBadge(
                 role: authProvider.activeRole,
                 fontSize: 10.sp,
-                onTap: authProvider.isExclusiveAdmin
-                    ? null
-                    : () => SchoolSwitcherModal.show(context),
+                onTap: () => SchoolSwitcherModal.show(context),
               ),
             ),
           ],

@@ -966,7 +966,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           Builder(
             builder: (ctx) {
               final auth = ctx.watch<AuthProvider>();
-              final isAdminOnly = auth.isExclusiveAdmin;
+              final canSwitch = !auth.isGuruMurni || auth.hasMultipleSchools;
               final isDark = Theme.of(context).brightness == Brightness.dark;
 
               final switcherWidget = Container(
@@ -1007,7 +1007,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (!isAdminOnly)
+                    if (canSwitch)
                       const Icon(
                         Icons.unfold_more_rounded,
                         color: Color(0xFF64748B),
@@ -1017,7 +1017,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 ),
               );
 
-              if (isAdminOnly) {
+              if (!canSwitch) {
                 return Row(
                   children: [
                     Expanded(child: switcherWidget),

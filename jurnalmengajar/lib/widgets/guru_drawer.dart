@@ -249,7 +249,7 @@ class GuruDrawer extends StatelessWidget {
             // Interactive School Switcher Banner
             Builder(
               builder: (context) {
-                final isAdminOnly = authProvider.isExclusiveAdmin;
+                final canSwitch = !authProvider.isGuruMurni || authProvider.hasMultipleSchools;
                 final switcherWidget = Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: 12.w,
@@ -282,7 +282,7 @@ class GuruDrawer extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (!isAdminOnly)
+                      if (canSwitch)
                         const Icon(
                           Icons.swap_vert_rounded,
                           color: Colors.white,
@@ -292,7 +292,7 @@ class GuruDrawer extends StatelessWidget {
                   ),
                 );
 
-                if (isAdminOnly) {
+                if (!canSwitch) {
                   return switcherWidget;
                 }
 

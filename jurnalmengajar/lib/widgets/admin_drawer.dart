@@ -113,7 +113,6 @@ class AdminDrawer extends StatelessWidget {
           SizedBox(height: 12.h),
           Builder(
             builder: (context) {
-              final isAdminOnly = authProvider.isExclusiveAdmin;
               final switcherWidget = Container(
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
                 decoration: BoxDecoration(
@@ -143,19 +142,14 @@ class AdminDrawer extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (!isAdminOnly)
-                      const Icon(
-                        Icons.swap_vert_rounded,
-                        color: Color(0xFF64748B),
-                        size: 18,
-                      ),
+                    const Icon(
+                      Icons.swap_vert_rounded,
+                      color: Color(0xFF64748B),
+                      size: 18,
+                    ),
                   ],
                 ),
               );
-
-              if (isAdminOnly) {
-                return switcherWidget;
-              }
 
               return InkWell(
                 onTap: () => SchoolSwitcherModal.show(context),
