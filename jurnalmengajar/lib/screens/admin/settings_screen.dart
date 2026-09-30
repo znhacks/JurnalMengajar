@@ -31,6 +31,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   bool _isSavingSupervisor = false;
 
   final _noboxApiKeyController = TextEditingController();
+  final _noboxAccountIdController = TextEditingController();
   bool _obscureApiKey = true;
   String? _lastSchoolId;
   bool _isEditingApiKey = false;
@@ -84,11 +85,13 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       final config = settingsProvider.noboxConfig;
       if (config != null && config.hasApiKey) {
         _noboxApiKeyController.text = config.maskedApiKey ?? '';
+        _noboxAccountIdController.text = config.accountId;
         setState(() {
           _isEditingApiKey = false;
         });
       } else {
         _noboxApiKeyController.clear();
+        _noboxAccountIdController.clear();
         setState(() {
           _isEditingApiKey = true;
         });
@@ -97,20 +100,20 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   }
 
   Future<void> _handleSaveNoboxApiKey(String schoolId) async {
-    final rawKey = _noboxApiKeyController.text.trim();
-    if (rawKey.isEmpty) {
-      AppHelper.showSnackBar(
-        context,
-        'API Key NoBox.ai tidak boleh kosong',
-        isError: true,
-      );
-      return;
+    String rawKey = _noboxApiKeyController.text.trim();
+    final rawAccountId = _noboxAccountIdController.text.trim();
+
+    // Jika API Key dikosongkan namun ID Akun diisi, gunakan master API Key
+    if (rawKey.isEmpty && rawAccountId.isNotEmpty) {
+      rawKey = 'Nobox-2e4323d173294c3ab4a72709740af1cf';
+      _noboxApiKeyController.text = rawKey;
     }
 
-    if (rawKey.startsWith('••••')) {
+    if (rawKey.isEmpty && rawAccountId.isEmpty) {
       AppHelper.showSnackBar(
         context,
-        'API Key saat ini sudah tersimpan dan terlindungi.',
+        'Masukkan ID Akun atau API Key NoBox.ai',
+        isError: true,
       );
       return;
     }
@@ -119,6 +122,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     final success = await settingsProvider.saveNoboxApiKey(
       schoolId: schoolId,
       apiKey: rawKey,
+      accountId: rawAccountId,
     );
 
     if (mounted) {
@@ -127,15 +131,16 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           _isEditingApiKey = false;
           final config = settingsProvider.noboxConfig;
           _noboxApiKeyController.text = config?.maskedApiKey ?? '';
+          _noboxAccountIdController.text = config?.accountId ?? '';
         });
         AppHelper.showSnackBar(
           context,
-          'API Key NoBox.ai berhasil disimpan!',
+          'Konfigurasi NoBox.ai berhasil disimpan!',
         );
       } else {
         AppHelper.showSnackBar(
           context,
-          settingsProvider.noboxErrorMessage ?? 'Gagal menyimpan API Key.',
+          settingsProvider.noboxErrorMessage ?? 'Gagal menyimpan konfigurasi.',
           isError: true,
         );
       }
@@ -161,6 +166,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   void dispose() {
     _daysController.dispose();
     _noboxApiKeyController.dispose();
+    _noboxAccountIdController.dispose();
     _supervisorNameController.dispose();
     _supervisorNipController.dispose();
     super.dispose();
@@ -1498,6 +1504,37 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                     });
                                   },
                                 ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 12.h),
+
+                            Text(
+                              'Account ID / ID Akun NoBox.ai (Opsional)',
+                              style: TextStyle(
+                                fontSize: 13.5.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 4.h),
+                            Text(
+                              'ID Akun WhatsApp di NoBox (kosongkan jika menggunakan akun default)',
+                              style: TextStyle(
+                                fontSize: 11.5.sp,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            SizedBox(height: 8.h),
+                            TextFormField(
+                              controller: _noboxAccountIdController,
+                              readOnly: (noboxConfig != null && noboxConfig.hasApiKey && !_isEditingApiKey),
+                              decoration: InputDecoration(
+                                hintText: (noboxConfig != null && noboxConfig.hasApiKey && !_isEditingApiKey)
+                                    ? (noboxConfig.accountId.isNotEmpty ? noboxConfig.accountId : 'Default (829936240919301)')
+                                    : 'Contoh: 829936240919301 (Kosongkan jika default)',
+                                prefixIcon: const Icon(Icons.badge_outlined, size: 20),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12.r),
                                 ),

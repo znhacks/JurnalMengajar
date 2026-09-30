@@ -386,7 +386,7 @@ void main() {
 
       // Verify Label & Textfield
       expect(find.text('API Key NoBox.ai *'), findsOneWidget);
-      expect(find.byType(TextFormField), findsNWidgets(2)); // Days + NoBox key
+      expect(find.text('Account ID / ID Akun NoBox.ai (Opsional)'), findsOneWidget);
 
       // Verify Status indicator
       expect(find.text('Status: Belum Dikonfigurasi'), findsOneWidget);
@@ -396,7 +396,9 @@ void main() {
       expect(find.text('Simpan API Key'), findsOneWidget);
 
       // Test entering an API key and saving
-      final noboxKeyInput = find.widgetWithText(TextFormField, '').last;
+      final noboxKeyInput = find.byWidgetPredicate((w) =>
+          w is TextField &&
+          w.decoration?.hintText?.contains('API Key') == true);
       await tester.ensureVisible(noboxKeyInput);
       await tester.pumpAndSettle();
       await tester.enterText(noboxKeyInput, 'Nobox-test-key-smkn11');

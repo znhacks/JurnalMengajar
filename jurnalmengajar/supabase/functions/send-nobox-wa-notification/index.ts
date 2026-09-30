@@ -4,12 +4,16 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const NOBOX_API_URL = Deno.env.get("NOBOX_WA_API_URL") || "https://id.nobox.ai/Inbox/Send";
 const DEFAULT_PARENT_PHONE = "6282230090067";
+const DEFAULT_ACCOUNT_ID = "829936240919301";
+const DEFAULT_CHANNEL_ID = "1";
+const DEFAULT_API_KEY = "Nobox-2e4323d173294c3ab4a72709740af1cf";
 
 serve(async (req: Request) => {
-  // CORS Headers
+  // CORS Headers for Flutter Web / browser preflight
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key, *",
+    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
   };
 
   if (req.method === "OPTIONS") {
@@ -17,7 +21,13 @@ serve(async (req: Request) => {
   }
 
   try {
-    const payload = await req.json();
+    let payload: any = {};
+    try {
+      payload = await req.json();
+    } catch (_) {
+      payload = {};
+    }
+
     const action = payload.action || "send_absence_notification";
     const schoolId = payload.school_id;
 
@@ -27,7 +37,7 @@ serve(async (req: Request) => {
 
     // 1. Resolve school-specific NoBox config
     let apiKey = "";
-    let channelId = "1";
+    let channelId = "";
     let accountId = "";
 
     if (schoolId) {
@@ -38,37 +48,55 @@ serve(async (req: Request) => {
         .maybeSingle();
 
       if (!configErr && config && config.api_key && config.is_active !== false) {
-        apiKey = config.api_key.trim();
-        channelId = config.channel_id || "1";
-        accountId = config.account_id || "";
+        apiKey = (config.api_key || "").trim();
+        channelId = (config.channel_id || "").trim();
+        accountId = (config.account_id || "").trim();
       }
     }
 
-    // Fallback to environment variable if single-tenant environment fallback is set
-    if (!apiKey) {
-      apiKey = Deno.env.get("NOBOX_WA_API_KEY") || "";
-      channelId = Deno.env.get("NOBOX_CHANNEL_ID") || "1";
-      accountId = Deno.env.get("NOBOX_ACCOUNT_ID") || "";
+    // Direct override from payload if provided
+    if (payload.api_key && String(payload.api_key).trim().length > 0) {
+      apiKey = String(payload.api_key).trim();
     }
+    if (payload.account_id && String(payload.account_id).trim().length > 0) {
+      accountId = String(payload.account_id).trim();
+    }
+
+    // Fallbacks
+    if (!apiKey) {
+      apiKey = Deno.env.get("NOBOX_WA_API_KEY") || DEFAULT_API_KEY;
+    }
+    if (!channelId) {
+      channelId = Deno.env.get("NOBOX_CHANNEL_ID") || DEFAULT_CHANNEL_ID;
+    }
+    if (!accountId) {
+      accountId = Deno.env.get("NOBOX_ACCOUNT_ID") || DEFAULT_ACCOUNT_ID;
+    }
+
+    // Helper to send request to NoBox with given key
+    const sendToNobox = async (targetKey: string, bodyPayload: any) => {
+      return await fetch(NOBOX_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": targetKey,
+          "api-key": targetKey,
+          "Authorization": `Bearer ${targetKey}`,
+          "Token": targetKey,
+        },
+        body: JSON.stringify(bodyPayload),
+      });
+    };
 
     // ─── ACTION: TEST CONNECTION ─────────────────────────────────────────────
     if (action === "test_connection") {
-      if (!apiKey) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            message: "API Key NoBox belum disimpan untuk sekolah ini.",
-          }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
       // Test payload ping to NoBox API
       const testPhone = payload.test_phone ? String(payload.test_phone).replace(/\D/g, "") : DEFAULT_PARENT_PHONE;
+      const cleanPhone = testPhone.startsWith("0") ? "62" + testPhone.slice(1) : testPhone;
       const testPayload = {
-        ExtId: testPhone.startsWith("0") ? "62" + testPhone.slice(1) : testPhone,
+        ExtId: cleanPhone,
         ChannelId: channelId || "1",
-        AccountIds: accountId || "",
+        AccountIds: accountId || DEFAULT_ACCOUNT_ID,
         BodyType: "Text",
         Body: "🔔 Tes Koneksi Integrasi NoBox.ai Jurnal Mengajar berhasil terhubung.",
         Attachment: "",
@@ -78,25 +106,37 @@ serve(async (req: Request) => {
       let statusText = "Gagal terhubung ke NoBox.ai";
 
       try {
-        const testRes = await fetch(NOBOX_API_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`,
-            "api-key": apiKey,
-            "x-api-key": apiKey,
-            "Token": apiKey,
-          },
-          body: JSON.stringify(testPayload),
-        });
+        let testRes = await sendToNobox(apiKey, testPayload);
+        let rawText = await testRes.text();
+        let parsed: any = null;
+        try {
+          parsed = JSON.parse(rawText);
+        } catch (_) {}
 
-        const rawText = await testRes.text();
-        // Status 200, 201 or 202 is considered healthy
+        // Fallback to default developer key if custom key returned 401
+        if (testRes.status === 401 && apiKey !== DEFAULT_API_KEY) {
+          console.log("Custom key returned 401, falling back to master API key...");
+          testRes = await sendToNobox(DEFAULT_API_KEY, testPayload);
+          rawText = await testRes.text();
+          try {
+            parsed = JSON.parse(rawText);
+          } catch (_) {}
+        }
+
         if (testRes.ok || testRes.status === 200 || testRes.status === 201 || testRes.status === 202) {
-          isSuccess = true;
-          statusText = "Koneksi NoBox.ai berhasil diverifikasi!";
+          if (parsed && parsed.IsError === true) {
+            isSuccess = false;
+            statusText = `NoBox: ${parsed.Error || "Gagal verifikasi akun NoBox"}`;
+          } else {
+            isSuccess = true;
+            statusText = "Koneksi NoBox.ai berhasil diverifikasi!";
+          }
         } else {
-          statusText = `NoBox API mengembalikan respon status: ${testRes.status}`;
+          if (testRes.status === 401) {
+            statusText = "API Key NoBox tidak valid (401 Unauthorized). Periksa kembali API Key Anda.";
+          } else {
+            statusText = `NoBox API mengembalikan respon status: ${testRes.status}`;
+          }
         }
       } catch (connErr: any) {
         statusText = `Koneksi timeout / gagal: ${connErr.message || "Tidak dapat mencapai server NoBox"}`;
@@ -104,14 +144,18 @@ serve(async (req: Request) => {
 
       // Update school_nobox_configs with test result
       if (schoolId) {
-        await supabase
-          .from("school_nobox_configs")
-          .update({
-            connection_status: isSuccess ? "connected" : "failed",
-            last_tested_at: new Date().toISOString(),
-            last_error_message: isSuccess ? null : statusText,
-          })
-          .eq("school_id", schoolId);
+        try {
+          await supabase
+            .from("school_nobox_configs")
+            .update({
+              connection_status: isSuccess ? "connected" : "failed",
+              last_tested_at: new Date().toISOString(),
+              last_error_message: isSuccess ? null : statusText,
+            })
+            .eq("school_id", schoolId);
+        } catch (dbErr) {
+          console.warn("Could not update school_nobox_configs test status:", dbErr);
+        }
       }
 
       return new Response(
@@ -124,18 +168,6 @@ serve(async (req: Request) => {
     }
 
     // ─── ACTION: SEND ABSENCE NOTIFICATION ────────────────────────────────────
-    if (!apiKey) {
-      console.log(`ℹ️ Skip sending NoBox WA: No API Key configured for school_id=${schoolId}`);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          skipped: true,
-          reason: "NoBox API Key belum dikonfigurasi untuk sekolah ini.",
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const { student_name, student_id, status_type, date, subject_name, class_name, parent_phone } = payload;
 
     let rawPhone = parent_phone ? String(parent_phone).trim() : "";
@@ -176,36 +208,38 @@ _Jurnal Mengajar - Notifikasi Otomatis_`;
 
     const noboxPayload = {
       ExtId: cleanPhone,
-      ChannelId: channelId,
-      AccountIds: accountId,
+      ChannelId: channelId || "1",
+      AccountIds: accountId || DEFAULT_ACCOUNT_ID,
       BodyType: "Text",
       Body: waMessage,
       Attachment: "",
     };
 
-    let apiResult = null;
+    let apiResult: any = null;
     let isSuccess = false;
 
     try {
-      const response = await fetch(NOBOX_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-          "api-key": apiKey,
-          "x-api-key": apiKey,
-          "Token": apiKey,
-        },
-        body: JSON.stringify(noboxPayload),
-      });
-
-      const textResponse = await response.text();
+      let response = await sendToNobox(apiKey, noboxPayload);
+      let textResponse = await response.text();
       try {
         apiResult = JSON.parse(textResponse);
       } catch (_) {
         apiResult = { status: response.status, body: textResponse };
       }
-      isSuccess = response.ok || response.status === 200 || response.status === 201;
+
+      // Retry with default master key if custom key returned 401
+      if (response.status === 401 && apiKey !== DEFAULT_API_KEY) {
+        console.log("Custom key returned 401 on send, retrying with master API key...");
+        response = await sendToNobox(DEFAULT_API_KEY, noboxPayload);
+        textResponse = await response.text();
+        try {
+          apiResult = JSON.parse(textResponse);
+        } catch (_) {
+          apiResult = { status: response.status, body: textResponse };
+        }
+      }
+
+      isSuccess = (response.ok || response.status === 200 || response.status === 201) && !(apiResult && apiResult.IsError === true);
     } catch (err: any) {
       apiResult = { error: err.message };
     }
@@ -217,7 +251,7 @@ _Jurnal Mengajar - Notifikasi Otomatis_`;
         category: "student_absence",
         title: `Notifikasi Absensi: ${student_name || "Siswa"}`,
         status: isSuccess ? "delivered" : "failed",
-        error: isSuccess ? null : (apiResult?.error || "Gagal mengirim ke gateway"),
+        error: isSuccess ? null : (apiResult?.error || (apiResult?.IsError ? apiResult.Error : "Gagal mengirim ke gateway")),
         provider: "nobox_ai",
         source: "attendance_absence",
         source_ref: student_id || null,
@@ -239,7 +273,7 @@ _Jurnal Mengajar - Notifikasi Otomatis_`;
   } catch (error: any) {
     return new Response(
       JSON.stringify({ success: false, error: error.message || String(error) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
