@@ -35,6 +35,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   bool _obscureApiKey = true;
   String? _lastSchoolId;
   bool _isEditingApiKey = false;
+  bool _isEditingAccountId = false;
 
   @override
   void initState() {
@@ -88,12 +89,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         _noboxAccountIdController.text = config.accountId;
         setState(() {
           _isEditingApiKey = false;
+          _isEditingAccountId = false;
         });
       } else {
         _noboxApiKeyController.clear();
         _noboxAccountIdController.clear();
         setState(() {
           _isEditingApiKey = true;
+          _isEditingAccountId = true;
         });
       }
     }
@@ -129,6 +132,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       if (success) {
         setState(() {
           _isEditingApiKey = false;
+          _isEditingAccountId = false;
           final config = settingsProvider.noboxConfig;
           _noboxApiKeyController.text = config?.maskedApiKey ?? '';
           _noboxAccountIdController.text = config?.accountId ?? '';
@@ -1468,6 +1472,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                     onPressed: () {
                                       setState(() {
                                         _isEditingApiKey = true;
+                                        _isEditingAccountId = true;
                                         _noboxApiKeyController.clear();
                                       });
                                     },
@@ -1511,12 +1516,33 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                             ),
                             SizedBox(height: 12.h),
 
-                            Text(
-                              'Account ID / ID Akun NoBox.ai (Opsional)',
-                              style: TextStyle(
-                                fontSize: 13.5.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Account ID / ID Akun NoBox.ai (Opsional)',
+                                    style: TextStyle(
+                                      fontSize: 13.5.sp,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                if (noboxConfig != null && noboxConfig.hasApiKey && !_isEditingAccountId)
+                                  TextButton.icon(
+                                    onPressed: () {
+                                      setState(() {
+                                        _isEditingAccountId = true;
+                                      });
+                                    },
+                                    icon: const Icon(Icons.edit_outlined, size: 14),
+                                    label: const Text('Ganti ID'),
+                                    style: TextButton.styleFrom(
+                                      visualDensity: VisualDensity.compact,
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                  ),
+                              ],
                             ),
                             SizedBox(height: 4.h),
                             Text(
@@ -1529,12 +1555,21 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                             SizedBox(height: 8.h),
                             TextFormField(
                               controller: _noboxAccountIdController,
-                              readOnly: (noboxConfig != null && noboxConfig.hasApiKey && !_isEditingApiKey),
+                              readOnly: (noboxConfig != null && noboxConfig.hasApiKey && !_isEditingAccountId && !_isEditingApiKey),
                               decoration: InputDecoration(
-                                hintText: (noboxConfig != null && noboxConfig.hasApiKey && !_isEditingApiKey)
+                                hintText: (noboxConfig != null && noboxConfig.hasApiKey && !_isEditingAccountId && !_isEditingApiKey)
                                     ? (noboxConfig.accountId.isNotEmpty ? noboxConfig.accountId : 'Default (829936240919301)')
                                     : 'Contoh: 829936240919301 (Kosongkan jika default)',
                                 prefixIcon: const Icon(Icons.badge_outlined, size: 20),
+                                suffixIcon: (noboxConfig != null && noboxConfig.hasApiKey && (_isEditingAccountId || _isEditingApiKey))
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear_rounded, size: 18),
+                                        tooltip: 'Hapus ID',
+                                        onPressed: () {
+                                          _noboxAccountIdController.clear();
+                                        },
+                                      )
+                                    : null,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12.r),
                                 ),
