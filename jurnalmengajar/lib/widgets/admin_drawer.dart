@@ -113,6 +113,7 @@ class AdminDrawer extends StatelessWidget {
           SizedBox(height: 12.h),
           Builder(
             builder: (context) {
+              final canSwitch = !authProvider.isAdminAsli || authProvider.hasMultipleSchools;
               final switcherWidget = Container(
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
                 decoration: BoxDecoration(
@@ -142,14 +143,19 @@ class AdminDrawer extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const Icon(
-                      Icons.swap_vert_rounded,
-                      color: Color(0xFF64748B),
-                      size: 18,
-                    ),
+                    if (canSwitch)
+                      const Icon(
+                        Icons.swap_vert_rounded,
+                        color: Color(0xFF64748B),
+                        size: 18,
+                      ),
                   ],
                 ),
               );
+
+              if (!canSwitch) {
+                return switcherWidget;
+              }
 
               return InkWell(
                 onTap: () => SchoolSwitcherModal.show(context),

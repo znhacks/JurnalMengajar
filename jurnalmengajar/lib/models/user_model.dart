@@ -15,6 +15,7 @@ class UserModel {
   final String? status; // 'active' | 'pending' | 'inactive' | 'requested_exit'
   final String? membershipRole; // role assigned within active school membership
   final String? nip;
+  final String? registeredRole; // role saat registrasi: 'admin' | 'guru' | 'pending_guru'
 
   bool get isPending =>
       (status != null && status!.toLowerCase() == 'pending') ||
@@ -41,6 +42,7 @@ class UserModel {
     this.status,
     this.membershipRole,
     this.nip,
+    this.registeredRole,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -77,6 +79,10 @@ class UserModel {
       status: json['status']?.toString() ?? json['membership_status']?.toString(),
       membershipRole: json['membership_role']?.toString() ?? json['membershipRole']?.toString(),
       nip: json['nip']?.toString(),
+      registeredRole: json['registered_role']?.toString() ??
+          json['registeredRole']?.toString() ??
+          json['meta_role']?.toString() ??
+          json['auth_role']?.toString(),
     );
   }
 
@@ -100,6 +106,9 @@ class UserModel {
     if (schoolId != null && schoolId!.isNotEmpty) {
       map['school_id'] = schoolId;
     }
+    if (registeredRole != null && registeredRole!.isNotEmpty) {
+      map['registered_role'] = registeredRole;
+    }
     return map;
   }
 
@@ -110,6 +119,9 @@ class UserModel {
     }
     if (membershipRole != null && membershipRole!.isNotEmpty) {
       map['membership_role'] = membershipRole;
+    }
+    if (registeredRole != null && registeredRole!.isNotEmpty) {
+      map['registered_role'] = registeredRole;
     }
     return map;
   }
@@ -132,6 +144,7 @@ class UserModel {
     String? membershipRole,
     String? nip,
     bool clearNip = false,
+    String? registeredRole,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -148,6 +161,7 @@ class UserModel {
       status: status ?? this.status,
       membershipRole: membershipRole ?? this.membershipRole,
       nip: clearNip ? null : (nip ?? this.nip),
+      registeredRole: registeredRole ?? this.registeredRole,
     );
   }
 }

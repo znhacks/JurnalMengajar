@@ -67,7 +67,12 @@ class SupabaseAuthRepository implements AuthRepository {
             }
           }
 
-          final user = UserModel.fromJson(response);
+          final userJson = Map<String, dynamic>.from(response);
+          final rawMetaRole = session.user.userMetadata?['role']?.toString().toLowerCase();
+          if (rawMetaRole != null && rawMetaRole.isNotEmpty) {
+            userJson['registered_role'] = rawMetaRole;
+          }
+          final user = UserModel.fromJson(userJson);
           await CacheService().save('user_profile_$userId', user.toJson());
           return user;
         },
@@ -81,11 +86,13 @@ class SupabaseAuthRepository implements AuthRepository {
           final fullName = session.user.userMetadata?['full_name'] as String? ??
               session.user.userMetadata?['name'] as String? ??
               email.split('@')[0];
+          final rawMetaRole = session.user.userMetadata?['role']?.toString().toLowerCase();
           return UserModel(
             id: userId,
             email: email,
             fullName: fullName,
             role: 'guru',
+            registeredRole: rawMetaRole ?? 'guru',
           );
         },
         timeout: NetworkResilience.defaultQueryTimeout,
@@ -120,7 +127,12 @@ class SupabaseAuthRepository implements AuthRepository {
           .eq('id', userId)
           .single();
 
-      final user = UserModel.fromJson(userResponse);
+      final userJson = Map<String, dynamic>.from(userResponse);
+      final rawMetaRole = response.user?.userMetadata?['role']?.toString().toLowerCase();
+      if (rawMetaRole != null && rawMetaRole.isNotEmpty) {
+        userJson['registered_role'] = rawMetaRole;
+      }
+      final user = UserModel.fromJson(userJson);
       await CacheService().save('user_profile_$userId', user.toJson());
       return user;
     } on AuthException catch (e) {
@@ -997,16 +1009,10 @@ class SupabaseAuthRepository implements AuthRepository {
             if (next['schools'] != null && next['schools'] is Map) {
               updates['school_name'] = next['schools']['name'];
             }
-            if (next['role'] != null) {
-              updates['role'] = next['role'];
-            }
           } else {
             updates['school_id'] = null;
             updates['school_name'] = null;
           }
-        } else {
-          final nextRole = stillInThisSchool.first['role'] as String;
-          updates['role'] = nextRole;
         }
 
         await _supabase.from('users').update(updates).eq('id', uId);
@@ -1165,9 +1171,6 @@ class SupabaseAuthRepository implements AuthRepository {
               updates['school_id'] = nextId;
               if (next['schools'] != null && next['schools'] is Map) {
                 updates['school_name'] = next['schools']['name'];
-              }
-              if (next['role'] != null) {
-                updates['role'] = next['role'];
               }
             } else {
               updates['school_id'] = null;

@@ -349,55 +349,65 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           scrolledUnderElevation: 0,
           title: Builder(
             builder: (context) {
-              final titleWidget = Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                child: Column(
-                  children: [
-                    Text(
-                      'Dashboard Admin',
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w800,
-                        color: Theme.of(context).colorScheme.onSurface,
+                final titleWidget = Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Dashboard Admin',
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w800,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
-                    ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          authProvider.activeSchoolName,
-                          style: GoogleFonts.hankenGrotesk(
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF2563EB),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            authProvider.activeSchoolName,
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF2563EB),
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 4.w),
-                        Icon(
-                          Icons.unfold_more_rounded,
-                          size: 14.sp,
-                          color: const Color(0xFF2563EB),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
+                          if (!authProvider.isAdminAsli || authProvider.hasMultipleSchools) ...[
+                            SizedBox(width: 4.w),
+                            Icon(
+                              Icons.unfold_more_rounded,
+                              size: 14.sp,
+                              color: const Color(0xFF2563EB),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                );
 
-              return InkWell(
-                onTap: () => SchoolSwitcherModal.show(context),
-                borderRadius: BorderRadius.circular(8.r),
-                child: titleWidget,
-              );
-            },
-          ),
+                final canSwitch = !authProvider.isAdminAsli || authProvider.hasMultipleSchools;
+                if (!canSwitch) return titleWidget;
+
+                return InkWell(
+                  onTap: () => SchoolSwitcherModal.show(context),
+                  borderRadius: BorderRadius.circular(8.r),
+                  child: titleWidget,
+                );
+              },
+            ),
           actions: [
             Padding(
               padding: EdgeInsets.only(right: 14.w),
-              child: RoleBadge(
-                role: authProvider.activeRole,
-                fontSize: 10.sp,
-                onTap: () => SchoolSwitcherModal.show(context),
+              child: Builder(
+                builder: (context) {
+                  final canSwitch = !authProvider.isAdminAsli || authProvider.hasMultipleSchools;
+                  return RoleBadge(
+                    role: authProvider.activeRole,
+                    fontSize: 10.sp,
+                    onTap: canSwitch ? () => SchoolSwitcherModal.show(context) : null,
+                  );
+                },
               ),
             ),
           ],

@@ -80,11 +80,15 @@ class AuthProvider with ChangeNotifier {
 
   bool get hasMultipleSchools => _userMemberships.length > 1;
 
-  /// True jika user adalah Admin Asli (akun dasar adalah admin/superadmin/school_admin).
+  /// True jika user adalah Admin Asli (akun dasar saat registrasi adalah admin/superadmin/school_admin).
   /// Admin Asli terkunci pada peran ADMIN, tidak dapat switch menjadi guru, dan hanya
   /// mengelola sekolah yang ditugaskan.
   bool get isAdminAsli {
     if (_currentUser == null) return false;
+    final regRole = _currentUser!.registeredRole?.toLowerCase();
+    if (regRole == 'guru' || regRole == 'pending_guru') {
+      return false;
+    }
     final r = _currentUser!.role.toLowerCase();
     return r == 'admin' || r == 'superadmin' || r == 'school_admin';
   }
@@ -341,7 +345,10 @@ class AuthProvider with ChangeNotifier {
 
     // STRICT ROLE & SCHOOL ENFORCEMENT
     String effectiveRole = role.toLowerCase();
-    if (isGuruMurni) {
+    if (isAdminAsli) {
+      // Admin Asli can NEVER switch to guru! Must stay admin!
+      effectiveRole = 'admin';
+    } else if (isGuruMurni) {
       // Pure Guru NEVER switches to admin!
       effectiveRole = 'guru';
     } else if (effectiveRole == 'admin') {
@@ -677,8 +684,7 @@ class AuthProvider with ChangeNotifier {
 
     if (isAdminAsli) {
       final assignedSchool = AppHelper.parseSingleCleanSchoolId(_currentUser?.schoolId);
-      final wantsGuru = (_activeRole.toLowerCase() == 'guru') || (savedRole == 'guru');
-      final targetRole = wantsGuru ? 'guru' : 'admin';
+      const targetRole = 'admin';
 
       activeMember = _userMemberships.firstWhere(
         (m) => (savedSchoolId != null && m.schoolId == savedSchoolId) && m.role.toLowerCase() == targetRole,
@@ -694,9 +700,8 @@ class AuthProvider with ChangeNotifier {
         ),
       );
 
-      final chosenRole = wantsGuru ? 'guru' : 'admin';
-      prefs.setString(_userRoleKey(userId), chosenRole);
-      prefs.setString(_kActiveRoleKey, chosenRole);
+      prefs.setString(_userRoleKey(userId), 'admin');
+      prefs.setString(_kActiveRoleKey, 'admin');
       final chosenSchool = activeMember.schoolId;
       if (chosenSchool.isNotEmpty) {
         prefs.setString(_userSchoolKey(userId), chosenSchool);
@@ -775,7 +780,7 @@ class AuthProvider with ChangeNotifier {
     // ENFORCE AUTHORITATIVE ROLE
     String finalActiveRole;
     if (isAdminAsli) {
-      finalActiveRole = (_activeRole.toLowerCase() == 'guru' || savedRole == 'guru') ? 'guru' : 'admin';
+      finalActiveRole = 'admin';
     } else if (isGuruMurni) {
       // Pure Guru can NEVER be anything other than guru!
       finalActiveRole = 'guru';
@@ -1115,8 +1120,7 @@ class AuthProvider with ChangeNotifier {
           final savedUserSchool = prefs.getString(_userSchoolKey(uid)) ?? prefs.getString(_kActiveSchoolIdKey);
 
           if (isAdminAsli) {
-            final wantsGuru = savedUserRole?.toLowerCase() == 'guru';
-            _activeRole = wantsGuru ? 'guru' : 'admin';
+            _activeRole = 'admin';
             _activeSchoolId = AppHelper.parseSingleCleanSchoolId(savedUserSchool) ??
                 (AppHelper.parseSingleCleanSchoolId(user.schoolId) ?? user.schoolId);
           } else {
@@ -1412,9 +1416,9 @@ class AuthProvider with ChangeNotifier {
     try {
       final targetSchoolId = schoolId ?? _activeSchoolId;
       await authRepository.updateUserRole(userId, role, targetSchoolId);
-      // If the modified user is current user and not Admin Asli, update local profile as well
+      // If the modified user is current user and not Admin Asli, refresh memberships
       if (_currentUser != null && _currentUser!.id == userId && !isAdminAsli) {
-        _currentUser = _currentUser!.copyWith(role: role);
+        await loadUserMemberships();
       }
       try {
         await CacheService().purgePrefix('teachers_');

@@ -1446,6 +1446,11 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                     continue;
                                   }
 
+                                  // RULE: Admin Asli can NEVER see or select GURU context!
+                                  if (authProvider.isAdminAsli && mRole == 'guru') {
+                                    continue;
+                                  }
+
                                   final baseKey = '${m.schoolId}_$mRole';
                                   if (!seen.contains(baseKey)) {
                                     seen.add(baseKey);
@@ -1459,8 +1464,9 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                     ));
                                   }
 
-                                  // Akun admin dapat selalu mengakses konteks GURU pada sekolah yang dikelolanya
-                                  if (mRole == 'admin' || mRole == 'superadmin') {
+                                  // ONLY for Guru with Admin rights (isAdminCadangan):
+                                  // If they have an admin membership at this school, ensure they can ALSO switch to GURU!
+                                  if (!authProvider.isAdminAsli && authProvider.isAdminCadangan && (mRole == 'admin' || mRole == 'superadmin')) {
                                     final guruKey = '${m.schoolId}_guru';
                                     if (!seen.contains(guruKey)) {
                                       seen.add(guruKey);
@@ -1476,11 +1482,10 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                   }
                                 }
 
-                                // Jika akun admin aktif (atau Admin Asli / Admin Cadangan), pastikan kedua opsi tersedia untuk sekolah aktif
+                                // Fallback options for Admin Asli: ensure their primary admin school is present, but NEVER guru!
                                 final activeSchoolId = authProvider.activeSchoolId;
-                                if ((authProvider.isAdminAsli || authProvider.isAdminCadangan) && activeSchoolId != null && activeSchoolId.isNotEmpty) {
+                                if (authProvider.isAdminAsli && activeSchoolId != null && activeSchoolId.isNotEmpty) {
                                   final adminKey = '${activeSchoolId}_admin';
-                                  final guruKey = '${activeSchoolId}_guru';
                                   if (!seen.contains(adminKey)) {
                                     seen.add(adminKey);
                                     list.add(SchoolRoleOption(
@@ -1491,23 +1496,12 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                       status: 'active',
                                     ));
                                   }
-                                  if (!seen.contains(guruKey)) {
-                                    seen.add(guruKey);
-                                    list.add(SchoolRoleOption(
-                                      schoolId: activeSchoolId,
-                                      schoolName: authProvider.activeSchoolName,
-                                      role: 'guru',
-                                      logoUrl: authProvider.activeSchool?.logoUrl,
-                                      status: 'active',
-                                    ));
-                                  }
                                 }
 
                                 if (authProvider.isAdminAsli) {
                                   final primarySchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.currentUser?.schoolId);
                                   if (primarySchoolId != null && primarySchoolId.isNotEmpty) {
                                     final adminKey = '${primarySchoolId}_admin';
-                                    final guruKey = '${primarySchoolId}_guru';
                                     final pSchoolName = (authProvider.currentUser?.schoolName != null && authProvider.currentUser!.schoolName!.isNotEmpty)
                                         ? authProvider.currentUser!.schoolName!
                                         : authProvider.activeSchoolName;
@@ -1521,11 +1515,33 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                         status: 'active',
                                       ));
                                     }
+                                  }
+                                }
+
+                                // Fallback options for Admin Cadangan: if in active school they have admin access, ensure both admin & guru options exist
+                                if (!authProvider.isAdminAsli && authProvider.isAdminCadangan && activeSchoolId != null && activeSchoolId.isNotEmpty) {
+                                  final hasAdminAccessInActiveSchool = authProvider.userMemberships.any((m) =>
+                                      m.schoolId == activeSchoolId &&
+                                      m.role.toLowerCase() == 'admin' &&
+                                      m.status?.toLowerCase() == 'active');
+                                  if (hasAdminAccessInActiveSchool) {
+                                    final adminKey = '${activeSchoolId}_admin';
+                                    final guruKey = '${activeSchoolId}_guru';
+                                    if (!seen.contains(adminKey)) {
+                                      seen.add(adminKey);
+                                      list.add(SchoolRoleOption(
+                                        schoolId: activeSchoolId,
+                                        schoolName: authProvider.activeSchoolName,
+                                        role: 'admin',
+                                        logoUrl: authProvider.activeSchool?.logoUrl,
+                                        status: 'active',
+                                      ));
+                                    }
                                     if (!seen.contains(guruKey)) {
                                       seen.add(guruKey);
                                       list.add(SchoolRoleOption(
-                                        schoolId: primarySchoolId,
-                                        schoolName: pSchoolName,
+                                        schoolId: activeSchoolId,
+                                        schoolName: authProvider.activeSchoolName,
                                         role: 'guru',
                                         logoUrl: authProvider.activeSchool?.logoUrl,
                                         status: 'active',
