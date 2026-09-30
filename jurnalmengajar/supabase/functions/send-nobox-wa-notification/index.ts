@@ -62,6 +62,25 @@ serve(async (req: Request) => {
       accountId = String(payload.account_id).trim();
     }
 
+    // Fallback: check any active school config in database before using constants
+    if (!apiKey || !accountId) {
+      try {
+        const { data: anyConfig } = await supabase
+          .from("school_nobox_configs")
+          .select("api_key, channel_id, account_id, is_active")
+          .eq("is_active", true)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (anyConfig && anyConfig.api_key && anyConfig.is_active !== false) {
+          if (!apiKey) apiKey = (anyConfig.api_key || "").trim();
+          if (!channelId) channelId = (anyConfig.channel_id || "").trim();
+          if (!accountId) accountId = (anyConfig.account_id || "").trim();
+        }
+      } catch (_) {}
+    }
+
     // Fallbacks
     if (!apiKey) {
       apiKey = Deno.env.get("NOBOX_WA_API_KEY") || DEFAULT_API_KEY;
@@ -180,30 +199,44 @@ serve(async (req: Request) => {
       cleanPhone = "62" + cleanPhone.slice(1);
     }
 
-    // Determine message content
+    // Determine message content according to exact user template
     let waMessage = payload.custom_message || payload.message;
     if (!waMessage) {
-      const reasonText =
-        status_type === "S" || status_type === "Sakit"
-          ? "Sakit"
-          : status_type === "I" || status_type === "Izin"
-          ? "Izin"
-          : "Tanpa Keterangan (Alpha)";
+      const st = String(status_type || "").trim().toLowerCase();
+      let reasonText = "Alpha";
+      if (st === "s" || st.includes("sakit")) {
+        reasonText = "Sakit";
+      } else if (st === "i" || st.includes("izin")) {
+        reasonText = "Izin";
+      } else if (st === "a" || st.includes("alfa") || st.includes("alpha")) {
+        reasonText = "Alpha";
+      } else if (status_type) {
+        reasonText = status_type;
+      }
+
+      let formattedDate = String(date || "").trim();
+      if (!formattedDate || formattedDate.includes("T")) {
+        const d = date ? new Date(date) : new Date();
+        formattedDate = `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
+      } else if (formattedDate.includes("-")) {
+        const parts = formattedDate.split("-");
+        if (parts.length === 3 && parts[0].length === 4) {
+          formattedDate = `${parseInt(parts[2], 10)}-${parseInt(parts[1], 10)}-${parts[0]}`;
+        }
+      }
 
       waMessage = `📢 *NOTIFIKASI ABSENSI SISWA*
 
 Yth. Orang Tua/Wali dari *${student_name || "Siswa"}*,
 
-Kami informasikan bahwa pada:
-📅 Tanggal: ${date || new Date().toLocaleDateString("id-ID")}
-📚 Mata Pelajaran: ${subject_name || "Mata Pelajaran"}${class_name ? ` (${class_name})` : ""}
+Menginfokan bahwa pada:
+📅 Tanggal: ${formattedDate}
+📚 Mata Pelajaran: ${subject_name || "Mata Pelajaran"}
 
-Keterangan Kehadiran: *${reasonText}*
+Pemberitahuan: Anak Anda tidak masuk karena: *${reasonText}*
 
-Mohon kerjasamanya untuk memantau kehadiran ananda di sekolah.
-Terima kasih.
-
-_Jurnal Mengajar - Notifikasi Otomatis_`;
+Mohon bantuannya untuk memantau putra/putri Bapak/Ibu.
+Terima kasih.`;
     }
 
     const noboxPayload = {
@@ -244,22 +277,38 @@ _Jurnal Mengajar - Notifikasi Otomatis_`;
       apiResult = { error: err.message };
     }
 
-    // Audit log without leaking credentials
-    try {
-      await supabase.from("notification_delivery_logs").insert({
-        channel: "whatsapp",
-        category: "student_absence",
-        title: `Notifikasi Absensi: ${student_name || "Siswa"}`,
-        status: isSuccess ? "delivered" : "failed",
-        error: isSuccess ? null : (apiResult?.error || (apiResult?.IsError ? apiResult.Error : "Gagal mengirim ke gateway")),
-        provider: "nobox_ai",
-        source: "attendance_absence",
-        source_ref: student_id || null,
-        school_id: schoolId || null,
-        user_id: payload.user_id || "00000000-0000-0000-0000-000000000000",
-      });
-    } catch (logErr) {
-      console.warn("Could not insert notification delivery log:", logErr);
+    // Resolve user ID safely for audit log
+    let resolvedUserId: string | null = payload.user_id || null;
+    if (!resolvedUserId) {
+      try {
+        const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+          const jwt = authHeader.replace("Bearer ", "").trim();
+          const { data: { user } } = await supabase.auth.getUser(jwt);
+          if (user && user.id) {
+            resolvedUserId = user.id;
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (resolvedUserId) {
+      try {
+        await supabase.from("notification_delivery_logs").insert({
+          channel: "whatsapp",
+          category: "student_absence",
+          title: `Notifikasi Absensi: ${student_name || "Siswa"}`,
+          status: isSuccess ? "delivered" : "failed",
+          error: isSuccess ? null : (apiResult?.error || (apiResult?.IsError ? apiResult.Error : "Gagal mengirim ke gateway")),
+          provider: "nobox_ai",
+          source: "attendance_absence",
+          source_ref: student_id || null,
+          school_id: schoolId || null,
+          user_id: resolvedUserId,
+        });
+      } catch (logErr) {
+        console.warn("Could not insert notification delivery log:", logErr);
+      }
     }
 
     return new Response(

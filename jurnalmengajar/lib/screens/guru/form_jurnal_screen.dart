@@ -874,28 +874,47 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
               orElse: () => SubjectModel(id: '', name: 'Mata Pelajaran', isActive: true),
             );
 
-            final activeSchoolId = context.read<AuthProvider>().activeSchoolId;
+            final targetSchoolId = effectiveSchoolId ??
+                context.read<AuthProvider>().activeSchoolId ??
+                schedule.schoolId ??
+                _existingJournal?.schoolId;
+            final currentUserId = context.read<AuthProvider>().currentUser?.id;
+
             // Trigger Nobox AI WhatsApp Student Absence notifications (Sakit / Izin / Alpha)
-            _studentAttendance.forEach((studentId, status) {
+            final absenceFutures = <Future<bool>>[];
+            int absentCount = 0;
+            for (final entry in _studentAttendance.entries) {
+              final studentId = entry.key;
+              final status = entry.value;
               if (status == 'S' || status == 'I' || status == 'A') {
+                absentCount++;
                 final student = masterProvider.students.firstWhere(
                   (s) => s.id == studentId,
                   orElse: () => StudentModel(
-                    id: '',
-                    classId: '',
+                    id: studentId,
+                    classId: schedule.classId,
                     name: 'Siswa',
                   ),
                 );
-                NoboxWaService.sendAbsenceNotification(
-                  student: student,
-                  statusType: status,
-                  classModel: cls,
-                  subjectModel: subject,
-                  date: updatedJournal.date,
-                  schoolId: activeSchoolId,
+                absenceFutures.add(
+                  NoboxWaService.sendAbsenceNotification(
+                    student: student,
+                    statusType: status,
+                    classModel: cls,
+                    subjectModel: subject,
+                    date: updatedJournal.date,
+                    schoolId: targetSchoolId,
+                    userId: currentUserId,
+                  ),
                 );
               }
-            });
+            }
+
+            if (absenceFutures.isNotEmpty) {
+              await Future.wait(absenceFutures);
+            }
+
+            if (!mounted) return;
 
             if (journalProvider.errorMessage != null) {
               AppHelper.showSnackBar(
@@ -904,7 +923,10 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 isError: true,
               );
             } else {
-              AppHelper.showSnackBar(context, 'Revisi jurnal berhasil dikirim!');
+              final msg = absentCount > 0
+                  ? 'Revisi jurnal berhasil dikirim & notifikasi WA otomatis dikirim ke orang tua ($absentCount siswa)!'
+                  : 'Revisi jurnal berhasil dikirim!';
+              AppHelper.showSnackBar(context, msg);
             }
             context.pop();
           } else if (mounted) {
@@ -950,28 +972,47 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
               orElse: () => SubjectModel(id: '', name: 'Mata Pelajaran', isActive: true),
             );
 
-            final activeSchoolId = context.read<AuthProvider>().activeSchoolId;
+            final targetSchoolId = effectiveSchoolId ??
+                context.read<AuthProvider>().activeSchoolId ??
+                schedule.schoolId ??
+                newJournal.schoolId;
+            final currentUserId = context.read<AuthProvider>().currentUser?.id;
+
             // Trigger Nobox AI WhatsApp Student Absence notifications (Sakit / Izin / Alpha)
-            _studentAttendance.forEach((studentId, status) {
+            final absenceFutures = <Future<bool>>[];
+            int absentCount = 0;
+            for (final entry in _studentAttendance.entries) {
+              final studentId = entry.key;
+              final status = entry.value;
               if (status == 'S' || status == 'I' || status == 'A') {
+                absentCount++;
                 final student = masterProvider.students.firstWhere(
                   (s) => s.id == studentId,
                   orElse: () => StudentModel(
-                    id: '',
-                    classId: '',
+                    id: studentId,
+                    classId: schedule.classId,
                     name: 'Siswa',
                   ),
                 );
-                NoboxWaService.sendAbsenceNotification(
-                  student: student,
-                  statusType: status,
-                  classModel: cls,
-                  subjectModel: subject,
-                  date: newJournal.date,
-                  schoolId: activeSchoolId,
+                absenceFutures.add(
+                  NoboxWaService.sendAbsenceNotification(
+                    student: student,
+                    statusType: status,
+                    classModel: cls,
+                    subjectModel: subject,
+                    date: newJournal.date,
+                    schoolId: targetSchoolId,
+                    userId: currentUserId,
+                  ),
                 );
               }
-            });
+            }
+
+            if (absenceFutures.isNotEmpty) {
+              await Future.wait(absenceFutures);
+            }
+
+            if (!mounted) return;
 
             if (journalProvider.errorMessage != null) {
               AppHelper.showSnackBar(
@@ -980,9 +1021,12 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 isError: true,
               );
             } else {
+              final msg = absentCount > 0
+                  ? 'Jurnal berhasil dikirim & notifikasi WA otomatis dikirim ke orang tua ($absentCount siswa)!'
+                  : 'Jurnal berhasil dikirim untuk verifikasi!';
               AppHelper.showSnackBar(
                 context,
-                'Jurnal berhasil dikirim untuk verifikasi!',
+                msg,
               );
             }
             CacheService().remove('draft_journal_${schedule.id}');

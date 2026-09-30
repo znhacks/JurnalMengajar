@@ -59,6 +59,10 @@ dependencies:
   printing: ^5.14.3
   package_info_plus: ^8.3.0
   excel: ^4.0.6
+  nobox_chat_sdk:
+    git:
+      url: https://gitlab.ubig.co.id/nobox.ai-sdk/nobox-chat-flutter.git
+      ref: main
 
 
 dev_dependencies:
