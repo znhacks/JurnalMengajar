@@ -59,7 +59,9 @@ class AboutAppScreen extends StatelessWidget {
                 style: GoogleFonts.hankenGrotesk(
                   fontSize: 22.sp,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A5F),
+                  color: isDark
+                      ? const Color(0xFF60A5FA)
+                      : const Color(0xFF1E3A5F),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -82,7 +84,9 @@ class AboutAppScreen extends StatelessWidget {
               SizedBox(height: 24.h),
 
               Divider(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFE2E8F0),
               ),
               SizedBox(height: 16.h),
 
@@ -90,11 +94,15 @@ class AboutAppScreen extends StatelessWidget {
               Card(
                 margin: EdgeInsets.zero,
                 elevation: 0,
-                color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+                color:
+                    Theme.of(context).cardTheme.color ??
+                    Theme.of(context).colorScheme.surface,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                   side: BorderSide(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0),
                   ),
                 ),
                 child: Padding(
@@ -122,11 +130,15 @@ class AboutAppScreen extends StatelessWidget {
               Card(
                 margin: EdgeInsets.zero,
                 elevation: 0,
-                color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+                color:
+                    Theme.of(context).cardTheme.color ??
+                    Theme.of(context).colorScheme.surface,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                   side: BorderSide(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0),
                   ),
                 ),
                 child: Padding(
@@ -171,11 +183,15 @@ class AboutAppScreen extends StatelessWidget {
               Card(
                 margin: EdgeInsets.zero,
                 elevation: 0,
-                color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+                color:
+                    Theme.of(context).cardTheme.color ??
+                    Theme.of(context).colorScheme.surface,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                   side: BorderSide(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0),
                   ),
                 ),
                 child: Padding(
@@ -189,7 +205,7 @@ class AboutAppScreen extends StatelessWidget {
                         context,
                         Icons.code_outlined,
                         'Tim Pengembang',
-                        'UBIG x JoeDevs',
+                        'UBIG, Ordi, Fawwas',
                       ),
                       SizedBox(height: 8.h),
                       _buildInfoRow(
@@ -205,7 +221,7 @@ class AboutAppScreen extends StatelessWidget {
 
               SizedBox(height: 40.h),
               Text(
-                '© 2025 Jurnal Mengajar - JDEVS. All rights reserved.',
+                '© 2025 Jurnal Mengajar - UBIG. All rights reserved.',
                 style: GoogleFonts.hankenGrotesk(
                   fontSize: 11.sp,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -252,7 +268,12 @@ class AboutAppScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(BuildContext context, IconData icon, String label, String value) {
+  Widget _buildInfoRow(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) {
     return Row(
       children: [
         Icon(icon, size: 18.w, color: const Color(0xFF2563EB)),
