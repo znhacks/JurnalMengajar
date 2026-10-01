@@ -1,3 +1,4 @@
+import 'package:cr_calendar/cr_calendar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -376,75 +377,70 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // Verify CrCalendar is rendered
+    expect(find.byType(CrCalendar), findsOneWidget);
+
     // Verify Tuesday, Wednesday, and Thursday date texts exist
     expect(find.text('${dateTue.day}'), findsWidgets);
     expect(find.text('${dateWed.day}'), findsWidgets);
     expect(find.text('${dateThu.day}'), findsWidgets);
 
-    // If Thursday is tapped (Holiday):
-    // Indicator on holiday turns RED (Color(0xFFDC2626))!
-    await tester.tap(find.text('${dateThu.day}').first);
+    // Verify date numbers are clean typography and NOT wrapped in circular shape
+    final dateTueText = find.text('${dateTue.day}').first;
+    final parentContainers = tester.widgetList<Container>(
+      find.ancestor(of: dateTueText, matching: find.byType(Container)),
+    );
+    for (final container in parentContainers) {
+      if (container.decoration is BoxDecoration) {
+        final boxDeco = container.decoration as BoxDecoration;
+        expect(boxDeco.shape, isNot(BoxShape.circle), reason: 'Date must not have circular shape');
+      }
+    }
+
+    // Verify Top-right AppBar buttons are present and functional
+    expect(find.byIcon(Icons.today_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.calendar_month_rounded), findsWidgets);
+
+    // Tap the month-year picker button in the app bar to verify it opens the picker
+    await tester.tap(find.byTooltip('Pilih Bulan & Tahun'));
     await tester.pumpAndSettle();
+    expect(find.text('Pilih Bulan & Tahun'), findsOneWidget);
 
-    final containerThuSelected = tester.widget<Container>(
-      find.ancestor(
-        of: find.text('${dateThu.day}').first,
-        matching: find.byType(Container),
-      ).first,
-    );
-    final boxDecoThuSelected = containerThuSelected.decoration as BoxDecoration;
-    expect(boxDecoThuSelected.color, const Color(0xFFDC2626));
-
-    // While Date Thu is selected:
-    // Date Tue (unfinished schedule) is NOT selected -> Green border (0xFF10B981)
-    final containerTue = tester.widget<Container>(
-      find.ancestor(
-        of: find.text('${dateTue.day}').first,
-        matching: find.byType(Container),
-      ).first,
-    );
-    final boxDecoTue = containerTue.decoration as BoxDecoration;
-    expect(boxDecoTue.border, isNotNull);
-    final borderTue = boxDecoTue.border as Border;
-    expect(borderTue.top.color, const Color(0xFF10B981));
-
-    // Date Wed (completed schedule) is NOT selected -> Blue border (0xFF3B82F6)
-    final containerWed = tester.widget<Container>(
-      find.ancestor(
-        of: find.text('${dateWed.day}').first,
-        matching: find.byType(Container),
-      ).first,
-    );
-    final boxDecoWed = containerWed.decoration as BoxDecoration;
-    expect(boxDecoWed.border, isNotNull);
-    final borderWed = boxDecoWed.border as Border;
-    expect(borderWed.top.color, const Color(0xFF3B82F6));
-
-    // When Date Tue is tapped (becomes selected):
-    // Indicator turns BLUE (AppTheme.primaryColor), NOT yellow or green!
-    await tester.tap(find.text('${dateTue.day}').first);
+    // Close the picker dialog with 'Batal'
+    await tester.tap(find.text('Batal'));
     await tester.pumpAndSettle();
+    expect(find.text('Pilih Bulan & Tahun'), findsNothing);
 
-    final containerTueSelected = tester.widget<Container>(
-      find.ancestor(
-        of: find.text('${dateTue.day}').first,
-        matching: find.byType(Container),
-      ).first,
-    );
-    final boxDecoTueSelected = containerTueSelected.decoration as BoxDecoration;
-    expect(boxDecoTueSelected.color, AppTheme.primaryColor);
+    // Verify event bars are present in the calendar
+    // For schedTue (unfilled today/past): Merah Pastel (0xFFF87171)
+    // For schedWed (filled with journal): Hijau (0xFF10B981)
+    // For h-thu (holiday): Merah (0xFFEF4444)
+    final allContainers = tester.widgetList<Container>(find.byType(Container));
+    final hasPastelRedBar = allContainers.any((c) {
+      if (c.decoration is BoxDecoration) {
+        final d = c.decoration as BoxDecoration;
+        return d.color == const Color(0xFFF87171);
+      }
+      return false;
+    });
+    expect(hasPastelRedBar, isTrue, reason: 'Unfilled schedule must have pastel red bar');
 
-    // Now Date Thu (Holiday) is unselected:
-    // Holiday unselected has RED border (0xFFEF4444)!
-    final containerThuUnselected = tester.widget<Container>(
-      find.ancestor(
-        of: find.text('${dateThu.day}').first,
-        matching: find.byType(Container),
-      ).first,
-    );
-    final boxDecoThuUnselected = containerThuUnselected.decoration as BoxDecoration;
-    expect(boxDecoThuUnselected.border, isNotNull);
-    final borderThu = boxDecoThuUnselected.border as Border;
-    expect(borderThu.top.color, const Color(0xFFEF4444));
+    final hasGreenBar = allContainers.any((c) {
+      if (c.decoration is BoxDecoration) {
+        final d = c.decoration as BoxDecoration;
+        return d.color == const Color(0xFF10B981);
+      }
+      return false;
+    });
+    expect(hasGreenBar, isTrue, reason: 'Filled schedule must have green bar');
+
+    final hasHolidayRedBar = allContainers.any((c) {
+      if (c.decoration is BoxDecoration) {
+        final d = c.decoration as BoxDecoration;
+        return d.color == const Color(0xFFEF4444);
+      }
+      return false;
+    });
+    expect(hasHolidayRedBar, isTrue, reason: 'Holiday must have red bar');
   });
 }
