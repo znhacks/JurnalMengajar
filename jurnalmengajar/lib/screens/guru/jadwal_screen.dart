@@ -1,4 +1,6 @@
 import 'package:cr_calendar/cr_calendar.dart';
+// ignore: implementation_imports
+import 'package:cr_calendar/src/cr_date_picker_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -352,48 +354,20 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         );
       },
       child: Container(
-        alignment: Alignment.topLeft,
+        alignment: Alignment.topCenter,
         decoration: BoxDecoration(
           color: cellBgColor,
           border: Border.all(color: cellBorderColor, width: 0.5),
         ),
-        child: Stack(
-          alignment: Alignment.topLeft,
-          children: [
-            // Date number rendered cleanly at the top-left WITHOUT CIRCLE
-            Padding(
-              padding: EdgeInsets.only(top: 4.h, left: 6.w),
-              child: Text(
-                '${properties.dayNumber}',
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 12.sp,
-                  fontWeight: fontWeight,
-                  color: textColor,
-                ),
-              ),
-            ),
-            // Overflow count badge (+1, +2)
-            if (properties.notFittedEventsCount > 0)
-              Positioned(
-                top: 3.h,
-                right: 3.w,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-                  decoration: BoxDecoration(
-                    color: (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)).withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(4.r),
-                  ),
-                  child: Text(
-                    '+${properties.notFittedEventsCount}',
-                    style: GoogleFonts.hankenGrotesk(
-                      fontSize: 8.5.sp,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : const Color(0xFF1E293B),
-                    ),
-                  ),
-                ),
-              ),
-          ],
+        padding: EdgeInsets.only(top: 3.h),
+        child: Text(
+          '${properties.dayNumber}',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.hankenGrotesk(
+            fontSize: 11.5.sp,
+            fontWeight: fontWeight,
+            color: textColor,
+          ),
         ),
       ),
     );
@@ -428,12 +402,12 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     }
 
     return Container(
-      height: 34.h,
+      height: 28.h,
       alignment: Alignment.center,
       child: Text(
         name,
         style: GoogleFonts.hankenGrotesk(
-          fontSize: 11.5.sp,
+          fontSize: 11.sp,
           fontWeight: FontWeight.w700,
           color: isSunday
               ? const Color(0xFFEF4444)
@@ -454,8 +428,8 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       child: Align(
         alignment: Alignment.topCenter,
         child: Container(
-          height: 18.h,
-          margin: EdgeInsets.symmetric(horizontal: 2.w),
+          height: 16.h,
+          margin: EdgeInsets.symmetric(horizontal: 4.w),
           padding: EdgeInsets.symmetric(horizontal: 4.w),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4.r),
@@ -477,7 +451,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
             maxLines: 1,
             textAlign: TextAlign.center,
             style: GoogleFonts.hankenGrotesk(
-              fontSize: 9.sp,
+              fontSize: 8.5.sp,
               fontWeight: FontWeight.w700,
               color: textColor,
               height: 1.0,
@@ -1360,159 +1334,178 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         child: Column(
           children: [
             // Calendar Month Navigation Control Row
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-              margin: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left_rounded),
-                    tooltip: 'Bulan Sebelumnya',
-                    onPressed: () {
-                      final prevMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1, 1);
-                      setState(() {
-                        _focusedMonth = prevMonth;
-                        _selectedDay = prevMonth;
-                      });
-                      _calendarController.selectedDate = prevMonth;
-                      if (teacher.id.isNotEmpty) {
-                        scheduleProvider.loadTeacherSchedules(teacher.id, prevMonth);
-                      }
-                    },
-                  ),
-                  InkWell(
-                    onTap: () => _showMonthYearPickerDialog(context, teacher, scheduleProvider),
-                    borderRadius: BorderRadius.circular(8.r),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.calendar_month_rounded,
-                            size: 16.sp,
-                            color: const Color(0xFF2563EB),
-                          ),
-                          SizedBox(width: 6.w),
-                          Text(
-                            monthTitle,
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.w800,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                  margin: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right_rounded),
-                    tooltip: 'Bulan Berikutnya',
-                    onPressed: () {
-                      final nextMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1);
-                      setState(() {
-                        _focusedMonth = nextMonth;
-                        _selectedDay = nextMonth;
-                      });
-                      _calendarController.selectedDate = nextMonth;
-                      if (teacher.id.isNotEmpty) {
-                        scheduleProvider.loadTeacherSchedules(teacher.id, nextMonth);
-                      }
-                    },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left_rounded),
+                        tooltip: 'Bulan Sebelumnya',
+                        onPressed: () {
+                          final prevMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1, 1);
+                          setState(() {
+                            _focusedMonth = prevMonth;
+                            _selectedDay = prevMonth;
+                          });
+                          _calendarController.selectedDate = prevMonth;
+                          if (teacher.id.isNotEmpty) {
+                            scheduleProvider.loadTeacherSchedules(teacher.id, prevMonth);
+                          }
+                        },
+                      ),
+                      InkWell(
+                        onTap: () => _showMonthYearPickerDialog(context, teacher, scheduleProvider),
+                        borderRadius: BorderRadius.circular(8.r),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.calendar_month_rounded,
+                                size: 16.sp,
+                                color: const Color(0xFF2563EB),
+                              ),
+                              SizedBox(width: 6.w),
+                              Text(
+                                monthTitle,
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.w800,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right_rounded),
+                        tooltip: 'Bulan Berikutnya',
+                        onPressed: () {
+                          final nextMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1);
+                          setState(() {
+                            _focusedMonth = nextMonth;
+                            _selectedDay = nextMonth;
+                          });
+                          _calendarController.selectedDate = nextMonth;
+                          if (teacher.id.isNotEmpty) {
+                            scheduleProvider.loadTeacherSchedules(teacher.id, nextMonth);
+                          }
+                        },
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
 
             // CrCalendar Month View with Horizontal Event Bars
             Expanded(
-              child: Container(
-                margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(14.r),
-                  border: Border.all(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: 720,
+                    maxHeight: 360.h,
                   ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: CrCalendar(
-                  key: ValueKey<String>('cr_cal_${_focusedMonth.year}_${_focusedMonth.month}'),
-                  firstDayOfWeek: WeekDay.monday,
-                  // Positioned neatly below date number (top 4.h, font 12.sp)
-                  eventsTopPadding: 24.h,
-                  initialDate: _focusedMonth,
-                  maxEventLines: 1,
-                  controller: _calendarController,
-                  forceSixWeek: true,
-                  dayItemBuilder: (properties) => _buildDayItemCell(
-                    properties: properties,
-                    schedules: scheduleProvider.cachedTeacherSchedules,
-                    journals: journalProvider.teacherJournals,
-                    teacher: teacher,
-                    scheduleProvider: scheduleProvider,
-                    journalProvider: journalProvider,
-                    masterProvider: masterProvider,
-                    holidayProvider: holidayProvider,
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(14.r),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: DatePickerSettings(
+                      landscapeDaysResizeMode: LandscapeDaysResizeMode.adaptive,
+                      child: CrCalendar(
+                        key: ValueKey<String>('cr_cal_${_focusedMonth.year}_${_focusedMonth.month}'),
+                        firstDayOfWeek: WeekDay.monday,
+                        // Positioned neatly below centered date number (top 3.h, font 11.5.sp)
+                        eventsTopPadding: 21.h,
+                        initialDate: _focusedMonth,
+                        maxEventLines: 1,
+                        controller: _calendarController,
+                        forceSixWeek: true,
+                        dayItemBuilder: (properties) => _buildDayItemCell(
+                          properties: properties,
+                          schedules: scheduleProvider.cachedTeacherSchedules,
+                          journals: journalProvider.teacherJournals,
+                          teacher: teacher,
+                          scheduleProvider: scheduleProvider,
+                          journalProvider: journalProvider,
+                          masterProvider: masterProvider,
+                          holidayProvider: holidayProvider,
+                        ),
+                        weekDaysBuilder: (day) => _buildWeekDayHeader(day),
+                        eventBuilder: (drawer) => _buildEventBar(drawer, isDark),
+                        onDayClicked: (events, day) => _onDayTapped(
+                          context,
+                          day,
+                          teacher,
+                          scheduleProvider,
+                          journalProvider,
+                          masterProvider,
+                          holidayProvider,
+                        ),
+                        minDate: DateTime.now().subtract(const Duration(days: 365 * 2)),
+                        maxDate: DateTime.now().add(const Duration(days: 365 * 2)),
+                      ),
+                    ),
                   ),
-                  weekDaysBuilder: (day) => _buildWeekDayHeader(day),
-                  eventBuilder: (drawer) => _buildEventBar(drawer, isDark),
-                  onDayClicked: (events, day) => _onDayTapped(
-                    context,
-                    day,
-                    teacher,
-                    scheduleProvider,
-                    journalProvider,
-                    masterProvider,
-                    holidayProvider,
-                  ),
-                  minDate: DateTime.now().subtract(const Duration(days: 365 * 2)),
-                  maxDate: DateTime.now().add(const Duration(days: 365 * 2)),
                 ),
               ),
             ),
 
             // Bottom Selected Day Quick Info Bar
-            InkWell(
-              onTap: () => _showDayEventsBottomSheet(
-                context,
-                _selectedDay,
-                scheduleProvider,
-                journalProvider,
-                masterProvider,
-                holidayProvider,
-                teacher,
-              ),
-              child: Container(
-                margin: EdgeInsets.fromLTRB(14.w, 4.h, 14.w, 10.h),
-                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: InkWell(
+                  onTap: () => _showDayEventsBottomSheet(
+                    context,
+                    _selectedDay,
+                    scheduleProvider,
+                    journalProvider,
+                    masterProvider,
+                    holidayProvider,
+                    teacher,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
+                  child: Container(
+                    margin: EdgeInsets.fromLTRB(14.w, 4.h, 14.w, 10.h),
+                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12.r),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(7.w),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(7.w),
                       decoration: BoxDecoration(
                         color: AppTheme.primaryColor.withValues(alpha: isDark ? 0.22 : 0.1),
                         borderRadius: BorderRadius.circular(8.r),
@@ -1581,9 +1574,11 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                 ),
               ),
             ),
-          ],
+          ),
         ),
-      ),
-    );
+      ],
+    ),
+  ),
+);
   }
 }
