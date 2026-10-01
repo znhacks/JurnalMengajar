@@ -257,6 +257,12 @@ class AdminDrawer extends StatelessWidget {
         'Hari Libur',
         '/admin/holidays',
       ),
+      _buildMenuItem(
+        context,
+        Icons.person_off_rounded,
+        'Cuti Guru',
+        '/admin/teacher-leaves',
+      ),
     ];
   }
 

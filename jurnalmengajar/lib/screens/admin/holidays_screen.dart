@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/holiday_provider.dart';
@@ -381,6 +382,11 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
       appBar: AppBar(
         title: const Text('Kelola Hari Libur'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person_off_rounded),
+            tooltip: 'Kelola Cuti Guru',
+            onPressed: () => context.push('/admin/teacher-leaves'),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: _loadHolidays,

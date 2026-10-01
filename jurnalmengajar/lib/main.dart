@@ -29,6 +29,7 @@ import 'providers/holiday_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/warning_letter_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/teacher_leave_provider.dart';
 
 // Router & Theme
 import 'core/router/app_router.dart';
@@ -100,6 +101,9 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => HolidayProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => TeacherLeaveProvider(),
         ),
         ChangeNotifierProvider(
           create: (_) => SettingsProvider(settingsRepository: settingsRepo),

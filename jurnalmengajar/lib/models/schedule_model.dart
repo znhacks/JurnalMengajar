@@ -11,6 +11,7 @@ class ScheduleModel {
   final String? note;
   final bool isActive;
   final String? schoolId;
+  final String? substituteTeacherId;
 
   ScheduleModel({
     required this.id,
@@ -23,6 +24,7 @@ class ScheduleModel {
     this.note,
     required this.isActive,
     this.schoolId,
+    this.substituteTeacherId,
   });
 
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
@@ -64,6 +66,8 @@ class ScheduleModel {
       note: json['note']?.toString(),
       isActive: isActive,
       schoolId: AppHelper.parseSingleCleanSchoolId(json['school_id']),
+      substituteTeacherId: json['substitute_teacher_id']?.toString() ??
+          json['substituteTeacherId']?.toString(),
     );
   }
 
@@ -83,6 +87,9 @@ class ScheduleModel {
     if (schoolId != null && schoolId!.isNotEmpty) {
       map['school_id'] = schoolId;
     }
+    if (substituteTeacherId != null && substituteTeacherId!.isNotEmpty) {
+      map['substitute_teacher_id'] = substituteTeacherId;
+    }
     return map;
   }
 
@@ -97,6 +104,7 @@ class ScheduleModel {
     String? note,
     bool? isActive,
     String? schoolId,
+    String? substituteTeacherId,
   }) {
     return ScheduleModel(
       id: id ?? this.id,
@@ -109,6 +117,7 @@ class ScheduleModel {
       note: note ?? this.note,
       isActive: isActive ?? this.isActive,
       schoolId: schoolId ?? this.schoolId,
+      substituteTeacherId: substituteTeacherId ?? this.substituteTeacherId,
     );
   }
 }
