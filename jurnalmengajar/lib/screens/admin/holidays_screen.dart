@@ -324,7 +324,7 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                           strokeWidth: 2,
                         ),
                       )
-                    : Text(isEdit ? 'Simpan Perubahan' : 'Simpan Libur'),
+                    : const Text('Simpan'),
               ),
             ],
           );
