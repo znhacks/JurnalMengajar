@@ -359,12 +359,12 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
           color: cellBgColor,
           border: Border.all(color: cellBorderColor, width: 0.5),
         ),
-        padding: EdgeInsets.only(top: 3.h),
+        padding: EdgeInsets.only(top: 4.h),
         child: Text(
           '${properties.dayNumber}',
           textAlign: TextAlign.center,
           style: GoogleFonts.hankenGrotesk(
-            fontSize: 11.5.sp,
+            fontSize: 12.sp,
             fontWeight: fontWeight,
             color: textColor,
           ),
@@ -402,12 +402,12 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     }
 
     return Container(
-      height: 28.h,
+      height: 30.h,
       alignment: Alignment.center,
       child: Text(
         name,
         style: GoogleFonts.hankenGrotesk(
-          fontSize: 11.sp,
+          fontSize: 11.5.sp,
           fontWeight: FontWeight.w700,
           color: isSunday
               ? const Color(0xFFEF4444)
@@ -428,9 +428,9 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       child: Align(
         alignment: Alignment.topCenter,
         child: Container(
-          height: 16.h,
-          margin: EdgeInsets.symmetric(horizontal: 4.w),
-          padding: EdgeInsets.symmetric(horizontal: 4.w),
+          height: 18.h,
+          margin: EdgeInsets.symmetric(horizontal: 2.w),
+          padding: EdgeInsets.symmetric(horizontal: 2.w),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4.r),
             color: drawer.backgroundColor,
@@ -445,16 +445,18 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                   ],
           ),
           alignment: Alignment.center,
-          child: Text(
-            drawer.name,
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.hankenGrotesk(
-              fontSize: 8.5.sp,
-              fontWeight: FontWeight.w700,
-              color: textColor,
-              height: 1.0,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              drawer.name,
+              maxLines: 1,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 9.sp,
+                fontWeight: FontWeight.w700,
+                color: textColor,
+                height: 1.0,
+              ),
             ),
           ),
         ),
@@ -1331,12 +1333,18 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Calendar Month Navigation Control Row
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 720),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isLaptop = constraints.maxWidth >= 768;
+            final calendarMaxWidth = isLaptop ? 1040.0 : double.infinity;
+            final calendarMaxHeight = isLaptop ? 500.h : 450.h;
+
+            return Column(
+              children: [
+                // Calendar Month Navigation Control Row
+                Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: calendarMaxWidth),
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                   margin: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
@@ -1417,8 +1425,8 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxWidth: 720,
-                    maxHeight: 360.h,
+                    maxWidth: calendarMaxWidth,
+                    maxHeight: calendarMaxHeight,
                   ),
                   child: Container(
                     margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
@@ -1435,8 +1443,8 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                       child: CrCalendar(
                         key: ValueKey<String>('cr_cal_${_focusedMonth.year}_${_focusedMonth.month}'),
                         firstDayOfWeek: WeekDay.monday,
-                        // Positioned neatly below centered date number (top 3.h, font 11.5.sp)
-                        eventsTopPadding: 21.h,
+                        // Positioned neatly below centered date number (top 4.h, font 12.sp)
+                        eventsTopPadding: 24.h,
                         initialDate: _focusedMonth,
                         maxEventLines: 1,
                         controller: _calendarController,
@@ -1474,7 +1482,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
             // Bottom Selected Day Quick Info Bar
             Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 720),
+                constraints: BoxConstraints(maxWidth: calendarMaxWidth),
                 child: InkWell(
                   onTap: () => _showDayEventsBottomSheet(
                     context,
@@ -1506,77 +1514,79 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                       children: [
                         Container(
                           padding: EdgeInsets.all(7.w),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: isDark ? 0.22 : 0.1),
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      child: Icon(
-                        Icons.view_agenda_outlined,
-                        size: 16.sp,
-                        color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
-                      ),
-                    ),
-                    SizedBox(width: 10.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(_selectedDay),
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 12.5.sp,
-                              fontWeight: FontWeight.w700,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withValues(alpha: isDark ? 0.22 : 0.1),
+                            borderRadius: BorderRadius.circular(8.r),
                           ),
-                          Text(
-                            selectedDayGroups.isEmpty
-                                ? 'Tidak ada jam pelajaran'
-                                : '${selectedDayGroups.length} Sesi Mengajar Terjadwal',
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.w500,
-                              color: selectedDayGroups.isEmpty
-                                  ? Theme.of(context).colorScheme.onSurfaceVariant
-                                  : const Color(0xFF10B981),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: isDark ? 0.2 : 0.1),
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Detail',
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.w700,
-                              color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
-                            ),
-                          ),
-                          SizedBox(width: 2.w),
-                          Icon(
-                            Icons.keyboard_arrow_up_rounded,
-                            size: 15.sp,
+                          child: Icon(
+                            Icons.view_agenda_outlined,
+                            size: 16.sp,
                             color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
                           ),
-                        ],
-                      ),
+                        ),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(_selectedDay),
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 12.5.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                              Text(
+                                selectedDayGroups.isEmpty
+                                    ? 'Tidak ada jam pelajaran'
+                                    : '${selectedDayGroups.length} Sesi Mengajar Terjadwal',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 11.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: selectedDayGroups.isEmpty
+                                      ? Theme.of(context).colorScheme.onSurfaceVariant
+                                      : const Color(0xFF10B981),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withValues(alpha: isDark ? 0.2 : 0.1),
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Detail',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 11.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
+                                ),
+                              ),
+                              SizedBox(width: 2.w),
+                              Icon(
+                                Icons.keyboard_arrow_up_rounded,
+                                size: 15.sp,
+                                color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     ),
   ),
 );
