@@ -21,33 +21,107 @@ class GuruWarningLetterListScreen extends StatefulWidget {
 }
 
 class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScreen> {
+  final ScrollController _scrollController = ScrollController();
+  static const int _pageSize = 8;
+  int _displayedCount = _pageSize;
+  bool _isLoadingMore = false;
+
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-      final warningProvider = Provider.of<WarningLetterProvider>(context, listen: false);
-      final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-
-      final currentUser = authProvider.currentUser;
-      if (currentUser != null) {
-        await masterProvider.loadAllData(authProvider.activeSchoolId);
-        final teacher = masterProvider.teachers.firstWhere(
-          (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
-          orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
-        );
-
-        if (teacher.id.isNotEmpty) {
-          final activeSchoolId = authProvider.activeSchoolId;
-          scheduleProvider.setSchoolId(activeSchoolId);
-          await Future.wait([
-            warningProvider.loadTeacherWarningLetters(teacher.id, activeSchoolId),
-            scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
-          ]);
-        }
-      }
+      _loadData();
     });
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    if (maxScroll > 0 && currentScroll >= maxScroll - 120) {
+      _loadMore();
+    }
+  }
+
+  void _loadMore() {
+    final warningProvider = Provider.of<WarningLetterProvider>(context, listen: false);
+    final activeSchoolId = AppHelper.parseSingleCleanSchoolId(Provider.of<AuthProvider>(context, listen: false).activeSchoolId);
+    final schoolWarnings = warningProvider.warningLetters.where((w) {
+      if (activeSchoolId != null && activeSchoolId.isNotEmpty) {
+        final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
+        if (wSchoolId != activeSchoolId) return false;
+      }
+      if (w.reason.contains('Kelas--')) return false;
+      return true;
+    }).toList();
+
+    final uniqueDates = schoolWarnings.map((w) {
+      return '${w.issuedAt.year}-${w.issuedAt.month}-${w.issuedAt.day}';
+    }).toSet().length;
+
+    if (_isLoadingMore || _displayedCount >= uniqueDates) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      setState(() {
+        _displayedCount += _pageSize;
+        _isLoadingMore = false;
+      });
+    });
+  }
+
+  Future<void> _loadData() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+    final warningProvider = Provider.of<WarningLetterProvider>(context, listen: false);
+    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+
+    final currentUser = authProvider.currentUser;
+    if (currentUser != null) {
+      await masterProvider.loadAllData(authProvider.activeSchoolId);
+      final teacher = masterProvider.teachers.firstWhere(
+        (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
+        orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
+      );
+
+      if (teacher.id.isNotEmpty) {
+        final activeSchoolId = authProvider.activeSchoolId;
+        scheduleProvider.setSchoolId(activeSchoolId);
+        await Future.wait([
+          warningProvider.loadTeacherWarningLetters(teacher.id, activeSchoolId),
+          scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
+        ]);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  String _formatReason(String reason) {
+    return reason.replaceAllMapped(
+      RegExp(r'Jam ke-([0-9,\s]+)', caseSensitive: false),
+      (match) {
+        final raw = match.group(1);
+        if (raw == null) return match.group(0) ?? '';
+        final numbers = RegExp(r'\d+')
+            .allMatches(raw)
+            .map((m) => int.tryParse(m.group(0) ?? ''))
+            .whereType<int>()
+            .toList();
+        if (numbers.isEmpty) return match.group(0) ?? '';
+        final formatted = AppHelper.formatTeachingHours(numbers);
+        return 'Jam ke-${formatted.replaceAll('-', ' - ')}';
+      },
+    );
   }
 
   @override
@@ -191,21 +265,10 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
           : SafeArea(
               child: RefreshIndicator(
                 onRefresh: () async {
-                  final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                  final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-                  final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-                  final currentUser = authProvider.currentUser;
-                  if (currentUser != null) {
-                    final teacher = masterProvider.teachers.firstWhere(
-                      (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
-                    );
-                    final activeSchoolId = authProvider.activeSchoolId;
-                    scheduleProvider.setSchoolId(activeSchoolId);
-                    await Future.wait([
-                      warningProvider.loadTeacherWarningLetters(teacher.id, activeSchoolId),
-                      scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
-                    ]);
-                  }
+                  setState(() {
+                    _displayedCount = _pageSize;
+                  });
+                  await _loadData();
                 },
                 color: AppTheme.primaryColor,
                 child: schoolWarnings.isEmpty
@@ -256,61 +319,83 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                           ),
                         ],
                       )
-                    : ListView.separated(
-                        padding: EdgeInsets.all(16.w),
-                        itemCount: sortedGroups.length,
-                        separatorBuilder: (context, _) => SizedBox(height: 16.h),
-                        itemBuilder: (context, index) {
-                          final group = sortedGroups[index];
-                          final groupDate = dateMap[group.key]!;
-                          final groupWarnings = group.value;
+                    : Builder(
+                        builder: (context) {
+                          final visibleGroups = sortedGroups.take(_displayedCount).toList();
+                          final hasMore = _displayedCount < sortedGroups.length;
 
-                          final hasUnread = groupWarnings.any((w) => w.status == 'unread');
-                          final unreadList = groupWarnings.where((w) => w.status == 'unread').toList();
-
-                          final theme = Theme.of(context);
-                          return Card(
-                            margin: EdgeInsets.zero,
-                            color: theme.colorScheme.surface,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16.r),
-                              side: BorderSide(
-                                color: hasUnread
-                                    ? const Color(0xFFFECACA)
-                                    : theme.colorScheme.outlineVariant,
-                                width: hasUnread ? 1.5 : 1.0,
-                              ),
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.all(16.w),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: EdgeInsets.all(8.w),
-                                        decoration: BoxDecoration(
-                                          color: hasUnread
-                                              ? const Color(0xFFFEE2E2)
-                                              : const Color(0xFFF1F5F9),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          Icons.warning_amber_rounded,
-                                          color: hasUnread
-                                              ? const Color(0xFFEF4444)
-                                              : const Color(0xFF64748B),
-                                          size: 20,
-                                        ),
+                          return ListView.separated(
+                            controller: _scrollController,
+                            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                            padding: EdgeInsets.all(16.w),
+                            itemCount: visibleGroups.length + (_isLoadingMore || hasMore ? 1 : 0),
+                            separatorBuilder: (context, index) {
+                              if (index >= visibleGroups.length - 1) return const SizedBox.shrink();
+                              return SizedBox(height: 16.h);
+                            },
+                            itemBuilder: (context, index) {
+                              if (index == visibleGroups.length) {
+                                return Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 14.h),
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 22.w,
+                                      height: 22.w,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.2,
+                                        color: AppTheme.primaryColor,
                                       ),
-                                      SizedBox(width: 12.w),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
+                                    ),
+                                  ),
+                                );
+                              }
+                              final group = visibleGroups[index];
+                              final groupDate = dateMap[group.key]!;
+                              final groupWarnings = group.value;
+
+                              final hasUnread = groupWarnings.any((w) => w.status == 'unread');
+                              final unreadList = groupWarnings.where((w) => w.status == 'unread').toList();
+
+                              final theme = Theme.of(context);
+                              return Card(
+                                margin: EdgeInsets.zero,
+                                color: theme.colorScheme.surface,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16.r),
+                                  side: BorderSide(
+                                    color: hasUnread
+                                        ? const Color(0xFFFECACA)
+                                        : theme.colorScheme.outlineVariant,
+                                    width: hasUnread ? 1.5 : 1.0,
+                                  ),
+                                ),
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.w),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: EdgeInsets.all(8.w),
+                                            decoration: BoxDecoration(
+                                              color: hasUnread
+                                                  ? const Color(0xFFFEE2E2)
+                                                  : const Color(0xFFF1F5F9),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              Icons.warning_amber_rounded,
+                                              color: hasUnread
+                                                  ? const Color(0xFFEF4444)
+                                                  : const Color(0xFF64748B),
+                                              size: 20,
+                                            ),
+                                          ),
+                                          SizedBox(width: 12.w),
+                                          Expanded(
+                                            child: Text(
                                               AppHelper.formatDate(groupDate),
                                               style: GoogleFonts.hankenGrotesk(
                                                 fontWeight: FontWeight.w800,
@@ -318,97 +403,87 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                                 color: theme.colorScheme.onSurface,
                                               ),
                                             ),
-                                            Text(
-                                              'Pengingat Keterlambatan (${groupWarnings.length} Pengingat)',
-                                              style: GoogleFonts.hankenGrotesk(
-                                                fontSize: 11.sp,
-                                                color: theme.brightness == Brightness.dark
-                                                    ? const Color(0xFF94A3B8)
-                                                    : const Color(0xFF64748B),
-                                                fontWeight: FontWeight.w500,
+                                          ),
+                                          if (!hasUnread)
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 8.w,
+                                                vertical: 4.h,
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      if (!hasUnread)
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 8.w,
-                                            vertical: 4.h,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFDCFCE7),
-                                            borderRadius: BorderRadius.circular(999),
-                                          ),
-                                          child: Text(
-                                            'Dikonfirmasi',
-                                            style: GoogleFonts.hankenGrotesk(
-                                              fontSize: 9.sp,
-                                              fontWeight: FontWeight.w700,
-                                              color: const Color(0xFF15803D),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                  const Divider(height: 24),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: groupWarnings.map((w) {
-                                      return Padding(
-                                        padding: EdgeInsets.only(bottom: 8.h),
-                                        child: Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              '• ',
-                                              style: TextStyle(
-                                                color: w.status == 'unread' ? const Color(0xFFB91C1C) : const Color(0xFF64748B),
-                                                fontWeight: FontWeight.bold,
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFDCFCE7),
+                                                borderRadius: BorderRadius.circular(999),
                                               ),
-                                            ),
-                                            Expanded(
                                               child: Text(
-                                                w.reason,
+                                                'Dikonfirmasi',
                                                 style: GoogleFonts.hankenGrotesk(
-                                                  fontSize: 13.sp,
-                                                  color: Theme.of(context).colorScheme.onSurface,
-                                                  height: 1.4,
+                                                  fontSize: 9.sp,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: const Color(0xFF15803D),
                                                 ),
                                               ),
                                             ),
-                                          ],
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-                                  if (hasUnread) ...[
-                                    SizedBox(height: 12.h),
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: ElevatedButton.icon(
-                                        onPressed: () async {
-                                          for (final w in unreadList) {
-                                            await warningProvider.markWarningLetterAsRead(w.id);
-                                          }
-                                        },
-                                        icon: const Icon(Icons.check_circle_outline, size: 16),
-                                        label: Text('Konfirmasi Telah Membaca (${unreadList.length})'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppTheme.primaryColor,
-                                          foregroundColor: Colors.white,
-                                          padding: EdgeInsets.symmetric(vertical: 10.h),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12.r),
+                                        ],
+                                      ),
+                                      const Divider(height: 24),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: groupWarnings.map((w) {
+                                          return Padding(
+                                            padding: EdgeInsets.only(bottom: 8.h),
+                                            child: Row(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  '• ',
+                                                  style: TextStyle(
+                                                    color: w.status == 'unread' ? const Color(0xFFB91C1C) : const Color(0xFF64748B),
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: Text(
+                                                    _formatReason(w.reason),
+                                                    style: GoogleFonts.hankenGrotesk(
+                                                      fontSize: 13.sp,
+                                                      color: Theme.of(context).colorScheme.onSurface,
+                                                      height: 1.4,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                      if (hasUnread) ...[
+                                        SizedBox(height: 12.h),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton.icon(
+                                            onPressed: () async {
+                                              for (final w in unreadList) {
+                                                await warningProvider.markWarningLetterAsRead(w.id);
+                                              }
+                                            },
+                                            icon: const Icon(Icons.check_circle_outline, size: 16),
+                                            label: const Text('Konfirmasi'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppTheme.primaryColor,
+                                              foregroundColor: Colors.white,
+                                              padding: EdgeInsets.symmetric(vertical: 10.h),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(12.r),
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           );
                         },
                       ),

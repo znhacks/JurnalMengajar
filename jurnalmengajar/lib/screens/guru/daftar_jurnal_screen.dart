@@ -221,24 +221,11 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
   }
 
   Widget _buildJournalList(List<JournalModel> list, MasterDataProvider master) {
-    if (list.isEmpty) {
-      return const AppEmptyWidget(
-        title: 'Jurnal Kosong',
-        subtitle: 'Tidak ada data jurnal dalam kategori ini.',
-      );
-    }
-
-    return RefreshIndicator(
+    return _InfiniteJournalListView(
+      allJournals: list,
+      masterProvider: master,
       onRefresh: _loadJournals,
-      color: AppTheme.primaryColor,
-      child: ListView.separated(
-        padding: EdgeInsets.all(16.w),
-        itemCount: list.length,
-        separatorBuilder: (context, _) => SizedBox(height: 12.h),
-        itemBuilder: (context, index) {
-          return _buildJournalCard(list[index], master);
-        },
-      ),
+      itemBuilder: (journal, m) => _buildJournalCard(journal, m),
     );
   }
 
@@ -374,6 +361,128 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _InfiniteJournalListView extends StatefulWidget {
+  final List<JournalModel> allJournals;
+  final MasterDataProvider masterProvider;
+  final Future<void> Function() onRefresh;
+  final Widget Function(JournalModel, MasterDataProvider) itemBuilder;
+
+  const _InfiniteJournalListView({
+    required this.allJournals,
+    required this.masterProvider,
+    required this.onRefresh,
+    required this.itemBuilder,
+  });
+
+  @override
+  State<_InfiniteJournalListView> createState() => _InfiniteJournalListViewState();
+}
+
+class _InfiniteJournalListViewState extends State<_InfiniteJournalListView> {
+  final ScrollController _scrollController = ScrollController();
+  static const int _pageSize = 12;
+  int _displayedCount = _pageSize;
+  bool _isLoadingMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _displayedCount = widget.allJournals.length > _pageSize ? _pageSize : widget.allJournals.length;
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void didUpdateWidget(covariant _InfiniteJournalListView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.allJournals.length != widget.allJournals.length) {
+      if (_displayedCount > widget.allJournals.length || _displayedCount < _pageSize) {
+        _displayedCount = widget.allJournals.length > _pageSize ? _pageSize : widget.allJournals.length;
+      }
+    }
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    if (maxScroll > 0 && currentScroll >= maxScroll - 120) {
+      _loadMore();
+    }
+  }
+
+  void _loadMore() {
+    if (_isLoadingMore || _displayedCount >= widget.allJournals.length) return;
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      setState(() {
+        _displayedCount = (_displayedCount + _pageSize).clamp(0, widget.allJournals.length);
+        _isLoadingMore = false;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.allJournals.isEmpty) {
+      return const AppEmptyWidget(
+        title: 'Jurnal Kosong',
+        subtitle: 'Tidak ada data jurnal dalam kategori ini.',
+      );
+    }
+
+    final visibleItems = widget.allJournals.take(_displayedCount).toList();
+    final hasMore = _displayedCount < widget.allJournals.length;
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        setState(() {
+          _displayedCount = widget.allJournals.length > _pageSize ? _pageSize : widget.allJournals.length;
+        });
+        await widget.onRefresh();
+      },
+      color: AppTheme.primaryColor,
+      child: ListView.separated(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        padding: EdgeInsets.all(16.w),
+        itemCount: visibleItems.length + (_isLoadingMore || hasMore ? 1 : 0),
+        separatorBuilder: (context, index) {
+          if (index >= visibleItems.length - 1) return const SizedBox.shrink();
+          return SizedBox(height: 12.h);
+        },
+        itemBuilder: (context, index) {
+          if (index == visibleItems.length) {
+            return Padding(
+              padding: EdgeInsets.symmetric(vertical: 14.h),
+              child: Center(
+                child: SizedBox(
+                  width: 22.w,
+                  height: 22.w,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.2,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+            );
+          }
+          return widget.itemBuilder(visibleItems[index], widget.masterProvider);
+        },
       ),
     );
   }

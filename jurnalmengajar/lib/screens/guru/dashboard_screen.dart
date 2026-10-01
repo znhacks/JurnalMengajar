@@ -335,7 +335,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 ),
                 SizedBox(height: 16.h),
                 Text(
-                  'Pengingat Jurnal Mengajar',
+                  'Pengingat',
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.w800,
@@ -345,7 +345,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 ),
                 SizedBox(height: 10.h),
                 Text(
-                  'Halo ${teacher.name}, Anda memiliki ${groupedKeys.length} jadwal mengajar hari ini yang belum diisi jurnalnya. Silakan segera melengkapi:',
+                  'Anda memiliki ${groupedKeys.length} jadwal mengajar yang belum diisi.',
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 13.sp,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,

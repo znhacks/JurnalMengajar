@@ -217,7 +217,7 @@ class WarningLetterProvider with ChangeNotifier {
             classToHours.forEach((classId, hours) {
               final className = classIdToName[classId] ?? 'Kelas--';
               final sortedHours = hours..sort();
-              final hoursStr = sortedHours.join(', ');
+              final hoursStr = AppHelper.formatTeachingHours(sortedHours).replaceAll('-', ' - ');
               final subjectsStr = classToSubjects[classId]?.join(', ') ?? 'Mapel--';
               detailStrings.add('$className (Mapel: $subjectsStr, Jam ke-$hoursStr)');
             });
