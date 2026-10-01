@@ -25,7 +25,8 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
 
   void _loadHolidays() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final schoolId = authProvider.activeSchoolId ?? 'a1111111-1111-1111-1111-111111111111';
+    final schoolId =
+        authProvider.activeSchoolId ?? 'a1111111-1111-1111-1111-111111111111';
     Provider.of<HolidayProvider>(context, listen: false).loadHolidays(schoolId);
   }
 
@@ -40,8 +41,14 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (context, setDialogState) {
-          final startFormatted = DateFormat('dd MMM yyyy', 'id_ID').format(startDate);
-          final endFormatted = DateFormat('dd MMM yyyy', 'id_ID').format(endDate);
+          final startFormatted = DateFormat(
+            'dd MMM yyyy',
+            'id_ID',
+          ).format(startDate);
+          final endFormatted = DateFormat(
+            'dd MMM yyyy',
+            'id_ID',
+          ).format(endDate);
 
           return AlertDialog(
             shape: RoundedRectangleBorder(
@@ -63,7 +70,7 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                 SizedBox(width: 12.w),
                 const Expanded(
                   child: Text(
-                    'Tambah Hari Libur / Cuti',
+                    'Tambah Hari Libur',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -117,7 +124,10 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                             ),
                             child: Text(
                               startFormatted,
-                              style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -149,7 +159,10 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                             ),
                             child: Text(
                               endFormatted,
-                              style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -185,14 +198,20 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline, color: Color(0xFFD97706), size: 18),
+                        const Icon(
+                          Icons.info_outline,
+                          color: Color(0xFFD97706),
+                          size: 18,
+                        ),
                         SizedBox(width: 8.w),
                         Expanded(
                           child: Text(
                             'Jurnal guru yang sudah terisi di tanggal libur ini akan di-soft-delete otomatis.',
                             style: TextStyle(
                               fontSize: 11.sp,
-                              color: Theme.of(context).brightness == Brightness.dark
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? const Color(0xFFFED7AA)
                                   : const Color(0xFF92400E),
                             ),
@@ -223,9 +242,17 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                           return;
                         }
 
-                        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                        final holidayProvider = Provider.of<HolidayProvider>(context, listen: false);
-                        final schoolId = authProvider.activeSchoolId ?? 'a1111111-1111-1111-1111-111111111111';
+                        final authProvider = Provider.of<AuthProvider>(
+                          context,
+                          listen: false,
+                        );
+                        final holidayProvider = Provider.of<HolidayProvider>(
+                          context,
+                          listen: false,
+                        );
+                        final schoolId =
+                            authProvider.activeSchoolId ??
+                            'a1111111-1111-1111-1111-111111111111';
 
                         final messenger = ScaffoldMessenger.of(context);
                         final navigator = Navigator.of(dialogCtx);
@@ -244,7 +271,9 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                           if (success) {
                             messenger.showSnackBar(
                               const SnackBar(
-                                content: Text('Hari libur berhasil ditambahkan!'),
+                                content: Text(
+                                  'Hari libur berhasil ditambahkan!',
+                                ),
                               ),
                             );
                             navigator.pop();
@@ -252,7 +281,8 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                             messenger.showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  holidayProvider.errorMessage ?? 'Gagal menambahkan hari libur.',
+                                  holidayProvider.errorMessage ??
+                                      'Gagal menambahkan hari libur.',
                                 ),
                                 backgroundColor: Colors.red,
                               ),
@@ -295,7 +325,7 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kelola Hari Libur / Cuti'),
+        title: const Text('Kelola Hari Libur'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -317,153 +347,178 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
         child: holidayProvider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : holidays.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24.w),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+            ? Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24.w),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.event_available_rounded,
+                        size: 64.w,
+                        color: Colors.grey[400],
+                      ),
+                      SizedBox(height: 16.h),
+                      Text(
+                        'Belum Ada Hari Libur Ditambahkan',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      SizedBox(height: 6.h),
+                      Text(
+                        'Tambahkan libur/cuti sekolah agar pengisian jurnal guru pada hari tersebut ditiadakan secara otomatis.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : ListView.builder(
+                padding: EdgeInsets.all(16.w),
+                itemCount: holidays.length,
+                itemBuilder: (context, index) {
+                  final item = holidays[index];
+                  final startStr = DateFormat(
+                    'dd MMM yyyy',
+                    'id_ID',
+                  ).format(item.startDate);
+                  final endStr = DateFormat(
+                    'dd MMM yyyy',
+                    'id_ID',
+                  ).format(item.endDate);
+                  final dateRangeLabel = startStr == endStr
+                      ? startStr
+                      : '$startStr - $endStr';
+
+                  return Card(
+                    margin: EdgeInsets.only(bottom: 12.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14.r),
+                    ),
+                    child: ListTile(
+                      contentPadding: EdgeInsets.all(14.w),
+                      leading: Container(
+                        padding: EdgeInsets.all(10.w),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF7F1D1D).withValues(alpha: 0.35)
+                              : const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: const Icon(
+                          Icons.event_busy_rounded,
+                          color: Color(0xFFDC2626),
+                        ),
+                      ),
+                      title: Text(
+                        item.title,
+                        style: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.event_available_rounded,
-                            size: 64.w,
-                            color: Colors.grey[400],
+                          SizedBox(height: 4.h),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                size: 12,
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                              SizedBox(width: 4.w),
+                              Text(
+                                dateRangeLabel,
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? const Color(0xFF60A5FA)
+                                      : const Color(0xFF2563EB),
+                                ),
+                              ),
+                            ],
                           ),
-                          SizedBox(height: 16.h),
-                          Text(
-                            'Belum Ada Hari Libur Ditambahkan',
-                            style: TextStyle(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
+                          if (item.description != null &&
+                              item.description!.isNotEmpty) ...[
+                            SizedBox(height: 4.h),
+                            Text(
+                              item.description!,
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 6.h),
-                          Text(
-                            'Tambahkan libur/cuti sekolah agar pengisian jurnal guru pada hari tersebut ditiadakan secara otomatis.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
+                          ],
                         ],
                       ),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: EdgeInsets.all(16.w),
-                    itemCount: holidays.length,
-                    itemBuilder: (context, index) {
-                      final item = holidays[index];
-                      final startStr = DateFormat('dd MMM yyyy', 'id_ID').format(item.startDate);
-                      final endStr = DateFormat('dd MMM yyyy', 'id_ID').format(item.endDate);
-                      final dateRangeLabel = startStr == endStr ? startStr : '$startStr - $endStr';
-
-                      return Card(
-                        margin: EdgeInsets.only(bottom: 12.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14.r),
+                      trailing: IconButton(
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.red,
                         ),
-                        child: ListTile(
-                          contentPadding: EdgeInsets.all(14.w),
-                          leading: Container(
-                            padding: EdgeInsets.all(10.w),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF7F1D1D).withValues(alpha: 0.35)
-                                  : const Color(0xFFFEE2E2),
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            child: const Icon(
-                              Icons.event_busy_rounded,
-                              color: Color(0xFFDC2626),
-                            ),
-                          ),
-                          title: Text(
-                            item.title,
-                            style: TextStyle(
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(height: 4.h),
-                              Row(
-                                children: [
-                                  Icon(Icons.calendar_today, size: 12, color: Theme.of(context).colorScheme.outline),
-                                  SizedBox(width: 4.w),
-                                  Text(
-                                    dateRangeLabel,
-                                    style: TextStyle(
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
-                                    ),
-                                  ),
-                                ],
+                        onPressed: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final schoolId =
+                              authProvider.activeSchoolId ??
+                              'a1111111-1111-1111-1111-111111111111';
+
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Hapus Hari Libur?'),
+                              content: Text(
+                                'Menghapus hari libur "${item.title}" akan mengaktifkan kembali tanggal ini dan merestore jurnal yang di-soft-delete.',
                               ),
-                              if (item.description != null && item.description!.isNotEmpty) ...[
-                                SizedBox(height: 4.h),
-                                Text(
-                                  item.description!,
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: const Text('Batal'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: const Text(
+                                    'Hapus',
+                                    style: TextStyle(color: Colors.red),
                                   ),
                                 ),
                               ],
-                            ],
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.red),
-                            onPressed: () async {
-                              final messenger = ScaffoldMessenger.of(context);
-                              final schoolId = authProvider.activeSchoolId ?? 'a1111111-1111-1111-1111-111111111111';
+                            ),
+                          );
 
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (ctx) => AlertDialog(
-                                  title: const Text('Hapus Hari Libur?'),
-                                  content: Text(
-                                    'Menghapus hari libur "${item.title}" akan mengaktifkan kembali tanggal ini dan merestore jurnal yang di-soft-delete.',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(ctx, false),
-                                      child: const Text('Batal'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(ctx, true),
-                                      child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-                                    ),
-                                  ],
+                          if (confirm == true && mounted) {
+                            final ok = await holidayProvider.deleteHoliday(
+                              item.id,
+                              schoolId,
+                              startDate: item.startDate,
+                              endDate: item.endDate,
+                            );
+                            if (ok && mounted) {
+                              messenger.showSnackBar(
+                                const SnackBar(
+                                  content: Text('Hari libur berhasil dihapus'),
                                 ),
                               );
-
-                              if (confirm == true && mounted) {
-                                final ok = await holidayProvider.deleteHoliday(
-                                  item.id,
-                                  schoolId,
-                                  startDate: item.startDate,
-                                  endDate: item.endDate,
-                                );
-                                if (ok && mounted) {
-                                  messenger.showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Hari libur berhasil dihapus'),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }

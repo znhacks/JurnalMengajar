@@ -113,7 +113,8 @@ class AdminDrawer extends StatelessWidget {
           SizedBox(height: 12.h),
           Builder(
             builder: (context) {
-              final canSwitch = !authProvider.isAdminAsli || authProvider.hasMultipleSchools;
+              final canSwitch =
+                  !authProvider.isAdminAsli || authProvider.hasMultipleSchools;
               final switcherWidget = Container(
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
                 decoration: BoxDecoration(
@@ -202,12 +203,6 @@ class AdminDrawer extends StatelessWidget {
         'Pengaturan',
         '/admin/settings',
       ),
-      _buildMenuItem(
-        context,
-        Icons.event_busy_rounded,
-        'Hari Libur / Cuti',
-        '/admin/holidays',
-      ),
       _buildMenuItem(context, Icons.info_rounded, 'Tentang Aplikasi', '/about'),
 
       SizedBox(height: 8.h),
@@ -255,6 +250,12 @@ class AdminDrawer extends StatelessWidget {
         Icons.mail_rounded,
         'Pengingat',
         '/admin/warning-letters',
+      ),
+      _buildMenuItem(
+        context,
+        Icons.event_busy_rounded,
+        'Hari Libur',
+        '/admin/holidays',
       ),
     ];
   }
