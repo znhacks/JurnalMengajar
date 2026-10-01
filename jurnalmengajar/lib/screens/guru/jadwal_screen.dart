@@ -53,9 +53,23 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       events: _calendarEvents,
       onSwipe: (year, month) {
         if (!mounted) return;
-        setState(() {
-          _focusedMonth = DateTime(year, month, 1);
-        });
+        final newMonth = DateTime(year, month, 1);
+        if (newMonth.year != _focusedMonth.year || newMonth.month != _focusedMonth.month) {
+          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+          final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+          final teacher = masterProvider.teachers.firstWhere(
+            (t) => t.email.toLowerCase() == (authProvider.currentUser?.email ?? '').toLowerCase(),
+            orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
+          );
+          setState(() {
+            _focusedMonth = newMonth;
+            _selectedDay = newMonth;
+          });
+          if (teacher.id.isNotEmpty) {
+            scheduleProvider.loadTeacherSchedules(teacher.id, newMonth);
+          }
+        }
       },
     );
     _calendarController.selectedDate = _selectedDay;
@@ -1026,11 +1040,11 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
   // Jumps to today and reloads today's data
   void _jumpToToday(TeacherModel teacher, ScheduleProvider scheduleProvider) {
     final now = DateTime.now();
-    _calendarController.goToDate(now, selectDate: true);
     setState(() {
       _focusedMonth = DateTime(now.year, now.month, 1);
       _selectedDay = now;
     });
+    _calendarController.selectedDate = now;
     if (teacher.id.isNotEmpty) {
       scheduleProvider.loadTeacherSchedules(teacher.id, now);
     }
@@ -1219,11 +1233,11 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                           onPressed: () {
                             Navigator.pop(dialogCtx);
                             final targetDate = DateTime(tempYear, tempMonth, 1);
-                            _calendarController.goToDate(targetDate, selectDate: true);
                             setState(() {
                               _focusedMonth = targetDate;
                               _selectedDay = targetDate;
                             });
+                            _calendarController.selectedDate = targetDate;
                             if (teacher.id.isNotEmpty) {
                               scheduleProvider.loadTeacherSchedules(teacher.id, targetDate);
                             }
@@ -1362,7 +1376,17 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                   IconButton(
                     icon: const Icon(Icons.chevron_left_rounded),
                     tooltip: 'Bulan Sebelumnya',
-                    onPressed: () => _calendarController.swipeToPreviousPage(),
+                    onPressed: () {
+                      final prevMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1, 1);
+                      setState(() {
+                        _focusedMonth = prevMonth;
+                        _selectedDay = prevMonth;
+                      });
+                      _calendarController.selectedDate = prevMonth;
+                      if (teacher.id.isNotEmpty) {
+                        scheduleProvider.loadTeacherSchedules(teacher.id, prevMonth);
+                      }
+                    },
                   ),
                   InkWell(
                     onTap: () => _showMonthYearPickerDialog(context, teacher, scheduleProvider),
@@ -1393,7 +1417,17 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                   IconButton(
                     icon: const Icon(Icons.chevron_right_rounded),
                     tooltip: 'Bulan Berikutnya',
-                    onPressed: () => _calendarController.swipeToNextMonth(),
+                    onPressed: () {
+                      final nextMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1);
+                      setState(() {
+                        _focusedMonth = nextMonth;
+                        _selectedDay = nextMonth;
+                      });
+                      _calendarController.selectedDate = nextMonth;
+                      if (teacher.id.isNotEmpty) {
+                        scheduleProvider.loadTeacherSchedules(teacher.id, nextMonth);
+                      }
+                    },
                   ),
                 ],
               ),
@@ -1412,10 +1446,11 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: CrCalendar(
+                  key: ValueKey<String>('cr_cal_${_focusedMonth.year}_${_focusedMonth.month}'),
                   firstDayOfWeek: WeekDay.monday,
                   // Positioned neatly below date number (top 4.h, font 12.sp)
                   eventsTopPadding: 24.h,
-                  initialDate: _selectedDay,
+                  initialDate: _focusedMonth,
                   maxEventLines: 1,
                   controller: _calendarController,
                   forceSixWeek: true,
