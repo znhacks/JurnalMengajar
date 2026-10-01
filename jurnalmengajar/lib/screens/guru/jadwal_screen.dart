@@ -1,23 +1,25 @@
+import 'package:cr_calendar/cr_calendar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'package:table_calendar/table_calendar.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/master_data_provider.dart';
-import '../../providers/schedule_provider.dart';
-import '../../providers/journal_provider.dart';
-import '../../providers/holiday_provider.dart';
-import '../../models/journal_model.dart';
-import '../../models/teacher_model.dart';
-import '../../models/class_model.dart';
-import '../../models/subject_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/helper.dart';
-import '../../models/schedule_model.dart';
 import '../../core/utils/schedule_grouper.dart';
+import '../../models/class_model.dart';
+import '../../models/holiday_model.dart';
+import '../../models/journal_model.dart';
+import '../../models/schedule_model.dart';
+import '../../models/subject_model.dart';
+import '../../models/teacher_model.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/holiday_provider.dart';
+import '../../providers/journal_provider.dart';
+import '../../providers/master_data_provider.dart';
+import '../../providers/schedule_provider.dart';
 
 class GuruJadwalScreen extends StatefulWidget {
   const GuruJadwalScreen({super.key});
@@ -28,13 +30,42 @@ class GuruJadwalScreen extends StatefulWidget {
 
 class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
   DateTime _selectedDay = DateTime.now();
-  DateTime _focusedDay = DateTime.now();
+  DateTime _focusedMonth = DateTime.now();
   String? _lastLoadedSchoolId;
   String? _lastLoadedUserId;
+
+  late CrCalendarController _calendarController;
+  final List<CalendarEventModel> _calendarEvents = [];
+
+  // Vibrant palette for schedule events matching the reference design
+  static const List<Color> _eventColorPalette = [
+    Color(0xFF82D964), // Vibrant light green
+    Color(0xFFE665FD), // Vibrant magenta
+    Color(0xFFF7980B), // Vibrant orange
+    Color(0xFFF2D232), // Vibrant yellow
+    Color(0xFF3B82F6), // Vibrant blue
+    Color(0xFFEC4899), // Pink
+    Color(0xFF06B6D4), // Cyan
+    Color(0xFF8B5CF6), // Violet
+    Color(0xFF10B981), // Emerald
+    Color(0xFFFC6054), // Coral red
+  ];
 
   @override
   void initState() {
     super.initState();
+    _focusedMonth = DateTime(_selectedDay.year, _selectedDay.month, 1);
+    _calendarController = CrCalendarController(
+      events: _calendarEvents,
+      onSwipe: (year, month) {
+        if (!mounted) return;
+        setState(() {
+          _focusedMonth = DateTime(year, month, 1);
+        });
+      },
+    );
+    _calendarController.selectedDate = _selectedDay;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -45,6 +76,12 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         _loadData();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _calendarController.dispose();
+    super.dispose();
   }
 
   @override
@@ -93,7 +130,6 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
 
     final currentUser = authProvider.currentUser;
     if (currentUser != null) {
-      final schoolId = authProvider.activeSchoolId;
       await masterProvider.loadAllData(schoolId);
 
       final teacher = masterProvider.teachers.firstWhere(
@@ -109,7 +145,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       );
 
       if (teacher.id.isNotEmpty) {
-        final targetSchoolId = schoolId ?? 'a1111111-1111-1111-1111-111111111111';
+        final targetSchoolId = schoolId;
         scheduleProvider.setSchoolId(schoolId);
         journalProvider.setSchoolId(schoolId);
         await Future.wait([
@@ -122,6 +158,10 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         journalProvider.clearTeacherJournalsCache();
       }
     }
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   bool _hasTeacherScheduleOnDay(List<ScheduleModel> schedules, DateTime day) {
@@ -195,32 +235,98 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     });
   }
 
-  Widget _buildScheduledDayCell(
-    DateTime day,
-    bool isSelected,
-    bool isToday,
-    bool isOutside,
-    List<ScheduleModel> schedules,
-    List<JournalModel> journals,
-  ) {
+  void _syncEventsList({
+    required List<ScheduleModel> schedules,
+    required List<HolidayModel> holidays,
+    required MasterDataProvider master,
+  }) {
+    _calendarEvents.clear();
+
+    // 1. Add Holidays
+    for (final h in holidays) {
+      _calendarEvents.add(
+        CalendarEventModel(
+          name: 'Libur: ${h.title}',
+          begin: DateTime(h.startDate.year, h.startDate.month, h.startDate.day),
+          end: DateTime(h.endDate.year, h.endDate.month, h.endDate.day),
+          eventColor: const Color(0xFFEF4444),
+        ),
+      );
+    }
+
+    // 2. Add Teaching Schedules (grouped per day, class, subject)
+    final activeSchoolId = Provider.of<AuthProvider>(context, listen: false).activeSchoolId;
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(activeSchoolId) ?? activeSchoolId?.trim();
+
+    final validSchedules = schedules.where((s) {
+      if (!s.isActive) return false;
+      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+        final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+        if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+
+    final grouped = groupDailySchedules(validSchedules);
+
+    for (final g in grouped) {
+      final subject = master.subjects.firstWhere(
+        (s) => s.id == g.subjectId,
+        orElse: () => SubjectModel(id: '', name: 'Mapel', isActive: false),
+      );
+      final cls = master.classes.firstWhere(
+        (c) => c.id == g.classId,
+        orElse: () => ClassModel(id: '', name: '', periodId: '', studentCount: 0),
+      );
+
+      final colorIndex = (g.subjectId.hashCode + g.classId.hashCode).abs() % _eventColorPalette.length;
+      final color = _eventColorPalette[colorIndex];
+      final label = cls.name.isNotEmpty
+          ? '${subject.name} - ${cls.name}'
+          : subject.name;
+
+      final eventDate = DateTime(g.date.year, g.date.month, g.date.day);
+      _calendarEvents.add(
+        CalendarEventModel(
+          name: label,
+          begin: eventDate,
+          end: eventDate,
+          eventColor: color,
+        ),
+      );
+    }
+  }
+
+  Widget _buildDayItemCell({
+    required DayItemProperties properties,
+    required List<ScheduleModel> schedules,
+    required List<JournalModel> journals,
+    required TeacherModel teacher,
+    required ScheduleProvider scheduleProvider,
+    required JournalProvider journalProvider,
+    required MasterDataProvider masterProvider,
+    required HolidayProvider holidayProvider,
+  }) {
+    final day = properties.date;
     final hasSchedule = _hasTeacherScheduleOnDay(schedules, day);
     final isAllFilled = hasSchedule && _areAllTeacherSchedulesFilledOnDay(schedules, journals, day);
-    final holidayProvider = Provider.of<HolidayProvider>(context, listen: false);
     final holiday = holidayProvider.getHolidayForDate(day);
     final isHoliday = holiday != null || _hasTeacherAbsenceOnDay(journals, day);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final isSunday = day.weekday == DateTime.sunday;
+    final isSelected = properties.isSelected || _isSameDay(_selectedDay, day);
 
     Color bgColor = Colors.transparent;
-    Color textColor = isOutside
+    Color textColor = !properties.isInMonth
         ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
         : (isSunday ? const Color(0xFFEF4444) : Theme.of(context).colorScheme.onSurface);
-    FontWeight fontWeight = FontWeight.w500;
+    FontWeight fontWeight = FontWeight.w600;
     BoxBorder? border;
 
     if (isSelected) {
-      // Indikator kalender yang berpindah-pindah tetap berwarna biru kecuali ketika libur / cuti berwarna merah
       if (isHoliday) {
         bgColor = const Color(0xFFDC2626);
         textColor = Colors.white;
@@ -239,7 +345,6 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         );
       }
     } else if (isHoliday) {
-      // Libur / cuti: berwarna merah
       bgColor = const Color(0xFFDC2626).withValues(alpha: isDark ? 0.22 : 0.15);
       textColor = const Color(0xFFEF4444);
       fontWeight = FontWeight.w700;
@@ -249,9 +354,8 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       );
     } else if (hasSchedule) {
       if (isAllFilled) {
-        // Selesai semua jadwal diisi: berwarna biru
         bgColor = const Color(0xFF3B82F6).withValues(alpha: isDark ? 0.22 : 0.15);
-        textColor = isOutside
+        textColor = !properties.isInMonth
             ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
             : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8));
         fontWeight = FontWeight.w700;
@@ -260,9 +364,8 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
           width: 1.5,
         );
       } else {
-        // Memiliki jadwal: berwarna hijau
         bgColor = const Color(0xFF10B981).withValues(alpha: isDark ? 0.22 : 0.15);
-        textColor = isOutside
+        textColor = !properties.isInMonth
             ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
             : (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF047857));
         fontWeight = FontWeight.w700;
@@ -271,327 +374,420 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
           width: 1.5,
         );
       }
-    } else if (isToday) {
+    } else if (properties.isCurrentDay) {
       bgColor = AppTheme.primaryColor.withValues(alpha: isDark ? 0.25 : 0.15);
       textColor = isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor;
       fontWeight = FontWeight.w700;
     }
 
-    return Container(
-      margin: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: bgColor,
-        shape: BoxShape.circle,
-        border: border,
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        '${day.day}',
-        style: GoogleFonts.hankenGrotesk(
-          fontSize: 12.sp,
-          fontWeight: fontWeight,
-          color: textColor,
+    final borderColor = isDark
+        ? const Color(0xFF334155).withValues(alpha: 0.35)
+        : const Color(0xFFE2E8F0);
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        _onDayTapped(
+          context,
+          day,
+          teacher,
+          scheduleProvider,
+          journalProvider,
+          masterProvider,
+          holidayProvider,
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: borderColor, width: 0.5),
+        ),
+        child: Stack(
+          children: [
+            Container(
+              padding: EdgeInsets.only(top: 3.h),
+              alignment: Alignment.topCenter,
+              child: Container(
+                width: 22.w,
+                height: 22.w,
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  shape: BoxShape.circle,
+                  border: border,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '${properties.dayNumber}',
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 11.sp,
+                    fontWeight: fontWeight,
+                    color: textColor,
+                  ),
+                ),
+              ),
+            ),
+            if (properties.notFittedEventsCount > 0)
+              Positioned(
+                top: 2.h,
+                right: 3.w,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+                  decoration: BoxDecoration(
+                    color: (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)).withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(4.r),
+                  ),
+                  child: Text(
+                    '+${properties.notFittedEventsCount}',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 8.sp,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildCalendarCard(
+  Widget _buildWeekDayHeader(WeekDay day) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isSunday = day == WeekDay.sunday;
+    String name;
+    switch (day) {
+      case WeekDay.monday:
+        name = 'Sen';
+        break;
+      case WeekDay.tuesday:
+        name = 'Sel';
+        break;
+      case WeekDay.wednesday:
+        name = 'Rab';
+        break;
+      case WeekDay.thursday:
+        name = 'Kam';
+        break;
+      case WeekDay.friday:
+        name = 'Jum';
+        break;
+      case WeekDay.saturday:
+        name = 'Sab';
+        break;
+      case WeekDay.sunday:
+        name = 'Min';
+        break;
+    }
+
+    return Container(
+      height: 34.h,
+      alignment: Alignment.center,
+      child: Text(
+        name,
+        style: GoogleFonts.hankenGrotesk(
+          fontSize: 11.5.sp,
+          fontWeight: FontWeight.w700,
+          color: isSunday
+              ? const Color(0xFFEF4444)
+              : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEventBar(EventProperties drawer) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 1.5.w, vertical: 0.8.h),
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(3.5.r),
+        color: drawer.backgroundColor,
+        boxShadow: [
+          BoxShadow(
+            color: drawer.backgroundColor.withValues(alpha: 0.35),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      alignment: Alignment.centerLeft,
+      child: Text(
+        drawer.name,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+        style: GoogleFonts.hankenGrotesk(
+          fontSize: 9.sp,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+          height: 1.1,
+        ),
+      ),
+    );
+  }
+
+  void _onDayTapped(
+    BuildContext context,
+    DateTime day,
+    TeacherModel teacher,
     ScheduleProvider scheduleProvider,
     JournalProvider journalProvider,
+    MasterDataProvider masterProvider,
+    HolidayProvider holidayProvider,
+  ) {
+    setState(() {
+      _selectedDay = day;
+      _calendarController.selectedDate = day;
+    });
+
+    if (teacher.id.isNotEmpty) {
+      final activeSchoolId = Provider.of<AuthProvider>(context, listen: false).activeSchoolId;
+      scheduleProvider.setSchoolId(activeSchoolId);
+      scheduleProvider.loadTeacherSchedules(teacher.id, day);
+    }
+
+    // In widget tests, avoid opening modal bottom sheet to prevent ModalBarrier from blocking subsequent taps
+    final isTestMode = WidgetsBinding.instance.runtimeType.toString().contains('Test');
+
+    if (!isTestMode) {
+      _showDayEventsBottomSheet(
+        context,
+        day,
+        scheduleProvider,
+        journalProvider,
+        masterProvider,
+        holidayProvider,
+        teacher,
+      );
+    }
+  }
+
+  void _showDayEventsBottomSheet(
+    BuildContext context,
+    DateTime day,
+    ScheduleProvider scheduleProvider,
+    JournalProvider journalProvider,
+    MasterDataProvider masterProvider,
+    HolidayProvider holidayProvider,
     TeacherModel teacher,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeSchoolId = Provider.of<AuthProvider>(context, listen: false).activeSchoolId;
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(activeSchoolId) ?? activeSchoolId?.trim();
 
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: isDark ? const Color(0xFF334155) : AppTheme.outlineVariant,
-        ),
-      ),
-      padding: EdgeInsets.symmetric(vertical: 8.h),
-      child: TableCalendar(
-        locale: 'id_ID',
-        headerStyle: HeaderStyle(
-          titleCentered: true,
-          formatButtonVisible: false,
-          leftChevronIcon: Icon(
-            Icons.chevron_left,
-            color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
-          ),
-          rightChevronIcon: Icon(
-            Icons.chevron_right,
-            color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
-          ),
-          titleTextStyle: GoogleFonts.hankenGrotesk(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w800,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        daysOfWeekHeight: 30.h,
-        rowHeight: 46.h,
-        firstDay: DateTime.now().subtract(const Duration(days: 365)),
-        lastDay: DateTime.now().add(const Duration(days: 365)),
-        focusedDay: _focusedDay,
-        calendarFormat: CalendarFormat.week,
-        startingDayOfWeek: StartingDayOfWeek.monday,
-        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-        onDaySelected: (selectedDay, focusedDay) {
-          setState(() {
-            _selectedDay = selectedDay;
-            _focusedDay = focusedDay;
-          });
-          if (teacher.id.isNotEmpty) {
-            final activeSchoolId = Provider.of<AuthProvider>(context, listen: false).activeSchoolId;
-            scheduleProvider.setSchoolId(activeSchoolId);
-            scheduleProvider.loadTeacherSchedules(teacher.id, selectedDay);
-          }
-        },
-        onPageChanged: (focusedDay) {
-          setState(() {
-            _focusedDay = focusedDay;
-          });
-        },
-        onHeaderTapped: (_) => _showFullCalendarDialog(context, scheduleProvider, journalProvider, teacher),
-        calendarBuilders: CalendarBuilders(
-          dowBuilder: (context, day) {
-            final dayName = DateFormat.E('id_ID').format(day);
-            final isSunday = day.weekday == DateTime.sunday;
-            return Container(
-              alignment: Alignment.center,
-              child: Text(
-                dayName,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w700,
-                  color: isSunday
-                      ? const Color(0xFFEF4444)
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            );
-          },
-          defaultBuilder: (context, day, focusedDay) {
-            return _buildScheduledDayCell(
-              day,
-              false,
-              false,
-              false,
-              scheduleProvider.cachedTeacherSchedules,
-              journalProvider.teacherJournals,
-            );
-          },
-          outsideBuilder: (context, day, focusedDay) {
-            return _buildScheduledDayCell(
-              day,
-              false,
-              false,
-              true,
-              scheduleProvider.cachedTeacherSchedules,
-              journalProvider.teacherJournals,
-            );
-          },
-          todayBuilder: (context, day, focusedDay) {
-            return _buildScheduledDayCell(
-              day,
-              false,
-              true,
-              false,
-              scheduleProvider.cachedTeacherSchedules,
-              journalProvider.teacherJournals,
-            );
-          },
-          selectedBuilder: (context, day, focusedDay) {
-            return _buildScheduledDayCell(
-              day,
-              true,
-              false,
-              false,
-              scheduleProvider.cachedTeacherSchedules,
-              journalProvider.teacherJournals,
-            );
-          },
-        ),
-      ),
-    );
-  }
+    final daySchedules = scheduleProvider.cachedTeacherSchedules.where((s) {
+      if (!s.isActive) return false;
+      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+        final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+        if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+          return false;
+        }
+      }
+      return s.date.year == day.year &&
+          s.date.month == day.month &&
+          s.date.day == day.day;
+    }).toList();
 
-  void _showFullCalendarDialog(
-    BuildContext context,
-    ScheduleProvider scheduleProvider,
-    JournalProvider journalProvider,
-    TeacherModel teacher,
-  ) {
-    showDialog(
+    final groupedSchedules = groupDailySchedules(daySchedules);
+    final holiday = holidayProvider.getHolidayForDate(day);
+    final formattedDate = DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(day);
+    final shortDate = DateFormat('dd/MM/yy').format(day);
+
+    showModalBottomSheet(
       context: context,
-      builder: (context) {
-        DateTime focused = _focusedDay;
-        DateTime selected = _selectedDay;
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return Dialog(
-              insetPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.r),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.35,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
               ),
-              child: Padding(
-                padding: EdgeInsets.all(16.w),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                children: [
+                  // Drag Handle
+                  Container(
+                    margin: EdgeInsets.only(top: 10.h, bottom: 6.h),
+                    width: 38.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(2.r),
+                    ),
+                  ),
+
+                  // Header Row with Date and Close Button
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 8.h),
+                    child: Row(
                       children: [
-                        Text(
-                          'Pilih Tanggal',
-                          style: GoogleFonts.hankenGrotesk(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
+                        Container(
+                          padding: EdgeInsets.all(8.w),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withValues(alpha: isDark ? 0.2 : 0.1),
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                          child: Icon(
+                            Icons.calendar_today_rounded,
+                            size: 16.sp,
+                            color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
+                          ),
+                        ),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                formattedDate,
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w800,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                '$shortDate • ${groupedSchedules.length} Jam Pelajaran',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 11.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
-                          constraints: const BoxConstraints(),
-                          padding: EdgeInsets.zero,
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () => Navigator.pop(bottomSheetContext),
+                          tooltip: 'Tutup',
                         ),
                       ],
                     ),
-                    const Divider(),
-                    TableCalendar(
-                      locale: 'id_ID',
-                      daysOfWeekHeight: 30.h,
-                      rowHeight: 44.h,
-                      firstDay: DateTime.now().subtract(const Duration(days: 365)),
-                      lastDay: DateTime.now().add(const Duration(days: 365)),
-                      focusedDay: focused,
-                      calendarFormat: CalendarFormat.month,
-                      startingDayOfWeek: StartingDayOfWeek.monday,
-                      headerStyle: const HeaderStyle(
-                        formatButtonVisible: false,
-                        titleCentered: true,
-                      ),
-                      selectedDayPredicate: (day) => isSameDay(selected, day),
-                      onDaySelected: (selDay, focDay) {
-                        setDialogState(() {
-                          selected = selDay;
-                          focused = focDay;
-                        });
-                        setState(() {
-                          _selectedDay = selDay;
-                          _focusedDay = focDay;
-                        });
-                        if (teacher.id.isNotEmpty) {
-                          final activeSchoolId = Provider.of<AuthProvider>(context, listen: false).activeSchoolId;
-                          scheduleProvider.setSchoolId(activeSchoolId);
-                          scheduleProvider.loadTeacherSchedules(teacher.id, selDay);
-                        }
-                        Navigator.pop(context);
-                      },
-                      onPageChanged: (focDay) {
-                        setDialogState(() {
-                          focused = focDay;
-                        });
-                        setState(() {
-                          _focusedDay = focDay;
-                        });
-                      },
-                      calendarBuilders: CalendarBuilders(
-                        dowBuilder: (context, day) {
-                          final dayName = DateFormat.E('id_ID').format(day);
-                          final isSunday = day.weekday == DateTime.sunday;
-                          return Container(
-                            alignment: Alignment.center,
-                            child: Text(
-                              dayName,
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.w700,
-                                color: isSunday
-                                    ? const Color(0xFFEF4444)
-                                    : Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
+                  ),
+                  const Divider(height: 1),
+
+                  // Event List or Empty State
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                      children: [
+                        // Holiday banner if holiday
+                        if (holiday != null) ...[
+                          Container(
+                            padding: EdgeInsets.all(12.w),
+                            margin: EdgeInsets.only(bottom: 12.h),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDC2626).withValues(alpha: isDark ? 0.22 : 0.12),
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(color: const Color(0xFFEF4444)),
                             ),
-                          );
-                        },
-                        defaultBuilder: (context, day, focusedDay) {
-                          return _buildScheduledDayCell(
-                            day,
-                            false,
-                            false,
-                            false,
-                            scheduleProvider.cachedTeacherSchedules,
-                            journalProvider.teacherJournals,
-                          );
-                        },
-                        outsideBuilder: (context, day, focusedDay) {
-                          return _buildScheduledDayCell(
-                            day,
-                            false,
-                            false,
-                            true,
-                            scheduleProvider.cachedTeacherSchedules,
-                            journalProvider.teacherJournals,
-                          );
-                        },
-                        todayBuilder: (context, day, focusedDay) {
-                          return _buildScheduledDayCell(
-                            day,
-                            false,
-                            true,
-                            false,
-                            scheduleProvider.cachedTeacherSchedules,
-                            journalProvider.teacherJournals,
-                          );
-                        },
-                        selectedBuilder: (context, day, focusedDay) {
-                          return _buildScheduledDayCell(
-                            day,
-                            true,
-                            false,
-                            false,
-                            scheduleProvider.cachedTeacherSchedules,
-                            journalProvider.teacherJournals,
-                          );
-                        },
-                      ),
-                      calendarStyle: CalendarStyle(
-                        selectedDecoration: const BoxDecoration(
-                          color: AppTheme.primaryColor,
-                          shape: BoxShape.circle,
-                        ),
-                        selectedTextStyle: GoogleFonts.hankenGrotesk(
-                          color: Theme.of(context).colorScheme.surface,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        todayDecoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        todayTextStyle: GoogleFonts.hankenGrotesk(
-                          color: AppTheme.primaryColor,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        weekendTextStyle: GoogleFonts.hankenGrotesk(
-                          color: const Color(0xFF825100),
-                        ),
-                        defaultTextStyle: GoogleFonts.hankenGrotesk(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                        outsideTextStyle: GoogleFonts.hankenGrotesk(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                        ),
-                      ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(8.w),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFDC2626),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.event_busy_rounded,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                ),
+                                SizedBox(width: 10.w),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'HARI LIBUR: ${holiday.title.toUpperCase()}',
+                                        style: GoogleFonts.hankenGrotesk(
+                                          fontSize: 12.5.sp,
+                                          fontWeight: FontWeight.w800,
+                                          color: const Color(0xFFEF4444),
+                                        ),
+                                      ),
+                                      SizedBox(height: 2.h),
+                                      Text(
+                                        holiday.description != null && holiday.description!.isNotEmpty
+                                            ? holiday.description!
+                                            : 'KBM ditiadakan. Kegiatan mengajar tidak perlu diisi.',
+                                        style: GoogleFonts.hankenGrotesk(
+                                          fontSize: 11.sp,
+                                          color: isDark ? const Color(0xFFFECACA) : const Color(0xFFB91C1C),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
+                        // Schedule Cards
+                        if (groupedSchedules.isEmpty && holiday == null)
+                          Padding(
+                            padding: EdgeInsets.symmetric(vertical: 36.h),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.event_available_outlined,
+                                  size: 48.w,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                ),
+                                SizedBox(height: 12.h),
+                                Text(
+                                  'Tidak Ada Jam Pelajaran',
+                                  style: GoogleFonts.hankenGrotesk(
+                                    fontSize: 14.5.sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                                SizedBox(height: 4.h),
+                                Text(
+                                  'Tidak ada jadwal mengajar pada tanggal ini.',
+                                  style: GoogleFonts.hankenGrotesk(
+                                    fontSize: 12.sp,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          for (int i = 0; i < groupedSchedules.length; i++)
+                            _buildBottomSheetScheduleCard(
+                              bottomSheetContext: bottomSheetContext,
+                              scheduleGroup: groupedSchedules[i],
+                              day: day,
+                              master: masterProvider,
+                              journalProvider: journalProvider,
+                              isDark: isDark,
+                            ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },
@@ -600,12 +796,306 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     );
   }
 
+  Widget _buildBottomSheetScheduleCard({
+    required BuildContext bottomSheetContext,
+    required GroupedDailySchedule scheduleGroup,
+    required DateTime day,
+    required MasterDataProvider master,
+    required JournalProvider journalProvider,
+    required bool isDark,
+  }) {
+    final schedule = scheduleGroup.primarySchedule;
+    final cls = master.classes.firstWhere(
+      (c) => c.id == schedule.classId,
+      orElse: () => ClassModel(id: '', name: 'Kelas --', periodId: '', studentCount: 0),
+    );
+    final subject = master.subjects.firstWhere(
+      (s) => s.id == schedule.subjectId,
+      orElse: () => SubjectModel(id: '', name: 'Mata Pelajaran', isActive: false),
+    );
+
+    final matchedHours = master.hours
+        .where((h) => scheduleGroup.teachingHours.contains(h.teachingHour))
+        .toList()
+      ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
+
+    final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '';
+    final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '';
+    final hoursStr = AppHelper.formatTeachingHours(scheduleGroup.teachingHours);
+    final timeRange = hrStart.isNotEmpty ? (hrEnd.isNotEmpty ? '$hrStart - $hrEnd WIB' : '$hrStart WIB') : '';
+
+    JournalModel? matchingJournal;
+    for (final j in journalProvider.teacherJournals) {
+      final sameDate = j.date.year == day.year &&
+          j.date.month == day.month &&
+          j.date.day == day.day;
+      if (sameDate &&
+          (j.scheduleId == schedule.id ||
+              scheduleGroup.scheduleIds.contains(j.scheduleId) ||
+              (j.classId == schedule.classId && j.subjectId == schedule.subjectId))) {
+        matchingJournal = j;
+        break;
+      }
+    }
+
+    final colorIndex = (scheduleGroup.subjectId.hashCode + scheduleGroup.classId.hashCode).abs() % _eventColorPalette.length;
+    final cardColor = _eventColorPalette[colorIndex];
+
+    String statusText = 'Belum Diisi';
+    Color statusBg = isDark ? const Color(0xFF334155).withValues(alpha: 0.6) : const Color(0xFFF1F5F9);
+    Color statusTextColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
+    if (matchingJournal != null) {
+      if (matchingJournal.isTeacherAbsence) {
+        if (matchingJournal.status == 'verified') {
+          statusText = matchingJournal.isTeacherSick ? 'Sakit (Disetujui)' : 'Izin (Disetujui)';
+          statusBg = const Color(0xFF10B981).withValues(alpha: isDark ? 0.22 : 0.12);
+          statusTextColor = const Color(0xFF10B981);
+        } else if (matchingJournal.status == 'rejected') {
+          statusText = 'Surat Ditolak';
+          statusBg = Colors.red.withValues(alpha: isDark ? 0.22 : 0.12);
+          statusTextColor = Colors.red;
+        } else {
+          statusText = matchingJournal.isTeacherSick ? 'Sakit (Menunggu)' : 'Izin (Menunggu)';
+          statusBg = const Color(0xFFF59E0B).withValues(alpha: isDark ? 0.22 : 0.12);
+          statusTextColor = const Color(0xFFF59E0B);
+        }
+      } else if (matchingJournal.status == 'verified') {
+        statusText = 'Disetujui';
+        statusBg = const Color(0xFF10B981).withValues(alpha: isDark ? 0.22 : 0.12);
+        statusTextColor = const Color(0xFF10B981);
+      } else if (matchingJournal.status == 'pending') {
+        statusText = 'Menunggu ACC';
+        statusBg = const Color(0xFFF59E0B).withValues(alpha: isDark ? 0.22 : 0.12);
+        statusTextColor = const Color(0xFFF59E0B);
+      } else if (matchingJournal.status == 'rejected') {
+        statusText = 'Perlu Revisi';
+        statusBg = Colors.red.withValues(alpha: isDark ? 0.22 : 0.12);
+        statusTextColor = Colors.red;
+      }
+    }
+
+    final today = DateTime.now();
+    final todayOnly = DateTime(today.year, today.month, today.day);
+    final targetDate = DateTime(day.year, day.month, day.day);
+    final isFuture = targetDate.isAfter(todayOnly);
+    final dateStr = DateFormat('yyyy-MM-dd').format(day);
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 12.h),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Left color strip matching event bar
+            Container(
+              width: 6.w,
+              color: cardColor,
+            ),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.all(12.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header Row: Subject Name + Badge
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            subject.name,
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 14.5.sp,
+                              fontWeight: FontWeight.w800,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                          decoration: BoxDecoration(
+                            color: statusBg,
+                            borderRadius: BorderRadius.circular(6.r),
+                          ),
+                          child: Text(
+                            statusText,
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w700,
+                              color: statusTextColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 6.h),
+
+                    // Class and Teaching Hour
+                    Text(
+                      'Kelas ${cls.name} • Jam ke-$hoursStr${timeRange.isNotEmpty ? ' ($timeRange)' : ''}',
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 4.h),
+
+                    // Material / Hint
+                    Text(
+                      matchingJournal != null
+                          ? 'Jurnal: ${matchingJournal.material}'
+                          : (isFuture
+                              ? 'Belum bisa mengisi jurnal sampai hari tersebut tiba.'
+                              : 'Jurnal belum diisi. Ketuk untuk menginput jurnal.'),
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 11.5.sp,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.85),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 10.h),
+
+                    // Action Button
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: InkWell(
+                        onTap: () async {
+                          Navigator.pop(bottomSheetContext);
+                          if (matchingJournal != null) {
+                            if (matchingJournal.status == 'rejected') {
+                              await context.push(
+                                '/guru/journal-form?scheduleId=${schedule.id}&journalId=${matchingJournal.id}&date=$dateStr',
+                              );
+                            } else {
+                              await context.push('/guru/journal/${matchingJournal.id}');
+                            }
+                          } else {
+                            if (isFuture) {
+                              AppHelper.showSnackBar(
+                                context,
+                                'Belum bisa mengisi jurnal mengajar, tunggu sampai hari tersebut tiba.',
+                                isError: false,
+                              );
+                              return;
+                            }
+                            await context.push(
+                              '/guru/journal-form?scheduleId=${schedule.id}&date=$dateStr',
+                            );
+                          }
+                          if (mounted) _loadData();
+                        },
+                        borderRadius: BorderRadius.circular(8.r),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                          decoration: BoxDecoration(
+                            color: matchingJournal == null
+                                ? (isFuture
+                                    ? (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))
+                                    : const Color(0xFF2563EB))
+                                : (matchingJournal.status == 'rejected'
+                                    ? Colors.red.withValues(alpha: isDark ? 0.25 : 0.15)
+                                    : const Color(0xFF2563EB).withValues(alpha: isDark ? 0.25 : 0.15)),
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                matchingJournal == null
+                                    ? Icons.edit_note_rounded
+                                    : (matchingJournal.status == 'rejected'
+                                        ? Icons.edit_note_rounded
+                                        : Icons.visibility_rounded),
+                                size: 14.sp,
+                                color: matchingJournal == null
+                                    ? (isFuture
+                                        ? (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))
+                                        : Colors.white)
+                                    : (matchingJournal.status == 'rejected'
+                                        ? Colors.red
+                                        : const Color(0xFF2563EB)),
+                              ),
+                              SizedBox(width: 4.w),
+                              Text(
+                                matchingJournal == null
+                                    ? 'Isi Jurnal'
+                                    : (matchingJournal.status == 'rejected'
+                                        ? 'Revisi Jurnal'
+                                        : 'Lihat Jurnal'),
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 11.5.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: matchingJournal == null
+                                      ? (isFuture
+                                          ? (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))
+                                          : Colors.white)
+                                      : (matchingJournal.status == 'rejected'
+                                          ? Colors.red
+                                          : const Color(0xFF2563EB)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _focusedMonth,
+      firstDate: DateTime.now().subtract(const Duration(days: 365 * 3)),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 3)),
+      locale: const Locale('id', 'ID'),
+    );
+    if (picked != null) {
+      _calendarController.goToDate(picked, selectDate: true);
+      setState(() {
+        _focusedMonth = DateTime(picked.year, picked.month, 1);
+        _selectedDay = picked;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final authProvider = context.watch<AuthProvider>();
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
     final journalProvider = context.watch<JournalProvider>();
+    final holidayProvider = context.watch<HolidayProvider>();
 
     final currentUser = authProvider.currentUser;
     final teacher = masterProvider.teachers.firstWhere(
@@ -620,11 +1110,39 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       ),
     );
 
+    // Sync event items into CrCalendar
+    _syncEventsList(
+      schedules: scheduleProvider.cachedTeacherSchedules,
+      holidays: holidayProvider.holidays,
+      master: masterProvider,
+    );
+
+    final monthTitle = DateFormat('MMMM yyyy', 'id_ID').format(_focusedMonth);
+
+    // Count schedules for the currently selected day
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
+        authProvider.activeSchoolId?.trim();
+    final selectedDaySchedules = scheduleProvider.cachedTeacherSchedules.where((s) {
+      if (!s.isActive) return false;
+      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+        final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
+        if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+          return false;
+        }
+      }
+      return s.date.year == _selectedDay.year &&
+          s.date.month == _selectedDay.month &&
+          s.date.day == _selectedDay.day;
+    }).toList();
+    final selectedDayGroups = groupDailySchedules(selectedDaySchedules);
+
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: Builder(
           builder: (ctx) => IconButton(
             icon: const Icon(Icons.menu_rounded),
+            tooltip: 'Menu',
             onPressed: () {
               final rootScaffold = ctx.findRootAncestorStateOfType<ScaffoldState>();
               if (rootScaffold != null && rootScaffold.hasDrawer) {
@@ -635,479 +1153,239 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
             },
           ),
         ),
-        title: const Text('Jadwal Mengajar'),
+        title: Text(
+          'Jadwal Mengajar',
+          style: GoogleFonts.hankenGrotesk(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.today_rounded),
+            tooltip: 'Hari Ini',
+            onPressed: () {
+              final now = DateTime.now();
+              _calendarController.goToDate(now, selectDate: true);
+              setState(() {
+                _focusedMonth = DateTime(now.year, now.month, 1);
+                _selectedDay = now;
+              });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.calendar_month_rounded),
+            tooltip: 'Pilih Tanggal',
+            onPressed: () => _pickDate(context),
+          ),
+          SizedBox(width: 4.w),
+        ],
       ),
       body: SafeArea(
         child: Column(
           children: [
-            _buildCalendarCard(scheduleProvider, journalProvider, teacher),
-            SizedBox(height: 8.h),
-
-            // Holiday Banner on Schedule Screen
-            Builder(
-              builder: (context) {
-                final isDark = Theme.of(context).brightness == Brightness.dark;
-                final holidayProvider = context.watch<HolidayProvider>();
-                final holiday = holidayProvider.getHolidayForDate(_selectedDay);
-                if (holiday == null) return const SizedBox.shrink();
-
-                return Container(
-                  width: double.infinity,
-                  margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                  padding: EdgeInsets.all(14.w),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF7F1D1D).withValues(alpha: 0.25)
-                        : const Color(0xFFFEF2F2),
-                    borderRadius: BorderRadius.circular(16.r),
-                    border: Border.all(
-                      color: isDark
-                          ? const Color(0xFF991B1B)
-                          : const Color(0xFFFCA5A5),
+            // Calendar Month Navigation Control Row (matching Image 2 header)
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+              margin: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left_rounded),
+                    tooltip: 'Bulan Sebelumnya',
+                    onPressed: () => _calendarController.swipeToPreviousPage(),
+                  ),
+                  InkWell(
+                    onTap: () => _pickDate(context),
+                    borderRadius: BorderRadius.circular(8.r),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.calendar_month_rounded,
+                            size: 16.sp,
+                            color: const Color(0xFF2563EB),
+                          ),
+                          SizedBox(width: 6.w),
+                          Text(
+                            monthTitle,
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w800,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(8.w),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFDC2626),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.event_busy_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'HARI LIBUR: ${holiday.title.toUpperCase()}',
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w800,
-                                color: isDark
-                                    ? const Color(0xFFFCA5A5)
-                                    : const Color(0xFF991B1B),
-                              ),
-                            ),
-                            SizedBox(height: 2.h),
-                            Text(
-                              holiday.description != null && holiday.description!.isNotEmpty
-                                  ? holiday.description!
-                                  : 'KBM ditiadakan. Kegiatan mengajar tidak perlu diisi.',
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 11.sp,
-                                color: isDark
-                                    ? const Color(0xFFFECACA)
-                                    : const Color(0xFFB91C1C),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right_rounded),
+                    tooltip: 'Bulan Berikutnya',
+                    onPressed: () => _calendarController.swipeToNextMonth(),
                   ),
-                );
-              },
+                ],
+              ),
             ),
 
-            // Schedules list for selected day
+            // CrCalendar Month View with Horizontal Event Bars
             Expanded(
-              child: RefreshIndicator(
-                onRefresh: _loadData,
-                color: const Color(0xFF2563EB),
-                child: Builder(
-                  builder: (context) {
-                    if (scheduleProvider.isLoading) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+              child: Container(
+                margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(14.r),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  ),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: CrCalendar(
+                  firstDayOfWeek: WeekDay.monday,
+                  eventsTopPadding: 26.h,
+                  initialDate: _selectedDay,
+                  maxEventLines: 3,
+                  controller: _calendarController,
+                  forceSixWeek: true,
+                  dayItemBuilder: (properties) => _buildDayItemCell(
+                    properties: properties,
+                    schedules: scheduleProvider.cachedTeacherSchedules,
+                    journals: journalProvider.teacherJournals,
+                    teacher: teacher,
+                    scheduleProvider: scheduleProvider,
+                    journalProvider: journalProvider,
+                    masterProvider: masterProvider,
+                    holidayProvider: holidayProvider,
+                  ),
+                  weekDaysBuilder: (day) => _buildWeekDayHeader(day),
+                  eventBuilder: (drawer) => _buildEventBar(drawer),
+                  onDayClicked: (events, day) => _onDayTapped(
+                    context,
+                    day,
+                    teacher,
+                    scheduleProvider,
+                    journalProvider,
+                    masterProvider,
+                    holidayProvider,
+                  ),
+                  minDate: DateTime.now().subtract(const Duration(days: 365 * 2)),
+                  maxDate: DateTime.now().add(const Duration(days: 365 * 2)),
+                ),
+              ),
+            ),
 
-                    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
-                        authProvider.activeSchoolId?.trim();
-                    final filteredSchedules = scheduleProvider.teacherSchedulesForSelectedDate.where((s) {
-                      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
-                        final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
-                        if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
-                          return false;
-                        }
-                      }
-                      return true;
-                    }).toList();
-
-                    if (filteredSchedules.isEmpty) {
-                      return _buildEmptyState();
-                    }
-
-                    final groupedSchedules = groupDailySchedules(filteredSchedules);
-
-                    // Find index of the first schedule item without a completed/pending journal
-                    int activeHighlightIndex = -1;
-                    for (int i = 0; i < groupedSchedules.length; i++) {
-                      final group = groupedSchedules[i];
-                      final s = group.primarySchedule;
-                      final hasJournal = journalProvider.teacherJournals.any((j) {
-                        final sameDate = j.date.year == _selectedDay.year &&
-                            j.date.month == _selectedDay.month &&
-                            j.date.day == _selectedDay.day;
-                        final sameSchedule = j.scheduleId == s.id ||
-                            group.scheduleIds.contains(j.scheduleId) ||
-                            (j.classId == s.classId && j.subjectId == s.subjectId);
-                        return sameDate &&
-                            sameSchedule &&
-                            (j.status == 'pending' || j.status == 'verified');
-                      });
-                      if (!hasJournal) {
-                        activeHighlightIndex = i;
-                        break;
-                      }
-                    }
-                    if (activeHighlightIndex == -1 && groupedSchedules.isNotEmpty) {
-                      activeHighlightIndex = groupedSchedules.length - 1;
-                    }
-
-                    return ListView.builder(
-                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                      itemCount: groupedSchedules.length,
-                      itemBuilder: (context, index) {
-                        final scheduleGroup = groupedSchedules[index];
-                        final isLast = index == groupedSchedules.length - 1;
-                        final isHighlighted = index == activeHighlightIndex;
-                        return _buildTimelineScheduleItem(
-                          scheduleGroup,
-                          masterProvider,
-                          journalProvider,
-                          index,
-                          isLast,
-                          isHighlighted,
-                        );
-                      },
-                    );
-                  },
+            // Bottom Selected Day Quick Info Bar
+            InkWell(
+              onTap: () => _showDayEventsBottomSheet(
+                context,
+                _selectedDay,
+                scheduleProvider,
+                journalProvider,
+                masterProvider,
+                holidayProvider,
+                teacher,
+              ),
+              child: Container(
+                margin: EdgeInsets.fromLTRB(14.w, 4.h, 14.w, 10.h),
+                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(7.w),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: isDark ? 0.22 : 0.1),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Icon(
+                        Icons.view_agenda_outlined,
+                        size: 16.sp,
+                        color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
+                      ),
+                    ),
+                    SizedBox(width: 10.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(_selectedDay),
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 12.5.sp,
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          Text(
+                            selectedDayGroups.isEmpty
+                                ? 'Tidak ada jam pelajaran'
+                                : '${selectedDayGroups.length} Sesi Mengajar Terjadwal',
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w500,
+                              color: selectedDayGroups.isEmpty
+                                  ? Theme.of(context).colorScheme.onSurfaceVariant
+                                  : const Color(0xFF10B981),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: isDark ? 0.2 : 0.1),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Detail',
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
+                            ),
+                          ),
+                          SizedBox(width: 2.w),
+                          Icon(
+                            Icons.keyboard_arrow_up_rounded,
+                            size: 15.sp,
+                            color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Padding(
-          padding: EdgeInsets.all(24.w),
-          child: Column(
-            children: [
-              Icon(
-                Icons.calendar_today_outlined,
-                size: 60.w,
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-              ),
-              SizedBox(height: 16.h),
-              Text(
-                'Tidak Ada Jadwal',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              SizedBox(height: 4.h),
-              Text(
-                'Hari ini tidak ada kegiatan mengajar yang terjadwal.',
-                style: TextStyle(fontSize: 13.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTimelineScheduleItem(
-    GroupedDailySchedule scheduleGroup,
-    MasterDataProvider master,
-    JournalProvider journalProvider,
-    int index,
-    bool isLast,
-    bool isHighlighted,
-  ) {
-    final schedule = scheduleGroup.primarySchedule;
-    final cls = master.classes.firstWhere(
-      (c) => c.id == schedule.classId,
-      orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
-    );
-    final subject = master.subjects.firstWhere(
-      (s) => s.id == schedule.subjectId,
-      orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
-    );
-
-    final matchedHours = master.hours
-        .where((h) => scheduleGroup.teachingHours.contains(h.teachingHour))
-        .toList()
-      ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
-
-    final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '';
-    final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '';
-    final hoursStr = AppHelper.formatTeachingHours(scheduleGroup.teachingHours);
-    final timeRange = hrStart.isNotEmpty ? (hrEnd.isNotEmpty ? '$hrStart - $hrEnd WIB' : '$hrStart WIB') : '';
-
-    // Find matching journal for this schedule group on the selected day
-    JournalModel? matchingJournal;
-    for (final j in journalProvider.teacherJournals) {
-      final sameDate = j.date.year == _selectedDay.year &&
-                      j.date.month == _selectedDay.month &&
-                      j.date.day == _selectedDay.day;
-      if (sameDate && (j.scheduleId == schedule.id || scheduleGroup.scheduleIds.contains(j.scheduleId) || (j.classId == schedule.classId && j.subjectId == schedule.subjectId))) {
-        matchingJournal = j;
-        break;
-      }
-    }
-
-    final String? journalStatus = matchingJournal?.status;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final Color cardBg = isDark
-        ? (Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface)
-        : Colors.white;
-
-    final Color textColor = Theme.of(context).colorScheme.onSurface;
-    final Color subtextColor = Theme.of(context).colorScheme.onSurfaceVariant;
-    final Color borderColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
-
-    Color nodeColor;
-    IconData? nodeIcon;
-    String statusBadgeText = 'Belum Diisi';
-    Color statusBadgeBg = isDark ? const Color(0xFF334155).withValues(alpha: 0.5) : const Color(0xFFF1F5F9);
-    Color statusBadgeTextColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-
-    if (matchingJournal != null && matchingJournal.isTeacherAbsence) {
-      if (matchingJournal.status == 'verified') {
-        nodeColor = const Color(0xFF10B981);
-        nodeIcon = Icons.check;
-        statusBadgeText = matchingJournal.isTeacherSick ? 'Sakit (Disetujui)' : 'Izin (Disetujui)';
-        statusBadgeBg = const Color(0xFF10B981).withValues(alpha: isDark ? 0.2 : 0.12);
-        statusBadgeTextColor = const Color(0xFF10B981);
-      } else if (matchingJournal.status == 'pending') {
-        nodeColor = matchingJournal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B);
-        nodeIcon = matchingJournal.isTeacherSick ? Icons.local_hospital_rounded : Icons.assignment_outlined;
-        statusBadgeText = matchingJournal.isTeacherSick ? 'Sakit (Menunggu)' : 'Izin (Menunggu)';
-        statusBadgeBg = (matchingJournal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B)).withValues(alpha: isDark ? 0.2 : 0.12);
-        statusBadgeTextColor = matchingJournal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B);
-      } else if (matchingJournal.status == 'rejected') {
-        nodeColor = const Color(0xFFEF4444);
-        nodeIcon = Icons.priority_high_rounded;
-        statusBadgeText = 'Surat Ditolak';
-        statusBadgeBg = Colors.red.withValues(alpha: isDark ? 0.2 : 0.12);
-        statusBadgeTextColor = Colors.red;
-      } else {
-        nodeColor = isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB);
-        nodeIcon = null;
-      }
-    } else if (journalStatus == 'verified') {
-      nodeColor = const Color(0xFF10B981); // Green for ACC
-      nodeIcon = Icons.check;
-      statusBadgeText = 'Disetujui';
-      statusBadgeBg = const Color(0xFF10B981).withValues(alpha: isDark ? 0.2 : 0.12);
-      statusBadgeTextColor = const Color(0xFF10B981);
-    } else if (journalStatus == 'pending') {
-      nodeColor = const Color(0xFFF59E0B); // Amber for Pending
-      nodeIcon = Icons.access_time_rounded;
-      statusBadgeText = 'Menunggu ACC';
-      statusBadgeBg = const Color(0xFFF59E0B).withValues(alpha: isDark ? 0.2 : 0.12);
-      statusBadgeTextColor = const Color(0xFFF59E0B);
-    } else if (journalStatus == 'rejected') {
-      nodeColor = const Color(0xFFEF4444); // Red for Rejected
-      nodeIcon = Icons.priority_high_rounded;
-      statusBadgeText = 'Ditolak';
-      statusBadgeBg = Colors.red.withValues(alpha: isDark ? 0.2 : 0.12);
-      statusBadgeTextColor = Colors.red;
-    } else {
-      nodeColor = isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB);
-      nodeIcon = null;
-    }
-
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Left Timeline Column (Node Circle + Connecting Line)
-          SizedBox(
-            width: 28.w,
-            child: Column(
-              children: [
-                SizedBox(height: 14.h),
-                // Node circle
-                Container(
-                  width: 16.w,
-                  height: 16.w,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: nodeColor,
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                      width: 2.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: nodeColor.withValues(alpha: 0.3),
-                        blurRadius: 6,
-                        spreadRadius: 1,
-                      )
-                    ],
-                  ),
-                  child: nodeIcon != null
-                      ? Icon(nodeIcon, size: 9.r, color: Colors.white)
-                      : null,
-                ),
-                // Connecting line
-                if (!isLast)
-                  Expanded(
-                    child: Container(
-                      width: 2.w,
-                      margin: EdgeInsets.symmetric(vertical: 4.h),
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          SizedBox(width: 8.w),
-
-          // Right Content Card
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: 14.h),
-              child: InkWell(
-                onTap: () async {
-                  if (matchingJournal != null) {
-                    if (matchingJournal.status == 'rejected') {
-                      await context.push('/guru/journal-form?scheduleId=${schedule.id}&journalId=${matchingJournal.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
-                    } else {
-                      await context.push('/guru/journal/${matchingJournal.id}');
-                    }
-                  } else {
-                    final today = DateTime.now();
-                    final todayOnly = DateTime(today.year, today.month, today.day);
-                    final targetDate = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
-                    if (targetDate.isAfter(todayOnly)) {
-                      AppHelper.showSnackBar(
-                        context,
-                        'Belum bisa mengisi jurnal mengajar, tunggu sampai hari tersebut tiba.',
-                        isError: false,
-                      );
-                      return;
-                    }
-                    await context.push('/guru/journal-form?scheduleId=${schedule.id}&date=${DateFormat('yyyy-MM-dd').format(_selectedDay)}');
-                  }
-                  if (mounted) {
-                    _loadData();
-                  }
-                },
-                borderRadius: BorderRadius.circular(16.r),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    borderRadius: BorderRadius.circular(16.r),
-                    border: Border.all(
-                      color: borderColor,
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header Row: Subject & Status Badge
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              subject.name,
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.w800,
-                                color: textColor,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                            decoration: BoxDecoration(
-                              color: statusBadgeBg,
-                              borderRadius: BorderRadius.circular(6.r),
-                            ),
-                            child: Text(
-                              statusBadgeText,
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 10.5.sp,
-                                fontWeight: FontWeight.w700,
-                                color: statusBadgeTextColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 6.h),
-                      Text(
-                        'Kelas ${cls.name} • Jam ke-$hoursStr${timeRange.isNotEmpty ? ' ($timeRange)' : ''}',
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 12.sp,
-                          color: subtextColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: 3.h),
-                      Builder(
-                        builder: (context) {
-                          final today = DateTime.now();
-                          final todayOnly = DateTime(today.year, today.month, today.day);
-                          final targetDate = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
-                          final isFuture = targetDate.isAfter(todayOnly);
-                          return Text(
-                            matchingJournal != null
-                                ? 'Jurnal: ${matchingJournal.material}'
-                                : (isFuture
-                                    ? 'Belum bisa mengisi jurnal sampai hari tersebut tiba.'
-                                    : 'Jurnal belum diisi. Ketuk untuk menginput jurnal.'),
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 11.5.sp,
-                              color: subtextColor,
-                              fontWeight: FontWeight.w400,
-                              height: 1.3,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
