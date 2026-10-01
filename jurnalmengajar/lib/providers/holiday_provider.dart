@@ -202,6 +202,129 @@ class HolidayProvider with ChangeNotifier {
     }
   }
 
+  /// Update holiday and reconcile soft-deleted journals
+  Future<bool> updateHoliday({
+    required String holidayId,
+    required String? schoolId,
+    required String title,
+    required DateTime startDate,
+    required DateTime endDate,
+    DateTime? oldStartDate,
+    DateTime? oldEndDate,
+    String? description,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final supabase = Supabase.instance.client;
+      final cleanId = AppHelper.parseSingleCleanSchoolId(schoolId);
+      String? targetSchoolId = (cleanId != null && cleanId.isNotEmpty)
+          ? cleanId
+          : schoolId?.trim();
+
+      final schoolRes = await supabase.from('schools').select('id').limit(1).maybeSingle();
+      if (schoolRes != null) {
+        final dbSchoolId = schoolRes['id'] as String?;
+        if (targetSchoolId == null || targetSchoolId.isEmpty || targetSchoolId == 'a1111111-1111-1111-1111-111111111111') {
+          targetSchoolId = dbSchoolId;
+        }
+      }
+
+      if (targetSchoolId == null || targetSchoolId.isEmpty) {
+        throw Exception('Tidak ada data sekolah terdaftar di database.');
+      }
+
+      // 1. If date changed, restore journals from old range first
+      final dateChanged = oldStartDate != null && oldEndDate != null &&
+          (oldStartDate.year != startDate.year ||
+           oldStartDate.month != startDate.month ||
+           oldStartDate.day != startDate.day ||
+           oldEndDate.year != endDate.year ||
+           oldEndDate.month != endDate.month ||
+           oldEndDate.day != endDate.day);
+
+      if (dateChanged) {
+        final oldStartStr = oldStartDate.toIso8601String().split('T').first;
+        final oldEndStr = oldEndDate.add(const Duration(days: 1)).toIso8601String().split('T').first;
+
+        try {
+          final classesRes = await supabase
+              .from('classes')
+              .select('id')
+              .eq('school_id', targetSchoolId);
+          final classIds = (classesRes as List)
+              .map((c) => c['id'] as String)
+              .where((id) => id.isNotEmpty)
+              .toList();
+
+          if (classIds.isNotEmpty) {
+            await supabase
+                .from('journals')
+                .update({
+                  'is_soft_deleted': false,
+                  'deleted_at': null,
+                })
+                .inFilter('class_id', classIds)
+                .gte('date', oldStartStr)
+                .lt('date', oldEndStr);
+          }
+        } catch (e) {
+          debugPrint('Note: restoring old journals during updateHoliday: $e');
+        }
+      }
+
+      // 2. Update the holiday record
+      final payload = {
+        'title': title,
+        'start_date': startDate.toIso8601String().split('T').first,
+        'end_date': endDate.toIso8601String().split('T').first,
+        'description': description,
+      };
+
+      await supabase.from('school_holidays').update(payload).eq('id', holidayId);
+
+      // 3. Soft-delete journals for new date range
+      final startStr = startDate.toIso8601String().split('T').first;
+      final endStr = endDate.add(const Duration(days: 1)).toIso8601String().split('T').first;
+
+      try {
+        final classesRes = await supabase
+            .from('classes')
+            .select('id')
+            .eq('school_id', targetSchoolId);
+        final classIds = (classesRes as List)
+            .map((c) => c['id'] as String)
+            .where((id) => id.isNotEmpty)
+            .toList();
+
+        if (classIds.isNotEmpty) {
+          await supabase
+              .from('journals')
+              .update({
+                'is_soft_deleted': true,
+                'deleted_at': DateTime.now().toIso8601String(),
+              })
+              .inFilter('class_id', classIds)
+              .gte('date', startStr)
+              .lt('date', endStr);
+        }
+      } catch (e) {
+        debugPrint('Note: soft-deleting journals during updateHoliday: $e');
+      }
+
+      CacheService().remove('holidays_$targetSchoolId');
+      await loadHolidays(targetSchoolId);
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   /// Delete holiday and restore soft-deleted journals
   Future<bool> deleteHoliday(String holidayId, String schoolId, {DateTime? startDate, DateTime? endDate}) async {
     _isLoading = true;

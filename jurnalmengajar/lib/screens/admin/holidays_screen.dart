@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/holiday_provider.dart';
+import '../../models/holiday_model.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../core/utils/helper.dart';
 
@@ -30,11 +31,12 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
     Provider.of<HolidayProvider>(context, listen: false).loadHolidays(schoolId);
   }
 
-  void _showAddHolidayDialog() {
-    final titleController = TextEditingController();
-    final descController = TextEditingController();
-    DateTime startDate = DateTime.now();
-    DateTime endDate = DateTime.now();
+  void _showHolidayDialog({HolidayModel? holiday}) {
+    final isEdit = holiday != null;
+    final titleController = TextEditingController(text: holiday?.title ?? '');
+    final descController = TextEditingController(text: holiday?.description ?? '');
+    DateTime startDate = holiday?.startDate ?? DateTime.now();
+    DateTime endDate = holiday?.endDate ?? DateTime.now();
     bool isSubmitting = false;
 
     showDialog(
@@ -62,16 +64,16 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                     color: const Color(0xFFFEE2E2),
                     borderRadius: BorderRadius.circular(10.r),
                   ),
-                  child: const Icon(
-                    Icons.event_busy_rounded,
-                    color: Color(0xFFDC2626),
+                  child: Icon(
+                    isEdit ? Icons.edit_calendar_rounded : Icons.event_busy_rounded,
+                    color: const Color(0xFFDC2626),
                   ),
                 ),
                 SizedBox(width: 12.w),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Tambah Hari Libur',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    isEdit ? 'Edit Hari Libur' : 'Tambah Hari Libur',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -258,21 +260,34 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                         final navigator = Navigator.of(dialogCtx);
                         setDialogState(() => isSubmitting = true);
 
-                        final success = await holidayProvider.addHoliday(
-                          schoolId: schoolId,
-                          title: title,
-                          startDate: startDate,
-                          endDate: endDate,
-                          description: descController.text.trim(),
-                          createdBy: authProvider.currentUser?.id,
-                        );
+                        final success = isEdit
+                            ? await holidayProvider.updateHoliday(
+                                holidayId: holiday.id,
+                                schoolId: schoolId,
+                                title: title,
+                                startDate: startDate,
+                                endDate: endDate,
+                                oldStartDate: holiday.startDate,
+                                oldEndDate: holiday.endDate,
+                                description: descController.text.trim(),
+                              )
+                            : await holidayProvider.addHoliday(
+                                schoolId: schoolId,
+                                title: title,
+                                startDate: startDate,
+                                endDate: endDate,
+                                description: descController.text.trim(),
+                                createdBy: authProvider.currentUser?.id,
+                              );
 
                         if (mounted) {
                           if (success) {
                             messenger.showSnackBar(
-                              const SnackBar(
+                              SnackBar(
                                 content: Text(
-                                  'Hari libur berhasil ditambahkan!',
+                                  isEdit
+                                      ? 'Hari libur berhasil diperbarui!'
+                                      : 'Hari libur berhasil ditambahkan!',
                                 ),
                               ),
                             );
@@ -282,7 +297,9 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                               SnackBar(
                                 content: Text(
                                   holidayProvider.errorMessage ??
-                                      'Gagal menambahkan hari libur.',
+                                      (isEdit
+                                          ? 'Gagal memperbarui hari libur.'
+                                          : 'Gagal menambahkan hari libur.'),
                                 ),
                                 backgroundColor: Colors.red,
                               ),
@@ -307,7 +324,7 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text('Simpan Libur'),
+                    : Text(isEdit ? 'Simpan Perubahan' : 'Simpan Libur'),
               ),
             ],
           );
@@ -334,14 +351,10 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
         ],
       ),
       drawer: const AdminDrawer(currentRoute: '/admin/holidays'),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddHolidayDialog,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showHolidayDialog(),
         backgroundColor: const Color(0xFFDC2626),
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text(
-          'Tambah Libur',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
       body: SafeArea(
         child: holidayProvider.isLoading
@@ -464,56 +477,72 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                           ],
                         ],
                       ),
-                      trailing: IconButton(
-                        icon: const Icon(
-                          Icons.delete_outline,
-                          color: Colors.red,
-                        ),
-                        onPressed: () async {
-                          final messenger = ScaffoldMessenger.of(context);
-                          final schoolId =
-                              authProvider.activeSchoolId ??
-                              'a1111111-1111-1111-1111-111111111111';
-
-                          final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Hapus Hari Libur?'),
-                              content: Text(
-                                'Menghapus hari libur "${item.title}" akan mengaktifkan kembali tanggal ini dan merestore jurnal yang di-soft-delete.',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('Batal'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: const Text(
-                                    'Hapus',
-                                    style: TextStyle(color: Colors.red),
-                                  ),
-                                ),
-                              ],
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              Icons.edit_outlined,
+                              color: isDark
+                                  ? const Color(0xFF60A5FA)
+                                  : const Color(0xFF2563EB),
                             ),
-                          );
+                            tooltip: 'Edit Hari Libur',
+                            onPressed: () => _showHolidayDialog(holiday: item),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
+                            ),
+                            tooltip: 'Hapus Hari Libur',
+                            onPressed: () async {
+                              final messenger = ScaffoldMessenger.of(context);
+                              final schoolId =
+                                  authProvider.activeSchoolId ??
+                                  'a1111111-1111-1111-1111-111111111111';
 
-                          if (confirm == true && mounted) {
-                            final ok = await holidayProvider.deleteHoliday(
-                              item.id,
-                              schoolId,
-                              startDate: item.startDate,
-                              endDate: item.endDate,
-                            );
-                            if (ok && mounted) {
-                              messenger.showSnackBar(
-                                const SnackBar(
-                                  content: Text('Hari libur berhasil dihapus'),
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Hapus Hari Libur?'),
+                                  content: Text(
+                                    'Menghapus hari libur "${item.title}" akan mengaktifkan kembali tanggal ini dan merestore jurnal yang di-soft-delete.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, false),
+                                      child: const Text('Batal'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                      child: const Text(
+                                        'Hapus',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               );
-                            }
-                          }
-                        },
+
+                              if (confirm == true && mounted) {
+                                final ok = await holidayProvider.deleteHoliday(
+                                  item.id,
+                                  schoolId,
+                                  startDate: item.startDate,
+                                  endDate: item.endDate,
+                                );
+                                if (ok && mounted) {
+                                  messenger.showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Hari libur berhasil dihapus'),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                        ],
                       ),
                     ),
                   );
