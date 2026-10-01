@@ -239,8 +239,13 @@ class MockHolidayProvider extends HolidayProvider {
 
 class MockMasterDataProvider extends MasterDataProvider {
   final List<TeacherModel> _mockTeachers;
-  MockMasterDataProvider(this._mockTeachers)
-      : super(
+  final List<SubjectModel> _mockSubjects;
+  final List<ClassModel> _mockClasses;
+  MockMasterDataProvider(
+    this._mockTeachers, [
+    this._mockSubjects = const [],
+    this._mockClasses = const [],
+  ]) : super(
           periodRepository: FakePeriodRepo(),
           subjectRepository: FakeSubjectRepo(),
           hourRepository: FakeHourRepo(),
@@ -250,6 +255,10 @@ class MockMasterDataProvider extends MasterDataProvider {
         );
   @override
   List<TeacherModel> get teachers => _mockTeachers;
+  @override
+  List<SubjectModel> get subjects => _mockSubjects;
+  @override
+  List<ClassModel> get classes => _mockClasses;
   @override
   Future<void> loadAllData([String? schoolId]) async {}
 }
@@ -347,7 +356,9 @@ void main() {
     final authRepo = FakeAuthRepo()..mockUser = testUser;
     final authProvider = AuthProvider(authRepository: authRepo);
     final themeProvider = ThemeProvider();
-    final masterProvider = MockMasterDataProvider([testTeacher]);
+    final testSubject = SubjectModel(id: 'sub-1', name: 'Matematika', isActive: true);
+    final testClass = ClassModel(id: 'c-1', name: 'XII RPL 1', periodId: 'p-1', studentCount: 30);
+    final masterProvider = MockMasterDataProvider([testTeacher], [testSubject], [testClass]);
     final scheduleProvider = MockScheduleProvider(testSchedules);
     final journalProvider = MockJournalProvider(testJournals);
     final holidayProvider = MockHolidayProvider(testHolidays);
@@ -442,5 +453,14 @@ void main() {
       return false;
     });
     expect(hasHolidayRedBar, isTrue, reason: 'Holiday must have red bar');
+
+    // Verify event bars display "X Jadwal" instead of lesson subject names
+    expect(find.text('1 Jadwal'), findsWidgets, reason: 'Event bar must display schedule count like "1 Jadwal"');
+    expect(find.text('Matematika - XII RPL 1'), findsNothing, reason: 'Lesson title must not appear directly on calendar bars');
+
+    // Verify tapping on the date table opens the schedule details bottom sheet
+    await tester.tap(find.text('${dateTue.day}').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Matematika'), findsWidgets, reason: 'Tapping date must display schedule details in bottom sheet');
   });
 }

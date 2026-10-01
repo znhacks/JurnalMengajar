@@ -189,7 +189,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       );
     }
 
-    // 2. Add Teaching Schedules (grouped per day, class, subject)
+    // 2. Add Teaching Schedules (grouped by day, showing count instead of lesson names)
     final activeSchoolId = Provider.of<AuthProvider>(context, listen: false).activeSchoolId;
     final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(activeSchoolId) ?? activeSchoolId?.trim();
 
@@ -204,35 +204,46 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       return true;
     }).toList();
 
-    final grouped = groupDailySchedules(validSchedules);
+    // Group schedules by date
+    final Map<DateTime, List<ScheduleModel>> schedulesByDay = {};
+    for (final s in validSchedules) {
+      final dateKey = DateTime(s.date.year, s.date.month, s.date.day);
+      schedulesByDay.putIfAbsent(dateKey, () => []).add(s);
+    }
+
     final today = DateTime.now();
     final todayOnly = DateTime(today.year, today.month, today.day);
 
-    for (final g in grouped) {
-      final subject = master.subjects.firstWhere(
-        (s) => s.id == g.subjectId,
-        orElse: () => SubjectModel(id: '', name: 'Mapel', isActive: false),
-      );
-      final cls = master.classes.firstWhere(
-        (c) => c.id == g.classId,
-        orElse: () => ClassModel(id: '', name: '', periodId: '', studentCount: 0),
-      );
+    for (final entry in schedulesByDay.entries) {
+      final groupDate = entry.key;
 
-      final groupDate = DateTime(g.date.year, g.date.month, g.date.day);
+      // Skip schedule event if this day is already covered by a holiday
+      final isHoliday = holidays.any((h) {
+        final s = DateTime(h.startDate.year, h.startDate.month, h.startDate.day);
+        final e = DateTime(h.endDate.year, h.endDate.month, h.endDate.day);
+        return (groupDate.isAfter(s) || groupDate.isAtSameMomentAs(s)) &&
+            (groupDate.isBefore(e) || groupDate.isAtSameMomentAs(e));
+      });
+      if (isHoliday) continue;
+
+      final daySchedules = entry.value;
+      final dayGroups = groupDailySchedules(daySchedules);
+      if (dayGroups.isEmpty) continue;
+
       final isFuture = groupDate.isAfter(todayOnly);
 
-      final primarySched = g.primarySchedule;
-      final matchingJournal = journals.where((j) {
-        final sameDate = j.date.year == g.date.year &&
-            j.date.month == g.date.month &&
-            j.date.day == g.date.day;
-        final sameSchedule = j.scheduleId == primarySched.id ||
-            g.scheduleIds.contains(j.scheduleId) ||
-            (j.classId == primarySched.classId && j.subjectId == primarySched.subjectId);
-        return sameDate && sameSchedule && j.status != 'rejected';
-      }).firstOrNull;
-
-      final bool isFilled = matchingJournal != null;
+      final bool allFilled = dayGroups.every((g) {
+        final primarySched = g.primarySchedule;
+        return journals.any((j) {
+          final sameDate = j.date.year == g.date.year &&
+              j.date.month == g.date.month &&
+              j.date.day == g.date.day;
+          final sameSchedule = j.scheduleId == primarySched.id ||
+              g.scheduleIds.contains(j.scheduleId) ||
+              (j.classId == primarySched.classId && j.subjectId == primarySched.subjectId);
+          return sameDate && sameSchedule && j.status != 'rejected';
+        });
+      });
 
       // Color rules requested by user:
       // - Belum bisa diisi (future): Abu-abu transparan
@@ -243,22 +254,20 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         barColor = isDark
             ? const Color(0xFF64748B).withValues(alpha: 0.38)
             : const Color(0xFF94A3B8).withValues(alpha: 0.45);
-      } else if (isFilled) {
+      } else if (allFilled) {
         barColor = _colorFilledGreen;
       } else {
         barColor = _colorPastelRed;
       }
 
-      final label = cls.name.isNotEmpty
-          ? '${subject.name} - ${cls.name}'
-          : subject.name;
+      // "untuk pelajarannya tidak tampil jadi hanya menampilkan x jadwalnya"
+      final label = '${dayGroups.length} Jadwal';
 
-      final eventDate = DateTime(g.date.year, g.date.month, g.date.day);
       _calendarEvents.add(
         CalendarEventModel(
           name: label,
-          begin: eventDate,
-          end: eventDate,
+          begin: groupDate,
+          end: groupDate,
           eventColor: barColor,
         ),
       );
@@ -329,11 +338,13 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         );
       },
       child: Container(
+        alignment: Alignment.topLeft,
         decoration: BoxDecoration(
           color: cellBgColor,
           border: Border.all(color: cellBorderColor, width: 0.5),
         ),
         child: Stack(
+          alignment: Alignment.topLeft,
           children: [
             // Date number rendered cleanly at the top-left WITHOUT CIRCLE
             Padding(
@@ -425,32 +436,39 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         ? (isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155))
         : Colors.white;
 
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 1.5.w, vertical: 0.8.h),
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(3.5.r),
-        color: drawer.backgroundColor,
-        boxShadow: isTransparentGray
-            ? null
-            : [
-                BoxShadow(
-                  color: drawer.backgroundColor.withValues(alpha: 0.25),
-                  blurRadius: 2,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-      ),
-      alignment: Alignment.centerLeft,
-      child: Text(
-        drawer.name,
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
-        style: GoogleFonts.hankenGrotesk(
-          fontSize: 9.sp,
-          fontWeight: FontWeight.w700,
-          color: textColor,
-          height: 1.1,
+    return IgnorePointer(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: Container(
+          height: 18.h,
+          margin: EdgeInsets.symmetric(horizontal: 2.w),
+          padding: EdgeInsets.symmetric(horizontal: 4.w),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4.r),
+            color: drawer.backgroundColor,
+            boxShadow: isTransparentGray
+                ? null
+                : [
+                    BoxShadow(
+                      color: drawer.backgroundColor.withValues(alpha: 0.25),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            drawer.name,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 9.sp,
+              fontWeight: FontWeight.w700,
+              color: textColor,
+              height: 1.0,
+            ),
+          ),
         ),
       ),
     );
@@ -476,19 +494,15 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       scheduleProvider.loadTeacherSchedules(teacher.id, day);
     }
 
-    final isTestMode = WidgetsBinding.instance.runtimeType.toString().contains('Test');
-
-    if (!isTestMode) {
-      _showDayEventsBottomSheet(
-        context,
-        day,
-        scheduleProvider,
-        journalProvider,
-        masterProvider,
-        holidayProvider,
-        teacher,
-      );
-    }
+    _showDayEventsBottomSheet(
+      context,
+      day,
+      scheduleProvider,
+      journalProvider,
+      masterProvider,
+      holidayProvider,
+      teacher,
+    );
   }
 
   void _showDayEventsBottomSheet(
@@ -1399,10 +1413,10 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                 clipBehavior: Clip.antiAlias,
                 child: CrCalendar(
                   firstDayOfWeek: WeekDay.monday,
-                  // Generous top padding (34.h) so event bars are not crowded/mepet with date numbers
-                  eventsTopPadding: 34.h,
+                  // Positioned neatly below date number (top 4.h, font 12.sp)
+                  eventsTopPadding: 24.h,
                   initialDate: _selectedDay,
-                  maxEventLines: 3,
+                  maxEventLines: 1,
                   controller: _calendarController,
                   forceSixWeek: true,
                   dayItemBuilder: (properties) => _buildDayItemCell(
