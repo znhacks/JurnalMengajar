@@ -9,10 +9,13 @@ CREATE TABLE IF NOT EXISTS public.school_holidays (
     title TEXT NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
+    category TEXT,
     description TEXT,
     created_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT now()
 );
+
+ALTER TABLE public.school_holidays ADD COLUMN IF NOT EXISTS category TEXT;
 
 -- 2. TAMBAH KOLOM SOFT-DELETE PADA TABEL JOURNALS
 ALTER TABLE public.journals 

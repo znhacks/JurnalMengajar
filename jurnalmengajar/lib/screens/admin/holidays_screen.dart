@@ -31,10 +31,46 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
     Provider.of<HolidayProvider>(context, listen: false).loadHolidays(schoolId);
   }
 
+  static const List<String> _holidayCategories = [
+    'Libur Hari Besar',
+    'Libur Umum',
+    'Cuti Bersama',
+    'Libur Semester Ganjil',
+    'Libur Semester Genap',
+    'Libur Awal Ramadhan',
+    'Libur Hari Raya Idul Fitri',
+    'Libur Khusus Sekolah',
+    'Lainnya',
+  ];
+
+  Color _getCategoryColor(String category, bool isDark) {
+    final lower = category.toLowerCase();
+    if (lower.contains('hari besar')) {
+      return isDark ? const Color(0xFFC084FC) : const Color(0xFF9333EA);
+    } else if (lower.contains('cuti bersama')) {
+      return isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706);
+    } else if (lower.contains('semester')) {
+      return isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB);
+    } else if (lower.contains('ramadhan') || lower.contains('fitri')) {
+      return isDark ? const Color(0xFF34D399) : const Color(0xFF059669);
+    } else if (lower.contains('khusus')) {
+      return isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7);
+    } else {
+      return isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626);
+    }
+  }
+
   void _showHolidayDialog({HolidayModel? holiday}) {
     final isEdit = holiday != null;
     final titleController = TextEditingController(text: holiday?.title ?? '');
-    final descController = TextEditingController(text: holiday?.description ?? '');
+    
+    final initialCat = holiday?.category ?? holiday?.description ?? 'Libur Hari Besar';
+    final isPredefined = _holidayCategories.contains(initialCat);
+    String selectedCategory = isPredefined ? initialCat : 'Lainnya';
+    final customCategoryController = TextEditingController(
+      text: !isPredefined && initialCat.isNotEmpty ? initialCat : '',
+    );
+
     DateTime startDate = holiday?.startDate ?? DateTime.now();
     DateTime endDate = holiday?.endDate ?? DateTime.now();
     bool isSubmitting = false;
@@ -43,6 +79,7 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (context, setDialogState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
           final startFormatted = DateFormat(
             'dd MMM yyyy',
             'id_ID',
@@ -61,12 +98,14 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                 Container(
                   padding: EdgeInsets.all(8.w),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEE2E2),
+                    color: isDark
+                        ? const Color(0xFF7F1D1D).withValues(alpha: 0.35)
+                        : const Color(0xFFFEE2E2),
                     borderRadius: BorderRadius.circular(10.r),
                   ),
                   child: Icon(
                     isEdit ? Icons.edit_calendar_rounded : Icons.event_busy_rounded,
-                    color: const Color(0xFFDC2626),
+                    color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
                   ),
                 ),
                 SizedBox(width: 12.w),
@@ -172,56 +211,46 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                     ],
                   ),
                   SizedBox(height: 14.h),
-                  TextField(
-                    controller: descController,
-                    enabled: !isSubmitting,
-                    maxLines: 2,
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedCategory,
+                    isExpanded: true,
                     decoration: InputDecoration(
-                      labelText: 'Keterangan (Opsional)',
-                      hintText: 'Misal: Seluruh kegiatan KBM ditiadakan',
+                      labelText: 'Kategori Libur *',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.r),
                       ),
+                      prefixIcon: const Icon(Icons.category_outlined),
                     ),
+                    items: _holidayCategories.map((cat) {
+                      return DropdownMenuItem(
+                        value: cat,
+                        child: Text(cat),
+                      );
+                    }).toList(),
+                    onChanged: isSubmitting
+                        ? null
+                        : (val) {
+                            if (val != null) {
+                              setDialogState(() {
+                                selectedCategory = val;
+                              });
+                            }
+                          },
                   ),
-                  SizedBox(height: 12.h),
-                  Container(
-                    padding: EdgeInsets.all(10.w),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? const Color(0xFF78350F).withValues(alpha: 0.35)
-                          : const Color(0xFFFFFBEB),
-                      borderRadius: BorderRadius.circular(10.r),
-                      border: Border.all(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF92400E)
-                            : const Color(0xFFFDE68A),
+                  if (selectedCategory == 'Lainnya') ...[
+                    SizedBox(height: 12.h),
+                    TextField(
+                      controller: customCategoryController,
+                      enabled: !isSubmitting,
+                      decoration: InputDecoration(
+                        labelText: 'Nama Kategori Lainnya *',
+                        hintText: 'Misal: Libur Khusus Pondok / Ujian',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.info_outline,
-                          color: Color(0xFFD97706),
-                          size: 18,
-                        ),
-                        SizedBox(width: 8.w),
-                        Expanded(
-                          child: Text(
-                            'Jurnal guru yang sudah terisi di tanggal libur ini akan di-soft-delete otomatis.',
-                            style: TextStyle(
-                              fontSize: 11.sp,
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? const Color(0xFFFED7AA)
-                                  : const Color(0xFF92400E),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -243,6 +272,12 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                           );
                           return;
                         }
+
+                        final chosenCategory = selectedCategory == 'Lainnya'
+                            ? (customCategoryController.text.trim().isNotEmpty
+                                ? customCategoryController.text.trim()
+                                : 'Libur Lainnya')
+                            : selectedCategory;
 
                         final authProvider = Provider.of<AuthProvider>(
                           context,
@@ -269,14 +304,16 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                                 endDate: endDate,
                                 oldStartDate: holiday.startDate,
                                 oldEndDate: holiday.endDate,
-                                description: descController.text.trim(),
+                                category: chosenCategory,
+                                description: chosenCategory,
                               )
                             : await holidayProvider.addHoliday(
                                 schoolId: schoolId,
                                 title: title,
                                 startDate: startDate,
                                 endDate: endDate,
-                                description: descController.text.trim(),
+                                category: chosenCategory,
+                                description: chosenCategory,
                                 createdBy: authProvider.currentUser?.id,
                               );
 
@@ -409,6 +446,11 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                   final dateRangeLabel = startStr == endStr
                       ? startStr
                       : '$startStr - $endStr';
+                  final itemCategory = item.category?.isNotEmpty == true
+                      ? item.category!
+                      : (item.description?.isNotEmpty == true
+                          ? item.description!
+                          : 'Libur Hari Besar');
 
                   return Card(
                     margin: EdgeInsets.only(bottom: 12.h),
@@ -425,9 +467,11 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                               : const Color(0xFFFEE2E2),
                           borderRadius: BorderRadius.circular(12.r),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.event_busy_rounded,
-                          color: Color(0xFFDC2626),
+                          color: isDark
+                              ? const Color(0xFFF87171)
+                              : const Color(0xFFDC2626),
                         ),
                       ),
                       title: Text(
@@ -462,19 +506,34 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                               ),
                             ],
                           ),
-                          if (item.description != null &&
-                              item.description!.isNotEmpty) ...[
-                            SizedBox(height: 4.h),
-                            Text(
-                              item.description!,
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
+                          SizedBox(height: 6.h),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 3.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getCategoryColor(
+                                itemCategory,
+                                isDark,
+                              ).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6.r),
+                              border: Border.all(
+                                color: _getCategoryColor(
+                                  itemCategory,
+                                  isDark,
+                                ).withValues(alpha: 0.35),
                               ),
                             ),
-                          ],
+                            child: Text(
+                              itemCategory,
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w600,
+                                color: _getCategoryColor(itemCategory, isDark),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                       trailing: Row(

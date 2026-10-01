@@ -123,6 +123,7 @@ class HolidayProvider with ChangeNotifier {
     required String title,
     required DateTime startDate,
     required DateTime endDate,
+    String? category,
     String? description,
     String? createdBy,
   }) async {
@@ -149,13 +150,18 @@ class HolidayProvider with ChangeNotifier {
         throw Exception('Tidak ada data sekolah terdaftar di database. Silakan buat/pilih sekolah terlebih dahulu.');
       }
 
+      final resolvedCat = (category != null && category.trim().isNotEmpty)
+          ? category.trim()
+          : (description?.trim() ?? 'Libur Umum');
+
       // 1. Insert holiday record
       final payload = {
         'school_id': targetSchoolId,
         'title': title,
         'start_date': startDate.toIso8601String().split('T').first,
         'end_date': endDate.toIso8601String().split('T').first,
-        'description': description,
+        'category': resolvedCat,
+        'description': resolvedCat,
         'created_by': createdBy,
       };
 
@@ -211,6 +217,7 @@ class HolidayProvider with ChangeNotifier {
     required DateTime endDate,
     DateTime? oldStartDate,
     DateTime? oldEndDate,
+    String? category,
     String? description,
   }) async {
     _isLoading = true;
@@ -274,12 +281,17 @@ class HolidayProvider with ChangeNotifier {
         }
       }
 
+      final resolvedCat = (category != null && category.trim().isNotEmpty)
+          ? category.trim()
+          : (description?.trim() ?? 'Libur Umum');
+
       // 2. Update the holiday record
       final payload = {
         'title': title,
         'start_date': startDate.toIso8601String().split('T').first,
         'end_date': endDate.toIso8601String().split('T').first,
-        'description': description,
+        'category': resolvedCat,
+        'description': resolvedCat,
       };
 
       await supabase.from('school_holidays').update(payload).eq('id', holidayId);
