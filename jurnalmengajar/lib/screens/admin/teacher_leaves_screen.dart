@@ -380,7 +380,7 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                           ),
                           SizedBox(height: 6.h),
                           Text(
-                            'Pilih guru pengganti untuk setiap jadwal mengajar agar KBM tetap berlangsung.',
+                            'Pilih guru pengganti untuk menggantikan seluruh jadwal mengajar selama masa cuti.',
                             style: TextStyle(
                               fontSize: 11.sp,
                               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -427,185 +427,101 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                               ),
                             ),
                           ] else ...[
-                            // Opsi Cepat: Set satu guru pengganti untuk semua jadwal
-                            if (substituteCandidates.isNotEmpty) ...[
-                              Container(
-                                margin: EdgeInsets.only(bottom: 12.h),
-                                padding: EdgeInsets.all(10.w),
-                                decoration: BoxDecoration(
+                            // 1 Tabel/Kotak yang langsung mengganti semua jadwal
+                            Container(
+                              padding: EdgeInsets.all(12.w),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).cardColor,
+                                borderRadius: BorderRadius.circular(12.r),
+                                border: Border.all(
                                   color: isDark
-                                      ? const Color(0xFF312E81).withValues(alpha: 0.3)
-                                      : const Color(0xFFEEF2FF),
-                                  borderRadius: BorderRadius.circular(10.r),
-                                  border: Border.all(
-                                    color: isDark
-                                        ? const Color(0xFF4338CA)
-                                        : const Color(0xFFC7D2FE),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: DropdownButtonFormField<String>(
-                                        initialValue: bulkSubstituteTeacherId,
-                                        isExpanded: true,
-                                        decoration: InputDecoration(
-                                          isDense: true,
-                                          contentPadding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
-                                          labelText: 'Terapkan Guru Pengganti ke Semua Jadwal',
-                                          labelStyle: TextStyle(fontSize: 11.sp),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(8.r),
-                                          ),
-                                        ),
-                                        items: substituteCandidates.map((t) {
-                                          return DropdownMenuItem(
-                                            value: t.id,
-                                            child: Text(
-                                              t.name,
-                                              style: TextStyle(fontSize: 12.sp),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          );
-                                        }).toList(),
-                                        onChanged: isSubmitting
-                                            ? null
-                                            : (val) {
-                                                if (val != null) {
-                                                  setDialogState(() {
-                                                    bulkSubstituteTeacherId = val;
-                                                    for (final s in teacherSchedules) {
-                                                      substituteAssignments[s.id] = val;
-                                                    }
-                                                  });
-                                                }
-                                              },
-                                      ),
-                                    ),
-                                  ],
+                                      ? const Color(0xFF475569)
+                                      : const Color(0xFFCBD5E1),
                                 ),
                               ),
-                            ],
-
-                            // Daftar Jadwal yang Membutuhkan Pengganti
-                            ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: teacherSchedules.length,
-                              separatorBuilder: (ctx, i) => SizedBox(height: 8.h),
-                              itemBuilder: (context, idx) {
-                                final sched = teacherSchedules[idx];
-                                final schedDateFormatted = DateFormat('EEE, dd MMM yyyy', 'id_ID').format(sched.date);
-
-                                // Find class and subject names safely
-                                final matchedClass = masterProvider.classes.where((c) => c.id == sched.classId).firstOrNull;
-                                final className = matchedClass?.name ?? 'Kelas -';
-
-                                final matchedSubject = masterProvider.subjects.where((s) => s.id == sched.subjectId).firstOrNull;
-                                final subjectName = matchedSubject?.name ?? 'Mapel -';
-
-                                final currentAssignedSub = substituteAssignments[sched.id];
-
-                                return Container(
-                                  padding: EdgeInsets.all(10.w),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).cardColor,
-                                    borderRadius: BorderRadius.circular(10.r),
-                                    border: Border.all(
-                                      color: isDark
-                                          ? const Color(0xFF475569)
-                                          : const Color(0xFFCBD5E1),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            schedDateFormatted,
-                                            style: TextStyle(
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.bold,
-                                              color: Theme.of(context).colorScheme.primary,
-                                            ),
-                                          ),
-                                          Container(
-                                            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                                            decoration: BoxDecoration(
-                                              color: isDark
-                                                  ? const Color(0xFF334155)
-                                                  : const Color(0xFFF1F5F9),
-                                              borderRadius: BorderRadius.circular(4.r),
-                                            ),
-                                            child: Text(
-                                              'Jam ke-${sched.teachingHour}',
-                                              style: TextStyle(
-                                                fontSize: 10.sp,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 4.h),
                                       Text(
-                                        '$className • $subjectName',
+                                        'Total Jadwal Terdampak',
                                         style: TextStyle(
                                           fontSize: 12.sp,
                                           fontWeight: FontWeight.w600,
                                           color: Theme.of(context).colorScheme.onSurface,
                                         ),
                                       ),
-                                      SizedBox(height: 8.h),
-                                      DropdownButtonFormField<String>(
-                                        initialValue: currentAssignedSub,
-                                        isExpanded: true,
-                                        decoration: InputDecoration(
-                                          isDense: true,
-                                          contentPadding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
-                                          labelText: 'Pilih Guru Pengganti',
-                                          labelStyle: TextStyle(fontSize: 11.sp),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(8.r),
+                                      Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                                        decoration: BoxDecoration(
+                                          color: isDark
+                                              ? const Color(0xFF1E3A8A).withValues(alpha: 0.4)
+                                              : const Color(0xFFDBEAFE),
+                                          borderRadius: BorderRadius.circular(6.r),
+                                        ),
+                                        child: Text(
+                                          '${teacherSchedules.length} Sesi Jam Pelajaran',
+                                          style: TextStyle(
+                                            fontSize: 11.sp,
+                                            fontWeight: FontWeight.bold,
+                                            color: isDark
+                                                ? const Color(0xFF60A5FA)
+                                                : const Color(0xFF2563EB),
                                           ),
                                         ),
-                                        items: [
-                                          DropdownMenuItem<String>(
-                                            value: null,
-                                            child: Text(
-                                              '- Tidak Ditugaskan -',
-                                              style: TextStyle(fontSize: 11.sp, color: Colors.grey),
-                                            ),
-                                          ),
-                                          ...substituteCandidates.map((t) {
-                                            return DropdownMenuItem<String>(
-                                              value: t.id,
-                                              child: Text(
-                                                t.name,
-                                                style: TextStyle(fontSize: 11.sp),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            );
-                                          }),
-                                        ],
-                                        onChanged: isSubmitting
-                                            ? null
-                                            : (val) {
-                                                setDialogState(() {
-                                                  if (val == null || val.isEmpty) {
-                                                    substituteAssignments.remove(sched.id);
-                                                  } else {
-                                                    substituteAssignments[sched.id] = val;
-                                                  }
-                                                });
-                                              },
                                       ),
                                     ],
                                   ),
-                                );
-                              },
+                                  SizedBox(height: 12.h),
+                                  Text(
+                                    'Pilih Guru Pengganti (Menggantikan Semua Jadwal) *',
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  SizedBox(height: 6.h),
+                                  DropdownButtonFormField<String>(
+                                    initialValue: bulkSubstituteTeacherId,
+                                    isExpanded: true,
+                                    decoration: InputDecoration(
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10.r),
+                                      ),
+                                      prefixIcon: const Icon(Icons.swap_horiz_rounded),
+                                      hintText: 'Pilih guru pengganti...',
+                                    ),
+                                    items: [
+                                      const DropdownMenuItem<String>(
+                                        value: null,
+                                        child: Text(
+                                          '- Tanpa Guru Pengganti -',
+                                          style: TextStyle(color: Colors.grey),
+                                        ),
+                                      ),
+                                      ...substituteCandidates.map((t) {
+                                        return DropdownMenuItem<String>(
+                                          value: t.id,
+                                          child: Text(
+                                            t.name + (t.nip != null && t.nip!.isNotEmpty ? ' (${t.nip})' : ''),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        );
+                                      }),
+                                    ],
+                                    onChanged: isSubmitting
+                                        ? null
+                                        : (val) {
+                                            setDialogState(() {
+                                              bulkSubstituteTeacherId = val;
+                                            });
+                                          },
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ],
@@ -640,15 +556,21 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
 
                         setDialogState(() => isSubmitting = true);
 
-                        // Build substitute items
+                        // Build substitute items for all teacherSchedules using bulkSubstituteTeacherId
                         final List<LeaveSubstituteItem> substituteList = [];
-                        for (final s in teacherSchedules) {
-                          final subId = substituteAssignments[s.id];
-                          if (subId != null && subId.isNotEmpty) {
-                            final subTeacher = teachers.firstWhere(
-                              (t) => t.id == subId,
-                              orElse: () => TeacherModel(id: '', name: 'Guru', position: '', address: '', phoneNumber: '', email: ''),
-                            );
+                        if (bulkSubstituteTeacherId != null && bulkSubstituteTeacherId!.isNotEmpty) {
+                          final subTeacher = teachers.firstWhere(
+                            (t) => t.id == bulkSubstituteTeacherId,
+                            orElse: () => TeacherModel(
+                              id: '',
+                              name: 'Guru Pengganti',
+                              position: '',
+                              address: '',
+                              phoneNumber: '',
+                              email: '',
+                            ),
+                          );
+                          for (final s in teacherSchedules) {
                             substituteList.add(
                               LeaveSubstituteItem(
                                 scheduleId: s.id,
@@ -656,7 +578,7 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                                 teachingHour: s.teachingHour,
                                 classId: s.classId,
                                 subjectId: s.subjectId,
-                                substituteTeacherId: subId,
+                                substituteTeacherId: bulkSubstituteTeacherId!,
                                 substituteTeacherName: subTeacher.name,
                               ),
                             );
@@ -713,7 +635,7 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text('Simpan Cuti'),
+                    : const Text('Simpan'),
               ),
             ],
           );
@@ -723,7 +645,6 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
   }
 
   void _showDetailDialog(TeacherLeaveModel leave, TeacherModel? teacher) {
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final startStr = DateFormat('dd MMM yyyy', 'id_ID').format(leave.startDate);
@@ -826,74 +747,55 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                     ),
                   ),
                 ] else ...[
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: leave.substitutes.length,
-                    separatorBuilder: (ctx, idx) => SizedBox(height: 8.h),
-                    itemBuilder: (context, i) {
-                      final item = leave.substitutes[i];
-                      final dateStr = DateFormat('EEE, dd MMM yyyy', 'id_ID').format(item.date);
-                      final matchedClass = masterProvider.classes.where((c) => c.id == item.classId).firstOrNull;
-                      final className = matchedClass?.name ?? 'Kelas -';
-                      final matchedSubject = masterProvider.subjects.where((s) => s.id == item.subjectId).firstOrNull;
-                      final subjectName = matchedSubject?.name ?? 'Mapel -';
-
-                      return Container(
-                        padding: EdgeInsets.all(10.w),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(10.r),
-                          border: Border.all(
-                            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  Container(
+                    padding: EdgeInsets.all(12.w),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(10.r),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  dateStr,
-                                  style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  'Jam ke-${item.teachingHour}',
-                                  style: TextStyle(fontSize: 10.sp, fontWeight: FontWeight.w600, color: Colors.grey),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 2.h),
+                            const Icon(Icons.swap_horiz_rounded, size: 16, color: Color(0xFF10B981)),
+                            SizedBox(width: 6.w),
                             Text(
-                              '$className • $subjectName',
-                              style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600),
+                              'Guru Pengganti: ',
+                              style: TextStyle(fontSize: 12.sp, color: Colors.grey),
                             ),
-                            SizedBox(height: 6.h),
-                            Row(
-                              children: [
-                                Icon(Icons.arrow_forward_rounded, size: 13, color: const Color(0xFF10B981)),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  'Digantikan oleh: ',
-                                  style: TextStyle(fontSize: 11.sp, color: Colors.grey),
+                            Expanded(
+                              child: Text(
+                                leave.substitutes.first.substituteTeacherName ?? 'Guru Pengganti',
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF10B981),
                                 ),
-                                Expanded(
-                                  child: Text(
-                                    item.substituteTeacherName ?? 'Guru Pengganti',
-                                    style: TextStyle(
-                                      fontSize: 11.sp,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF10B981),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ],
                         ),
-                      );
-                    },
+                        SizedBox(height: 8.h),
+                        Row(
+                          children: [
+                            Icon(Icons.check_circle_outline_rounded, size: 14, color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB)),
+                            SizedBox(width: 6.w),
+                            Text(
+                              'Menggantikan ${leave.substitutes.length} Sesi Jam Mengajar',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ],
@@ -959,11 +861,10 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
         ],
       ),
       drawer: const AdminDrawer(currentRoute: '/admin/teacher-leaves'),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => _showLeaveDialog(),
         backgroundColor: const Color(0xFF2563EB),
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('Tambah Cuti', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
       body: SafeArea(
         child: Column(
