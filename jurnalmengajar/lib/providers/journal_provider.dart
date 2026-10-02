@@ -63,7 +63,8 @@ class JournalProvider with ChangeNotifier {
     final int sequence = ++_loadSequence;
 
     final sKey = _currentSchoolId ?? 'default';
-    if (_journals.isEmpty) {
+    final bool hasExistingJournals = _journals.isNotEmpty;
+    if (!hasExistingJournals) {
       try {
         final cached = await CacheService().loadList('journals_$sKey');
         if (cached != null && cached.isNotEmpty && _journals.isEmpty && sequence == _loadSequence) {
@@ -78,9 +79,6 @@ class JournalProvider with ChangeNotifier {
         _isLoading = true;
         notifyListeners();
       }
-    } else {
-      _isLoading = true;
-      notifyListeners();
     }
 
     try {
@@ -150,7 +148,8 @@ class JournalProvider with ChangeNotifier {
     final scopedKey = 'teacher_journals_${cleanSchoolId ?? "all"}_$teacherId';
     _errorMessage = null;
 
-    if (_teacherJournals.isEmpty) {
+    final bool hasExistingTeacherJournals = _teacherJournals.isNotEmpty;
+    if (!hasExistingTeacherJournals) {
       try {
         final cached = await CacheService().loadList(scopedKey) ??
             await CacheService().loadList('teacher_journals_$teacherId') ??
@@ -174,9 +173,6 @@ class JournalProvider with ChangeNotifier {
         _isLoading = true;
         notifyListeners();
       }
-    } else {
-      _isLoading = true;
-      notifyListeners();
     }
 
     try {

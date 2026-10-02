@@ -83,7 +83,11 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
     final schoolId = authProvider.activeSchoolId;
     if (currentUser == null || schoolId == null || schoolId.isEmpty) return;
 
-    await masterProvider.loadAllData(schoolId);
+    if (masterProvider.teachers.isEmpty || masterProvider.classes.isEmpty || masterProvider.subjects.isEmpty) {
+      await masterProvider.loadAllData(schoolId);
+    } else {
+      masterProvider.loadAllData(schoolId);
+    }
 
     final teacher = masterProvider.teachers.firstWhere(
       (t) => t.id == currentUser.id || t.email.toLowerCase() == currentUser.email.toLowerCase(),
@@ -129,7 +133,8 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
     final List<JournalModel> allItems = List.from(teacherJournals);
     allItems.sort((a, b) => b.date.compareTo(a.date));
 
-    final isLoading = journalProvider.isLoading || scheduleProvider.isLoading;
+    final hasData = allItems.isNotEmpty;
+    final isInitialLoading = (journalProvider.isLoading || scheduleProvider.isLoading) && !hasData;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -176,7 +181,7 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
         ),
       ),
       body: SafeArea(
-        child: isLoading
+        child: isInitialLoading
             ? const Center(child: CircularProgressIndicator())
             : TabBarView(
                 controller: _tabController,
