@@ -16,11 +16,12 @@ class MockScheduleRepository implements ScheduleRepository {
     await Future.delayed(const Duration(milliseconds: 300));
     return _db.schedules.where((s) {
       final sameTeacher = s.teacherId == teacherId;
-      if (date == null) return sameTeacher;
+      if (!sameTeacher) return false;
+      if (date == null) return true;
       final sameDate = s.date.year == date.year &&
           s.date.month == date.month &&
           s.date.day == date.day;
-      return sameTeacher && sameDate;
+      return sameDate;
     }).toList();
   }
 

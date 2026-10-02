@@ -324,8 +324,8 @@ void main() {
       );
 
       final today = DateTime.now();
-      final thisMonthDate1 = DateTime(today.year, today.month, 5);
-      final thisMonthDate2 = DateTime(today.year, today.month, 12);
+      final thisMonthDate1 = DateTime(today.year, today.month, today.day > 1 ? 1 : 1);
+      final thisMonthDate2 = DateTime(today.year, today.month, today.day > 1 ? today.day : 1);
 
       // Schedule 1: Will be filled with a journal
       final schedule1 = ScheduleModel(
