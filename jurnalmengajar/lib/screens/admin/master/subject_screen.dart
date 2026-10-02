@@ -6,6 +6,7 @@ import '../../../providers/master_data_provider.dart';
 import '../../../models/subject_model.dart';
 import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/admin_selection_action_button.dart';
+import '../../../widgets/admin_search_filter_bar.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 
@@ -21,6 +22,15 @@ class MasterSubjectScreen extends StatefulWidget {
 class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _selectedStatus = 'all';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -214,6 +224,24 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
     final masterProvider = context.watch<MasterDataProvider>();
     final subjects = masterProvider.subjects;
 
+    final filteredSubjects = subjects.where((s) {
+      final matchesSearch = _searchQuery.isEmpty ||
+          s.name.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesStatus = _selectedStatus == 'all' ||
+          (_selectedStatus == 'active' && s.isActive) ||
+          (_selectedStatus == 'inactive' && !s.isActive);
+      return matchesSearch && matchesStatus;
+    }).toList();
+
+    final activeCount = subjects.where((s) => s.isActive).length;
+    final inactiveCount = subjects.where((s) => !s.isActive).length;
+
+    final filterItems = [
+      AdminFilterItem(id: 'all', label: 'Semua', count: subjects.length),
+      AdminFilterItem(id: 'active', label: 'Aktif', count: activeCount),
+      AdminFilterItem(id: 'inactive', label: 'Non-aktif', count: inactiveCount),
+    ];
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -239,8 +267,8 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                       Icons.checklist_rounded,
                       color: Colors.white,
                     ),
-                    tooltip: _selectedIds.length == subjects.length ? 'Batal Pilih Semua' : 'Pilih Semua',
-                    onPressed: () => _selectAll(subjects),
+                    tooltip: _selectedIds.length == filteredSubjects.length ? 'Batal Pilih Semua' : 'Pilih Semua',
+                    onPressed: () => _selectAll(filteredSubjects),
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.redAccent),
@@ -265,22 +293,45 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                 ],
               ),
       drawer: const AdminDrawer(currentRoute: '/admin/master-data/subjects'),
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        color: const Color(0xFF2563EB),
-        child: masterProvider.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : subjects.isEmpty
-                ? const AppEmptyWidget(
-                    title: 'Mata Pelajaran Kosong',
-                    subtitle: 'Tekan tombol + di bawah untuk menambah daftar pelajaran.',
-                  )
-                : ListView.separated(
-                    padding: EdgeInsets.all(16.w),
-                    itemCount: subjects.length,
-                    separatorBuilder: (context, index) => SizedBox(height: 12.h),
-                    itemBuilder: (context, index) {
-                      final subject = subjects[index];
+      body: masterProvider.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : subjects.isEmpty
+              ? const AppEmptyWidget(
+                  title: 'Mata Pelajaran Kosong',
+                  subtitle: 'Tekan tombol + di bawah untuk menambah daftar pelajaran.',
+                )
+              : Column(
+                  children: [
+                    AdminSearchFilterBar(
+                      hintText: 'Cari mata pelajaran atau kode...',
+                      searchController: _searchController,
+                      onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
+                      filterItems: filterItems,
+                      selectedFilterId: _selectedStatus,
+                      onFilterSelected: (id) => setState(() => _selectedStatus = id),
+                    ),
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: _refreshData,
+                        color: const Color(0xFF2563EB),
+                        child: filteredSubjects.isEmpty
+                            ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: [
+                                  SizedBox(height: 60.h),
+                                  const AppEmptyWidget(
+                                    title: 'Pelajaran Tidak Ditemukan',
+                                    subtitle: 'Tidak ada pelajaran yang cocok dengan pencarian atau filter.',
+                                    icon: Icons.search_off_rounded,
+                                  ),
+                                ],
+                              )
+                            : ListView.separated(
+                                padding: EdgeInsets.all(16.w),
+                                itemCount: filteredSubjects.length,
+                                separatorBuilder: (context, index) => SizedBox(height: 12.h),
+                                itemBuilder: (context, index) {
+                                  final subject = filteredSubjects[index];
                       final isSelected = _selectedIds.contains(subject.id);
                       final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -393,7 +444,10 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                       );
                     },
                   ),
-      ),
+                ),
+              ),
+            ],
+          ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),
         backgroundColor: const Color(0xFF2563EB),

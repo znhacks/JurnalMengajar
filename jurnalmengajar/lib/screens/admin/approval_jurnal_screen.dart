@@ -10,6 +10,7 @@ import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
 import '../../models/teacher_model.dart';
 import '../../widgets/admin_drawer.dart';
+import '../../widgets/admin_search_filter_bar.dart';
 import '../../widgets/state_widgets.dart';
 import '../../core/utils/helper.dart';
 
@@ -21,6 +22,15 @@ class ApprovalJurnalScreen extends StatefulWidget {
 }
 
 class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _selectedClassId = 'all';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
   @override
   void initState() {
     super.initState();
@@ -72,6 +82,40 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
       return j.status == 'pending' &&
           (schoolTeacherIds.isEmpty || schoolTeacherIds.contains(j.teacherId));
     }).toList();
+
+    final filteredPendingJournals = pendingJournals.where((j) {
+      if (_selectedClassId != 'all' && j.classId != _selectedClassId) {
+        return false;
+      }
+      if (_searchQuery.isEmpty) return true;
+      final query = _searchQuery.toLowerCase();
+      final cls = masterProvider.classes.firstWhere(
+        (c) => c.id == j.classId,
+        orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
+      );
+      final subject = masterProvider.subjects.firstWhere(
+        (s) => s.id == j.subjectId,
+        orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
+      );
+      final teacher = masterProvider.teachers.firstWhere(
+        (t) => t.id == j.teacherId,
+        orElse: () => TeacherModel(id: '', name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''),
+      );
+      return teacher.name.toLowerCase().contains(query) ||
+          cls.name.toLowerCase().contains(query) ||
+          subject.name.toLowerCase().contains(query) ||
+          j.material.toLowerCase().contains(query);
+    }).toList();
+
+    final filterItems = [
+      AdminFilterItem(id: 'all', label: 'Semua Kelas', count: pendingJournals.length),
+      ...masterProvider.classes.where((c) => pendingJournals.any((j) => j.classId == c.id)).map((c) => AdminFilterItem(
+        id: c.id,
+        label: c.name,
+        count: pendingJournals.where((j) => j.classId == c.id).length,
+      )),
+    ];
+
     final isLoading = journalProvider.isLoading || masterProvider.isLoading;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -90,23 +134,46 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
         ),
       ),
       drawer: const AdminDrawer(currentRoute: '/admin/journals'),
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        color: const Color(0xFF2563EB),
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : pendingJournals.isEmpty
-                ? const AppEmptyWidget(
-                    title: 'Semua Jurnal Bersih',
-                    subtitle: 'Tidak ada jurnal mengajar yang menunggu verifikasi saat ini.',
-                    icon: Icons.done_all_rounded,
-                  )
-                : ListView.separated(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-                    itemCount: pendingJournals.length,
-                    separatorBuilder: (context, _) => SizedBox(height: 14.h),
-                    itemBuilder: (context, index) {
-                      final journal = pendingJournals[index];
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : pendingJournals.isEmpty
+              ? const AppEmptyWidget(
+                  title: 'Semua Jurnal Bersih',
+                  subtitle: 'Tidak ada jurnal mengajar yang menunggu verifikasi saat ini.',
+                  icon: Icons.done_all_rounded,
+                )
+              : Column(
+                  children: [
+                    AdminSearchFilterBar(
+                      hintText: 'Cari guru, kelas, atau mapel...',
+                      searchController: _searchController,
+                      onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
+                      filterItems: filterItems,
+                      selectedFilterId: _selectedClassId,
+                      onFilterSelected: (id) => setState(() => _selectedClassId = id),
+                    ),
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: _refreshData,
+                        color: const Color(0xFF2563EB),
+                        child: filteredPendingJournals.isEmpty
+                            ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: [
+                                  SizedBox(height: 60.h),
+                                  const AppEmptyWidget(
+                                    title: 'Jurnal Tidak Ditemukan',
+                                    subtitle: 'Tidak ada jurnal menunggu verifikasi yang cocok dengan pencarian atau filter.',
+                                    icon: Icons.search_off_rounded,
+                                  ),
+                                ],
+                              )
+                            : ListView.separated(
+                                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                                itemCount: filteredPendingJournals.length,
+                                separatorBuilder: (context, _) => SizedBox(height: 14.h),
+                                itemBuilder: (context, index) {
+                                  final journal = filteredPendingJournals[index];
 
                       final cls = masterProvider.classes.firstWhere(
                         (c) => c.id == journal.classId,
@@ -433,7 +500,10 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                       );
                     },
                   ),
-      ),
+                ),
+              ),
+            ],
+          ),
     );
   }
 }

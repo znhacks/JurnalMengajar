@@ -13,6 +13,7 @@ import '../../models/subject_model.dart';
 import '../../models/teacher_model.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../widgets/admin_selection_action_button.dart';
+import '../../widgets/admin_search_filter_bar.dart';
 import '../../widgets/state_widgets.dart';
 import '../../core/utils/helper.dart';
 import '../../core/theme/app_theme.dart';
@@ -34,6 +35,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String _selectedClassId = 'all';
   final Set<String> _expandedTeacherIds = {};
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
@@ -336,80 +338,29 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
-                  // ── Universal Search Bar ──────────────────────────────
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 4.h),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (val) {
-                        setState(() {
-                          _searchQuery = val;
-                          // auto-expand all teachers when searching
-                          if (val.isNotEmpty) {
-                            _expandedTeacherIds.addAll(
-                              masterProvider.teachers.map((t) => t.id),
-                            );
-                          }
-                        });
-                      },
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 13.sp,
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Cari guru, kelas, atau mapel...',
-                        hintStyle: GoogleFonts.hankenGrotesk(
-                          fontSize: 13.sp,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          size: 20.r,
-                        ),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: Icon(
-                                  Icons.clear,
-                                  size: 18.r,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() => _searchQuery = '');
-                                },
-                              )
-                            : null,
-                        filled: true,
-                        fillColor: Theme.of(context).brightness == Brightness.dark
-                            ? Theme.of(context).colorScheme.surfaceContainerHighest
-                            : Colors.white,
-                        contentPadding: EdgeInsets.symmetric(
-                            vertical: 8.h, horizontal: 16.w),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFF334155)
-                                : const Color(0xFFE2E8F0),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFF334155)
-                                : const Color(0xFFE2E8F0),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: Color(0xFF2563EB), width: 1.5),
-                        ),
-                      ),
-                    ),
+                  AdminSearchFilterBar(
+                    hintText: 'Cari guru, kelas, atau mapel...',
+                    searchController: _searchController,
+                    onSearchChanged: (val) {
+                      setState(() {
+                        _searchQuery = val.trim();
+                        if (val.isNotEmpty) {
+                          _expandedTeacherIds.addAll(
+                            masterProvider.teachers.map((t) => t.id),
+                          );
+                        }
+                      });
+                    },
+                    filterItems: [
+                      AdminFilterItem(id: 'all', label: 'Semua Kelas', count: allJournals.length),
+                      ...masterProvider.classes.map((c) => AdminFilterItem(
+                        id: c.id,
+                        label: c.name,
+                        count: allJournals.where((j) => j.classId == c.id).length,
+                      )),
+                    ],
+                    selectedFilterId: _selectedClassId,
+                    onFilterSelected: (id) => setState(() => _selectedClassId = id),
                   ),
                   // ── Tab Content ──────────────────────────────────────
                   Expanded(
@@ -481,29 +432,31 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     MasterDataProvider master, {
     Color? badgeColor,
   }) {
-    // Apply universal search filter
-    final filtered = _searchQuery.isEmpty
-        ? list
-        : list.where((j) {
-            final query = _searchQuery.toLowerCase();
-            final teacher = master.teachers.firstWhere(
-              (t) => t.id == j.teacherId,
-              orElse: () => TeacherModel(
-                  id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
-            );
-            final cls = master.classes.firstWhere(
-              (c) => c.id == j.classId,
-              orElse: () => ClassModel(id: '', name: '', periodId: '', studentCount: 0),
-            );
-            final subject = master.subjects.firstWhere(
-              (s) => s.id == j.subjectId,
-              orElse: () => SubjectModel(id: '', name: '', isActive: false),
-            );
-            return teacher.name.toLowerCase().contains(query) ||
-                cls.name.toLowerCase().contains(query) ||
-                subject.name.toLowerCase().contains(query) ||
-                j.material.toLowerCase().contains(query);
-          }).toList();
+    // Apply universal search & class filter
+    final filtered = list.where((j) {
+      if (_selectedClassId != 'all' && j.classId != _selectedClassId) {
+        return false;
+      }
+      if (_searchQuery.isEmpty) return true;
+      final query = _searchQuery.toLowerCase();
+      final teacher = master.teachers.firstWhere(
+        (t) => t.id == j.teacherId,
+        orElse: () => TeacherModel(
+            id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
+      );
+      final cls = master.classes.firstWhere(
+        (c) => c.id == j.classId,
+        orElse: () => ClassModel(id: '', name: '', periodId: '', studentCount: 0),
+      );
+      final subject = master.subjects.firstWhere(
+        (s) => s.id == j.subjectId,
+        orElse: () => SubjectModel(id: '', name: '', isActive: false),
+      );
+      return teacher.name.toLowerCase().contains(query) ||
+          cls.name.toLowerCase().contains(query) ||
+          subject.name.toLowerCase().contains(query) ||
+          j.material.toLowerCase().contains(query);
+    }).toList();
 
     if (filtered.isEmpty) {
       return AppEmptyWidget(
@@ -927,8 +880,11 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
 }
 
   Widget _buildUnfilledList(List<GroupedDailySchedule> list, MasterDataProvider master) {
-    // 1. Filter list by universal search query
+    // 1. Filter list by universal search & class filter
     final filteredList = list.where((group) {
+      if (_selectedClassId != 'all' && group.classId != _selectedClassId) {
+        return false;
+      }
       if (_searchQuery.isEmpty) return true;
       final teacher = master.teachers.firstWhere(
         (t) => t.id == group.teacherId,

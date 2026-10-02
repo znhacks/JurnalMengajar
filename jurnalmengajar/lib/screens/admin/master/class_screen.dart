@@ -7,6 +7,7 @@ import '../../../models/class_model.dart';
 import '../../../models/period_model.dart';
 import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/admin_selection_action_button.dart';
+import '../../../widgets/admin_search_filter_bar.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../widgets/animated_widgets.dart';
@@ -23,6 +24,15 @@ class MasterClassScreen extends StatefulWidget {
 class _MasterClassScreenState extends State<MasterClassScreen> {
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _selectedPeriodId = 'all';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -317,6 +327,21 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
     final masterProvider = context.watch<MasterDataProvider>();
     final classes = masterProvider.classes;
 
+    final filteredClasses = classes.where((c) {
+      final matchesSearch = _searchQuery.isEmpty || c.name.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesPeriod = _selectedPeriodId == 'all' || c.periodId == _selectedPeriodId;
+      return matchesSearch && matchesPeriod;
+    }).toList();
+
+    final filterItems = [
+      AdminFilterItem(id: 'all', label: 'Semua', count: classes.length),
+      ...masterProvider.periods.map((p) => AdminFilterItem(
+        id: p.id,
+        label: p.name + (p.isActive ? ' (Aktif)' : ''),
+        count: classes.where((c) => c.periodId == p.id).length,
+      )),
+    ];
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -342,8 +367,8 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                       Icons.checklist_rounded,
                       color: Colors.white,
                     ),
-                    tooltip: _selectedIds.length == classes.length ? 'Batal Pilih Semua' : 'Pilih Semua',
-                    onPressed: () => _selectAll(classes),
+                    tooltip: _selectedIds.length == filteredClasses.length ? 'Batal Pilih Semua' : 'Pilih Semua',
+                    onPressed: () => _selectAll(filteredClasses),
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.redAccent),
@@ -384,22 +409,45 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                 ],
               ),
       drawer: const AdminDrawer(currentRoute: '/admin/master-data/classes'),
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        color: const Color(0xFF2563EB),
-        child: masterProvider.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : classes.isEmpty
-            ? const AppEmptyWidget(
-                title: 'Kelas Kosong',
-                subtitle: 'Tekan tombol + di bawah untuk menambah kelas.',
-              )
-            : ListView.separated(
-                padding: EdgeInsets.all(16.w),
-                itemCount: classes.length,
-                separatorBuilder: (context, index) => SizedBox(height: 12.h),
-                itemBuilder: (context, index) {
-                  final item = classes[index];
+      body: masterProvider.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : classes.isEmpty
+              ? const AppEmptyWidget(
+                  title: 'Kelas Kosong',
+                  subtitle: 'Tekan tombol + di bawah untuk menambah kelas.',
+                )
+              : Column(
+                  children: [
+                    AdminSearchFilterBar(
+                      hintText: 'Cari nama kelas...',
+                      searchController: _searchController,
+                      onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
+                      filterItems: filterItems,
+                      selectedFilterId: _selectedPeriodId,
+                      onFilterSelected: (id) => setState(() => _selectedPeriodId = id),
+                    ),
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: _refreshData,
+                        color: const Color(0xFF2563EB),
+                        child: filteredClasses.isEmpty
+                            ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: [
+                                  SizedBox(height: 60.h),
+                                  const AppEmptyWidget(
+                                    title: 'Kelas Tidak Ditemukan',
+                                    subtitle: 'Tidak ada data kelas yang cocok dengan pencarian atau filter.',
+                                    icon: Icons.search_off_rounded,
+                                  ),
+                                ],
+                              )
+                            : ListView.separated(
+                                padding: EdgeInsets.all(16.w),
+                                itemCount: filteredClasses.length,
+                                separatorBuilder: (context, index) => SizedBox(height: 12.h),
+                                itemBuilder: (context, index) {
+                                  final item = filteredClasses[index];
                   final period = masterProvider.periods.firstWhere(
                     (p) => p.id == item.periodId,
                     orElse: () =>
@@ -544,7 +592,10 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                 );
               },
             ),
-      ),
+          ),
+        ),
+      ],
+    ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),
         backgroundColor: const Color(0xFF2563EB),

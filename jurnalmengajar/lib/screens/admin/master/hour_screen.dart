@@ -7,6 +7,7 @@ import '../../../providers/master_data_provider.dart';
 import '../../../models/hour_model.dart';
 import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/admin_selection_action_button.dart';
+import '../../../widgets/admin_search_filter_bar.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/theme/app_theme.dart';
@@ -22,6 +23,15 @@ class MasterHourScreen extends StatefulWidget {
 class _MasterHourScreenState extends State<MasterHourScreen> {
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _selectedTimeFilter = 'all';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -307,6 +317,35 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
     final masterProvider = context.watch<MasterDataProvider>();
     final hours = masterProvider.hours;
 
+    final filteredHours = hours.where((h) {
+      final query = _searchQuery.toLowerCase();
+      final matchesSearch = query.isEmpty ||
+          h.teachingHour.toString().contains(query) ||
+          'jam ke-${h.teachingHour}'.contains(query) ||
+          'jam ${h.teachingHour}'.contains(query) ||
+          h.startTime.contains(query) ||
+          h.endTime.contains(query);
+
+      bool matchesTime = true;
+      final startHourInt = int.tryParse(h.startTime.split(':').first) ?? 0;
+      if (_selectedTimeFilter == 'morning') {
+        matchesTime = startHourInt < 12;
+      } else if (_selectedTimeFilter == 'afternoon') {
+        matchesTime = startHourInt >= 12;
+      }
+
+      return matchesSearch && matchesTime;
+    }).toList();
+
+    final morningCount = hours.where((h) => (int.tryParse(h.startTime.split(':').first) ?? 0) < 12).length;
+    final afternoonCount = hours.where((h) => (int.tryParse(h.startTime.split(':').first) ?? 0) >= 12).length;
+
+    final filterItems = [
+      AdminFilterItem(id: 'all', label: 'Semua', count: hours.length),
+      AdminFilterItem(id: 'morning', label: 'Pagi (< 12:00)', count: morningCount),
+      AdminFilterItem(id: 'afternoon', label: 'Siang/Sore (≥ 12:00)', count: afternoonCount),
+    ];
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -332,8 +371,8 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                       Icons.checklist_rounded,
                       color: Colors.white,
                     ),
-                    tooltip: _selectedIds.length == hours.length ? 'Batal Pilih Semua' : 'Pilih Semua',
-                    onPressed: () => _selectAll(hours),
+                    tooltip: _selectedIds.length == filteredHours.length ? 'Batal Pilih Semua' : 'Pilih Semua',
+                    onPressed: () => _selectAll(filteredHours),
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.redAccent),
@@ -358,22 +397,45 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                 ],
               ),
       drawer: const AdminDrawer(currentRoute: '/admin/master-data/hours'),
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        color: const Color(0xFF2563EB),
-        child: masterProvider.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : hours.isEmpty
-                ? const AppEmptyWidget(
-                    title: 'Jam Pelajaran Kosong',
-                    subtitle: 'Tekan tombol + di bawah untuk menambah jam pelajaran.',
-                  )
-                : ListView.separated(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                    itemCount: hours.length,
-                    separatorBuilder: (context, index) => SizedBox(height: 8.h),
-                    itemBuilder: (context, index) {
-                      final hour = hours[index];
+      body: masterProvider.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : hours.isEmpty
+              ? const AppEmptyWidget(
+                  title: 'Jam Pelajaran Kosong',
+                  subtitle: 'Tekan tombol + di bawah untuk menambah jam pelajaran.',
+                )
+              : Column(
+                  children: [
+                    AdminSearchFilterBar(
+                      hintText: 'Cari jam ke- atau waktu (contoh: 07:00)...',
+                      searchController: _searchController,
+                      onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
+                      filterItems: filterItems,
+                      selectedFilterId: _selectedTimeFilter,
+                      onFilterSelected: (id) => setState(() => _selectedTimeFilter = id),
+                    ),
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: _refreshData,
+                        color: const Color(0xFF2563EB),
+                        child: filteredHours.isEmpty
+                            ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: [
+                                  SizedBox(height: 60.h),
+                                  const AppEmptyWidget(
+                                    title: 'Jam Pelajaran Tidak Ditemukan',
+                                    subtitle: 'Tidak ada jam pelajaran yang cocok dengan pencarian atau filter.',
+                                    icon: Icons.search_off_rounded,
+                                  ),
+                                ],
+                              )
+                            : ListView.separated(
+                                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                                itemCount: filteredHours.length,
+                                separatorBuilder: (context, index) => SizedBox(height: 8.h),
+                                itemBuilder: (context, index) {
+                                  final hour = filteredHours[index];
                       final isSelected = _selectedIds.contains(hour.id);
                       final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -486,7 +548,10 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                       );
                     },
                   ),
-      ),
+                ),
+              ),
+            ],
+          ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),
         backgroundColor: const Color(0xFF2563EB),

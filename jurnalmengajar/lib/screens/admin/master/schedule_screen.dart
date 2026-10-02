@@ -11,6 +11,7 @@ import '../../../models/teacher_model.dart';
 import '../../../models/class_model.dart';
 import '../../../models/subject_model.dart';
 import '../../../widgets/admin_drawer.dart';
+import '../../../widgets/admin_search_filter_bar.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/utils/schedule_grouper.dart';
@@ -915,6 +916,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
 
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  int _selectedDayFilter = 0;
   bool _isExporting = false;
 
   Future<void> _handleExportExcel(List<ScheduleModel> schedules, MasterDataProvider master, AuthProvider auth) async {
@@ -964,22 +966,27 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
 
     debugPrint('[RUNTIME_DEBUG:MASTER_SCHEDULE] build() called -> Total Schedules: ${validSchedules.length}, Grouped: ${allGroupedSchedules.length}, Master Teachers: ${masterProvider.teachers.length}');
 
-    // Map all grouped schedules by Teacher ID
+    // Map all grouped schedules by Teacher ID, respecting day filter
     final Map<String, List<GroupedMasterSchedule>> teacherGroupedMap = {};
     for (final sched in allGroupedSchedules) {
-      teacherGroupedMap.putIfAbsent(sched.teacherId, () => []).add(sched);
+      if (_selectedDayFilter == 0 || sched.weekdays.contains(_selectedDayFilter)) {
+        teacherGroupedMap.putIfAbsent(sched.teacherId, () => []).add(sched);
+      }
     }
 
-    // Build unified set of all teacher IDs to display (STRICTLY from verified teachers in masterProvider.teachers)
+    // Build unified set of all teacher IDs to display
     final Set<String> allAvailableTeacherIds = {};
-    for (final t in masterProvider.teachers) {
-      if (t.id.isNotEmpty) allAvailableTeacherIds.add(t.id);
-    }
-    // Any scheduled teacher must also be a recognized teacher of this school
-    for (final s in validSchedules) {
-      if (s.teacherId.isNotEmpty && masterProvider.teachers.any((t) => t.id == s.teacherId)) {
-        allAvailableTeacherIds.add(s.teacherId);
+    if (_selectedDayFilter == 0) {
+      for (final t in masterProvider.teachers) {
+        if (t.id.isNotEmpty) allAvailableTeacherIds.add(t.id);
       }
+      for (final s in validSchedules) {
+        if (s.teacherId.isNotEmpty && masterProvider.teachers.any((t) => t.id == s.teacherId)) {
+          allAvailableTeacherIds.add(s.teacherId);
+        }
+      }
+    } else {
+      allAvailableTeacherIds.addAll(teacherGroupedMap.keys);
     }
 
     // Filter by search query
@@ -1070,66 +1077,29 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
-                  // ─── Search Bar ──────────────────────────────────────────
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (val) {
-                        setState(() {
-                          _searchQuery = val;
-                        });
-                      },
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 13.sp,
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Cari guru, kelas, pelajaran, atau hari...',
-                        hintStyle: GoogleFonts.hankenGrotesk(
-                          fontSize: 12.sp,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.search_rounded,
-                          color: Color(0xFF2563EB),
-                        ),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: Icon(
-                                  Icons.clear_rounded,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() {
-                                    _searchQuery = '';
-                                  });
-                                },
-                              )
-                            : null,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 14.w,
-                          vertical: 10.h,
-                        ),
-                        filled: true,
-                        fillColor: isDark
-                            ? Theme.of(context).colorScheme.surfaceContainerHighest
-                            : const Color(0xFFF1F5F9),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14.r),
-                          borderSide: BorderSide(
-                            color: isDark ? const Color(0xFF334155) : Colors.transparent,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Divider(
-                    height: 1,
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  AdminSearchFilterBar(
+                    hintText: 'Cari guru, kelas, pelajaran, atau hari...',
+                    searchController: _searchController,
+                    onSearchChanged: (val) {
+                      setState(() {
+                        _searchQuery = val.trim();
+                      });
+                    },
+                    filterItems: [
+                      AdminFilterItem(id: '0', label: 'Semua Hari', count: allGroupedSchedules.length),
+                      AdminFilterItem(id: '1', label: 'Senin', count: allGroupedSchedules.where((s) => s.weekdays.contains(1)).length),
+                      AdminFilterItem(id: '2', label: 'Selasa', count: allGroupedSchedules.where((s) => s.weekdays.contains(2)).length),
+                      AdminFilterItem(id: '3', label: 'Rabu', count: allGroupedSchedules.where((s) => s.weekdays.contains(3)).length),
+                      AdminFilterItem(id: '4', label: 'Kamis', count: allGroupedSchedules.where((s) => s.weekdays.contains(4)).length),
+                      AdminFilterItem(id: '5', label: 'Jumat', count: allGroupedSchedules.where((s) => s.weekdays.contains(5)).length),
+                      AdminFilterItem(id: '6', label: 'Sabtu', count: allGroupedSchedules.where((s) => s.weekdays.contains(6)).length),
+                    ],
+                    selectedFilterId: _selectedDayFilter.toString(),
+                    onFilterSelected: (id) {
+                      setState(() {
+                        _selectedDayFilter = int.tryParse(id) ?? 0;
+                      });
+                    },
                   ),
 
                   // ─── Content Section ──────────────────────────────────────

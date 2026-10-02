@@ -7,6 +7,7 @@ import '../../../models/student_model.dart';
 import '../../../models/class_model.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../widgets/admin_selection_action_button.dart';
+import '../../../widgets/admin_search_filter_bar.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../widgets/animated_widgets.dart';
@@ -24,6 +25,7 @@ class MasterStudentScreen extends StatefulWidget {
 class _MasterStudentScreenState extends State<MasterStudentScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String _selectedGender = 'all';
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
 
@@ -459,10 +461,17 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
       orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
     );
 
-    final filteredStudents = masterProvider.students.where((s) {
+    final totalStudents = masterProvider.students;
+    final maleCount = totalStudents.where((s) => s.gender == 'L').length;
+    final femaleCount = totalStudents.where((s) => s.gender == 'P').length;
+
+    final filteredStudents = totalStudents.where((s) {
       final nameMatch = s.name.toLowerCase().contains(_searchQuery.toLowerCase());
       final nisMatch = s.nis?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false;
-      return nameMatch || nisMatch;
+      final matchesSearch = nameMatch || nisMatch;
+
+      final matchesGender = _selectedGender == 'all' || s.gender == _selectedGender;
+      return matchesSearch && matchesGender;
     }).toList();
 
     return Scaffold(
@@ -581,62 +590,49 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                     ),
                   ),
 
-                  // Search bar
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (val) {
-                        setState(() {
-                          _searchQuery = val;
-                        });
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Cari nama atau NIS siswa...',
-                        hintStyle: GoogleFonts.hankenGrotesk(
-                          fontSize: 13.sp,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () {
-                                  setState(() {
-                                    _searchController.clear();
-                                    _searchQuery = '';
-                                  });
-                                },
-                              )
-                            : null,
-                        filled: true,
-                        fillColor: Theme.of(context).brightness == Brightness.dark
-                            ? Theme.of(context).colorScheme.surfaceContainerHighest
-                            : Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFF334155)
-                                : AppTheme.outlineVariant,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFF334155)
-                                : AppTheme.outlineVariant,
-                          ),
-                        ),
+                  // Search & Gender Filter Bar
+                  AdminSearchFilterBar(
+                    searchController: _searchController,
+                    searchHint: 'Cari nama atau NIS siswa...',
+                    searchQuery: _searchQuery,
+                    onSearchChanged: (val) {
+                      setState(() {
+                        _searchQuery = val;
+                      });
+                    },
+                    onSearchCleared: () {
+                      setState(() {
+                        _searchController.clear();
+                        _searchQuery = '';
+                      });
+                    },
+                    filterItems: [
+                      AdminFilterItem(
+                        id: 'all',
+                        label: 'Semua',
+                        count: totalStudents.length,
                       ),
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 13.sp,
-                        color: Theme.of(context).colorScheme.onSurface,
+                      AdminFilterItem(
+                        id: 'L',
+                        label: 'Laki-laki',
+                        icon: Icons.male_rounded,
+                        count: maleCount,
                       ),
-                    ),
+                      AdminFilterItem(
+                        id: 'P',
+                        label: 'Perempuan',
+                        icon: Icons.female_rounded,
+                        count: femaleCount,
+                      ),
+                    ],
+                    selectedFilterId: _selectedGender,
+                    onFilterSelected: (id) {
+                      setState(() {
+                        _selectedGender = id;
+                      });
+                    },
                   ),
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 12.h),
 
                   // List of students
                   Expanded(
@@ -645,10 +641,12 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                             children: [
                               SizedBox(height: 50.h),
                               AppEmptyWidget(
-                                title: _searchQuery.isEmpty ? 'Siswa Kosong' : 'Siswa Tidak Ditemukan',
-                                subtitle: _searchQuery.isEmpty
+                                title: (_searchQuery.isEmpty && _selectedGender == 'all')
+                                    ? 'Siswa Kosong'
+                                    : 'Siswa Tidak Ditemukan',
+                                subtitle: (_searchQuery.isEmpty && _selectedGender == 'all')
                                     ? 'Belum ada data siswa di kelas ini. Ketuk tombol + di bawah untuk menambah.'
-                                    : 'Tidak ada siswa yang cocok dengan kata pencarian Anda.',
+                                    : 'Tidak ada siswa yang cocok dengan filter atau kata pencarian Anda.',
                                 icon: Icons.people_outline_rounded,
                               ),
                             ],
