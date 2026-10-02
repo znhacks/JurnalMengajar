@@ -9,6 +9,7 @@ import '../../providers/master_data_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/teacher_model.dart';
 import '../../widgets/admin_drawer.dart';
+import '../../widgets/admin_search_filter_bar.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/helper.dart';
 
@@ -21,6 +22,7 @@ class AdminWarningLetterListScreen extends StatefulWidget {
 
 class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScreen> {
   String _searchQuery = '';
+  String _selectedStatus = 'all';
   final _searchController = TextEditingController();
 
   @override
@@ -53,14 +55,25 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
     final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId);
     final schoolTeacherIds = masterProvider.teachers.map((t) => t.id).toSet();
 
-    final filteredWarnings = warningProvider.warningLetters.where((warning) {
+    final schoolWarnings = warningProvider.warningLetters.where((warning) {
       if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
         final wSchoolId = AppHelper.parseSingleCleanSchoolId(warning.schoolId);
         if (wSchoolId != null && wSchoolId.isNotEmpty && wSchoolId != cleanActiveSchoolId) {
           return false;
         }
       }
-      if (!schoolTeacherIds.contains(warning.teacherId)) return false;
+      return schoolTeacherIds.contains(warning.teacherId);
+    }).toList();
+
+    final unreadCount = schoolWarnings.where((w) => w.status == 'unread').length;
+    final readCount = schoolWarnings.where((w) => w.status == 'read').length;
+
+    final filteredWarnings = schoolWarnings.where((warning) {
+      final statusMatch = _selectedStatus == 'all' || warning.status == _selectedStatus;
+      if (!statusMatch) return false;
+
+      if (_searchQuery.isEmpty) return true;
+
       final teacher = masterProvider.teachers.firstWhere(
         (t) => t.id == warning.teacherId,
         orElse: () => TeacherModel(id: '', name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''),
@@ -107,62 +120,49 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                 color: AppTheme.primaryColor,
                 child: Column(
                   children: [
-                    // Search box
-                    Padding(
-                      padding: EdgeInsets.all(16.w),
-                      child: TextField(
-                        controller: _searchController,
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 13.sp,
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
+                    // Search & Status Filter Bar
+                    AdminSearchFilterBar(
+                      searchController: _searchController,
+                      searchHint: 'Cari nama guru atau keterangan...',
+                      searchQuery: _searchQuery,
+                      onSearchChanged: (val) {
+                        setState(() {
+                          _searchQuery = val.toLowerCase();
+                        });
+                      },
+                      onSearchCleared: () {
+                        setState(() {
+                          _searchController.clear();
+                          _searchQuery = '';
+                        });
+                      },
+                      filterItems: [
+                        AdminFilterItem(
+                          id: 'all',
+                          label: 'Semua',
+                          count: schoolWarnings.length,
                         ),
-                        decoration: InputDecoration(
-                          hintText: 'Cari nama guru atau mata pelajaran...',
-                          hintStyle: GoogleFonts.hankenGrotesk(
-                            fontSize: 13.sp,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                          prefixIcon: const Icon(Icons.search, color: AppTheme.primaryColor),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: Icon(
-                                    Icons.clear,
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  ),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                  },
-                                )
-                              : null,
-                          filled: true,
-                          fillColor: Theme.of(context).brightness == Brightness.dark
-                              ? Theme.of(context).colorScheme.surfaceContainerHighest
-                              : Colors.white,
-                          contentPadding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16.r),
-                            borderSide: BorderSide(
-                              color: Theme.of(context).brightness == Brightness.dark
-                                  ? const Color(0xFF334155)
-                                  : const Color(0xFFE2E8F0),
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16.r),
-                            borderSide: BorderSide(
-                              color: Theme.of(context).brightness == Brightness.dark
-                                  ? const Color(0xFF334155)
-                                  : const Color(0xFFE2E8F0),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16.r),
-                            borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
-                          ),
+                        AdminFilterItem(
+                          id: 'unread',
+                          label: 'Belum Dibaca',
+                          icon: Icons.mark_email_unread_rounded,
+                          count: unreadCount,
                         ),
-                      ),
+                        AdminFilterItem(
+                          id: 'read',
+                          label: 'Sudah Dibaca',
+                          icon: Icons.mark_email_read_rounded,
+                          count: readCount,
+                        ),
+                      ],
+                      selectedFilterId: _selectedStatus,
+                      onFilterSelected: (id) {
+                        setState(() {
+                          _selectedStatus = id;
+                        });
+                      },
                     ),
+                    SizedBox(height: 12.h),
                     Expanded(
                       child: teacherIds.isEmpty
                           ? ListView(
@@ -181,7 +181,9 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                       ),
                                       SizedBox(height: 16.h),
                                       Text(
-                                        'Tidak ada Pengingat',
+                                        (_searchQuery.isNotEmpty || _selectedStatus != 'all')
+                                            ? 'Pengingat Tidak Ditemukan'
+                                            : 'Tidak ada Pengingat',
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 16.sp,
                                           fontWeight: FontWeight.bold,
@@ -190,8 +192,8 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
                                       ),
                                       SizedBox(height: 8.h),
                                       Text(
-                                        _searchQuery.isNotEmpty
-                                            ? 'Tidak ada hasil yang cocok dengan pencarian Anda.'
+                                        (_searchQuery.isNotEmpty || _selectedStatus != 'all')
+                                            ? 'Tidak ada pengingat yang cocok dengan pencarian atau filter Anda.'
                                             : 'Semua guru tertib mengisi jurnal tepat waktu.',
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 13.sp,

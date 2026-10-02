@@ -11,6 +11,7 @@ import '../../../models/user_model.dart';
 import '../../../models/teacher_model.dart';
 import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/admin_selection_action_button.dart';
+import '../../../widgets/admin_search_filter_bar.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../services/excel_export_service.dart';
@@ -31,6 +32,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
   String? _errorMessage;
   List<Map<String, dynamic>> _exitRequests = [];
   final TextEditingController _searchController = TextEditingController();
+  String _selectedRole = 'all';
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
   String? _lastSchoolId;
@@ -39,6 +41,9 @@ class _MasterUserScreenState extends State<MasterUserScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
     _searchController.addListener(_onSearchChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -959,12 +964,22 @@ class _MasterUserScreenState extends State<MasterUserScreen>
 
     final isSuperAdminUser = authProvider.currentUser?.role.toLowerCase() == 'superadmin';
 
+    final totalActiveUsers = _allUsers.where((u) => !u.isPending && u.status != 'pending' && u.status != 'pending_exit' && (u.status == null || u.status == 'active')).toList();
+    final totalGuruCount = totalActiveUsers.where((u) => u.role.toLowerCase() == 'guru' || u.role.toLowerCase() == 'teacher').length;
+    final totalAdminCount = totalActiveUsers.where((u) => u.role.toLowerCase() == 'admin' || u.role.toLowerCase() == 'superadmin').length;
+
     final activeUsers = _filteredUsers.where((u) {
       // Guru yang belum disetujui (pending) DILARANG masuk Pengguna Aktif!
       if (u.isPending || u.status == 'pending' || u.role.toLowerCase() == 'pending_guru') return false;
       if (u.status != null && u.status != 'active') return false;
       final r = u.role.toLowerCase();
-      return r == 'guru' || r == 'admin' || r == 'superadmin' || r == 'teacher';
+      final isRole = r == 'guru' || r == 'admin' || r == 'superadmin' || r == 'teacher';
+      if (!isRole) return false;
+
+      if (_selectedRole == 'all') return true;
+      if (_selectedRole == 'admin') return r == 'admin' || r == 'superadmin';
+      if (_selectedRole == 'guru') return r == 'guru' || r == 'teacher';
+      return true;
     }).toList();
 
     // Filtering pending users:
@@ -1085,65 +1100,45 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                     )
                   : Column(
                       children: [
-                        // Search field
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                          child: TextField(
-                            controller: _searchController,
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 13.sp,
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Cari nama atau email...',
-                              hintStyle: GoogleFonts.hankenGrotesk(
-                                fontSize: 13.sp,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                              prefixIcon: Icon(
-                                Icons.search_rounded,
-                                color: const Color(0xFF2563EB),
-                                size: 20.r,
-                              ),
-                              suffixIcon: _searchController.text.isNotEmpty
-                                  ? IconButton(
-                                      icon: Icon(
-                                        Icons.clear_rounded,
-                                        size: 18.r,
-                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                      ),
-                                      onPressed: () => _searchController.clear(),
-                                    )
-                                  : null,
-                              fillColor: Theme.of(context).brightness == Brightness.dark
-                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                  : Colors.white,
-                              filled: true,
-                              contentPadding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16.r),
-                                borderSide: BorderSide(
-                                  color: Theme.of(context).brightness == Brightness.dark
-                                      ? const Color(0xFF334155)
-                                      : const Color(0xFFE2E8F0),
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16.r),
-                                borderSide: BorderSide(
-                                  color: Theme.of(context).brightness == Brightness.dark
-                                      ? const Color(0xFF334155)
-                                      : const Color(0xFFE2E8F0),
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16.r),
-                                borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-                              ),
-                            ),
-                          ),
+                        // Search & Role Filter Bar
+                        AdminSearchFilterBar(
+                          searchController: _searchController,
+                          searchHint: 'Cari nama atau email pengguna...',
+                          searchQuery: _searchController.text,
+                          onSearchChanged: (_) => _onSearchChanged(),
+                          onSearchCleared: () {
+                            _searchController.clear();
+                            _onSearchChanged();
+                          },
+                          filterItems: _tabController.index == 0
+                              ? [
+                                  AdminFilterItem(
+                                    id: 'all',
+                                    label: 'Semua',
+                                    count: totalActiveUsers.length,
+                                  ),
+                                  AdminFilterItem(
+                                    id: 'guru',
+                                    label: 'Guru',
+                                    icon: Icons.school_rounded,
+                                    count: totalGuruCount,
+                                  ),
+                                  AdminFilterItem(
+                                    id: 'admin',
+                                    label: 'Admin',
+                                    icon: Icons.admin_panel_settings_rounded,
+                                    count: totalAdminCount,
+                                  ),
+                                ]
+                              : null,
+                          selectedFilterId: _selectedRole,
+                          onFilterSelected: (id) {
+                            setState(() {
+                              _selectedRole = id;
+                            });
+                          },
                         ),
+                        SizedBox(height: 8.h),
                         Expanded(
                           child: TabBarView(
                             controller: _tabController,

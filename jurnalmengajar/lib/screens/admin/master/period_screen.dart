@@ -6,6 +6,7 @@ import '../../../providers/master_data_provider.dart';
 import '../../../models/period_model.dart';
 import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/admin_selection_action_button.dart';
+import '../../../widgets/admin_search_filter_bar.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../providers/auth_provider.dart';
@@ -20,6 +21,15 @@ class MasterPeriodScreen extends StatefulWidget {
 class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _selectedStatus = 'all';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -286,6 +296,24 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
     final masterProvider = context.watch<MasterDataProvider>();
     final periods = masterProvider.periods;
 
+    final filteredPeriods = periods.where((p) {
+      final matchesSearch = _searchQuery.isEmpty ||
+          p.name.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesStatus = _selectedStatus == 'all' ||
+          (_selectedStatus == 'active' && p.isActive) ||
+          (_selectedStatus == 'inactive' && !p.isActive);
+      return matchesSearch && matchesStatus;
+    }).toList();
+
+    final activeCount = periods.where((p) => p.isActive).length;
+    final inactiveCount = periods.where((p) => !p.isActive).length;
+
+    final filterItems = [
+      AdminFilterItem(id: 'all', label: 'Semua', count: periods.length),
+      AdminFilterItem(id: 'active', label: 'Aktif', count: activeCount),
+      AdminFilterItem(id: 'inactive', label: 'Selesai/Non-aktif', count: inactiveCount),
+    ];
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -312,8 +340,8 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                       Icons.checklist_rounded,
                       color: Colors.white,
                     ),
-                    tooltip: _selectedIds.length == periods.length ? 'Batal Pilih Semua' : 'Pilih Semua',
-                    onPressed: () => _selectAll(periods),
+                    tooltip: _selectedIds.length == filteredPeriods.length ? 'Batal Pilih Semua' : 'Pilih Semua',
+                    onPressed: () => _selectAll(filteredPeriods),
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.redAccent),
@@ -338,22 +366,45 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                 ],
               ),
       drawer: const AdminDrawer(currentRoute: '/admin/master-data/periods'),
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        color: const Color(0xFF2563EB),
-        child: masterProvider.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : periods.isEmpty
-                ? const AppEmptyWidget(
-                    title: 'Periode Kosong',
-                    subtitle: 'Tekan tombol + di bawah untuk menambah periode akademik.',
-                  )
-                : ListView.separated(
-                    padding: EdgeInsets.all(16.w),
-                    itemCount: periods.length,
-                    separatorBuilder: (context, index) => SizedBox(height: 12.h),
-                    itemBuilder: (context, index) {
-                      final period = periods[index];
+      body: masterProvider.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : periods.isEmpty
+              ? const AppEmptyWidget(
+                  title: 'Periode Kosong',
+                  subtitle: 'Tekan tombol + di bawah untuk menambah periode akademik.',
+                )
+              : Column(
+                  children: [
+                    AdminSearchFilterBar(
+                      hintText: 'Cari periode akademik...',
+                      searchController: _searchController,
+                      onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
+                      filterItems: filterItems,
+                      selectedFilterId: _selectedStatus,
+                      onFilterSelected: (id) => setState(() => _selectedStatus = id),
+                    ),
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: _refreshData,
+                        color: const Color(0xFF2563EB),
+                        child: filteredPeriods.isEmpty
+                            ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: [
+                                  SizedBox(height: 60.h),
+                                  const AppEmptyWidget(
+                                    title: 'Periode Tidak Ditemukan',
+                                    subtitle: 'Tidak ada periode yang cocok dengan pencarian atau filter.',
+                                    icon: Icons.search_off_rounded,
+                                  ),
+                                ],
+                              )
+                            : ListView.separated(
+                                padding: EdgeInsets.all(16.w),
+                                itemCount: filteredPeriods.length,
+                                separatorBuilder: (context, index) => SizedBox(height: 12.h),
+                                itemBuilder: (context, index) {
+                                  final period = filteredPeriods[index];
                       final isSelected = _selectedIds.contains(period.id);
                       final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -467,7 +518,10 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                       );
                     },
                   ),
-      ),
+                ),
+              ),
+            ],
+          ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),
         backgroundColor: const Color(0xFF2563EB),

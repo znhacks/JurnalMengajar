@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -14,6 +13,7 @@ import '../../../models/teacher_model.dart';
 import '../../../models/school_model.dart';
 import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/admin_selection_action_button.dart';
+import '../../../widgets/admin_search_filter_bar.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/utils/image_crop_helper.dart';
@@ -31,6 +31,7 @@ class MasterTeacherScreen extends StatefulWidget {
 class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String _selectedPosition = 'all';
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
 
@@ -514,15 +515,18 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
     }
   }
 
-  /// Group teachers by position, applying search filter first.
+  /// Group teachers by position, applying search and position filter.
   Map<String, List<TeacherModel>> _buildGroups(List<TeacherModel> teachers) {
-    final filtered = _searchQuery.isEmpty
-        ? teachers
-        : teachers.where((t) {
-            return t.name.toLowerCase().contains(_searchQuery) ||
-                t.position.toLowerCase().contains(_searchQuery) ||
-                t.email.toLowerCase().contains(_searchQuery);
-          }).toList();
+    final filtered = teachers.where((t) {
+      final pos = t.position.trim().isEmpty ? 'Lainnya' : t.position.trim();
+      final matchesPosition = _selectedPosition == 'all' || pos == _selectedPosition;
+      if (!matchesPosition) return false;
+
+      if (_searchQuery.isEmpty) return true;
+      return t.name.toLowerCase().contains(_searchQuery) ||
+          t.position.toLowerCase().contains(_searchQuery) ||
+          t.email.toLowerCase().contains(_searchQuery);
+    }).toList();
 
     final Map<String, List<TeacherModel>> groups = {};
     for (final t in filtered) {
@@ -751,7 +755,17 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
   Widget build(BuildContext context) {
     final masterProvider = context.watch<MasterDataProvider>();
     final teachers = masterProvider.teachers;
+    final positions = teachers.map((t) => t.position.trim().isEmpty ? 'Lainnya' : t.position.trim()).toSet().toList()..sort();
+    final filterItems = [
+      AdminFilterItem(id: 'all', label: 'Semua', count: teachers.length),
+      ...positions.map((pos) {
+        final cnt = teachers.where((t) => (t.position.trim().isEmpty ? 'Lainnya' : t.position.trim()) == pos).length;
+        return AdminFilterItem(id: pos, label: pos, count: cnt);
+      }),
+    ];
+
     final groups = _buildGroups(teachers);
+    final visibleTeachers = groups.values.expand((element) => element).toList();
     final hasResults = groups.isNotEmpty;
 
     // Build a flat list of items: [header, card, card, ..., header, card, ...]
@@ -792,8 +806,8 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                       Icons.checklist_rounded,
                       color: Colors.white,
                     ),
-                    tooltip: _selectedIds.length == teachers.length ? 'Batal Pilih Semua' : 'Pilih Semua',
-                    onPressed: () => _selectAll(teachers),
+                    tooltip: _selectedIds.length == visibleTeachers.length ? 'Batal Pilih Semua' : 'Pilih Semua',
+                    onPressed: () => _selectAll(visibleTeachers),
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.redAccent),
@@ -821,87 +835,46 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                           )
                         : const Icon(Icons.table_view_rounded, color: Color(0xFF10B981)),
                     tooltip: 'Ekspor Excel',
-                    onPressed: (_isExporting || teachers.isEmpty)
+                    onPressed: (_isExporting || visibleTeachers.isEmpty)
                         ? null
                         : () {
-                            final filtered = _searchQuery.isEmpty
-                                ? teachers
-                                : teachers.where((t) {
-                                    return t.name.toLowerCase().contains(_searchQuery) ||
-                                        t.position.toLowerCase().contains(_searchQuery) ||
-                                        t.email.toLowerCase().contains(_searchQuery);
-                                  }).toList();
                             final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                            _handleExportExcel(filtered, authProvider);
+                            _handleExportExcel(visibleTeachers, authProvider);
                           },
                   ),
                   AdminSelectionActionButton(
-                    onPressed: teachers.isEmpty ? null : () => _toggleSelectionMode(),
+                    onPressed: visibleTeachers.isEmpty ? null : () => _toggleSelectionMode(),
                   ),
                 ],
               ),
       drawer: const AdminDrawer(currentRoute: '/admin/master-data/teachers'),
       body: Column(
         children: [
-          // --- Search Bar ---
-          Padding(
-            padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
-            child: TextField(
-              controller: _searchController,
-              style: GoogleFonts.hankenGrotesk(
-                fontSize: 13.sp,
-                color: Theme.of(context).colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Cari guru berdasarkan nama, jabatan, atau email...',
-                hintStyle: GoogleFonts.hankenGrotesk(
-                  fontSize: 13.sp,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                  color: const Color(0xFF2563EB),
-                  size: 20.r,
-                ),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(
-                          Icons.clear_rounded,
-                          size: 18.r,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        onPressed: () => _searchController.clear(),
-                      )
-                    : null,
-                filled: true,
-                fillColor: Theme.of(context).brightness == Brightness.dark
-                    ? Theme.of(context).colorScheme.surfaceContainerHighest
-                    : Colors.white,
-                contentPadding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16.r),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFE2E8F0),
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16.r),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFE2E8F0),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16.r),
-                  borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-                ),
-              ),
-            ),
+          // --- Search & Position Filter Bar ---
+          AdminSearchFilterBar(
+            searchController: _searchController,
+            searchHint: 'Cari nama guru, jabatan, atau email...',
+            searchQuery: _searchQuery,
+            onSearchChanged: (val) {
+              setState(() {
+                _searchQuery = val.toLowerCase();
+              });
+            },
+            onSearchCleared: () {
+              setState(() {
+                _searchController.clear();
+                _searchQuery = '';
+              });
+            },
+            filterItems: filterItems,
+            selectedFilterId: _selectedPosition,
+            onFilterSelected: (id) {
+              setState(() {
+                _selectedPosition = id;
+              });
+            },
           ),
+          SizedBox(height: 12.h),
 
           // --- List ---
           Expanded(
@@ -931,7 +904,9 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                                     ),
                                     SizedBox(height: 4.h),
                                     Text(
-                                      '"$_searchQuery"',
+                                      _searchQuery.isNotEmpty
+                                          ? '"$_searchQuery"'
+                                          : 'Dengan filter jabatan: $_selectedPosition',
                                       style: TextStyle(fontSize: 13.sp, color: Colors.grey[400]),
                                     ),
                                   ],

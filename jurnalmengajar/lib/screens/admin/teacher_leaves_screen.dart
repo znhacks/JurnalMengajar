@@ -9,6 +9,7 @@ import '../../providers/teacher_leave_provider.dart';
 import '../../models/teacher_leave_model.dart';
 import '../../models/teacher_model.dart';
 import '../../widgets/admin_drawer.dart';
+import '../../widgets/admin_search_filter_bar.dart';
 import '../../core/utils/helper.dart';
 
 class AdminTeacherLeavesScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class AdminTeacherLeavesScreen extends StatefulWidget {
 
 class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
   String _searchQuery = '';
+  String _selectedLeaveFilter = 'all';
   final TextEditingController _searchController = TextEditingController();
 
   static const List<String> _leaveReasons = [
@@ -822,8 +824,26 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
     final teachers = masterProvider.teachers;
     final allLeaves = leaveProvider.leaves;
 
-    // Filter leaves by search
+    // Filter leaves by status & search
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
     final filteredLeaves = allLeaves.where((l) {
+      if (_selectedLeaveFilter == 'active') {
+        final s = DateTime(l.startDate.year, l.startDate.month, l.startDate.day);
+        final e = DateTime(l.endDate.year, l.endDate.month, l.endDate.day);
+        if (!((today.isAfter(s) || today.isAtSameMomentAs(s)) &&
+              (today.isBefore(e) || today.isAtSameMomentAs(e)))) {
+          return false;
+        }
+      } else if (_selectedLeaveFilter == 'upcoming') {
+        final s = DateTime(l.startDate.year, l.startDate.month, l.startDate.day);
+        if (!s.isAfter(today)) return false;
+      } else if (_selectedLeaveFilter == 'past') {
+        final e = DateTime(l.endDate.year, l.endDate.month, l.endDate.day);
+        if (!e.isBefore(today)) return false;
+      }
+
       if (_searchQuery.isEmpty) return true;
       final t = teachers.firstWhere(
         (teach) => teach.id == l.teacherId,
@@ -835,14 +855,29 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
     }).toList();
 
     // Summary calculations
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
     final activeLeavesCount = allLeaves.where((l) {
       final s = DateTime(l.startDate.year, l.startDate.month, l.startDate.day);
       final e = DateTime(l.endDate.year, l.endDate.month, l.endDate.day);
       return (today.isAfter(s) || today.isAtSameMomentAs(s)) &&
              (today.isBefore(e) || today.isAtSameMomentAs(e));
     }).length;
+
+    final upcomingLeavesCount = allLeaves.where((l) {
+      final s = DateTime(l.startDate.year, l.startDate.month, l.startDate.day);
+      return s.isAfter(today);
+    }).length;
+
+    final pastLeavesCount = allLeaves.where((l) {
+      final e = DateTime(l.endDate.year, l.endDate.month, l.endDate.day);
+      return e.isBefore(today);
+    }).length;
+
+    final filterItems = [
+      AdminFilterItem(id: 'all', label: 'Semua', count: allLeaves.length),
+      AdminFilterItem(id: 'active', label: 'Cuti Hari Ini', count: activeLeavesCount),
+      AdminFilterItem(id: 'upcoming', label: 'Akan Datang', count: upcomingLeavesCount),
+      AdminFilterItem(id: 'past', label: 'Selesai', count: pastLeavesCount),
+    ];
 
     int totalSubstitutedSessions = 0;
     for (final l in allLeaves) {
@@ -910,36 +945,14 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
               ),
             ),
 
-            // Search Bar
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (val) {
-                  setState(() {
-                    _searchQuery = val.trim();
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: 'Cari guru atau alasan cuti...',
-                  prefixIcon: const Icon(Icons.search_rounded),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear_rounded),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {
-                              _searchQuery = '';
-                            });
-                          },
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                ),
-              ),
+            // Search & Filter Bar
+            AdminSearchFilterBar(
+              hintText: 'Cari guru atau alasan cuti...',
+              searchController: _searchController,
+              onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
+              filterItems: filterItems,
+              selectedFilterId: _selectedLeaveFilter,
+              onFilterSelected: (id) => setState(() => _selectedLeaveFilter = id),
             ),
 
             // Content List

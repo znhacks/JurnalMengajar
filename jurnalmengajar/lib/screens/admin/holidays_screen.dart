@@ -7,6 +7,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/holiday_provider.dart';
 import '../../models/holiday_model.dart';
 import '../../widgets/admin_drawer.dart';
+import '../../widgets/admin_search_filter_bar.dart';
+import '../../widgets/state_widgets.dart';
 import '../../core/utils/helper.dart';
 
 class AdminHolidaysScreen extends StatefulWidget {
@@ -17,6 +19,16 @@ class AdminHolidaysScreen extends StatefulWidget {
 }
 
 class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _selectedCategory = 'all';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -378,6 +390,30 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
     final holidays = holidayProvider.holidays;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final filteredHolidays = holidays.where((h) {
+      final matchesCategory = _selectedCategory == 'all' || h.category == _selectedCategory;
+      final matchesSearch = _searchQuery.isEmpty ||
+          (h.description?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
+          (h.category != null && h.category!.toLowerCase().contains(_searchQuery.toLowerCase()));
+      return matchesCategory && matchesSearch;
+    }).toList();
+
+    final categoriesWithHolidays = <String>{};
+    for (final h in holidays) {
+      if (h.category != null && h.category!.isNotEmpty) {
+        categoriesWithHolidays.add(h.category!);
+      }
+    }
+
+    final filterItems = [
+      AdminFilterItem(id: 'all', label: 'Semua Kategori', count: holidays.length),
+      ...categoriesWithHolidays.map((cat) => AdminFilterItem(
+        id: cat,
+        label: cat,
+        count: holidays.where((h) => h.category == cat).length,
+      )),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kelola Hari Libur'),
@@ -436,11 +472,34 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                   ),
                 ),
               )
-            : ListView.builder(
-                padding: EdgeInsets.all(16.w),
-                itemCount: holidays.length,
-                itemBuilder: (context, index) {
-                  final item = holidays[index];
+            : Column(
+                children: [
+                  AdminSearchFilterBar(
+                    hintText: 'Cari hari libur atau keterangan...',
+                    searchController: _searchController,
+                    onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
+                    filterItems: filterItems,
+                    selectedFilterId: _selectedCategory,
+                    onFilterSelected: (id) => setState(() => _selectedCategory = id),
+                  ),
+                  Expanded(
+                    child: filteredHolidays.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              SizedBox(height: 60.h),
+                              const AppEmptyWidget(
+                                title: 'Hari Libur Tidak Ditemukan',
+                                subtitle: 'Tidak ada hari libur yang cocok dengan pencarian atau kategori.',
+                                icon: Icons.search_off_rounded,
+                              ),
+                            ],
+                          )
+                        : ListView.builder(
+                            padding: EdgeInsets.all(16.w),
+                            itemCount: filteredHolidays.length,
+                            itemBuilder: (context, index) {
+                              final item = filteredHolidays[index];
                   final startStr = DateFormat(
                     'dd MMM yyyy',
                     'id_ID',
@@ -613,6 +672,9 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                   );
                 },
               ),
+            ),
+          ],
+        ),
       ),
     );
   }
