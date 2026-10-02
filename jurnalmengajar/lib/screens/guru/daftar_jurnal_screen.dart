@@ -472,6 +472,11 @@ class _InfiniteJournalListViewState extends State<_InfiniteJournalListView> {
         },
         itemBuilder: (context, index) {
           if (index == visibleItems.length) {
+            if (!_isLoadingMore && hasMore) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) _loadMore();
+              });
+            }
             return Padding(
               padding: EdgeInsets.symmetric(vertical: 14.h),
               child: Center(

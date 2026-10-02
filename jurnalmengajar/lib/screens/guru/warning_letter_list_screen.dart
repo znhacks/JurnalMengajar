@@ -24,6 +24,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
   final ScrollController _scrollController = ScrollController();
   static const int _pageSize = 8;
   int _displayedCount = _pageSize;
+  int _currentTotalCount = 0;
   bool _isLoadingMore = false;
 
   @override
@@ -45,22 +46,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
   }
 
   void _loadMore() {
-    final warningProvider = Provider.of<WarningLetterProvider>(context, listen: false);
-    final activeSchoolId = AppHelper.parseSingleCleanSchoolId(Provider.of<AuthProvider>(context, listen: false).activeSchoolId);
-    final schoolWarnings = warningProvider.warningLetters.where((w) {
-      if (activeSchoolId != null && activeSchoolId.isNotEmpty) {
-        final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
-        if (wSchoolId != activeSchoolId) return false;
-      }
-      if (w.reason.contains('Kelas--')) return false;
-      return true;
-    }).toList();
-
-    final uniqueDates = schoolWarnings.map((w) {
-      return '${w.issuedAt.year}-${w.issuedAt.month}-${w.issuedAt.day}';
-    }).toSet().length;
-
-    if (_isLoadingMore || _displayedCount >= uniqueDates) return;
+    if (_isLoadingMore || _displayedCount >= _currentTotalCount) return;
 
     setState(() {
       _isLoadingMore = true;
@@ -69,7 +55,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
     Future.delayed(const Duration(milliseconds: 300), () {
       if (!mounted) return;
       setState(() {
-        _displayedCount += _pageSize;
+        _displayedCount = (_displayedCount + _pageSize).clamp(0, _currentTotalCount);
         _isLoadingMore = false;
       });
     });
@@ -321,6 +307,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                       )
                     : Builder(
                         builder: (context) {
+                          _currentTotalCount = sortedGroups.length;
                           final visibleGroups = sortedGroups.take(_displayedCount).toList();
                           final hasMore = _displayedCount < sortedGroups.length;
 
@@ -335,6 +322,11 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                             },
                             itemBuilder: (context, index) {
                               if (index == visibleGroups.length) {
+                                if (!_isLoadingMore && hasMore) {
+                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                    if (mounted) _loadMore();
+                                  });
+                                }
                                 return Padding(
                                   padding: EdgeInsets.symmetric(vertical: 14.h),
                                   child: Center(
