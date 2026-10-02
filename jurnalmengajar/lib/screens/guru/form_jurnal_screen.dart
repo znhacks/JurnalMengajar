@@ -1178,36 +1178,45 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (_existingJournal?.status == 'rejected') ...[
-                  Container(
-                    padding: EdgeInsets.all(14.w),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.red.shade200),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 22.sp),
-                        SizedBox(width: 10.w),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Jurnal Ditolak (Perlu Revisi)',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red.shade900,
-                                  fontSize: 13.sp,
-                                ),
-                              ),
+                  Builder(
+                    builder: (context) {
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      return Container(
+                        padding: EdgeInsets.all(14.w),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.red.shade900.withValues(alpha: 0.25) : Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDark ? Colors.red.shade800.withValues(alpha: 0.6) : Colors.red.shade200,
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              color: isDark ? Colors.red.shade300 : Colors.red.shade700,
+                              size: 22.sp,
+                            ),
+                            SizedBox(width: 10.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Jurnal Ditolak (Perlu Revisi)',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? Colors.red.shade200 : Colors.red.shade900,
+                                      fontSize: 13.sp,
+                                    ),
+                                  ),
                               if (_existingJournal?.rejectionNote != null && _existingJournal!.rejectionNote!.isNotEmpty) ...[
                                 SizedBox(height: 4.h),
                                 Text(
                                   'Catatan Penolakan: ${_existingJournal!.rejectionNote}',
                                   style: TextStyle(
-                                    color: Colors.red.shade800,
+                                    color: isDark ? Colors.red.shade300 : Colors.red.shade800,
                                     fontSize: 12.sp,
                                   ),
                                 ),
@@ -1217,9 +1226,11 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                         ),
                       ],
                     ),
-                  ),
-                  SizedBox(height: 16.h),
-                ],
+                  );
+                },
+              ),
+              SizedBox(height: 16.h),
+            ],
                 // Info Summary Card (Read-only)
                 Builder(
                   builder: (context) {
@@ -1312,65 +1323,71 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
                 // Absence notification banner & multi-schedule toggle
                 if (_teacherAttendanceStatus != 'hadir') ...[
-                  Container(
-                    padding: EdgeInsets.all(14.w),
-                    decoration: BoxDecoration(
-                      color: _teacherAttendanceStatus == 'sakit'
-                          ? Colors.red.shade50
-                          : Colors.amber.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _teacherAttendanceStatus == 'sakit'
-                            ? Colors.red.shade200
-                            : Colors.amber.shade200,
-                      ),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          _teacherAttendanceStatus == 'sakit'
-                              ? Icons.info_outline_rounded
-                              : Icons.mark_email_read_outlined,
-                          color: _teacherAttendanceStatus == 'sakit'
-                              ? Colors.red.shade700
-                              : Colors.amber.shade800,
-                          size: 22.sp,
+                  Builder(
+                    builder: (context) {
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      final isSakit = _teacherAttendanceStatus == 'sakit';
+                      final bgColor = isSakit
+                          ? (isDark ? Colors.red.shade900.withValues(alpha: 0.25) : Colors.red.shade50)
+                          : (isDark ? Colors.amber.shade900.withValues(alpha: 0.25) : Colors.amber.shade50);
+                      final borderColor = isSakit
+                          ? (isDark ? Colors.red.shade800.withValues(alpha: 0.6) : Colors.red.shade200)
+                          : (isDark ? Colors.amber.shade800.withValues(alpha: 0.6) : Colors.amber.shade200);
+                      final iconColor = isSakit
+                          ? (isDark ? Colors.red.shade300 : Colors.red.shade700)
+                          : (isDark ? Colors.amber.shade300 : Colors.amber.shade800);
+                      final titleColor = isSakit
+                          ? (isDark ? Colors.red.shade200 : Colors.red.shade900)
+                          : (isDark ? Colors.amber.shade200 : Colors.amber.shade900);
+                      final descColor = isSakit
+                          ? (isDark ? Colors.red.shade300 : Colors.red.shade800)
+                          : (isDark ? Colors.amber.shade300 : Colors.amber.shade900);
+
+                      return Container(
+                        padding: EdgeInsets.all(14.w),
+                        decoration: BoxDecoration(
+                          color: bgColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: borderColor),
                         ),
-                        SizedBox(width: 10.w),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _teacherAttendanceStatus == 'sakit'
-                                    ? 'Keterangan Sakit Guru'
-                                    : 'Keterangan Izin Guru',
-                                style: GoogleFonts.hankenGrotesk(
-                                  fontWeight: FontWeight.bold,
-                                  color: _teacherAttendanceStatus == 'sakit'
-                                      ? Colors.red.shade900
-                                      : Colors.amber.shade900,
-                                  fontSize: 13.sp,
-                                ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              isSakit ? Icons.info_outline_rounded : Icons.mark_email_read_outlined,
+                              color: iconColor,
+                              size: 22.sp,
+                            ),
+                            SizedBox(width: 10.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    isSakit ? 'Keterangan Sakit Guru' : 'Keterangan Izin Guru',
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontWeight: FontWeight.bold,
+                                      color: titleColor,
+                                      fontSize: 13.sp,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4.h),
+                                  Text(
+                                    isSakit
+                                        ? 'Anda tidak perlu mengisi materi atau absensi siswa. Cukup unggah foto Surat Keterangan Dokter di bawah.'
+                                        : 'Anda tidak perlu mengisi materi atau absensi siswa. Cukup unggah foto Surat Izin / Dispensasi di bawah.',
+                                    style: GoogleFonts.hankenGrotesk(
+                                      color: descColor,
+                                      fontSize: 12.sp,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              SizedBox(height: 4.h),
-                              Text(
-                                _teacherAttendanceStatus == 'sakit'
-                                    ? 'Anda tidak perlu mengisi materi atau absensi siswa. Cukup unggah foto Surat Keterangan Dokter di bawah.'
-                                    : 'Anda tidak perlu mengisi materi atau absensi siswa. Cukup unggah foto Surat Izin / Dispensasi di bawah.',
-                                style: GoogleFonts.hankenGrotesk(
-                                  color: _teacherAttendanceStatus == 'sakit'
-                                      ? Colors.red.shade800
-                                      : Colors.amber.shade900,
-                                  fontSize: 12.sp,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                   if (availableGroupedSchedules.length > 1) ...[
                     SizedBox(height: 10.h),
