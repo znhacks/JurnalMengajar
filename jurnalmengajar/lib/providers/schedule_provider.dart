@@ -127,9 +127,14 @@ class ScheduleProvider with ChangeNotifier {
     final int sequence = ++_loadSequence;
 
     final sKey = _currentSchoolId ?? 'default';
+<<<<<<< HEAD
 
     // SWR Instant Cache Population: If _schedules is empty, show disk cached data immediately (0ms)
     if (_schedules.isEmpty) {
+=======
+    final bool hasExistingSchedules = _schedules.isNotEmpty;
+    if (!hasExistingSchedules) {
+>>>>>>> 42f140080d98300baf8a264598c45787a22e022c
       try {
         final cached = await CacheService().loadList('schedules_$sKey');
         if (cached != null && cached.isNotEmpty && _schedules.isEmpty && sequence == _loadSequence) {
