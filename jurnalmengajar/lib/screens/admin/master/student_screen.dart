@@ -13,6 +13,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../widgets/animated_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/excel_export_service.dart';
+import '../../../widgets/student_import_modal.dart';
 
 class MasterStudentScreen extends StatefulWidget {
   final String classId;
@@ -513,6 +514,17 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
               ),
               actions: [
                 IconButton(
+                  icon: const Icon(Icons.file_upload_outlined, color: Color(0xFF2563EB)),
+                  tooltip: 'Impor Siswa Excel',
+                  onPressed: () {
+                    StudentImportModal.show(
+                      context,
+                      initialClass: cls,
+                      onImportSuccess: _refreshData,
+                    );
+                  },
+                ),
+                IconButton(
                   icon: _isExporting
                       ? SizedBox(
                           width: 18.w,
@@ -639,16 +651,45 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                     child: filteredStudents.isEmpty
                         ? ListView(
                             children: [
-                              SizedBox(height: 50.h),
+                              SizedBox(height: 40.h),
                               AppEmptyWidget(
                                 title: (_searchQuery.isEmpty && _selectedGender == 'all')
                                     ? 'Siswa Kosong'
                                     : 'Siswa Tidak Ditemukan',
                                 subtitle: (_searchQuery.isEmpty && _selectedGender == 'all')
-                                    ? 'Belum ada data siswa di kelas ini. Ketuk tombol + di bawah untuk menambah.'
+                                    ? 'Belum ada data siswa di kelas ini. Ketuk tombol + di bawah atau impor dari Excel.'
                                     : 'Tidak ada siswa yang cocok dengan filter atau kata pencarian Anda.',
                                 icon: Icons.people_outline_rounded,
                               ),
+                              if (_searchQuery.isEmpty && _selectedGender == 'all') ...[
+                                SizedBox(height: 16.h),
+                                Center(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () {
+                                      StudentImportModal.show(
+                                        context,
+                                        initialClass: cls,
+                                        onImportSuccess: _refreshData,
+                                      );
+                                    },
+                                    icon: const Icon(Icons.file_upload_outlined),
+                                    label: Text(
+                                      'Impor Siswa dari Excel',
+                                      style: GoogleFonts.hankenGrotesk(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: const Color(0xFF2563EB),
+                                      side: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+                                      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
                           )
                         : ListView.separated(

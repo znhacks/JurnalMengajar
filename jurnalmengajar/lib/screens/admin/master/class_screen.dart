@@ -13,6 +13,7 @@ import '../../../core/utils/helper.dart';
 import '../../../widgets/animated_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/excel_export_service.dart';
+import '../../../widgets/student_import_modal.dart';
 
 class MasterClassScreen extends StatefulWidget {
   const MasterClassScreen({super.key});
@@ -311,8 +312,8 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
     }
   }
 
-  Widget _actionIcon(IconData icon, Color color, VoidCallback onTap) {
-    return InkWell(
+  Widget _actionIcon(IconData icon, Color color, VoidCallback onTap, {String? tooltip}) {
+    final widget = InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       child: Padding(
@@ -320,6 +321,10 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
         child: Icon(icon, color: color, size: 18.w),
       ),
     );
+    if (tooltip != null) {
+      return Tooltip(message: tooltip, child: widget);
+    }
+    return widget;
   }
 
   @override
@@ -387,6 +392,19 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                 ),
                 title: const Text('Master Kelas & Siswa'),
                 actions: [
+                  IconButton(
+                    icon: const Icon(Icons.file_upload_outlined, color: Color(0xFF2563EB)),
+                    tooltip: 'Impor Siswa Excel',
+                    onPressed: classes.isEmpty
+                        ? null
+                        : () {
+                            StudentImportModal.show(
+                              context,
+                              availableClasses: classes,
+                              onImportSuccess: _refreshData,
+                            );
+                          },
+                  ),
                   IconButton(
                     icon: _isExporting
                         ? SizedBox(
@@ -548,11 +566,24 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                                   Icons.visibility_outlined,
                                   Colors.blue,
                                   () => context.push('/admin/master-data/classes/${item.id}/students'),
+                                  tooltip: 'Lihat Siswa',
+                                ),
+                                _actionIcon(
+                                  Icons.file_upload_outlined,
+                                  const Color(0xFF0D9488),
+                                  () => StudentImportModal.show(
+                                    context,
+                                    initialClass: item,
+                                    availableClasses: classes,
+                                    onImportSuccess: _refreshData,
+                                  ),
+                                  tooltip: 'Impor Siswa ke Kelas Ini',
                                 ),
                                 _actionIcon(
                                   Icons.edit_outlined,
                                   Colors.indigo,
                                   () => _showFormDialog(classItem: item),
+                                  tooltip: 'Edit Kelas',
                                 ),
                                 _actionIcon(
                                   Icons.delete_outline,

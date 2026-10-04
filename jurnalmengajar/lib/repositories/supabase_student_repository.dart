@@ -78,4 +78,26 @@ class SupabaseStudentRepository implements StudentRepository {
       throw Exception('Gagal menghapus beberapa siswa: $e');
     }
   }
+
+  Future<void> createMultiple(List<StudentModel> models) async {
+    if (models.isEmpty) return;
+    try {
+      final payloads = models.map((m) {
+        final map = m.toJson();
+        if (map['id'] == null || (map['id'] as String).isEmpty) {
+          map['id'] = _uuid.v4();
+        }
+        return map;
+      }).toList();
+
+      const chunkSize = 100;
+      for (var i = 0; i < payloads.length; i += chunkSize) {
+        final end = (i + chunkSize < payloads.length) ? i + chunkSize : payloads.length;
+        final chunk = payloads.sublist(i, end);
+        await _supabase.from('students').insert(chunk);
+      }
+    } catch (e) {
+      throw Exception('Gagal menambah beberapa siswa: $e');
+    }
+  }
 }

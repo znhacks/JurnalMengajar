@@ -13,6 +13,7 @@ import '../repositories/class_repository.dart';
 import '../repositories/teacher_repository.dart';
 import '../models/student_model.dart';
 import '../repositories/student_repository.dart';
+import '../repositories/supabase_student_repository.dart';
 import '../repositories/school_repository.dart';
 import '../core/services/cache_service.dart';
 import '../core/utils/helper.dart';
@@ -683,6 +684,44 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await studentRepository.delete(id);
+      _students = await studentRepository.getAllByClass(classId);
+      _classes = await classRepository.getAll(_currentSchoolId);
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> createMultipleStudents(List<StudentModel> models, String classId) async {
+    if (models.isEmpty) return true;
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final finalModels = models.map((m) {
+        return (_currentSchoolId != null &&
+                _currentSchoolId!.isNotEmpty &&
+                (m.schoolId == null || m.schoolId!.isEmpty))
+            ? m.copyWith(schoolId: _currentSchoolId)
+            : m;
+      }).toList();
+
+      if (studentRepository is SupabaseStudentRepository) {
+        await (studentRepository as SupabaseStudentRepository).createMultiple(finalModels);
+      } else {
+        for (final m in finalModels) {
+          await studentRepository.create(m);
+        }
+      }
+
+      // Invalidate class cache so student_count is fresh
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(_currentSchoolId);
+      await CacheService().remove('classes_${cleanSchoolId ?? "all"}');
+
       _students = await studentRepository.getAllByClass(classId);
       _classes = await classRepository.getAll(_currentSchoolId);
       return true;

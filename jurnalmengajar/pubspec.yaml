@@ -64,6 +64,7 @@ dependencies:
       url: https://gitlab.ubig.co.id/nobox.ai-sdk/nobox-chat-flutter.git
       ref: main
   cr_calendar: ^1.3.0
+  file_picker: ^8.3.7
 
 
 dev_dependencies:
