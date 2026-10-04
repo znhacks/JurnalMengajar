@@ -1,10 +1,9 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:excel/excel.dart';
-import 'package:file_picker/file_picker.dart';
 import '../models/student_model.dart';
 import 'excel_export_service.dart';
 import 'excel_saver.dart';
+import 'excel_picker.dart';
 
 class StudentImportItem {
   final String name;
@@ -151,33 +150,18 @@ class ExcelImportService {
   static Future<StudentImportParseResult?> pickAndParseExcel({
     List<StudentModel>? existingStudents,
   }) async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['xlsx', 'xls'],
-      withData: true,
-    );
-
-    if (result == null || result.files.isEmpty) {
+    final picked = await pickExcelFilePlatform();
+    if (picked == null) {
       return null;
     }
 
-    final file = result.files.first;
-    Uint8List? bytes = file.bytes;
-
-    if (bytes == null && !kIsWeb && file.path != null) {
-      final localFile = File(file.path!);
-      if (await localFile.exists()) {
-        bytes = await localFile.readAsBytes();
-      }
-    }
-
-    if (bytes == null || bytes.isEmpty) {
+    if (picked.bytes.isEmpty) {
       throw Exception('File Excel kosong atau tidak dapat dibaca.');
     }
 
     return parseExcelBytes(
-      bytes,
-      fileName: file.name,
+      picked.bytes,
+      fileName: picked.name,
       existingStudents: existingStudents,
     );
   }
