@@ -152,16 +152,13 @@ void main() {
     expect(find.text('Kelas: Kelas X-A'), findsOneWidget);
 
     // Verify template download section
-    expect(find.text('Belum punya format Excel?'), findsOneWidget);
-    expect(find.text('Unduh'), findsOneWidget);
+    expect(find.text('Unduh Template'), findsOneWidget);
 
     // Verify file picker drop area
     expect(find.text('Pilih File Excel Siswa'), findsOneWidget);
-    expect(find.text('Mendukung format .xlsx atau .xls'), findsOneWidget);
+    expect(find.text('Format .xlsx atau .xls'), findsOneWidget);
 
     // Verify column guidelines
-    expect(find.text('Petunjuk Format Kolom Excel:'), findsOneWidget);
-    expect(find.text('Nama Siswa: '), findsOneWidget);
-    expect(find.text('Jenis Kelamin: '), findsOneWidget);
+    expect(find.text('Kolom: Nama, NIS, L/P, No HP'), findsOneWidget);
   });
 }
