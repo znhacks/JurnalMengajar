@@ -34,15 +34,24 @@ class WarningLetterProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  String? _currentTeacherId;
+
   Future<void> loadAllWarningLetters([String? schoolId]) async {
     final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+    final isSchoolChanged = cleanSchoolId != _currentSchoolId;
+    if (isSchoolChanged) {
+      _warningLetters = [];
+      _errorMessage = null;
+    }
     _currentSchoolId = cleanSchoolId;
     final int sequence = ++_loadSequence;
 
-    _isLoading = true;
-    _errorMessage = null;
-    _warningLetters = [];
-    notifyListeners();
+    final hasExistingData = _warningLetters.isNotEmpty;
+    if (!hasExistingData) {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
+    }
 
     try {
       final results = await warningLetterRepository.getAll(cleanSchoolId);
@@ -67,13 +76,21 @@ class WarningLetterProvider with ChangeNotifier {
 
   Future<void> loadTeacherWarningLetters(String teacherId, [String? schoolId]) async {
     final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+    final isContextChanged = cleanSchoolId != _currentSchoolId || teacherId != _currentTeacherId;
+    if (isContextChanged) {
+      _warningLetters = [];
+      _errorMessage = null;
+    }
     _currentSchoolId = cleanSchoolId;
+    _currentTeacherId = teacherId;
     final int sequence = ++_loadSequence;
 
-    _isLoading = true;
-    _errorMessage = null;
-    _warningLetters = [];
-    notifyListeners();
+    final hasExistingData = _warningLetters.isNotEmpty;
+    if (!hasExistingData) {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
+    }
 
     try {
       final results = await warningLetterRepository.getByTeacherId(teacherId, cleanSchoolId);

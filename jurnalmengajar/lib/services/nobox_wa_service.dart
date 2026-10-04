@@ -7,9 +7,10 @@ import '../models/class_model.dart';
 import '../models/subject_model.dart';
 
 class NoboxWaService {
-  static const String defaultAccountId = '852562967880453';
-  static const String defaultChannelId = '1';
-  static const String defaultApiKey = 'Nobox-907bfe154e614d5b8be361f020e5ef62';
+  static const String defaultAccountId = String.fromEnvironment('NOBOX_ACCOUNT_ID', defaultValue: '');
+  static const String defaultChannelId = String.fromEnvironment('NOBOX_CHANNEL_ID', defaultValue: '1');
+  static const String defaultApiKey = String.fromEnvironment('NOBOX_API_KEY', defaultValue: '');
+
   /// Formats absence WhatsApp notification according to official template
   static String formatAbsenceMessage({
     required String studentName,
@@ -73,6 +74,11 @@ class NoboxWaService {
             }
           }
         } catch (_) {}
+      }
+
+      // If no valid key is configured on client, delegate to backend Edge Function securely
+      if (apiKey.isEmpty) {
+        return false;
       }
 
       final prefs = await SharedPreferences.getInstance();
