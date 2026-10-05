@@ -8,6 +8,8 @@ class StudentModel {
   final String? gender; // 'L' (Laki-laki) or 'P' (Perempuan)
   final String? parentPhoneNumber;
   final String? schoolId;
+  final String status; // 'aktif', 'naik', 'tidak_naik', 'lulus', 'pindah', 'tetap'
+  final String? enrollmentStatus; // Status specifically in the context of the queried class
 
   StudentModel({
     required this.id,
@@ -17,6 +19,8 @@ class StudentModel {
     this.gender,
     this.parentPhoneNumber,
     this.schoolId,
+    this.status = 'aktif',
+    this.enrollmentStatus,
   });
 
   factory StudentModel.fromJson(Map<String, dynamic> json) {
@@ -28,6 +32,8 @@ class StudentModel {
       gender: json['gender']?.toString(),
       parentPhoneNumber: json['parent_phone_number']?.toString() ?? json['parent_phone']?.toString() ?? json['parentPhoneNumber']?.toString(),
       schoolId: AppHelper.parseSingleCleanSchoolId(json['school_id']),
+      status: json['status']?.toString() ?? 'aktif',
+      enrollmentStatus: json['enrollment_status']?.toString() ?? json['history_status']?.toString(),
     );
   }
 
@@ -36,6 +42,7 @@ class StudentModel {
     final map = <String, dynamic>{
       'class_id': classId,
       'name': name,
+      'status': status,
     };
     if (id.isNotEmpty) {
       map['id'] = id;
@@ -63,6 +70,8 @@ class StudentModel {
     String? gender,
     String? parentPhoneNumber,
     String? schoolId,
+    String? status,
+    String? enrollmentStatus,
   }) {
     return StudentModel(
       id: id ?? this.id,
@@ -72,6 +81,8 @@ class StudentModel {
       gender: gender ?? this.gender,
       parentPhoneNumber: parentPhoneNumber ?? this.parentPhoneNumber,
       schoolId: schoolId ?? this.schoolId,
+      status: status ?? this.status,
+      enrollmentStatus: enrollmentStatus ?? this.enrollmentStatus,
     );
   }
 }

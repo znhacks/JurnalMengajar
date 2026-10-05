@@ -13,7 +13,9 @@ import '../../../core/theme/app_theme.dart';
 import '../../../widgets/animated_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/excel_export_service.dart';
+import 'package:go_router/go_router.dart';
 import '../../../widgets/student_import_modal.dart';
+import '../../../widgets/student_history_modal.dart';
 
 class MasterStudentScreen extends StatefulWidget {
   final String classId;
@@ -535,8 +537,13 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
     }
   }
 
-  Widget _actionIcon(IconData icon, Color color, VoidCallback onTap) {
-    return InkWell(
+  Widget _actionIcon(
+    IconData icon,
+    Color color,
+    VoidCallback onTap, {
+    String? tooltip,
+  }) {
+    final btn = InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       child: Padding(
@@ -544,6 +551,44 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
         child: Icon(icon, color: color, size: 18.w),
       ),
     );
+    if (tooltip != null) {
+      return Tooltip(message: tooltip, child: btn);
+    }
+    return btn;
+  }
+
+  Color _getEnrollmentStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'naik':
+        return const Color(0xFF10B981);
+      case 'lulus':
+        return const Color(0xFF8B5CF6);
+      case 'tidak_naik':
+        return const Color(0xFFF59E0B);
+      case 'pindah':
+        return const Color(0xFF06B6D4);
+      case 'aktif':
+      default:
+        return const Color(0xFF2563EB);
+    }
+  }
+
+  String _formatEnrollmentStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'naik':
+        return 'Naik Kelas';
+      case 'tidak_naik':
+        return 'Tinggal Kelas';
+      case 'lulus':
+        return 'Lulus';
+      case 'pindah':
+        return 'Pindah';
+      case 'tetap':
+        return 'Tetap';
+      case 'aktif':
+      default:
+        return 'Aktif';
+    }
   }
 
   @override
@@ -655,6 +700,18 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                             authProvider,
                           );
                         },
+                ),
+                IconButton(
+                  icon: const Icon(
+                    Icons.trending_up_rounded,
+                    color: Color(0xFFF59E0B),
+                  ),
+                  tooltip: 'Kenaikan & Mutasi Kelas',
+                  onPressed: () {
+                    context.push(
+                      '/admin/master-data/student-promotions?classId=${widget.classId}',
+                    );
+                  },
                 ),
                 AdminSelectionActionButton(
                   onPressed: filteredStudents.isEmpty
@@ -862,7 +919,10 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                 child: ScaleTap(
                                   onTap: _isSelectionMode
                                       ? () => _toggleSelectItem(student.id)
-                                      : null,
+                                      : () => StudentHistoryModal.show(
+                                            context,
+                                            student: student,
+                                          ),
                                   onLongPress: () {
                                     if (!_isSelectionMode) {
                                       _toggleSelectionMode(
@@ -977,6 +1037,53 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                                   ),
                                                 ],
                                               ),
+                                              if (student.enrollmentStatus !=
+                                                      null &&
+                                                  student
+                                                      .enrollmentStatus!
+                                                      .isNotEmpty &&
+                                                  student.enrollmentStatus !=
+                                                      'aktif') ...[
+                                                SizedBox(height: 3.h),
+                                                Container(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 6.w,
+                                                    vertical: 2.h,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: _getEnrollmentStatusColor(
+                                                      student.enrollmentStatus!,
+                                                    ).withValues(alpha: 0.12),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      6,
+                                                    ),
+                                                    border: Border.all(
+                                                      color: _getEnrollmentStatusColor(
+                                                        student
+                                                            .enrollmentStatus!,
+                                                      ).withValues(alpha: 0.3),
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    _formatEnrollmentStatus(
+                                                      student
+                                                          .enrollmentStatus!,
+                                                    ),
+                                                    style: GoogleFonts
+                                                        .hankenGrotesk(
+                                                      fontSize: 9.sp,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color:
+                                                          _getEnrollmentStatusColor(
+                                                        student
+                                                            .enrollmentStatus!,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                               if (student.parentPhoneNumber !=
                                                       null &&
                                                   student
@@ -1004,6 +1111,15 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               _actionIcon(
+                                                Icons.history_edu_outlined,
+                                                const Color(0xFF8B5CF6),
+                                                () => StudentHistoryModal.show(
+                                                  context,
+                                                  student: student,
+                                                ),
+                                                tooltip: 'Histori Pendidikan',
+                                              ),
+                                              _actionIcon(
                                                 Icons.edit_outlined,
                                                 isDark
                                                     ? const Color(0xFF93C5FD)
@@ -1011,6 +1127,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                                 () => _showFormDialog(
                                                   studentItem: student,
                                                 ),
+                                                tooltip: 'Edit Siswa',
                                               ),
                                               _actionIcon(
                                                 Icons.delete_outline,

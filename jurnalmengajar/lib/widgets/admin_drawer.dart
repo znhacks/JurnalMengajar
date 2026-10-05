@@ -235,6 +235,12 @@ class AdminDrawer extends StatelessWidget {
       ),
       _buildMenuItem(
         context,
+        Icons.trending_up_rounded,
+        'Kenaikan Kelas',
+        '/admin/master-data/student-promotions',
+      ),
+      _buildMenuItem(
+        context,
         Icons.school_rounded,
         'Guru',
         '/admin/master-data/teachers',

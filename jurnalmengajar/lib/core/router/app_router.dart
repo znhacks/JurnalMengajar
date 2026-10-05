@@ -31,6 +31,7 @@ import '../../screens/admin/admin_jurnal_list_screen.dart';
 import '../../screens/admin/holidays_screen.dart';
 import '../../screens/admin/teacher_leaves_screen.dart';
 import '../../screens/admin/master/student_screen.dart';
+import '../../screens/admin/master/student_promotion_screen.dart';
 import '../../screens/admin/master/teacher_detail_screen.dart';
 import '../../screens/admin/teacher_statistics_screen.dart';
 import '../../screens/auth/school_expired_screen.dart';
@@ -374,6 +375,14 @@ class AppRouter {
             final classId = state.pathParameters['classId']!;
             return _buildCustomTransition(
                 context, state, MasterStudentScreen(classId: classId));
+          },
+        ),
+        GoRoute(
+          path: '/admin/master-data/student-promotions',
+          pageBuilder: (context, state) {
+            final classId = state.uri.queryParameters['classId'];
+            return _buildCustomTransition(
+                context, state, StudentPromotionScreen(initialClassId: classId));
           },
         ),
         GoRoute(

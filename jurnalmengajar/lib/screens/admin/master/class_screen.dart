@@ -421,6 +421,16 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                             _handleExportExcel(classes, masterProvider, authProvider);
                           },
                   ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.trending_up_rounded,
+                      color: Color(0xFFF59E0B),
+                    ),
+                    tooltip: 'Kenaikan & Mutasi Kelas',
+                    onPressed: () {
+                      context.push('/admin/master-data/student-promotions');
+                    },
+                  ),
                   AdminSelectionActionButton(
                     onPressed: classes.isEmpty ? null : () => _toggleSelectionMode(),
                   ),
@@ -567,6 +577,12 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                                   Colors.blue,
                                   () => context.push('/admin/master-data/classes/${item.id}/students'),
                                   tooltip: 'Lihat Siswa',
+                                ),
+                                _actionIcon(
+                                  Icons.trending_up_rounded,
+                                  const Color(0xFFF59E0B),
+                                  () => context.push('/admin/master-data/student-promotions?classId=${item.id}'),
+                                  tooltip: 'Kenaikan / Mutasi Kelas',
                                 ),
                                 _actionIcon(
                                   Icons.file_upload_outlined,

@@ -12,6 +12,7 @@ import '../repositories/hour_repository.dart';
 import '../repositories/class_repository.dart';
 import '../repositories/teacher_repository.dart';
 import '../models/student_model.dart';
+import '../models/student_academic_history_model.dart';
 import '../repositories/student_repository.dart';
 import '../repositories/supabase_student_repository.dart';
 import '../repositories/school_repository.dart';
@@ -728,6 +729,61 @@ class MasterDataProvider with ChangeNotifier {
     } catch (e) {
       _errorMessage = e.toString();
       return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<List<StudentAcademicHistoryModel>> getStudentHistories(String studentId) async {
+    try {
+      return await studentRepository.getStudentHistories(studentId);
+    } catch (e) {
+      _errorMessage = e.toString();
+      return <StudentAcademicHistoryModel>[];
+    }
+  }
+
+  Future<Map<String, dynamic>> processStudentPromotions({
+    required String sourcePeriodId,
+    required String sourceClassId,
+    String? targetPeriodId,
+    String? targetClassId,
+    required List<Map<String, dynamic>> items,
+    DateTime? transferDate,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final schoolId = _currentSchoolId;
+      if (schoolId == null || schoolId.isEmpty) {
+        throw Exception('Konteks sekolah aktif tidak ditemukan.');
+      }
+
+      final result = await studentRepository.processPromotions(
+        schoolId: schoolId,
+        sourcePeriodId: sourcePeriodId,
+        sourceClassId: sourceClassId,
+        targetPeriodId: targetPeriodId,
+        targetClassId: targetClassId,
+        items: items,
+        transferDate: transferDate,
+      );
+
+      // Invalidate class cache so counts and list are fresh
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(_currentSchoolId);
+      await CacheService().remove('classes_${cleanSchoolId ?? "all"}');
+
+      // Refresh classes list
+      _classes = await classRepository.getAll(_currentSchoolId);
+      // Refresh students list for source class
+      _students = await studentRepository.getAllByClass(sourceClassId);
+
+      return result;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return {'success': false, 'message': e.toString()};
     } finally {
       _isLoading = false;
       notifyListeners();
