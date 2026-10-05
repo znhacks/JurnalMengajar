@@ -66,8 +66,6 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      String? changedPeriodId;
-
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
@@ -77,7 +75,7 @@ void main() {
               body: AdminPeriodSelectorBar(
                 periods: [periodActive, periodHistorical1, periodHistorical2],
                 selectedPeriodId: periodHistorical1.id,
-                onPeriodChanged: (id) => changedPeriodId = id,
+                onPeriodChanged: (_) {},
               ),
             ),
           ),

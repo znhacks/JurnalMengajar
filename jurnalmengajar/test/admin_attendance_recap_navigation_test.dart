@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:jurnalmengajar/core/services/cache_service.dart';
 import 'package:jurnalmengajar/core/theme/app_theme.dart';
 import 'package:jurnalmengajar/models/user_model.dart';
 import 'package:jurnalmengajar/providers/auth_provider.dart';

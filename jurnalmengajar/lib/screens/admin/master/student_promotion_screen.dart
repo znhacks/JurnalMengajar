@@ -638,7 +638,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
 
                   // Dropdown Periode Asal
                   DropdownButtonFormField<String>(
-                    value: _sourcePeriodId,
+                    initialValue: _sourcePeriodId,
                     decoration: InputDecoration(
                       labelText: 'Tahun Ajaran Asal',
                       prefixIcon: const Icon(Icons.calendar_month_outlined),
@@ -663,7 +663,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
 
                   // Dropdown Kelas Asal
                   DropdownButtonFormField<String>(
-                    value: _sourceClassId,
+                    initialValue: _sourceClassId,
                     decoration: InputDecoration(
                       labelText: 'Kelas Asal',
                       prefixIcon: const Icon(Icons.class_outlined),
@@ -763,7 +763,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                     SizedBox(height: 8.h),
                     // Dropdown Periode Tujuan
                     DropdownButtonFormField<String>(
-                      value: _targetPeriodId,
+                      initialValue: _targetPeriodId,
                       decoration: InputDecoration(
                         labelText: 'Tahun Ajaran Tujuan',
                         prefixIcon: const Icon(Icons.calendar_today_outlined),
@@ -788,7 +788,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
 
                     // Dropdown Kelas Tujuan
                     DropdownButtonFormField<String>(
-                      value: _targetClassId,
+                      initialValue: _targetClassId,
                       decoration: InputDecoration(
                         labelText: 'Kelas Tujuan Utama',
                         prefixIcon: const Icon(Icons.class_rounded),

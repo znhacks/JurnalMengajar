@@ -1,3 +1,4 @@
+import 'package:jurnalmengajar/models/student_academic_history_model.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -81,6 +82,8 @@ class FakePeriodRepo implements PeriodRepository {
   @override Future<void> update(PeriodModel period) async {}
   @override Future<void> delete(String id) async {}
   @override Future<void> deleteMultiple(List<String> ids) async {}
+
+
 }
 
 class FakeSubjectRepo implements SubjectRepository {
@@ -117,6 +120,19 @@ class FakeTeacherRepo implements TeacherRepository {
 }
 
 class FakeStudentRepo implements StudentRepository {
+  @override
+  Future<List<StudentAcademicHistoryModel>> getStudentHistories(String studentId) async => [];
+  @override
+  Future<Map<String, dynamic>> processPromotions({
+    required String schoolId,
+    required String sourcePeriodId,
+    required String sourceClassId,
+    String? targetPeriodId,
+    String? targetClassId,
+    required List<Map<String, dynamic>> items,
+    DateTime? transferDate,
+  }) async => {'success': true};
+
   @override Future<List<StudentModel>> getAllByClass(String classId) async => [];
   @override Future<void> create(StudentModel student) async {}
   @override Future<void> update(StudentModel student) async {}
@@ -180,7 +196,7 @@ class MockJournalProvider extends JournalProvider {
   @override
   Future<void> loadTeacherJournals(String teacherId) async {}
   @override
-  Future<void> loadAllJournals([String? schoolId]) async {}
+  Future<void> loadAllJournals([String? schoolId, String? periodId]) async {}
   @override
   Future<JournalModel?> getJournalForSchedule(String scheduleId, {DateTime? date}) async {
     try {

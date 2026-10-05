@@ -1,3 +1,4 @@
+import 'package:jurnalmengajar/models/student_academic_history_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,6 +29,8 @@ class FakePeriodRepo implements PeriodRepository {
   Future<void> delete(String id) async {}
   @override
   Future<void> deleteMultiple(List<String> ids) async {}
+
+
 }
 
 class FakeSubjectRepo implements SubjectRepository {
@@ -85,6 +88,19 @@ class FakeTeacherRepo implements TeacherRepository {
 }
 
 class FakeStudentRepo implements StudentRepository {
+  @override
+  Future<List<StudentAcademicHistoryModel>> getStudentHistories(String studentId) async => [];
+  @override
+  Future<Map<String, dynamic>> processPromotions({
+    required String schoolId,
+    required String sourcePeriodId,
+    required String sourceClassId,
+    String? targetPeriodId,
+    String? targetClassId,
+    required List<Map<String, dynamic>> items,
+    DateTime? transferDate,
+  }) async => {'success': true};
+
   List<StudentModel> items = [];
 
   @override

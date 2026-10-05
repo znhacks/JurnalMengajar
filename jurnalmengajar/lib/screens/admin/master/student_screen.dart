@@ -1171,8 +1171,9 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                                           ],
                                                         ),
                                                   );
-                                                  if (confirm == true)
+                                                  if (confirm == true) {
                                                     _handleDelete(student.id);
+                                                   }
                                                 },
                                               ),
                                             ],

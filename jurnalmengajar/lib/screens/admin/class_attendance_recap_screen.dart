@@ -415,7 +415,7 @@ class _AdminClassAttendanceRecapScreenState
   }
 
   // ── Export Actions ──────────────────────────────────────────────────────────
-  Future<void> _handleExport(BuildContext context, ClassModel classModel, PeriodModel period) async {
+  Future<void> _handleExport(ClassModel classModel, PeriodModel period) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -807,7 +807,7 @@ class _AdminClassAttendanceRecapScreenState
                         : ListView.separated(
                             controller: scrollController,
                             itemCount: summary.records.length,
-                            separatorBuilder: (_, __) => SizedBox(height: 8.h),
+                            separatorBuilder: (_, _) => SizedBox(height: 8.h),
                             itemBuilder: (c, idx) {
                               final r = summary.records[idx];
                               Color statusColor = Colors.grey;
@@ -1000,7 +1000,7 @@ class _AdminClassAttendanceRecapScreenState
                     )
                   : const Icon(Icons.file_download_outlined),
               tooltip: 'Unduh / Cetak Rekap',
-              onPressed: _isExporting ? null : () => _handleExport(context, currentClass!, selectedPeriod),
+              onPressed: _isExporting ? null : () => _handleExport(currentClass!, selectedPeriod),
             ),
         ],
       ),
@@ -1327,7 +1327,7 @@ class _AdminClassAttendanceRecapScreenState
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: summaries.length,
-              separatorBuilder: (_, __) => SizedBox(height: 10.h),
+              separatorBuilder: (_, _) => SizedBox(height: 10.h),
               itemBuilder: (context, index) {
                 final cs = summaries[index];
                 return _buildClassCard(cs, period, isDark);
@@ -1451,7 +1451,7 @@ class _AdminClassAttendanceRecapScreenState
                     IconButton(
                       icon: const Icon(Icons.file_download_outlined, size: 20),
                       tooltip: 'Unduh Rekap Kelas',
-                      onPressed: () => _handleExport(context, cs.classModel, period),
+                      onPressed: () => _handleExport(cs.classModel, period),
                       visualDensity: VisualDensity.compact,
                     ),
                   TextButton.icon(
@@ -1889,7 +1889,7 @@ class _AdminClassAttendanceRecapScreenState
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: summaries.length,
-      separatorBuilder: (_, __) => SizedBox(height: 8.h),
+      separatorBuilder: (_, _) => SizedBox(height: 8.h),
       itemBuilder: (context, index) {
         final s = summaries[index];
         final rate = s.attendancePercentage;
@@ -2057,7 +2057,7 @@ class _AdminClassAttendanceRecapScreenState
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: sortedJournals.length,
-      separatorBuilder: (_, __) => SizedBox(height: 8.h),
+      separatorBuilder: (_, _) => SizedBox(height: 8.h),
       itemBuilder: (context, index) {
         final j = sortedJournals[index];
         final subj = masterProvider.subjects.firstWhere(
