@@ -77,22 +77,39 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Hapus $count Data Siswa', style: const TextStyle(color: Colors.red)),
-        content: Text('Apakah Anda yakin ingin menghapus $count data siswa yang dipilih secara permanen?'),
+        title: Text(
+          'Hapus $count Data Siswa',
+          style: const TextStyle(color: Colors.red),
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus $count data siswa yang dipilih secara permanen?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hapus Massal', style: TextStyle(color: Colors.red)),
+            child: const Text(
+              'Hapus Massal',
+              style: TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
     );
 
     if (confirmed == true && mounted) {
-      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+      final masterProvider = Provider.of<MasterDataProvider>(
+        context,
+        listen: false,
+      );
       final idsToDelete = _selectedIds.toList();
-      final success = await masterProvider.deleteMultipleStudents(idsToDelete, widget.classId);
+      final success = await masterProvider.deleteMultipleStudents(
+        idsToDelete,
+        widget.classId,
+      );
       if (!mounted) return;
       if (success) {
         AppHelper.showSnackBar(context, '$count data siswa berhasil dihapus.');
@@ -101,17 +118,29 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
           _isSelectionMode = false;
         });
       } else {
-        AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menghapus data siswa.', isError: true);
+        AppHelper.showSnackBar(
+          context,
+          masterProvider.errorMessage ?? 'Gagal menghapus data siswa.',
+          isError: true,
+        );
       }
     }
   }
 
   bool _isExporting = false;
 
-  Future<void> _handleExportExcel(List<StudentModel> students, String className, AuthProvider auth) async {
+  Future<void> _handleExportExcel(
+    List<StudentModel> students,
+    String className,
+    AuthProvider auth,
+  ) async {
     if (_isExporting) return;
     if (students.isEmpty) {
-      AppHelper.showSnackBar(context, 'Tidak ada data siswa untuk diekspor.', isError: true);
+      AppHelper.showSnackBar(
+        context,
+        'Tidak ada data siswa untuk diekspor.',
+        isError: true,
+      );
       return;
     }
 
@@ -119,7 +148,9 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
     AppHelper.showSnackBar(context, 'Mempersiapkan file Excel...');
 
     try {
-      final schoolName = auth.activeSchoolName.isNotEmpty ? auth.activeSchoolName : 'Sekolah';
+      final schoolName = auth.activeSchoolName.isNotEmpty
+          ? auth.activeSchoolName
+          : 'Sekolah';
       await ExcelExportService.exportStudents(
         students: students,
         className: className,
@@ -130,7 +161,11 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
       }
     } catch (e) {
       if (mounted) {
-        AppHelper.showSnackBar(context, 'Ekspor gagal. Silakan coba lagi.', isError: true);
+        AppHelper.showSnackBar(
+          context,
+          'Ekspor gagal. Silakan coba lagi.',
+          isError: true,
+        );
       }
     } finally {
       if (mounted) {
@@ -146,22 +181,31 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
   }
 
   Future<void> _refreshData() async {
-    await Provider.of<MasterDataProvider>(context, listen: false)
-        .loadStudentsForClass(widget.classId);
+    await Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    ).loadStudentsForClass(widget.classId);
   }
 
   void _showFormDialog({StudentModel? studentItem}) {
     final nameController = TextEditingController(text: studentItem?.name ?? '');
     final nisController = TextEditingController(text: studentItem?.nis ?? '');
-    final parentPhoneController = TextEditingController(text: studentItem?.parentPhoneNumber ?? '');
+    final parentPhoneController = TextEditingController(
+      text: studentItem?.parentPhoneNumber ?? '',
+    );
     String selectedGender = studentItem?.gender ?? 'L'; // Default Laki-laki
 
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+    final masterProvider = Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    );
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+      backgroundColor:
+          Theme.of(context).cardTheme.color ??
+          Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
@@ -187,14 +231,18 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                       width: 40.w,
                       height: 4.h,
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                        color: isDark
+                            ? const Color(0xFF475569)
+                            : const Color(0xFFCBD5E1),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                   ),
                   SizedBox(height: 16.h),
                   Text(
-                    studentItem == null ? 'Tambah Siswa Baru' : 'Edit Data Siswa',
+                    studentItem == null
+                        ? 'Tambah Siswa Baru'
+                        : 'Edit Data Siswa',
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w800,
@@ -220,7 +268,9 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFE2E8F0),
                         ),
                       ),
                     ),
@@ -248,7 +298,9 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFE2E8F0),
                         ),
                       ),
                     ),
@@ -276,7 +328,9 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFE2E8F0),
                         ),
                       ),
                     ),
@@ -310,17 +364,25 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                 fontWeight: FontWeight.bold,
                                 color: selectedGender == 'L'
                                     ? Colors.white
-                                    : Theme.of(context).colorScheme.onSurfaceVariant,
+                                    : Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ),
                           selected: selectedGender == 'L',
                           selectedColor: const Color(0xFF2563EB),
-                          backgroundColor: isDark ? Theme.of(context).colorScheme.surfaceContainerHighest : const Color(0xFFF1F5F9),
+                          backgroundColor: isDark
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest
+                              : const Color(0xFFF1F5F9),
                           side: BorderSide(
                             color: selectedGender == 'L'
                                 ? const Color(0xFF2563EB)
-                                : (isDark ? const Color(0xFF475569) : AppTheme.outlineVariant),
+                                : (isDark
+                                      ? const Color(0xFF475569)
+                                      : AppTheme.outlineVariant),
                           ),
                           onSelected: (selected) {
                             if (selected) {
@@ -343,17 +405,27 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                 fontWeight: FontWeight.bold,
                                 color: selectedGender == 'P'
                                     ? Colors.white
-                                    : Theme.of(context).colorScheme.onSurfaceVariant,
+                                    : Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ),
                           selected: selectedGender == 'P',
-                          selectedColor: const Color(0xFFEC4899), // Pink for females
-                          backgroundColor: isDark ? Theme.of(context).colorScheme.surfaceContainerHighest : const Color(0xFFF1F5F9),
+                          selectedColor: const Color(
+                            0xFFEC4899,
+                          ), // Pink for females
+                          backgroundColor: isDark
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest
+                              : const Color(0xFFF1F5F9),
                           side: BorderSide(
                             color: selectedGender == 'P'
                                 ? const Color(0xFFEC4899)
-                                : (isDark ? const Color(0xFF475569) : AppTheme.outlineVariant),
+                                : (isDark
+                                      ? const Color(0xFF475569)
+                                      : AppTheme.outlineVariant),
                           ),
                           onSelected: (selected) {
                             if (selected) {
@@ -372,7 +444,11 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                   ElevatedButton(
                     onPressed: () async {
                       if (nameController.text.trim().isEmpty) {
-                        AppHelper.showSnackBar(context, 'Nama siswa tidak boleh kosong', isError: true);
+                        AppHelper.showSnackBar(
+                          context,
+                          'Nama siswa tidak boleh kosong',
+                          isError: true,
+                        );
                         return;
                       }
 
@@ -381,24 +457,37 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                         id: studentItem?.id ?? '',
                         classId: widget.classId,
                         name: nameController.text.trim(),
-                        nis: nisController.text.trim().isEmpty ? null : nisController.text.trim(),
+                        nis: nisController.text.trim().isEmpty
+                            ? null
+                            : nisController.text.trim(),
                         gender: selectedGender,
-                        parentPhoneNumber: parentPhoneController.text.trim().isEmpty ? null : parentPhoneController.text.trim(),
+                        parentPhoneNumber:
+                            parentPhoneController.text.trim().isEmpty
+                            ? null
+                            : parentPhoneController.text.trim(),
                       );
 
                       if (studentItem == null) {
-                        success = await masterProvider.createStudent(newStudent);
+                        success = await masterProvider.createStudent(
+                          newStudent,
+                        );
                       } else {
-                        success = await masterProvider.updateStudent(newStudent);
+                        success = await masterProvider.updateStudent(
+                          newStudent,
+                        );
                       }
 
                       if (success && context.mounted) {
-                        AppHelper.showSnackBar(context, 'Data siswa berhasil disimpan!');
+                        AppHelper.showSnackBar(
+                          context,
+                          'Data siswa berhasil disimpan!',
+                        );
                         Navigator.pop(context);
                       } else if (context.mounted) {
                         AppHelper.showSnackBar(
                           context,
-                          masterProvider.errorMessage ?? 'Gagal menyimpan data siswa.',
+                          masterProvider.errorMessage ??
+                              'Gagal menyimpan data siswa.',
                           isError: true,
                         );
                       }
@@ -430,7 +519,10 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
   }
 
   Future<void> _handleDelete(String id) async {
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+    final masterProvider = Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    );
     final success = await masterProvider.deleteStudent(id, widget.classId);
     if (success && mounted) {
       AppHelper.showSnackBar(context, 'Data siswa berhasil dihapus');
@@ -459,7 +551,8 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
     final masterProvider = context.watch<MasterDataProvider>();
     final cls = masterProvider.classes.firstWhere(
       (c) => c.id == widget.classId,
-      orElse: () => ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
+      orElse: () =>
+          ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
     );
 
     final totalStudents = masterProvider.students;
@@ -467,11 +560,15 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
     final femaleCount = totalStudents.where((s) => s.gender == 'P').length;
 
     final filteredStudents = totalStudents.where((s) {
-      final nameMatch = s.name.toLowerCase().contains(_searchQuery.toLowerCase());
-      final nisMatch = s.nis?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false;
+      final nameMatch = s.name.toLowerCase().contains(
+        _searchQuery.toLowerCase(),
+      );
+      final nisMatch =
+          s.nis?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false;
       final matchesSearch = nameMatch || nisMatch;
 
-      final matchesGender = _selectedGender == 'all' || s.gender == _selectedGender;
+      final matchesGender =
+          _selectedGender == 'all' || s.gender == _selectedGender;
       return matchesSearch && matchesGender;
     }).toList();
 
@@ -488,14 +585,19 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                   _selectedIds.clear();
                 }),
               ),
-              title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
+              title: Text(
+                '${_selectedIds.length} Terpilih',
+                style: const TextStyle(color: Colors.white),
+              ),
               actions: [
                 IconButton(
                   icon: const Icon(
                     Icons.checklist_rounded,
                     color: Colors.white,
                   ),
-                  tooltip: _selectedIds.length == filteredStudents.length ? 'Batal Pilih Semua' : 'Pilih Semua',
+                  tooltip: _selectedIds.length == filteredStudents.length
+                      ? 'Batal Pilih Semua'
+                      : 'Pilih Semua',
                   onPressed: () => _selectAll(filteredStudents),
                 ),
                 IconButton(
@@ -508,13 +610,14 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
           : AppBar(
               title: Text(
                 'Daftar Siswa',
-                style: GoogleFonts.hankenGrotesk(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
               ),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.file_upload_outlined, color: Color(0xFF2563EB)),
+                  icon: const Icon(
+                    Icons.file_upload_outlined,
+                    color: Color(0xFF2563EB),
+                  ),
                   tooltip: 'Impor Siswa Excel',
                   onPressed: () {
                     StudentImportModal.show(
@@ -529,19 +632,34 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                       ? SizedBox(
                           width: 18.w,
                           height: 18.w,
-                          child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2563EB)),
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFF2563EB),
+                          ),
                         )
-                      : const Icon(Icons.table_view_rounded, color: Color(0xFF10B981)),
+                      : const Icon(
+                          Icons.table_view_rounded,
+                          color: Color(0xFF10B981),
+                        ),
                   tooltip: 'Ekspor Excel',
                   onPressed: (_isExporting || filteredStudents.isEmpty)
                       ? null
                       : () {
-                          final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                          _handleExportExcel(filteredStudents, cls.name, authProvider);
+                          final authProvider = Provider.of<AuthProvider>(
+                            context,
+                            listen: false,
+                          );
+                          _handleExportExcel(
+                            filteredStudents,
+                            cls.name,
+                            authProvider,
+                          );
                         },
                 ),
                 AdminSelectionActionButton(
-                  onPressed: filteredStudents.isEmpty ? null : () => _toggleSelectionMode(),
+                  onPressed: filteredStudents.isEmpty
+                      ? null
+                      : () => _toggleSelectionMode(),
                 ),
               ],
             ),
@@ -556,7 +674,10 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                   Container(
                     width: double.infinity,
                     margin: EdgeInsets.all(16.w),
-                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 12.h,
+                    ),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
@@ -566,31 +687,39 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF2563EB).withValues(alpha: 0.25),
+                          color: const Color(
+                            0xFF2563EB,
+                          ).withValues(alpha: 0.25),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
                       ],
                     ),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          cls.name,
-                          style: GoogleFonts.hankenGrotesk(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
+                        Flexible(
+                          child: Text(
+                            cls.name,
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        SizedBox(width: 8.w),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10.w,
+                            vertical: 4.h,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
-                            '${filteredStudents.length} Siswa Terdaftar',
+                            '${filteredStudents.length} Siswa',
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 11.sp,
                               fontWeight: FontWeight.bold,
@@ -653,15 +782,20 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                             children: [
                               SizedBox(height: 40.h),
                               AppEmptyWidget(
-                                title: (_searchQuery.isEmpty && _selectedGender == 'all')
+                                title:
+                                    (_searchQuery.isEmpty &&
+                                        _selectedGender == 'all')
                                     ? 'Siswa Kosong'
                                     : 'Siswa Tidak Ditemukan',
-                                subtitle: (_searchQuery.isEmpty && _selectedGender == 'all')
+                                subtitle:
+                                    (_searchQuery.isEmpty &&
+                                        _selectedGender == 'all')
                                     ? 'Belum ada data siswa di kelas ini. Ketuk tombol + di bawah atau impor dari Excel.'
                                     : 'Tidak ada siswa yang cocok dengan filter atau kata pencarian Anda.',
                                 icon: Icons.people_outline_rounded,
                               ),
-                              if (_searchQuery.isEmpty && _selectedGender == 'all') ...[
+                              if (_searchQuery.isEmpty &&
+                                  _selectedGender == 'all') ...[
                                 SizedBox(height: 16.h),
                                 Center(
                                   child: OutlinedButton.icon(
@@ -672,7 +806,9 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                         onImportSuccess: _refreshData,
                                       );
                                     },
-                                    icon: const Icon(Icons.file_upload_outlined),
+                                    icon: const Icon(
+                                      Icons.file_upload_outlined,
+                                    ),
                                     label: Text(
                                       'Impor Siswa dari Excel',
                                       style: GoogleFonts.hankenGrotesk(
@@ -681,8 +817,14 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                     ),
                                     style: OutlinedButton.styleFrom(
                                       foregroundColor: const Color(0xFF2563EB),
-                                      side: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-                                      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+                                      side: const BorderSide(
+                                        color: Color(0xFF2563EB),
+                                        width: 1.5,
+                                      ),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 20.w,
+                                        vertical: 12.h,
+                                      ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
@@ -693,164 +835,238 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                             ],
                           )
                         : ListView.separated(
-                            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 8.h,
+                            ),
                             itemCount: filteredStudents.length,
-                            separatorBuilder: (context, _) => SizedBox(height: 12.h),
+                            separatorBuilder: (context, _) =>
+                                SizedBox(height: 12.h),
                             itemBuilder: (context, index) {
                               final student = filteredStudents[index];
                               final isMale = student.gender == 'L';
-                              final genderColor = isMale ? const Color(0xFF2563EB) : const Color(0xFFEC4899);
-                              final isSelected = _selectedIds.contains(student.id);
-                              final isDark = Theme.of(context).brightness == Brightness.dark;
+                              final genderColor = isMale
+                                  ? const Color(0xFF2563EB)
+                                  : const Color(0xFFEC4899);
+                              final isSelected = _selectedIds.contains(
+                                student.id,
+                              );
+                              final isDark =
+                                  Theme.of(context).brightness ==
+                                  Brightness.dark;
 
                               return FadeSlideIn(
-                                delay: Duration(milliseconds: (index * 35).clamp(0, 400)),
+                                delay: Duration(
+                                  milliseconds: (index * 35).clamp(0, 400),
+                                ),
                                 child: ScaleTap(
                                   onTap: _isSelectionMode
                                       ? () => _toggleSelectItem(student.id)
                                       : null,
                                   onLongPress: () {
                                     if (!_isSelectionMode) {
-                                      _toggleSelectionMode(initialId: student.id);
+                                      _toggleSelectionMode(
+                                        initialId: student.id,
+                                      );
                                     } else {
                                       _toggleSelectItem(student.id);
                                     }
                                   },
                                   child: Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 12.w,
+                                      vertical: 8.h,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: isSelected
-                                          ? (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEFF6FF))
-                                          : (isDark ? Theme.of(context).colorScheme.surface : Colors.white),
+                                          ? (isDark
+                                                ? const Color(
+                                                    0xFF1E3A8A,
+                                                  ).withValues(alpha: 0.35)
+                                                : const Color(0xFFEFF6FF))
+                                          : (isDark
+                                                ? Theme.of(
+                                                    context,
+                                                  ).colorScheme.surface
+                                                : Colors.white),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
                                         color: isSelected
                                             ? const Color(0xFF2563EB)
-                                            : (isDark ? const Color(0xFF334155) : AppTheme.outlineVariant),
+                                            : (isDark
+                                                  ? const Color(0xFF334155)
+                                                  : AppTheme.outlineVariant),
                                         width: isSelected ? 1.5 : 1.0,
                                       ),
                                     ),
                                     child: Row(
-                                    children: [
-                                      if (_isSelectionMode) ...[
-                                        Checkbox(
-                                          value: isSelected,
-                                          activeColor: const Color(0xFF2563EB),
-                                          onChanged: (_) => _toggleSelectItem(student.id),
-                                        ),
-                                        SizedBox(width: 4.w),
-                                      ],
-                                      // Initials avatar
-                                      CircleAvatar(
-                                        radius: 17.r,
-                                        backgroundColor: genderColor.withValues(alpha: 0.1),
-                                        child: Text(
-                                          student.name.isNotEmpty
-                                              ? student.name.substring(0, 1).toUpperCase()
-                                              : 'S',
-                                          style: GoogleFonts.hankenGrotesk(
-                                            fontWeight: FontWeight.bold,
-                                            color: genderColor,
-                                            fontSize: 13.sp,
+                                      children: [
+                                        if (_isSelectionMode) ...[
+                                          Checkbox(
+                                            value: isSelected,
+                                            activeColor: const Color(
+                                              0xFF2563EB,
+                                            ),
+                                            onChanged: (_) =>
+                                                _toggleSelectItem(student.id),
+                                          ),
+                                          SizedBox(width: 4.w),
+                                        ],
+                                        // Initials avatar
+                                        CircleAvatar(
+                                          radius: 17.r,
+                                          backgroundColor: genderColor
+                                              .withValues(alpha: 0.1),
+                                          child: Text(
+                                            student.name.isNotEmpty
+                                                ? student.name
+                                                      .substring(0, 1)
+                                                      .toUpperCase()
+                                                : 'S',
+                                            style: GoogleFonts.hankenGrotesk(
+                                              fontWeight: FontWeight.bold,
+                                              color: genderColor,
+                                              fontSize: 13.sp,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      SizedBox(width: 10.w),
+                                        SizedBox(width: 10.w),
 
-                                      // Student details
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              student.name,
-                                              style: GoogleFonts.hankenGrotesk(
-                                                fontSize: 13.sp,
-                                                fontWeight: FontWeight.bold,
-                                                color: Theme.of(context).colorScheme.onSurface,
+                                        // Student details
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                student.name,
+                                                style:
+                                                    GoogleFonts.hankenGrotesk(
+                                                      fontSize: 13.sp,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Theme.of(
+                                                        context,
+                                                      ).colorScheme.onSurface,
+                                                    ),
                                               ),
-                                            ),
-                                            SizedBox(height: 2.h),
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  student.nis != null ? 'NIS: ${student.nis}' : 'NIS: -',
-                                                  style: GoogleFonts.hankenGrotesk(
-                                                    fontSize: 11.sp,
-                                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                              SizedBox(height: 2.h),
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    student.nis != null
+                                                        ? 'NIS: ${student.nis}'
+                                                        : 'NIS: -',
+                                                    style:
+                                                        GoogleFonts.hankenGrotesk(
+                                                          fontSize: 11.sp,
+                                                          color: Theme.of(context)
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                        ),
                                                   ),
-                                                ),
-                                                Text(
-                                                  '  ·  ${isMale ? 'L' : 'P'}',
-                                                  style: GoogleFonts.hankenGrotesk(
-                                                    fontSize: 11.sp,
-                                                    color: genderColor,
-                                                    fontWeight: FontWeight.bold,
+                                                  Text(
+                                                    '  ·  ${isMale ? 'L' : 'P'}',
+                                                    style:
+                                                        GoogleFonts.hankenGrotesk(
+                                                          fontSize: 11.sp,
+                                                          color: genderColor,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
                                                   ),
+                                                ],
+                                              ),
+                                              if (student.parentPhoneNumber !=
+                                                      null &&
+                                                  student
+                                                      .parentPhoneNumber!
+                                                      .isNotEmpty) ...[
+                                                SizedBox(height: 2.h),
+                                                Text(
+                                                  'No. Ortu: ${student.parentPhoneNumber}',
+                                                  style:
+                                                      GoogleFonts.hankenGrotesk(
+                                                        fontSize: 10.sp,
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurfaceVariant,
+                                                      ),
                                                 ),
                                               ],
-                                            ),
-                                            if (student.parentPhoneNumber != null && student.parentPhoneNumber!.isNotEmpty) ...[
-                                              SizedBox(height: 2.h),
-                                              Text(
-                                                'No. Ortu: ${student.parentPhoneNumber}',
-                                                style: GoogleFonts.hankenGrotesk(
-                                                  fontSize: 10.sp,
-                                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                            ],
+                                          ),
+                                        ),
+
+                                        // Compact action icons
+                                        if (!_isSelectionMode)
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              _actionIcon(
+                                                Icons.edit_outlined,
+                                                isDark
+                                                    ? const Color(0xFF93C5FD)
+                                                    : const Color(0xFF2563EB),
+                                                () => _showFormDialog(
+                                                  studentItem: student,
                                                 ),
                                               ),
-                                            ],
-                                          ],
-                                        ),
-                                      ),
-
-                                      // Compact action icons
-                                      if (!_isSelectionMode)
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            _actionIcon(
-                                              Icons.edit_outlined,
-                                              isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB),
-                                              () => _showFormDialog(studentItem: student),
-                                            ),
-                                            _actionIcon(
-                                              Icons.delete_outline,
-                                              Colors.red,
-                                              () async {
-                                                final confirm = await showDialog<bool>(
-                                                  context: context,
-                                                  builder: (context) => AlertDialog(
-                                                    title: const Text('Hapus Siswa'),
-                                                    content: Text(
-                                                        'Apakah Anda yakin ingin menghapus data ${student.name} secara permanen?'),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () => Navigator.pop(context, false),
-                                                        child: const Text('Batal'),
-                                                      ),
-                                                      TextButton(
-                                                        onPressed: () => Navigator.pop(context, true),
-                                                        child: const Text(
-                                                          'Hapus',
-                                                          style: TextStyle(color: Colors.red),
+                                              _actionIcon(
+                                                Icons.delete_outline,
+                                                Colors.red,
+                                                () async {
+                                                  final confirm = await showDialog<bool>(
+                                                    context: context,
+                                                    builder: (context) =>
+                                                        AlertDialog(
+                                                          title: const Text(
+                                                            'Hapus Siswa',
+                                                          ),
+                                                          content: Text(
+                                                            'Apakah Anda yakin ingin menghapus data ${student.name} secara permanen?',
+                                                          ),
+                                                          actions: [
+                                                            TextButton(
+                                                              onPressed: () =>
+                                                                  Navigator.pop(
+                                                                    context,
+                                                                    false,
+                                                                  ),
+                                                              child: const Text(
+                                                                'Batal',
+                                                              ),
+                                                            ),
+                                                            TextButton(
+                                                              onPressed: () =>
+                                                                  Navigator.pop(
+                                                                    context,
+                                                                    true,
+                                                                  ),
+                                                              child: const Text(
+                                                                'Hapus',
+                                                                style: TextStyle(
+                                                                  color: Colors
+                                                                      .red,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
                                                         ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                                if (confirm == true) _handleDelete(student.id);
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                    ],
+                                                  );
+                                                  if (confirm == true)
+                                                    _handleDelete(student.id);
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
+                              );
+                            },
+                          ),
                   ),
                 ],
               ),
