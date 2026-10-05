@@ -1313,6 +1313,9 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                     Expanded(
                                                       child: Text(
                                                         'Belum ada jadwal mengajar',
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                        softWrap: false,
                                                         style: GoogleFonts.hankenGrotesk(
                                                           fontSize: 12.sp,
                                                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -1320,27 +1323,32 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                         ),
                                                       ),
                                                     ),
-                                                    SizedBox(width: 8.w),
-                                                    ElevatedButton.icon(
-                                                      onPressed: () => _showFormDialog(
-                                                        initialTeacherId: teacherId,
-                                                      ),
-                                                      icon: const Icon(Icons.add_rounded, size: 16),
-                                                      label: const Text('Buat Jadwal'),
-                                                      style: ElevatedButton.styleFrom(
-                                                        backgroundColor: const Color(0xFF2563EB),
-                                                        foregroundColor: Colors.white,
-                                                        padding: EdgeInsets.symmetric(
-                                                          horizontal: 10.w,
-                                                          vertical: 6.h,
+                                                    if (!isHistorical) ...[
+                                                      SizedBox(width: 8.w),
+                                                      ElevatedButton.icon(
+                                                        onPressed: () => _showFormDialog(
+                                                          initialTeacherId: teacherId,
                                                         ),
-                                                        visualDensity: VisualDensity.compact,
-                                                        textStyle: GoogleFonts.hankenGrotesk(
-                                                          fontSize: 11.sp,
-                                                          fontWeight: FontWeight.bold,
+                                                        icon: const Icon(Icons.add_rounded, size: 16),
+                                                        label: const Text('Buat Jadwal'),
+                                                        style: ElevatedButton.styleFrom(
+                                                          backgroundColor: const Color(0xFF2563EB),
+                                                          foregroundColor: Colors.white,
+                                                          minimumSize: const Size(0, 34),
+                                                          maximumSize: const Size(160, 40),
+                                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                          padding: EdgeInsets.symmetric(
+                                                            horizontal: 12,
+                                                            vertical: 6.h,
+                                                          ),
+                                                          visualDensity: VisualDensity.compact,
+                                                          textStyle: GoogleFonts.hankenGrotesk(
+                                                            fontSize: 11.sp,
+                                                            fontWeight: FontWeight.bold,
+                                                          ),
                                                         ),
                                                       ),
-                                                    ),
+                                                    ],
                                                   ],
                                                 ),
                                               ),
