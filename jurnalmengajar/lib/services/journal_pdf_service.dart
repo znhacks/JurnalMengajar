@@ -9,6 +9,7 @@ import '../models/class_model.dart';
 import '../models/subject_model.dart';
 import '../models/school_model.dart';
 import '../models/schedule_model.dart';
+import '../models/class_attendance_recap_model.dart';
 
 class JournalPdfService {
   /// Generates a PDF byte array for teaching journals report tailored for supervisors.
@@ -761,4 +762,258 @@ class JournalPdfService {
       ),
     );
   }
+
+  // ===========================================================================
+  // REKAPITULASI PRESENSI KEHADIRAN KELAS (PDF)
+  // ===========================================================================
+  static Future<Uint8List> generateClassAttendancePdf({
+    required String className,
+    required String periodName,
+    required String schoolName,
+    SchoolModel? school,
+    required List<StudentAttendanceSummary> studentSummaries,
+    required int totalMeetings,
+    required int totalStudents,
+    required int totalPresent,
+    required int totalSick,
+    required int totalPermission,
+    required int totalAlpha,
+    required double attendanceRate,
+    String? dateRangeText,
+    String? homeroomTeacherName,
+    String? homeroomTeacherNip,
+    String? principalName,
+    String? principalNip,
+  }) async {
+    final pdf = pw.Document();
+
+    // Fetch logo if available
+    pw.ImageProvider? logoImage;
+    if (school?.logoUrl != null && school!.logoUrl!.isNotEmpty) {
+      try {
+        logoImage = await networkImage(school.logoUrl!);
+      } catch (_) {}
+    }
+
+    final ttfRegular = await PdfGoogleFonts.interRegular();
+    final ttfBold = await PdfGoogleFonts.interBold();
+    final ttfSemiBold = await PdfGoogleFonts.interSemiBold();
+
+    final fullDateFormat = DateFormat('d MMMM yyyy', 'id_ID');
+    final printDateStr = fullDateFormat.format(DateTime.now());
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4.landscape,
+        margin: const pw.EdgeInsets.all(32),
+        build: (pw.Context context) {
+          return [
+            // ── Kop Surat ──────────────────────────────────────────────────
+            pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                if (logoImage != null)
+                  pw.Container(
+                    width: 55,
+                    height: 55,
+                    margin: const pw.EdgeInsets.only(right: 14),
+                    child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+                  ),
+                pw.Expanded(
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      pw.Text(
+                        schoolName.toUpperCase(),
+                        style: pw.TextStyle(
+                          font: ttfBold,
+                          fontSize: 14,
+                          color: PdfColors.blueGrey900,
+                        ),
+                        textAlign: pw.TextAlign.center,
+                      ),
+                      if (school?.address != null && school!.address!.isNotEmpty) ...[
+                        pw.SizedBox(height: 2),
+                        pw.Text(
+                          school.address!,
+                          style: pw.TextStyle(font: ttfRegular, fontSize: 8.5, color: PdfColors.grey700),
+                          textAlign: pw.TextAlign.center,
+                        ),
+                      ],
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        'LAPORAN REKAPITULASI PRESENSI KEHADIRAN SISWA',
+                        style: pw.TextStyle(
+                          font: ttfBold,
+                          fontSize: 12,
+                          color: PdfColors.blue800,
+                        ),
+                        textAlign: pw.TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 6),
+            pw.Divider(thickness: 1.5, color: PdfColors.blueGrey800),
+            pw.SizedBox(height: 8),
+
+            // ── Metadata & Ringkasan ─────────────────────────────────────────
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('Kelas: $className', style: pw.TextStyle(font: ttfBold, fontSize: 10)),
+                    pw.SizedBox(height: 2),
+                    pw.Text('Tahun Ajaran / Periode: $periodName', style: pw.TextStyle(font: ttfRegular, fontSize: 9)),
+                    if (dateRangeText != null && dateRangeText.isNotEmpty) ...[
+                      pw.SizedBox(height: 2),
+                      pw.Text('Rentang Waktu: $dateRangeText', style: pw.TextStyle(font: ttfRegular, fontSize: 9)),
+                    ],
+                  ],
+                ),
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.blue50,
+                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                    border: pw.Border.all(color: PdfColors.blue200, width: 0.8),
+                  ),
+                  child: pw.Row(
+                    children: [
+                      pw.Text('Total Siswa: $totalStudents  |  ', style: pw.TextStyle(font: ttfSemiBold, fontSize: 8.5)),
+                      pw.Text('Pertemuan: $totalMeetings  |  ', style: pw.TextStyle(font: ttfSemiBold, fontSize: 8.5)),
+                      pw.Text('Hadir: $totalPresent  |  ', style: pw.TextStyle(font: ttfSemiBold, fontSize: 8.5, color: PdfColors.green800)),
+                      pw.Text('S: $totalSick  I: $totalPermission  A: $totalAlpha  |  ', style: pw.TextStyle(font: ttfSemiBold, fontSize: 8.5, color: PdfColors.orange800)),
+                      pw.Text('Rata-rata: ${attendanceRate.toStringAsFixed(1)}%', style: pw.TextStyle(font: ttfBold, fontSize: 9, color: PdfColors.blue900)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 12),
+
+            // ── Tabel Rekap Siswa ────────────────────────────────────────────
+            pw.TableHelper.fromTextArray(
+              headers: [
+                'No',
+                'Nama Siswa',
+                'NIS',
+                'L/P',
+                'Hadir (H)',
+                'Sakit (S)',
+                'Izin (I)',
+                'Alfa (A)',
+                'Total',
+                '% Kehadiran',
+                'Keterangan',
+              ],
+              data: List.generate(studentSummaries.length, (index) {
+                final s = studentSummaries[index];
+                return [
+                  '${index + 1}',
+                  s.student.name,
+                  s.student.nis?.isNotEmpty == true ? s.student.nis! : '-',
+                  s.student.gender == 'L' ? 'L' : (s.student.gender == 'P' ? 'P' : '-'),
+                  '${s.presentCount}',
+                  '${s.sickCount}',
+                  '${s.permissionCount}',
+                  '${s.alphaCount}',
+                  '${s.totalMeetings}',
+                  '${s.attendancePercentage.toStringAsFixed(1)}%',
+                  s.performanceLabel,
+                ];
+              }),
+              headerStyle: pw.TextStyle(
+                font: ttfBold,
+                fontSize: 8.5,
+                color: PdfColors.white,
+              ),
+              headerDecoration: const pw.BoxDecoration(
+                color: PdfColor.fromInt(0xFF1E3A8A), // Dark blue
+              ),
+              cellStyle: pw.TextStyle(
+                font: ttfRegular,
+                fontSize: 8,
+                color: PdfColors.blueGrey900,
+              ),
+              cellAlignment: pw.Alignment.center,
+              cellAlignments: {
+                0: pw.Alignment.center,
+                1: pw.Alignment.centerLeft,
+                2: pw.Alignment.center,
+                3: pw.Alignment.center,
+                4: pw.Alignment.center,
+                5: pw.Alignment.center,
+                6: pw.Alignment.center,
+                7: pw.Alignment.center,
+                8: pw.Alignment.center,
+                9: pw.Alignment.center,
+                10: pw.Alignment.center,
+              },
+              rowDecoration: const pw.BoxDecoration(
+                border: pw.Border(
+                  bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+                ),
+              ),
+              oddRowDecoration: const pw.BoxDecoration(
+                color: PdfColor.fromInt(0xFFF8FAFC),
+              ),
+            ),
+            pw.SizedBox(height: 20),
+
+            // ── Tanda Tangan ─────────────────────────────────────────────────
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    pw.Text('Mengetahui,', style: pw.TextStyle(font: ttfRegular, fontSize: 8.5)),
+                    pw.Text('Kepala Sekolah', style: pw.TextStyle(font: ttfSemiBold, fontSize: 9)),
+                    pw.SizedBox(height: 40),
+                    pw.Text(
+                      principalName?.isNotEmpty == true ? principalName! : '( ........................................ )',
+                      style: pw.TextStyle(font: ttfBold, fontSize: 9, decoration: pw.TextDecoration.underline),
+                    ),
+                    pw.SizedBox(height: 2),
+                    pw.Text(
+                      principalNip?.isNotEmpty == true ? 'NIP. $principalNip' : 'NIP. ........................................',
+                      style: pw.TextStyle(font: ttfRegular, fontSize: 8),
+                    ),
+                  ],
+                ),
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    pw.Text(
+                      'Dicetak pada: $printDateStr',
+                      style: pw.TextStyle(font: ttfRegular, fontSize: 8.5),
+                    ),
+                    pw.Text('Wali Kelas / Guru Pembina', style: pw.TextStyle(font: ttfSemiBold, fontSize: 9)),
+                    pw.SizedBox(height: 40),
+                    pw.Text(
+                      homeroomTeacherName?.isNotEmpty == true ? homeroomTeacherName! : '( ........................................ )',
+                      style: pw.TextStyle(font: ttfBold, fontSize: 9, decoration: pw.TextDecoration.underline),
+                    ),
+                    pw.SizedBox(height: 2),
+                    pw.Text(
+                      homeroomTeacherNip?.isNotEmpty == true ? 'NIP. $homeroomTeacherNip' : 'NIP. ........................................',
+                      style: pw.TextStyle(font: ttfRegular, fontSize: 8),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ];
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
 }
+

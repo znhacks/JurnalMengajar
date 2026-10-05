@@ -632,6 +632,132 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               ),
                             ),
                           ),
+                          SizedBox(height: 10.h),
+
+                          // 4b. Shortcut ke Halaman Rekap Kehadiran Siswa per Kelas
+                          FadeSlideIn(
+                            delay: const Duration(milliseconds: 185),
+                            child: InkWell(
+                              onTap: () =>
+                                  context.push('/admin/class-attendance-recap'),
+                              borderRadius: BorderRadius.circular(14.r),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 14.w,
+                                  vertical: 10.h,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: isDark
+                                        ? [
+                                            const Color(0xFF132E27),
+                                            const Color(0xFF0F172A),
+                                          ]
+                                        : [
+                                            const Color(0xFFECFDF5),
+                                            const Color(0xFFD1FAE5),
+                                          ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(14.r),
+                                  border: Border.all(
+                                    color: isDark
+                                        ? const Color(0xFF065F46)
+                                        : const Color(0xFFA7F3D0),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: isDark ? 0.2 : 0.04,
+                                      ),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(9.r),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF059669).withValues(
+                                          alpha: 0.15,
+                                        ),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.fact_check_rounded,
+                                        color: const Color(0xFF059669),
+                                        size: 20.r,
+                                      ),
+                                    ),
+                                    SizedBox(width: 12.w),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Rekap Kehadiran Siswa',
+                                            style: GoogleFonts.hankenGrotesk(
+                                              fontSize: 13.5.sp,
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface,
+                                            ),
+                                          ),
+                                          SizedBox(height: 2.h),
+                                          Text(
+                                            'Pantau persentase kehadiran, siswa sakit, izin, dan alpa per kelas.',
+                                            style: TextStyle(
+                                              fontSize: 11.sp,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurfaceVariant,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(width: 8.w),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 10.w,
+                                        vertical: 5.h,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF059669),
+                                        borderRadius: BorderRadius.circular(
+                                          9.r,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            'Buka',
+                                            style: TextStyle(
+                                              fontSize: 11.sp,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          SizedBox(width: 4.w),
+                                          Icon(
+                                            Icons.arrow_forward_rounded,
+                                            size: 13.r,
+                                            color: Colors.white,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                           SizedBox(height: 12.h),
 
                           // 5. Schedule List Section

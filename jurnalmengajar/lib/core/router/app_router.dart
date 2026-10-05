@@ -34,6 +34,7 @@ import '../../screens/admin/master/student_screen.dart';
 import '../../screens/admin/master/student_promotion_screen.dart';
 import '../../screens/admin/master/teacher_detail_screen.dart';
 import '../../screens/admin/teacher_statistics_screen.dart';
+import '../../screens/admin/class_attendance_recap_screen.dart';
 import '../../screens/auth/school_expired_screen.dart';
 import '../../widgets/swipe_back_wrapper.dart';
 
@@ -348,6 +349,22 @@ class AppRouter {
           path: '/admin/teacher-statistics',
           pageBuilder: (context, state) => _buildCustomTransition(
               context, state, const AdminTeacherStatisticsScreen()),
+        ),
+        GoRoute(
+          path: '/admin/class-attendance-recap',
+          pageBuilder: (context, state) {
+            final classId = state.uri.queryParameters['classId'];
+            return _buildCustomTransition(
+                context, state, AdminClassAttendanceRecapScreen(initialClassId: classId));
+          },
+        ),
+        GoRoute(
+          path: '/admin/attendance-recap',
+          pageBuilder: (context, state) {
+            final classId = state.uri.queryParameters['classId'];
+            return _buildCustomTransition(
+                context, state, AdminClassAttendanceRecapScreen(initialClassId: classId));
+          },
         ),
         GoRoute(
           path: '/admin/master-data/periods',

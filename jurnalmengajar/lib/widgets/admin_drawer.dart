@@ -199,6 +199,12 @@ class AdminDrawer extends StatelessWidget {
       ),
       _buildMenuItem(
         context,
+        Icons.fact_check_rounded,
+        'Rekap Kehadiran',
+        '/admin/class-attendance-recap',
+      ),
+      _buildMenuItem(
+        context,
         Icons.settings_rounded,
         'Pengaturan',
         '/admin/settings',

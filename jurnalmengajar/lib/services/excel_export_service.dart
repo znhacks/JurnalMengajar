@@ -8,6 +8,7 @@ import '../models/subject_model.dart';
 import '../models/hour_model.dart';
 import '../models/student_model.dart';
 import '../models/user_model.dart';
+import '../models/class_attendance_recap_model.dart';
 import '../providers/master_data_provider.dart';
 import 'excel_saver.dart';
 
@@ -664,4 +665,188 @@ class ExcelExportService {
       downloadOrShareExcel(bytes, fileName);
     }
   }
+
+  // ===========================================================================
+  // 7. EXPORT REKAP KEHADIRAN KELAS
+  // ===========================================================================
+  static Future<void> exportClassAttendanceRecap({
+    required String className,
+    required String periodName,
+    required String schoolName,
+    required List<StudentAttendanceSummary> studentSummaries,
+    required List<JournalModel> classJournals,
+    required MasterDataProvider masterProvider,
+    String? dateRangeText,
+  }) async {
+    final excel = Excel.createExcel();
+
+    // ── Sheet 1: Rekap Siswa ──────────────────────────────────────────────────
+    final studentSheetName = 'Rekap Presensi Siswa';
+    final defaultSheet = excel.getDefaultSheet() ?? 'Sheet1';
+    excel.rename(defaultSheet, studentSheetName);
+    final sheet1 = excel[studentSheetName];
+
+    final headers1 = [
+      'No',
+      'Nama Siswa',
+      'NIS',
+      'L/P',
+      'Hadir (H)',
+      'Sakit (S)',
+      'Izin (I)',
+      'Alfa (A)',
+      'Total Sesi',
+      '% Kehadiran',
+      'Status',
+    ];
+
+    sheet1.appendRow(headers1.map((h) => TextCellValue(h)).toList());
+    for (var col = 0; col < headers1.length; col++) {
+      sheet1.cell(CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 0)).cellStyle = headerStyle();
+    }
+
+    final hStyle = bodyStyle();
+    final centerStyle = bodyStyle(align: HorizontalAlign.Center);
+
+    for (int i = 0; i < studentSummaries.length; i++) {
+      final summary = studentSummaries[i];
+      final s = summary.student;
+      final genderLabel = s.gender == 'L'
+          ? 'L'
+          : (s.gender == 'P' ? 'P' : '-');
+
+      final row = [
+        IntCellValue(i + 1),
+        TextCellValue(s.name.trim().isNotEmpty ? s.name.trim() : '-'),
+        TextCellValue(s.nis != null && s.nis!.trim().isNotEmpty ? s.nis!.trim() : '-'),
+        TextCellValue(genderLabel),
+        IntCellValue(summary.presentCount),
+        IntCellValue(summary.sickCount),
+        IntCellValue(summary.permissionCount),
+        IntCellValue(summary.alphaCount),
+        IntCellValue(summary.totalMeetings),
+        TextCellValue('${summary.attendancePercentage.toStringAsFixed(1)}%'),
+        TextCellValue(summary.performanceLabel),
+      ];
+
+      sheet1.appendRow(row);
+      final rowIndex = i + 1;
+      sheet1.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet1.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex)).cellStyle = hStyle;
+      sheet1.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet1.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet1.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet1.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet1.cell(CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet1.cell(CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet1.cell(CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet1.cell(CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet1.cell(CellIndex.indexByColumnRow(columnIndex: 10, rowIndex: rowIndex)).cellStyle = centerStyle;
+    }
+
+    // ── Sheet 2: Log Pertemuan ────────────────────────────────────────────────
+    final logSheetName = 'Log Pertemuan Kelas';
+    final sheet2 = excel[logSheetName];
+
+    final headers2 = [
+      'No',
+      'Tanggal',
+      'Hari',
+      'Jam Ke-',
+      'Mata Pelajaran',
+      'Guru Pengajar',
+      'Materi',
+      'Hadir',
+      'Sakit',
+      'Izin',
+      'Alfa',
+      'Siswa Tidak Hadir',
+    ];
+
+    sheet2.appendRow(headers2.map((h) => TextCellValue(h)).toList());
+    for (var col = 0; col < headers2.length; col++) {
+      sheet2.cell(CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 0)).cellStyle = headerStyle();
+    }
+
+    // Sort journals chronologically
+    final sortedJournals = List<JournalModel>.from(classJournals)
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    for (int i = 0; i < sortedJournals.length; i++) {
+      final j = sortedJournals[i];
+      final teacher = masterProvider.teachers.firstWhere(
+        (t) => t.id == j.teacherId,
+        orElse: () => TeacherModel(
+          id: j.teacherId,
+          name: 'Guru Tidak Diketahui',
+          position: '',
+          address: '',
+          phoneNumber: '',
+          email: '',
+        ),
+      );
+      final subj = masterProvider.subjects.firstWhere(
+        (s) => s.id == j.subjectId,
+        orElse: () => SubjectModel(id: j.subjectId, name: '-', isActive: false),
+      );
+
+      final absenceInfo = JournalAbsenceInfo.fromJournal(j);
+      final absentList = <String>[];
+      if (absenceInfo.sickStudentNames.isNotEmpty) {
+        absentList.add('Sakit: ${absenceInfo.sickStudentNames.join(", ")}');
+      }
+      if (absenceInfo.permissionStudentNames.isNotEmpty) {
+        absentList.add('Izin: ${absenceInfo.permissionStudentNames.join(", ")}');
+      }
+      if (absenceInfo.alphaStudentNames.isNotEmpty) {
+        absentList.add('Alfa: ${absenceInfo.alphaStudentNames.join(", ")}');
+      }
+      final absentDetailsStr = absentList.isNotEmpty ? absentList.join(' | ') : 'Semua Hadir';
+
+      final totalStudentsInClass = studentSummaries.isNotEmpty ? studentSummaries.length : 30;
+      final totalAbsents = j.sickCount + j.permissionCount + j.alphaCount;
+      final presentCount = (totalStudentsInClass - totalAbsents).clamp(0, totalStudentsInClass);
+
+      final row = [
+        IntCellValue(i + 1),
+        TextCellValue(formatDate(j.date)),
+        TextCellValue(formatDayName(j.date)),
+        IntCellValue(j.teachingHour),
+        TextCellValue(subj.name.isNotEmpty ? subj.name : '-'),
+        TextCellValue(teacher.name.isNotEmpty ? teacher.name : '-'),
+        TextCellValue(j.material.trim().isNotEmpty ? j.material.trim() : '-'),
+        IntCellValue(presentCount),
+        IntCellValue(j.sickCount),
+        IntCellValue(j.permissionCount),
+        IntCellValue(j.alphaCount),
+        TextCellValue(absentDetailsStr),
+      ];
+
+      sheet2.appendRow(row);
+      final rowIndex = i + 1;
+      sheet2.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet2.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet2.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet2.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet2.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: rowIndex)).cellStyle = hStyle;
+      sheet2.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: rowIndex)).cellStyle = hStyle;
+      sheet2.cell(CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: rowIndex)).cellStyle = hStyle;
+      sheet2.cell(CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet2.cell(CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet2.cell(CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet2.cell(CellIndex.indexByColumnRow(columnIndex: 10, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet2.cell(CellIndex.indexByColumnRow(columnIndex: 11, rowIndex: rowIndex)).cellStyle = hStyle;
+    }
+
+    final dateSuffix = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final safeClass = sanitizeFileName(className);
+    final safePeriod = sanitizeFileName(periodName);
+    final fileName = 'Rekap_Presensi_${safeClass}_${safePeriod}_$dateSuffix.xlsx';
+
+    final bytes = excel.save();
+    if (bytes != null) {
+      downloadOrShareExcel(bytes, fileName);
+    }
+  }
 }
+
