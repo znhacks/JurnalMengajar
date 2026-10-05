@@ -16,9 +16,9 @@ class SupabaseScheduleRepository implements ScheduleRepository {
   SupabaseScheduleRepository(this._supabase);
 
   @override
-  Future<List<ScheduleModel>> getAll([String? schoolId]) async {
+  Future<List<ScheduleModel>> getAll([String? schoolId, String? periodId]) async {
     final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
-    final cacheKey = 'schedules_${cleanSchoolId ?? "all"}';
+    final cacheKey = 'schedules_${cleanSchoolId ?? "all"}${periodId != null && periodId.isNotEmpty ? "_$periodId" : ""}';
 
     // Fallback loader dari local cache jika offline / sinyal lemah
     Future<List<ScheduleModel>> loadFromCache() async {
@@ -44,13 +44,16 @@ class SupabaseScheduleRepository implements ScheduleRepository {
           debugPrint('================================================================');
           debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Fetching ALL schedules from network...');
           debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Current Auth User: id=$currentAuthUid, email=$currentAuthEmail');
-          debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Parameter schoolId: "$schoolId"');
+          debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] Parameter schoolId: "$schoolId", periodId: "$periodId"');
 
           var query = _supabase.from(SupabaseConstants.tableSchedules).select();
           if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
             query = query.eq('school_id', cleanSchoolId);
           } else {
             debugPrint('[RUNTIME_DEBUG:SCHEDULE_REPO] WARNING: ScheduleRepository.getAll called without cleanSchoolId! Scoping may rely solely on RLS.');
+          }
+          if (periodId != null && periodId.isNotEmpty) {
+            query = query.eq('period_id', periodId);
           }
           final response = await query.order(SupabaseConstants.fieldDate, ascending: true);
 

@@ -28,16 +28,26 @@ class JournalProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  Future<void> loadAllJournals([String? schoolId]) async {
-    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId?.trim();
+  String? _selectedPeriodId;
+  String? get selectedPeriodId => _selectedPeriodId;
 
-    if (_inFlightLoadAll != null && _inFlightSchoolId == cleanSchoolId) {
+  void setSelectedPeriodId(String? periodId) {
+    _selectedPeriodId = periodId;
+  }
+
+  Future<void> loadAllJournals([String? schoolId, String? periodId]) async {
+    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId?.trim();
+    final targetPeriodId = periodId ?? _selectedPeriodId;
+    _selectedPeriodId = targetPeriodId;
+
+    final inFlightKey = '${cleanSchoolId ?? "all"}_${targetPeriodId ?? "all"}';
+    if (_inFlightLoadAll != null && _inFlightSchoolId == inFlightKey) {
       return _inFlightLoadAll!;
     }
 
-    final future = _executeLoadAllJournals(cleanSchoolId);
+    final future = _executeLoadAllJournals(cleanSchoolId, targetPeriodId);
     _inFlightLoadAll = future;
-    _inFlightSchoolId = cleanSchoolId;
+    _inFlightSchoolId = inFlightKey;
     try {
       await future;
     } finally {
@@ -48,7 +58,7 @@ class JournalProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _executeLoadAllJournals(String? cleanSchoolId) async {
+  Future<void> _executeLoadAllJournals(String? cleanSchoolId, String? targetPeriodId) async {
     final isSchoolChanged = cleanSchoolId != null && cleanSchoolId.isNotEmpty && cleanSchoolId != _currentSchoolId;
 
     if (isSchoolChanged) {
@@ -62,7 +72,7 @@ class JournalProvider with ChangeNotifier {
     _errorMessage = null;
     final int sequence = ++_loadSequence;
 
-    final sKey = _currentSchoolId ?? 'default';
+    final sKey = '${_currentSchoolId ?? "default"}${targetPeriodId != null && targetPeriodId.isNotEmpty ? "_$targetPeriodId" : ""}';
     final bool hasExistingJournals = _journals.isNotEmpty;
     if (!hasExistingJournals) {
       try {
@@ -82,21 +92,30 @@ class JournalProvider with ChangeNotifier {
     }
 
     try {
-      final fresh = await journalRepository.getAll(_currentSchoolId);
+      final repo = journalRepository;
+      final fresh = (repo is SupabaseJournalRepository)
+          ? await repo.getAll(_currentSchoolId, targetPeriodId)
+          : await repo.getAll(_currentSchoolId);
       if (sequence != _loadSequence || _currentSchoolId != cleanSchoolId) {
         debugPrint('[RUNTIME_DEBUG:JOURNAL_PROVIDER] Stale loadAllJournals dropped for $cleanSchoolId');
         return;
       }
 
       // Multi-tenant defense: ensure no journal from another school slips in
+      List<JournalModel> scoped = fresh;
       if (_currentSchoolId != null && _currentSchoolId!.isNotEmpty) {
-        _journals = fresh.where((j) {
+        scoped = scoped.where((j) {
           final sSchoolId = AppHelper.parseSingleCleanSchoolId(j.schoolId);
           return sSchoolId == null || sSchoolId.isEmpty || sSchoolId == _currentSchoolId;
         }).toList();
-      } else {
-        _journals = fresh;
       }
+
+      // Period defense: ensure no journal from another period slips in if targetPeriodId is set
+      if (targetPeriodId != null && targetPeriodId.isNotEmpty) {
+        scoped = scoped.where((j) => j.periodId == targetPeriodId).toList();
+      }
+
+      _journals = scoped;
     } catch (e) {
       if (sequence == _loadSequence) {
         _errorMessage = e.toString();

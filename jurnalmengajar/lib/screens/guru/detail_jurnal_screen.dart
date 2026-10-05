@@ -11,6 +11,7 @@ import '../../models/journal_attachment_model.dart';
 import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
 import '../../models/teacher_model.dart';
+import '../../models/period_model.dart';
 import '../../core/utils/helper.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
@@ -56,6 +57,15 @@ class DetailJurnalScreen extends StatelessWidget {
       (t) => t.id == journal.teacherId,
       orElse: () => TeacherModel(id: '', name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''),
     );
+
+    final period = masterProvider.periods.firstWhere(
+      (p) => p.id == (journal.periodId ?? cls.periodId),
+      orElse: () => masterProvider.periods.firstWhere(
+        (p) => p.isActive,
+        orElse: () => PeriodModel(id: '', name: '', isActive: true),
+      ),
+    );
+    final isHistorical = !period.isActive && period.id.isNotEmpty;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -437,7 +447,7 @@ class DetailJurnalScreen extends StatelessWidget {
                   ),
                 ),
               ],
-              if (isAdmin && journal.status == 'pending') ...[
+              if (isAdmin && journal.status == 'pending' && !isHistorical) ...[
                 SizedBox(height: 24.h),
                 Row(
                   children: [
@@ -474,6 +484,36 @@ class DetailJurnalScreen extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+              ],
+              if (isHistorical) ...[
+                SizedBox(height: 20.h),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF78350F).withValues(alpha: 0.25) : const Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFFD97706).withValues(alpha: 0.4) : const Color(0xFFFCD34D),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.archive_outlined, size: 18.sp, color: const Color(0xFFD97706)),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Text(
+                          'Arsip Jurnal (${period.name}) - Data periode sebelumnya bersifat Read-Only.',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? const Color(0xFFFBBF24) : const Color(0xFF92400E),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
               SizedBox(height: 24.h),

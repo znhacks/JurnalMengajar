@@ -10,8 +10,10 @@ import '../../../models/schedule_model.dart';
 import '../../../models/teacher_model.dart';
 import '../../../models/class_model.dart';
 import '../../../models/subject_model.dart';
+import '../../../models/period_model.dart';
 import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/admin_search_filter_bar.dart';
+import '../../../widgets/admin_period_selector_bar.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/utils/schedule_grouper.dart';
@@ -25,6 +27,9 @@ class MasterScheduleScreen extends StatefulWidget {
 }
 
 class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
+  String? _selectedPeriodId;
+  String? _lastSchoolId;
+
   @override
   void initState() {
     super.initState();
@@ -33,7 +38,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
     });
   }
 
-  Future<void> _refreshData() async {
+  Future<void> _refreshData({String? periodId}) async {
     if (!mounted) return;
     final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
     final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
@@ -44,14 +49,38 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
     debugPrint('[RUNTIME_DEBUG:MASTER_SCHEDULE] _refreshData initiated.');
     debugPrint('[RUNTIME_DEBUG:MASTER_SCHEDULE] Auth: user=${authProvider.currentUser?.email}, role=${authProvider.activeRole}, schoolId=${authProvider.activeSchoolId}, schoolName="${authProvider.activeSchoolName}"');
 
+    await masterProvider.loadAllData(authProvider.activeSchoolId);
+
+    final activeId = masterProvider.activePeriod?.id ??
+        (masterProvider.periods.isNotEmpty ? masterProvider.periods.first.id : null);
+    final targetPeriodId = periodId ?? _selectedPeriodId ?? activeId;
+    if (_selectedPeriodId != targetPeriodId) {
+      setState(() {
+        _selectedPeriodId = targetPeriodId;
+      });
+    }
+
     await Future.wait([
-      masterProvider.loadAllData(authProvider.activeSchoolId),
-      scheduleProvider.loadAllSchedules(authProvider.activeSchoolId),
-      journalProvider.loadAllJournals(authProvider.activeSchoolId),
+      scheduleProvider.loadAllSchedules(authProvider.activeSchoolId, targetPeriodId),
+      journalProvider.loadAllJournals(authProvider.activeSchoolId, targetPeriodId),
     ]);
 
     debugPrint('[RUNTIME_DEBUG:MASTER_SCHEDULE] _refreshData complete -> Master Teachers: ${masterProvider.teachers.length}, Schedules: ${scheduleProvider.schedules.length}');
     debugPrint('================================================================');
+  }
+
+  Future<void> _onPeriodChanged(String newPeriodId) async {
+    setState(() {
+      _selectedPeriodId = newPeriodId;
+    });
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+
+    await Future.wait([
+      scheduleProvider.loadAllSchedules(authProvider.activeSchoolId, newPeriodId),
+      journalProvider.loadAllJournals(authProvider.activeSchoolId, newPeriodId),
+    ]);
   }
 
   String getWeekdayName(int weekday) {
@@ -81,7 +110,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
     // Default Dropdown Values
-    String? selectedPeriodId = groupedSchedule?.periodId ?? masterProvider.activePeriod?.id ?? (masterProvider.periods.isNotEmpty ? masterProvider.periods.first.id : null);
+    String? selectedPeriodId = groupedSchedule?.periodId ?? _selectedPeriodId ?? masterProvider.activePeriod?.id ?? (masterProvider.periods.isNotEmpty ? masterProvider.periods.first.id : null);
     String? selectedTeacherId = groupedSchedule?.teacherId ?? initialTeacherId ?? (masterProvider.teachers.isNotEmpty ? masterProvider.teachers.first.id : null);
     String? selectedClassId = groupedSchedule?.classId ?? (masterProvider.classes.isNotEmpty ? masterProvider.classes.first.id : null);
     String? selectedSubjectId = groupedSchedule?.subjectId ?? (masterProvider.subjects.isNotEmpty ? masterProvider.subjects.first.id : null);
@@ -960,6 +989,19 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
   Widget build(BuildContext context) {
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
+    final authProvider = context.watch<AuthProvider>();
+
+    if (_lastSchoolId != authProvider.activeSchoolId) {
+      _lastSchoolId = authProvider.activeSchoolId;
+      _selectedPeriodId = null;
+    }
+
+    final effectivePeriodId = _selectedPeriodId ?? masterProvider.activePeriod?.id ?? (masterProvider.periods.isNotEmpty ? masterProvider.periods.first.id : null);
+    final currentPeriod = masterProvider.periods.firstWhere(
+      (p) => p.id == effectivePeriodId,
+      orElse: () => masterProvider.activePeriod ?? PeriodModel(id: '', name: '', isActive: true),
+    );
+    final isHistorical = !currentPeriod.isActive && currentPeriod.id.isNotEmpty;
 
     final validSchedules = scheduleProvider.schedules;
     final allGroupedSchedules = groupMasterSchedules(validSchedules);
@@ -1077,6 +1119,11 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
+                  AdminPeriodSelectorBar(
+                    periods: masterProvider.periods,
+                    selectedPeriodId: effectivePeriodId,
+                    onPeriodChanged: _onPeriodChanged,
+                  ),
                   AdminSearchFilterBar(
                     hintText: 'Cari guru, kelas, pelajaran, atau hari...',
                     searchController: _searchController,
@@ -1400,9 +1447,10 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                               ),
                                                             ),
                                                           ),
-                                                          Row(
-                                                            mainAxisSize: MainAxisSize.min,
-                                                            children: [
+                                                          if (!isHistorical)
+                                                            Row(
+                                                              mainAxisSize: MainAxisSize.min,
+                                                              children: [
                                                               IconButton(
                                                                 icon: const Icon(
                                                                   Icons.edit_rounded,
@@ -1494,6 +1542,33 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                                     VisualDensity.compact,
                                                               ),
                                                             ],
+                                                          )
+                                                        else
+                                                          Container(
+                                                            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                                                            decoration: BoxDecoration(
+                                                              color: isDark ? const Color(0xFF334155).withValues(alpha: 0.4) : const Color(0xFFF1F5F9),
+                                                              borderRadius: BorderRadius.circular(6.r),
+                                                              border: Border.all(
+                                                                color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                                                                width: 0.8,
+                                                              ),
+                                                            ),
+                                                            child: Row(
+                                                              mainAxisSize: MainAxisSize.min,
+                                                              children: [
+                                                                Icon(Icons.lock_outline_rounded, size: 12.sp, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                                                                SizedBox(width: 3.w),
+                                                                Text(
+                                                                  'Arsip',
+                                                                  style: GoogleFonts.hankenGrotesk(
+                                                                    fontSize: 10.sp,
+                                                                    fontWeight: FontWeight.w700,
+                                                                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
                                                           ),
                                                         ],
                                                       ),
@@ -1600,12 +1675,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                 ],
               ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showFormDialog(),
-        backgroundColor: const Color(0xFF2563EB),
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add_rounded),
-      ),
+      floatingActionButton: isHistorical
+          ? null
+          : FloatingActionButton(
+              onPressed: () => _showFormDialog(),
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              child: const Icon(Icons.add_rounded),
+            ),
     );
   }
 }

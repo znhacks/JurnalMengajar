@@ -17,9 +17,9 @@ class SupabaseJournalRepository implements JournalRepository {
   SupabaseJournalRepository(this._supabase);
 
   @override
-  Future<List<JournalModel>> getAll([String? schoolId]) async {
+  Future<List<JournalModel>> getAll([String? schoolId, String? periodId]) async {
     final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
-    final cacheKey = 'journals_${cleanSchoolId ?? "all"}';
+    final cacheKey = 'journals_${cleanSchoolId ?? "all"}${periodId != null && periodId.isNotEmpty ? "_$periodId" : ""}';
 
     Future<List<JournalModel>> loadFromCache() async {
       try {
@@ -43,6 +43,9 @@ class SupabaseJournalRepository implements JournalRepository {
               .eq('is_soft_deleted', false);
           if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
             query = query.eq('school_id', cleanSchoolId);
+          }
+          if (periodId != null && periodId.isNotEmpty) {
+            query = query.eq('period_id', periodId);
           }
           final response = await query.order(SupabaseConstants.fieldDate, ascending: false);
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/schedule_model.dart';
 import '../repositories/schedule_repository.dart';
+import '../repositories/supabase_schedule_repository.dart';
 import '../core/services/cache_service.dart';
 import '../core/utils/helper.dart';
 
@@ -71,33 +72,44 @@ class ScheduleProvider with ChangeNotifier {
     }
   }
 
-  Future<void> loadAllSchedules([String? schoolId]) async {
-    return _loadAllSchedulesInternal(schoolId, forceRefresh: false);
+  String? _selectedPeriodId;
+  String? get selectedPeriodId => _selectedPeriodId;
+
+  void setSelectedPeriodId(String? periodId) {
+    _selectedPeriodId = periodId;
   }
 
-  Future<void> refreshAllSchedules([String? schoolId]) async {
-    return _loadAllSchedulesInternal(schoolId, forceRefresh: true);
+  Future<void> loadAllSchedules([String? schoolId, String? periodId]) async {
+    return _loadAllSchedulesInternal(schoolId, periodId: periodId, forceRefresh: false);
   }
 
-  Future<void> _loadAllSchedulesInternal(String? schoolId, {bool forceRefresh = false}) async {
+  Future<void> refreshAllSchedules([String? schoolId, String? periodId]) async {
+    return _loadAllSchedulesInternal(schoolId, periodId: periodId, forceRefresh: true);
+  }
+
+  Future<void> _loadAllSchedulesInternal(String? schoolId, {String? periodId, bool forceRefresh = false}) async {
     final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId?.trim();
+    final targetPeriodId = periodId ?? _selectedPeriodId;
+    _selectedPeriodId = targetPeriodId;
 
-    // Instant return: data already in memory for this school and not forced (0ms)
+    // Instant return: data already in memory for this school and period and not forced (0ms)
     if (!forceRefresh &&
         _isAllSchedulesLoaded &&
         _currentSchoolId == cleanSchoolId &&
         _schedules.isNotEmpty) {
-      return;
+      if (targetPeriodId == null || _schedules.every((s) => s.periodId == targetPeriodId)) {
+        return;
+      }
     }
 
-    // In-flight coalescing: reuse ongoing request for the same schoolId
-    if (_inFlightLoadAll != null && _inFlightSchoolId == cleanSchoolId) {
+    final inFlightKey = '${cleanSchoolId ?? "all"}_${targetPeriodId ?? "all"}';
+    if (_inFlightLoadAll != null && _inFlightSchoolId == inFlightKey) {
       return _inFlightLoadAll!;
     }
 
-    final future = _executeLoadAllSchedules(cleanSchoolId, forceRefresh: forceRefresh);
+    final future = _executeLoadAllSchedules(cleanSchoolId, targetPeriodId, forceRefresh: forceRefresh);
     _inFlightLoadAll = future;
-    _inFlightSchoolId = cleanSchoolId;
+    _inFlightSchoolId = inFlightKey;
     try {
       await future;
     } finally {
@@ -108,7 +120,7 @@ class ScheduleProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _executeLoadAllSchedules(String? cleanSchoolId, {bool forceRefresh = false}) async {
+  Future<void> _executeLoadAllSchedules(String? cleanSchoolId, String? targetPeriodId, {bool forceRefresh = false}) async {
     final isSchoolChanged = cleanSchoolId != null && cleanSchoolId.isNotEmpty && cleanSchoolId != _currentSchoolId;
 
     if (isSchoolChanged) {
@@ -126,7 +138,7 @@ class ScheduleProvider with ChangeNotifier {
     _errorMessage = null;
     final int sequence = ++_loadSequence;
 
-    final sKey = _currentSchoolId ?? 'default';
+    final sKey = '${_currentSchoolId ?? "default"}${targetPeriodId != null && targetPeriodId.isNotEmpty ? "_$targetPeriodId" : ""}';
     // SWR Instant Cache Population: If _schedules is empty, show disk cached data immediately (0ms)
     if (_schedules.isEmpty) {
       try {
@@ -151,7 +163,10 @@ class ScheduleProvider with ChangeNotifier {
     // This completely prevents UI flickering / loading spinners on page transitions!
 
     try {
-      final fresh = await scheduleRepository.getAll(_currentSchoolId);
+      final repo = scheduleRepository;
+      final fresh = (repo is SupabaseScheduleRepository)
+          ? await repo.getAll(_currentSchoolId, targetPeriodId)
+          : await repo.getAll(_currentSchoolId);
       // Sequence and tenant check: drop stale response if context switched while in-flight
       if (sequence != _loadSequence || _currentSchoolId != cleanSchoolId) {
         debugPrint('[RUNTIME_DEBUG:SCHEDULE_PROVIDER] Stale loadAllSchedules dropped for $cleanSchoolId');
@@ -159,15 +174,20 @@ class ScheduleProvider with ChangeNotifier {
       }
 
       // Multi-tenant defense: ensure only schedules strictly matching this school are kept
+      List<ScheduleModel> scoped = fresh;
       if (_currentSchoolId != null && _currentSchoolId!.isNotEmpty) {
-        _schedules = fresh.where((s) {
+        scoped = scoped.where((s) {
           final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
           return sSchoolId == _currentSchoolId;
         }).toList();
-      } else {
-        _schedules = fresh;
       }
 
+      // Period defense: ensure no schedule from another period slips in if targetPeriodId is set
+      if (targetPeriodId != null && targetPeriodId.isNotEmpty) {
+        scoped = scoped.where((s) => s.periodId == targetPeriodId).toList();
+      }
+
+      _schedules = scoped;
       _isAllSchedulesLoaded = true;
 
       // Asynchronously cache to disk

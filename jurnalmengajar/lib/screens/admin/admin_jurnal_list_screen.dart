@@ -11,9 +11,11 @@ import '../../models/journal_model.dart';
 import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
 import '../../models/teacher_model.dart';
+import '../../models/period_model.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../widgets/admin_selection_action_button.dart';
 import '../../widgets/admin_search_filter_bar.dart';
+import '../../widgets/admin_period_selector_bar.dart';
 import '../../widgets/state_widgets.dart';
 import '../../core/utils/helper.dart';
 import '../../core/theme/app_theme.dart';
@@ -39,6 +41,9 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
   final Set<String> _expandedTeacherIds = {};
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
+
+  String? _selectedPeriodId;
+  String? _lastSchoolId;
 
   void _toggleSelectionMode({String? initialId}) {
     setState(() {
@@ -159,17 +164,44 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     super.dispose();
   }
 
-  Future<void> _refreshData() async {
+  Future<void> _refreshData({String? periodId}) async {
     if (!mounted) return;
     final journalProvider = Provider.of<JournalProvider>(context, listen: false);
     final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
     final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
+    await masterProvider.loadAllData(authProvider.activeSchoolId);
+
+    final activeId = masterProvider.activePeriod?.id ??
+        (masterProvider.periods.isNotEmpty ? masterProvider.periods.first.id : null);
+    final targetPeriodId = periodId ?? _selectedPeriodId ?? activeId;
+    if (_selectedPeriodId != targetPeriodId) {
+      setState(() {
+        _selectedPeriodId = targetPeriodId;
+      });
+    }
+
     await Future.wait([
-      journalProvider.loadAllJournals(authProvider.activeSchoolId),
-      masterProvider.loadAllData(authProvider.activeSchoolId),
-      scheduleProvider.loadAllSchedules(authProvider.activeSchoolId),
+      journalProvider.loadAllJournals(authProvider.activeSchoolId, targetPeriodId),
+      scheduleProvider.loadAllSchedules(authProvider.activeSchoolId, targetPeriodId),
+    ]);
+  }
+
+  Future<void> _onPeriodChanged(String newPeriodId) async {
+    setState(() {
+      _selectedPeriodId = newPeriodId;
+      _selectedClassId = 'all';
+      _isSelectionMode = false;
+      _selectedIds.clear();
+    });
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+
+    await Future.wait([
+      journalProvider.loadAllJournals(authProvider.activeSchoolId, newPeriodId),
+      scheduleProvider.loadAllSchedules(authProvider.activeSchoolId, newPeriodId),
     ]);
   }
 
@@ -178,6 +210,19 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     final journalProvider = context.watch<JournalProvider>();
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
+    final authProvider = context.watch<AuthProvider>();
+
+    if (_lastSchoolId != authProvider.activeSchoolId) {
+      _lastSchoolId = authProvider.activeSchoolId;
+      _selectedPeriodId = null;
+    }
+
+    final effectivePeriodId = _selectedPeriodId ?? masterProvider.activePeriod?.id ?? (masterProvider.periods.isNotEmpty ? masterProvider.periods.first.id : null);
+    final currentPeriod = masterProvider.periods.firstWhere(
+      (p) => p.id == effectivePeriodId,
+      orElse: () => masterProvider.activePeriod ?? PeriodModel(id: '', name: '', isActive: true),
+    );
+    final isHistorical = !currentPeriod.isActive && currentPeriod.id.isNotEmpty;
 
     final allJournals = journalProvider.journals;
     final pendingJournals = allJournals.where((j) => j.status == 'pending').toList();
@@ -291,9 +336,10 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                             _handleExportExcel(targetJournals, masterProvider, authProvider);
                           },
                   ),
-                  AdminSelectionActionButton(
-                    onPressed: allJournals.isEmpty ? null : () => _toggleSelectionMode(),
-                  ),
+                  if (!isHistorical)
+                    AdminSelectionActionButton(
+                      onPressed: allJournals.isEmpty ? null : () => _toggleSelectionMode(),
+                    ),
                 ],
               bottom: PreferredSize(
                 preferredSize: Size.fromHeight(48.h),
@@ -338,6 +384,11 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
+                  AdminPeriodSelectorBar(
+                    periods: masterProvider.periods,
+                    selectedPeriodId: effectivePeriodId,
+                    onPeriodChanged: _onPeriodChanged,
+                  ),
                   AdminSearchFilterBar(
                     hintText: 'Cari guru, kelas, atau mapel...',
                     searchController: _searchController,
@@ -353,7 +404,10 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                     },
                     filterItems: [
                       AdminFilterItem(id: 'all', label: 'Semua Kelas', count: allJournals.length),
-                      ...masterProvider.classes.map((c) => AdminFilterItem(
+                      ...masterProvider.classes.where((c) {
+                        if (c.periodId == currentPeriod.id) return true;
+                        return allJournals.any((j) => j.classId == c.id);
+                      }).map((c) => AdminFilterItem(
                         id: c.id,
                         label: c.name,
                         count: allJournals.where((j) => j.classId == c.id).length,
@@ -632,19 +686,23 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     final isSelected = _selectedIds.contains(journal.id);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final isHistorical = master.periods.any((p) => p.id == (_selectedPeriodId ?? master.activePeriod?.id) && !p.isActive);
+
     return FadeSlideIn(
       delay: const Duration(milliseconds: 60),
       child: ScaleTap(
         onTap: _isSelectionMode
             ? () => _toggleSelectItem(journal.id)
             : () => context.push('/admin/journal/${journal.id}'),
-        onLongPress: () {
-          if (!_isSelectionMode) {
-            _toggleSelectionMode(initialId: journal.id);
-          } else {
-            _toggleSelectItem(journal.id);
-          }
-        },
+        onLongPress: isHistorical
+            ? null
+            : () {
+                if (!_isSelectionMode) {
+                  _toggleSelectionMode(initialId: journal.id);
+                } else {
+                  _toggleSelectItem(journal.id);
+                }
+              },
         child: Container(
           decoration: BoxDecoration(
             color: isSelected

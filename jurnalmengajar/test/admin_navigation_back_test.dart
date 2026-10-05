@@ -28,6 +28,7 @@ import 'package:jurnalmengajar/repositories/subject_repository.dart';
 import 'package:jurnalmengajar/repositories/hour_repository.dart';
 import 'package:jurnalmengajar/repositories/class_repository.dart';
 import 'package:jurnalmengajar/repositories/teacher_repository.dart';
+import 'package:jurnalmengajar/models/student_academic_history_model.dart';
 import 'package:jurnalmengajar/repositories/student_repository.dart';
 import 'package:jurnalmengajar/repositories/journal_repository.dart';
 import 'package:jurnalmengajar/repositories/schedule_repository.dart';
@@ -181,6 +182,18 @@ class FakeStudentRepo implements StudentRepository {
   Future<void> delete(String id) async {}
   @override
   Future<void> deleteMultiple(List<String> ids) async {}
+  @override
+  Future<List<StudentAcademicHistoryModel>> getStudentHistories(String studentId) async => [];
+  @override
+  Future<Map<String, dynamic>> processPromotions({
+    required String schoolId,
+    required String sourcePeriodId,
+    required String sourceClassId,
+    String? targetPeriodId,
+    String? targetClassId,
+    required List<Map<String, dynamic>> items,
+    DateTime? transferDate,
+  }) async => {'success': true};
 }
 
 class FakeJournalRepo implements JournalRepository {

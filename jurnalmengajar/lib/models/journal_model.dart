@@ -24,6 +24,7 @@ class JournalModel {
   final String? schoolId;
   final DateTime? createdAt;
   final String teacherAttendanceStatus; // 'hadir' | 'sakit' | 'izin'
+  final String? periodId;
 
   bool get isTeacherAbsence => teacherAttendanceStatus == 'sakit' || teacherAttendanceStatus == 'izin';
   bool get isTeacherSick => teacherAttendanceStatus == 'sakit';
@@ -51,6 +52,7 @@ class JournalModel {
     this.schoolId,
     this.createdAt,
     this.teacherAttendanceStatus = 'hadir',
+    this.periodId,
   });
 
   factory JournalModel.fromJson(Map<String, dynamic> json) {
@@ -163,6 +165,7 @@ class JournalModel {
       schoolId: AppHelper.parseSingleCleanSchoolId(json['school_id']),
       createdAt: createdAt,
       teacherAttendanceStatus: json['teacher_attendance_status']?.toString() ?? 'hadir',
+      periodId: json['period_id']?.toString() ?? json['periodId']?.toString(),
     );
   }
 
@@ -193,6 +196,9 @@ class JournalModel {
     if (schoolId != null && schoolId!.isNotEmpty) {
       map['school_id'] = schoolId;
     }
+    if (periodId != null && periodId!.isNotEmpty) {
+      map['period_id'] = periodId;
+    }
     return map;
   }
 
@@ -218,6 +224,7 @@ class JournalModel {
     String? schoolId,
     DateTime? createdAt,
     String? teacherAttendanceStatus,
+    String? periodId,
   }) {
     return JournalModel(
       id: id ?? this.id,
@@ -241,6 +248,7 @@ class JournalModel {
       schoolId: schoolId ?? this.schoolId,
       createdAt: createdAt ?? this.createdAt,
       teacherAttendanceStatus: teacherAttendanceStatus ?? this.teacherAttendanceStatus,
+      periodId: periodId ?? this.periodId,
     );
   }
 }
