@@ -35,7 +35,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
   bool _isGraduationMode = false; // Mode kelulusan murni
 
   // Tanggal Efektif
-  DateTime _transferDate = DateTime.now();
+  final DateTime _transferDate = DateTime.now();
 
   // Siswa terpilih & status
   final Set<String> _selectedStudentIds = {};
@@ -44,6 +44,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
   final Map<String, String> _studentNoteMap = {}; // studentId -> note
 
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _studentsScrollController = ScrollController();
   String _searchQuery = '';
   bool _isSubmitting = false;
 
@@ -58,6 +59,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _studentsScrollController.dispose();
     super.dispose();
   }
 
@@ -94,21 +96,20 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
   Future<void> _loadSourceStudents(String classId) async {
     setState(() {
       _isLoadingStudents = true;
-      _sourceStudents = [];
-      _selectedStudentIds.clear();
-      _studentStatusMap.clear();
-      _studentTargetClassMap.clear();
-      _studentNoteMap.clear();
     });
 
     try {
       final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-      await masterProvider.loadStudentsForClass(classId);
-      final students = masterProvider.students;
+      final students = await masterProvider.studentRepository.getAllByClass(classId);
 
       if (mounted) {
         setState(() {
           _sourceStudents = students;
+          _selectedStudentIds.clear();
+          _studentStatusMap.clear();
+          _studentTargetClassMap.clear();
+          _studentNoteMap.clear();
+
           // Default: seluruh siswa terpilih dan diset 'naik'
           for (final s in students) {
             _selectedStudentIds.add(s.id);
@@ -373,7 +374,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
           ),
         ],
       ),
-      body: masterProvider.isLoading && _sourceStudents.isEmpty
+      body: masterProvider.isLoading && masterProvider.classes.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
@@ -395,81 +396,102 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                         )
                       : _buildStepBody(periods, sourceClasses, targetClasses, isDark),
                 ),
-
-                // Bottom Action Navigation Bar
-                _buildBottomBar(isDark),
               ],
             ),
+      bottomNavigationBar: SafeArea(
+        child: _buildBottomBar(isDark),
+      ),
     );
   }
 
   Widget _buildStepHeader(bool isDark) {
-    final steps = [
-      {'title': 'Sumber & Tujuan', 'icon': Icons.tune_rounded},
-      {'title': 'Pilih Siswa', 'icon': Icons.checklist_rounded},
-      {'title': 'Verifikasi', 'icon': Icons.verified_rounded},
-    ];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 600;
+        final steps = [
+          {
+            'title': isCompact ? 'Sumber' : 'Sumber & Tujuan',
+            'icon': Icons.tune_rounded,
+          },
+          {
+            'title': isCompact ? 'Pilih Siswa' : 'Pilih Siswa',
+            'icon': Icons.checklist_rounded,
+          },
+          {
+            'title': isCompact ? 'Verifikasi' : 'Verifikasi',
+            'icon': Icons.verified_rounded,
+          },
+        ];
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          bottom: BorderSide(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: isCompact ? 10.w : 16.w,
+            vertical: 10.h,
           ),
-        ),
-      ),
-      child: Row(
-        children: List.generate(steps.length, (index) {
-          final isCompleted = _currentStep > index;
-          final isCurrent = _currentStep == index;
-          final color = isCurrent
-              ? AppTheme.primaryColor
-              : isCompleted
-                  ? Colors.green
-                  : Colors.grey;
-
-          return Expanded(
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 14.r,
-                  backgroundColor: color.withValues(alpha: 0.15),
-                  child: Icon(
-                    isCompleted ? Icons.check : (steps[index]['icon'] as IconData),
-                    size: 14.w,
-                    color: color,
-                  ),
-                ),
-                SizedBox(width: 8.w),
-                Flexible(
-                  child: Text(
-                    steps[index]['title'] as String,
-                    style: GoogleFonts.hankenGrotesk(
-                      fontSize: 12.sp,
-                      fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-                      color: isCurrent
-                          ? Theme.of(context).colorScheme.onSurface
-                          : Colors.grey[500],
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                if (index < steps.length - 1)
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 6.w),
-                    child: Icon(
-                      Icons.chevron_right_rounded,
-                      size: 16.w,
-                      color: Colors.grey[400],
-                    ),
-                  ),
-              ],
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            border: Border(
+              bottom: BorderSide(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              ),
             ),
-          );
-        }),
-      ),
+          ),
+          child: Row(
+            children: List.generate(steps.length, (index) {
+              final isCompleted = _currentStep > index;
+              final isCurrent = _currentStep == index;
+              final color = isCurrent
+                  ? AppTheme.primaryColor
+                  : isCompleted
+                      ? Colors.green
+                      : Colors.grey;
+
+              return Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircleAvatar(
+                      radius: isCompact ? 12.r : 14.r,
+                      backgroundColor: color.withValues(alpha: 0.15),
+                      child: Icon(
+                        isCompleted ? Icons.check : (steps[index]['icon'] as IconData),
+                        size: isCompact ? 12.w : 14.w,
+                        color: color,
+                      ),
+                    ),
+                    SizedBox(width: isCompact ? 4.w : 8.w),
+                    Flexible(
+                      child: Text(
+                        steps[index]['title'] as String,
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: isCompact ? 11.sp : 12.sp,
+                          fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+                          color: isCurrent
+                              ? Theme.of(context).colorScheme.onSurface
+                              : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (index < steps.length - 1)
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isCompact ? 2.w : 6.w,
+                        ),
+                        child: Icon(
+                          Icons.chevron_right_rounded,
+                          size: isCompact ? 14.w : 16.w,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }),
+          ),
+        );
+      },
     );
   }
 
@@ -726,7 +748,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                       style: GoogleFonts.hankenGrotesk(fontSize: 11.sp, color: Colors.grey),
                     ),
                     value: _isGraduationMode,
-                    activeColor: const Color(0xFF8B5CF6),
+                    activeThumbColor: const Color(0xFF8B5CF6),
                     onChanged: (val) {
                       setState(() {
                         _isGraduationMode = val;
@@ -842,15 +864,43 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    ActionChip(
-                      avatar: const Icon(Icons.select_all_rounded, size: 16),
-                      label: Text(
-                        _selectedStudentIds.length == filtered.length && filtered.isNotEmpty
-                            ? 'Batal Pilih Semua'
-                            : 'Pilih Semua (${filtered.length})',
-                        style: GoogleFonts.hankenGrotesk(fontSize: 11.sp),
-                      ),
-                      onPressed: () => _toggleSelectAll(filtered),
+                    Builder(
+                      builder: (context) {
+                        final isAllSelected = _selectedStudentIds.length == filtered.length && filtered.isNotEmpty;
+                        return ActionChip(
+                          avatar: Icon(
+                            Icons.checklist_rounded,
+                            size: 16,
+                            color: isAllSelected
+                                ? const Color(0xFF38BDF8)
+                                : (isDark ? Colors.white70 : const Color(0xFF0284C7)),
+                          ),
+                          label: Text(
+                            isAllSelected
+                                ? 'Batal Pilih Semua'
+                                : 'Pilih Semua (${filtered.length})',
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.bold,
+                              color: isAllSelected
+                                  ? (isDark ? const Color(0xFF7DD3FC) : const Color(0xFF0369A1))
+                                  : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                            ),
+                          ),
+                          backgroundColor: isAllSelected
+                              ? (isDark
+                                  ? const Color(0xFF0C4A6E).withValues(alpha: 0.6)
+                                  : const Color(0xFFE0F2FE))
+                              : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
+                          side: BorderSide(
+                            color: isAllSelected
+                                ? const Color(0xFF38BDF8)
+                                : (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
+                            width: 1,
+                          ),
+                          onPressed: () => _toggleSelectAll(filtered),
+                        );
+                      },
                     ),
                     SizedBox(width: 6.w),
                     ActionChip(
@@ -931,133 +981,134 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                     icon: Icons.people_outline,
                   ),
                 )
-              : ListView.separated(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                  itemCount: filtered.length,
-                  separatorBuilder: (context, _) => SizedBox(height: 8.h),
-                  itemBuilder: (context, index) {
-                    final student = filtered[index];
-                    final isSelected = _selectedStudentIds.contains(student.id);
-                    final status = _studentStatusMap[student.id] ?? (_isGraduationMode ? 'lulus' : 'naik');
-                    final statusColor = _getStatusColor(status);
+              : Scrollbar(
+                  controller: _studentsScrollController,
+                  thumbVisibility: true,
+                  child: ListView.separated(
+                    controller: _studentsScrollController,
+                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                    itemCount: filtered.length,
+                    separatorBuilder: (context, _) => SizedBox(height: 8.h),
+                    itemBuilder: (context, index) {
+                      final student = filtered[index];
+                      final isSelected = _selectedStudentIds.contains(student.id);
+                      final status = _studentStatusMap[student.id] ?? (_isGraduationMode ? 'lulus' : 'naik');
+                      final statusColor = _getStatusColor(status);
 
-                    return Container(
-                      padding: EdgeInsets.all(12.w),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? (isDark
-                                ? const Color(0xFF1E3A8A).withValues(alpha: 0.25)
-                                : const Color(0xFFEFF6FF))
-                            : (isDark ? const Color(0xFF1E293B) : Colors.white),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
+                      return Container(
+                        padding: EdgeInsets.all(12.w),
+                        decoration: BoxDecoration(
                           color: isSelected
-                              ? const Color(0xFF2563EB)
-                              : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                          width: isSelected ? 1.5 : 1.0,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: isSelected,
-                                activeColor: const Color(0xFF2563EB),
-                                onChanged: (val) {
-                                  setState(() {
-                                    if (val == true) {
-                                      _selectedStudentIds.add(student.id);
-                                      _studentStatusMap.putIfAbsent(
-                                        student.id,
-                                        () => _isGraduationMode ? 'lulus' : 'naik',
-                                      );
-                                    } else {
-                                      _selectedStudentIds.remove(student.id);
-                                    }
-                                  });
-                                },
-                              ),
-                              CircleAvatar(
-                                radius: 16.r,
-                                backgroundColor: statusColor.withValues(alpha: 0.15),
-                                child: Text(
-                                  student.name.isNotEmpty
-                                      ? student.name.substring(0, 1).toUpperCase()
-                                      : 'S',
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontWeight: FontWeight.bold,
-                                    color: statusColor,
-                                    fontSize: 12.sp,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 10.w),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      student.name,
-                                      style: GoogleFonts.hankenGrotesk(
-                                        fontSize: 13.sp,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      'NIS: ${student.nis ?? "-"} · ${student.gender == "L" ? "Laki-laki" : "Perempuan"}',
-                                      style: GoogleFonts.hankenGrotesk(
-                                        fontSize: 11.sp,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // Status dropdown for this student
-                              if (isSelected)
-                                Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 8.w),
-                                  decoration: BoxDecoration(
-                                    color: statusColor.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: statusColor.withValues(alpha: 0.3),
-                                    ),
-                                  ),
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<String>(
-                                      value: status,
-                                      isDense: true,
-                                      icon: Icon(Icons.arrow_drop_down, color: statusColor),
-                                      style: GoogleFonts.hankenGrotesk(
-                                        fontSize: 11.sp,
-                                        fontWeight: FontWeight.bold,
-                                        color: statusColor,
-                                      ),
-                                      items: const [
-                                        DropdownMenuItem(value: 'naik', child: Text('Naik')),
-                                        DropdownMenuItem(value: 'tidak_naik', child: Text('Tidak Naik')),
-                                        DropdownMenuItem(value: 'lulus', child: Text('Lulus')),
-                                        DropdownMenuItem(value: 'pindah', child: Text('Pindah')),
-                                        DropdownMenuItem(value: 'tetap', child: Text('Tetap')),
-                                      ],
-                                      onChanged: (val) {
-                                        if (val != null) {
-                                          setState(() => _studentStatusMap[student.id] = val);
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ),
-                            ],
+                              ? (isDark
+                                  ? const Color(0xFF1E3A8A).withValues(alpha: 0.25)
+                                  : const Color(0xFFEFF6FF))
+                              : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFF2563EB)
+                                : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                            width: isSelected ? 1.5 : 1.0,
                           ),
-                        ],
-                      ),
-                    );
-                  },
+                        ),
+                        child: Row(
+                          children: [
+                            Checkbox(
+                              value: isSelected,
+                              activeColor: const Color(0xFF2563EB),
+                              onChanged: (val) {
+                                setState(() {
+                                  if (val == true) {
+                                    _selectedStudentIds.add(student.id);
+                                    _studentStatusMap.putIfAbsent(
+                                      student.id,
+                                      () => _isGraduationMode ? 'lulus' : 'naik',
+                                    );
+                                  } else {
+                                    _selectedStudentIds.remove(student.id);
+                                  }
+                                });
+                              },
+                            ),
+                            CircleAvatar(
+                              radius: 16.r,
+                              backgroundColor: statusColor.withValues(alpha: 0.15),
+                              child: Text(
+                                student.name.isNotEmpty
+                                    ? student.name.substring(0, 1).toUpperCase()
+                                    : 'S',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontWeight: FontWeight.bold,
+                                  color: statusColor,
+                                  fontSize: 12.sp,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 10.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    student.name,
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    'NIS: ${student.nis ?? "-"} · ${student.gender == "L" ? "Laki-laki" : "Perempuan"}',
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontSize: 11.sp,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Status dropdown for this student
+                            if (isSelected)
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 8.w),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: statusColor.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: status,
+                                    isDense: true,
+                                    icon: Icon(Icons.arrow_drop_down, color: statusColor),
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontSize: 11.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: statusColor,
+                                    ),
+                                    items: const [
+                                      DropdownMenuItem(value: 'naik', child: Text('Naik')),
+                                      DropdownMenuItem(value: 'tidak_naik', child: Text('Tidak Naik')),
+                                      DropdownMenuItem(value: 'lulus', child: Text('Lulus')),
+                                      DropdownMenuItem(value: 'pindah', child: Text('Pindah')),
+                                      DropdownMenuItem(value: 'tetap', child: Text('Tetap')),
+                                    ],
+                                    onChanged: (val) {
+                                      if (val != null) {
+                                        setState(() => _studentStatusMap[student.id] = val);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
         ),
       ],
@@ -1357,7 +1408,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
   // --- BOTTOM ACTION NAVIGATION BAR ---
   Widget _buildBottomBar(bool isDark) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
@@ -1371,13 +1422,14 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
           if (_currentStep > 0) ...[
             OutlinedButton.icon(
               onPressed: _isSubmitting ? null : () => setState(() => _currentStep--),
-              icon: const Icon(Icons.arrow_back_rounded),
+              icon: const Icon(Icons.arrow_back_rounded, size: 18),
               label: const Text('Kembali'),
               style: OutlinedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                minimumSize: const Size(0, 44),
+                padding: EdgeInsets.symmetric(horizontal: 14.w),
               ),
             ),
-            SizedBox(width: 12.w),
+            SizedBox(width: 10.w),
           ],
           Expanded(
             child: ElevatedButton.icon(
@@ -1394,18 +1446,19 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                     },
               icon: Icon(
                 _currentStep == 2 ? Icons.check_circle_outline_rounded : Icons.arrow_forward_rounded,
+                size: 18,
               ),
               label: Text(
                 _currentStep == 2
                     ? 'Konfirmasi & Proses (${_selectedStudentIds.length} Siswa)'
-                    : 'Lanjut ke ${_currentStep == 0 ? "Pilih Siswa" : "Verifikasi"}',
-                style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+                    : (_currentStep == 0 ? 'Pilih Siswa' : 'Verifikasi'),
+                style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold, fontSize: 13.sp),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 14.h),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                minimumSize: const Size(0, 44),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
           ),
