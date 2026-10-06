@@ -601,6 +601,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   GestureDetector(
+                                    // Langsung tampilkan halaman register
+                                    // (route /register) — tidak kembali ke awal.
                                     onTap: () => context.push('/register'),
                                     child: Text(
                                       'Daftar Sekarang',

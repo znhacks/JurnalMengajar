@@ -15,11 +15,39 @@ import '../../widgets/wave_clipper.dart';
 class RegisterScreen extends StatefulWidget {
   final List<String>? initialSelectedSchools;
   final String? initialSchoolId;
+  // Prefill dari form sederhana (langkah 1 di halaman login).
+  final String? initialFullName;
+  final String? initialPosition;
+  final String? initialPhoneNumber;
+  final String? initialAddress;
+  final String? initialNip;
+  final Uint8List? initialProfileImageBytes;
+  // 'guru' atau 'admin'. Default 'guru' agar route /register tidak berubah.
+  final String? initialRegisterType;
+  final String? initialSchoolCode;
+  // Ketika true, RegisterScreen ditampilkan inline di dalam LoginScreen
+  // (tanpa navigasi route) dengan tampilan yang sama persis.
+  final bool embedded;
+  final VoidCallback? onBackToLogin;
+  // Dipanggil setelah registrasi guru berhasil (mode embedded).
+  // Jika null, fallback ke onBackToLogin lalu ke context.pop().
+  final VoidCallback? onRegisterSuccess;
 
   const RegisterScreen({
     super.key,
     this.initialSelectedSchools,
     this.initialSchoolId,
+    this.initialFullName,
+    this.initialPosition,
+    this.initialPhoneNumber,
+    this.initialAddress,
+    this.initialNip,
+    this.initialProfileImageBytes,
+    this.initialRegisterType,
+    this.initialSchoolCode,
+    this.embedded = false,
+    this.onBackToLogin,
+    this.onRegisterSuccess,
   });
 
   @override
@@ -53,6 +81,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String _registerType = 'guru'; // 'guru' or 'admin'
+  // Langkah 0 = data diri TANPA email/password (foto, sekolah, nama,
+  // NIP, jabatan, telepon, alamat). Langkah 1 = akun (email & password).
+  // Satu widget yang sama untuk route /register maupun dari halaman login,
+  // sehingga tampilannya selalu persis seperti halaman register.
+  int _step = 0;
   final List<String> _selectedSchools = [];
   String? _resolvedSchoolId;
   String? _detectedPlan;
@@ -65,6 +98,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
         widget.initialSelectedSchools!.isNotEmpty) {
       _selectedSchools.addAll(widget.initialSelectedSchools!);
       _resolvedSchoolId = widget.initialSchoolId;
+    }
+    // Prefill dari form sederhana (tidak menimpa jika kosong).
+    if ((widget.initialFullName ?? '').isNotEmpty) {
+      _fullNameController.text = widget.initialFullName!;
+    }
+    if ((widget.initialPosition ?? '').isNotEmpty) {
+      _positionController.text = widget.initialPosition!;
+    }
+    if ((widget.initialPhoneNumber ?? '').isNotEmpty) {
+      _phoneNumberController.text = widget.initialPhoneNumber!;
+    }
+    if ((widget.initialAddress ?? '').isNotEmpty) {
+      _addressController.text = widget.initialAddress!;
+    }
+    if ((widget.initialNip ?? '').isNotEmpty) {
+      _nipController.text = widget.initialNip!;
+    }
+    if (widget.initialProfileImageBytes != null) {
+      _profileImageBytes = widget.initialProfileImageBytes;
+    }
+    // Tipe pendaftaran dari form sederhana (tetap default 'guru' untuk
+    // route /register agar tidak merusak alur yang sudah benar).
+    if (widget.initialRegisterType == 'guru' ||
+        widget.initialRegisterType == 'admin') {
+      _registerType = widget.initialRegisterType!;
+    }
+    if ((widget.initialSchoolCode ?? '').isNotEmpty) {
+      _schoolCodeController.text = widget.initialSchoolCode!;
+    }
+    // Mode admin: nama sekolah dipakai dari controller, bukan selected list.
+    // Prefill agar langkah 2 langsung terlihat seperti halaman register.
+    if (_registerType == 'admin' &&
+        _schoolNameController.text.trim().isEmpty &&
+        widget.initialSelectedSchools != null &&
+        widget.initialSelectedSchools!.isNotEmpty) {
+      _schoolNameController.text = widget.initialSelectedSchools!.first;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_resolvedSchoolId != null && _resolvedSchoolId!.isNotEmpty) {
@@ -182,6 +251,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  /// Validasi langkah 0 (data diri tanpa email/password), lalu ke langkah 1.
+  /// Tetap di halaman register — tidak kembali ke tampilan awal.
+  void _goToAccountStep() {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final isTeacherRegister = _registerType == 'guru';
+    if (isTeacherRegister && _selectedSchools.isEmpty) {
+      AppHelper.showSnackBar(
+        context,
+        'Silakan verifikasi kode sekolah tempat Anda mengajar terlebih dahulu.',
+        isError: true,
+      );
+      return;
+    }
+    if (!isTeacherRegister && _schoolNameController.text.trim().isEmpty) {
+      AppHelper.showSnackBar(
+        context,
+        'Silakan masukkan nama sekolah yang dikelola.',
+        isError: true,
+      );
+      return;
+    }
+    if (isTeacherRegister && _positionController.text.trim().isEmpty) {
+      AppHelper.showSnackBar(
+        context,
+        'Silakan pilih jabatan / guru mapel terlebih dahulu.',
+        isError: true,
+      );
+      return;
+    }
+    setState(() {
+      _step = 1;
+    });
+  }
+
+  void _backToProfileStep() {
+    setState(() {
+      _step = 0;
+    });
+  }
+
   Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
       final isTeacherRegister = _registerType == 'guru';
@@ -258,6 +367,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
 
         // For Teacher registration (pending verification)
+        // Mode embedded: JANGAN pakai context.pop() (menyebabkan
+        // LoginScreen kehilangan state dan kembali ke tampilan awal).
+        // Tetap tampilkan dialog di halaman register, lalu kembali
+        // ke login hanya via callback yang menjaga state.
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -270,7 +383,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
               TextButton(
                 onPressed: () {
                   Navigator.pop(dialogContext);
-                  if (mounted) {
+                  if (!mounted) return;
+                  if (widget.onRegisterSuccess != null) {
+                    widget.onRegisterSuccess!();
+                  } else if (widget.onBackToLogin != null) {
+                    widget.onBackToLogin!();
+                  } else {
                     context.pop();
                   }
                 },
@@ -294,7 +412,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final isLoading = context.watch<AuthProvider>().isLoading;
     final masterProvider = context.watch<MasterDataProvider>();
 
-    return Scaffold(
+    // Langkah akun: tombol back sistem kembali ke langkah data diri
+    // (tetap di halaman register, tidak kembali ke tampilan awal).
+    // Langkah data diri: back sistem berjalan normal (ke halaman login).
+    return PopScope(
+      canPop: _step == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_step == 1) {
+          _backToProfileStep();
+        }
+      },
+      child: Scaffold(
       body: Container(
         color: Theme.of(context).scaffoldBackgroundColor,
         child: SafeArea(
@@ -369,6 +498,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               tooltip: 'Kembali ke Login',
                               onPressed: () {
+                                // Langkah akun: kembali ke langkah data diri
+                                // dulu (tetap di halaman register).
+                                if (_step == 1) {
+                                  _backToProfileStep();
+                                  return;
+                                }
+                                // Mode embedded (ditampilkan dari LoginScreen):
+                                // kembali ke form login tanpa navigasi route.
+                                if (widget.onBackToLogin != null) {
+                                  widget.onBackToLogin!();
+                                  return;
+                                }
                                 if (context.canPop()) {
                                   context.pop();
                                 } else {
@@ -429,7 +570,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ).requestFocus(_fullNameFocusNode);
                               } else {
                                 if (!isLoading) {
-                                  _handleRegister();
+                                  if (_step == 0) {
+                                    _goToAccountStep();
+                                  } else {
+                                    _handleRegister();
+                                  }
                                 }
                               }
                             },
@@ -447,7 +592,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ).requestFocus(_fullNameFocusNode);
                               } else {
                                 if (!isLoading) {
-                                  _handleRegister();
+                                  if (_step == 0) {
+                                    _goToAccountStep();
+                                  } else {
+                                    _handleRegister();
+                                  }
                                 }
                               }
                             },
@@ -457,6 +606,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
+                                // Penanda langkah: 1 = data diri (tanpa email/
+                                // password), 2 = akun (email & password).
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 12.w,
+                                    vertical: 8.h,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEFF6FF),
+                                    borderRadius: BorderRadius.circular(12.r),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        _step == 0
+                                            ? Icons.person_add_alt_rounded
+                                            : Icons.lock_outline_rounded,
+                                        size: 16.r,
+                                        color: const Color.fromARGB(
+                                            255, 37, 99, 235),
+                                      ),
+                                      SizedBox(width: 8.w),
+                                      Expanded(
+                                        child: Text(
+                                          _step == 0
+                                              ? 'Langkah 1 dari 2: Data Diri (tanpa email & password)'
+                                              : 'Langkah 2 dari 2: Akun (email & password)',
+                                          style: TextStyle(
+                                            fontSize: 12.sp,
+                                            fontWeight: FontWeight.bold,
+                                            color: const Color.fromARGB(
+                                                255, 30, 64, 175),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(height: 16.h),
                                 // Toggle Switch Opsi Pendaftaran (Guru vs Admin Sekolah)
                                 _buildFieldLabel('TIPE PENDAFTARAN'),
                                 Container(
@@ -1360,8 +1548,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                                 SizedBox(height: 16.h),
 
-                                // Email
-                                _buildFieldLabel('EMAIL'),
+                                if (_step == 1) ...[
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 14.w,
+                                      vertical: 10.h,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF0FDF4),
+                                      borderRadius: BorderRadius.circular(12.r),
+                                      border: Border.all(
+                                        color: const Color(0xFF86EFAC),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.check_circle_rounded,
+                                          color: Color(0xFF166534),
+                                          size: 18,
+                                        ),
+                                        SizedBox(width: 8.w),
+                                        Expanded(
+                                          child: Text(
+                                            _registerType == 'guru'
+                                                ? 'Data diri tersimpan: ${_fullNameController.text.trim()} • ${_selectedSchools.join(', ')}'
+                                                : 'Data diri tersimpan: ${_fullNameController.text.trim()} • ${_schoolNameController.text.trim()}',
+                                            style: TextStyle(
+                                              fontSize: 12.sp,
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF166534),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(height: 16.h),
+                                  // Email
+                                  _buildFieldLabel('EMAIL'),
                                 _buildTextField(
                                   controller: _emailController,
                                   focusNode: _emailFocusNode,
@@ -1469,11 +1694,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     ),
                                   ),
                                 ),
-                                SizedBox(height: 32.h),
+                                SizedBox(height: 16.h),
+                                  // Kembali ke langkah data diri (tetap di halaman register).
+                                  OutlinedButton(
+                                    onPressed: isLoading
+                                        ? null
+                                        : _backToProfileStep,
+                                    style: OutlinedButton.styleFrom(
+                                      side: const BorderSide(
+                                        color: Color.fromARGB(
+                                            255, 37, 99, 235),
+                                        width: 1.5,
+                                      ),
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: kIsWeb ? 10 : 12.h,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(16.r),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Kembali ke Data Diri',
+                                      style: TextStyle(
+                                        fontSize: kIsWeb ? 14 : 15.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color.fromARGB(
+                                            255, 37, 99, 235),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 12.h),
 
-                                // Register Button
-                                ElevatedButton(
-                                  onPressed: isLoading ? null : _handleRegister,
+                                  // Register Button
+                                  ElevatedButton(
+                                    onPressed:
+                                        isLoading ? null : _handleRegister,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color.fromARGB(
                                       255,
@@ -1517,6 +1773,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           ),
                                         ),
                                 ),
+                                ] else ...[
+                                  SizedBox(height: 32.h),
+
+                                  // Lanjut ke langkah akun (tetap di halaman register).
+                                  ElevatedButton(
+                                    onPressed: isLoading ? null : _goToAccountStep,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color.fromARGB(
+                                        255,
+                                        37,
+                                        99,
+                                        235,
+                                      ),
+                                      foregroundColor: Colors.white,
+                                      elevation: 4,
+                                      shadowColor: const Color.fromARGB(
+                                        255,
+                                        37,
+                                        99,
+                                        235,
+                                      ).withValues(alpha: 0.4),
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: kIsWeb ? 10 : 13.h,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16.r),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Lanjut ke Akun',
+                                      style: TextStyle(
+                                        fontSize: kIsWeb ? 15 : 16.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                                 SizedBox(height: 24.h),
 
                                 // Login Link
@@ -1535,6 +1828,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     ),
                                     GestureDetector(
                                       onTap: () {
+                                        // Mode embedded: kembali ke form login
+                                        // tanpa navigasi route.
+                                        if (widget.onBackToLogin != null) {
+                                          widget.onBackToLogin!();
+                                          return;
+                                        }
                                         if (context.canPop()) {
                                           context.pop();
                                         } else {
@@ -1574,6 +1873,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 
