@@ -6,7 +6,6 @@ import '../../../providers/master_data_provider.dart';
 import '../../../models/student_model.dart';
 import '../../../models/class_model.dart';
 import '../../../widgets/state_widgets.dart';
-import '../../../widgets/admin_selection_action_button.dart';
 import '../../../widgets/admin_search_filter_bar.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/theme/app_theme.dart';
@@ -537,26 +536,6 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
     }
   }
 
-  Widget _actionIcon(
-    IconData icon,
-    Color color,
-    VoidCallback onTap, {
-    String? tooltip,
-  }) {
-    final btn = InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Padding(
-        padding: EdgeInsets.all(5.w),
-        child: Icon(icon, color: color, size: 18.w),
-      ),
-    );
-    if (tooltip != null) {
-      return Tooltip(message: tooltip, child: btn);
-    }
-    return btn;
-  }
-
   Color _getEnrollmentStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'naik':
@@ -658,38 +637,34 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                 style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
               ),
               actions: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.file_upload_outlined,
-                    color: Color(0xFF2563EB),
-                  ),
-                  tooltip: 'Impor Siswa Excel',
-                  onPressed: () {
-                    StudentImportModal.show(
-                      context,
-                      initialClass: cls,
-                      onImportSuccess: _refreshData,
-                    );
-                  },
-                ),
-                IconButton(
-                  icon: _isExporting
-                      ? SizedBox(
-                          width: 18.w,
-                          height: 18.w,
-                          child: const CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Color(0xFF2563EB),
-                          ),
-                        )
-                      : const Icon(
-                          Icons.table_view_rounded,
-                          color: Color(0xFF10B981),
+                if (_isExporting)
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8.w),
+                    child: Center(
+                      child: SizedBox(
+                        width: 18.w,
+                        height: 18.w,
+                        child: const CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Color(0xFF2563EB),
                         ),
-                  tooltip: 'Ekspor Excel',
-                  onPressed: (_isExporting || filteredStudents.isEmpty)
-                      ? null
-                      : () {
+                      ),
+                    ),
+                  ),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert_rounded),
+                  tooltip: 'Opsi Lainnya',
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'import_excel':
+                        StudentImportModal.show(
+                          context,
+                          initialClass: cls,
+                          onImportSuccess: _refreshData,
+                        );
+                        break;
+                      case 'export_excel':
+                        if (!_isExporting && filteredStudents.isNotEmpty) {
                           final authProvider = Provider.of<AuthProvider>(
                             context,
                             listen: false,
@@ -699,24 +674,83 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                             cls.name,
                             authProvider,
                           );
-                        },
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.trending_up_rounded,
-                    color: Color(0xFFF59E0B),
-                  ),
-                  tooltip: 'Kenaikan & Mutasi Kelas',
-                  onPressed: () {
-                    context.push(
-                      '/admin/master-data/student-promotions?classId=${widget.classId}',
-                    );
+                        }
+                        break;
+                      case 'promotions':
+                        context.push(
+                          '/admin/master-data/student-promotions?classId=${widget.classId}',
+                        );
+                        break;
+                      case 'batch_select':
+                        _toggleSelectionMode();
+                        break;
+                    }
                   },
-                ),
-                AdminSelectionActionButton(
-                  onPressed: filteredStudents.isEmpty
-                      ? null
-                      : () => _toggleSelectionMode(),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'import_excel',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.file_upload_outlined,
+                            color: const Color(0xFF2563EB),
+                            size: 20.r,
+                          ),
+                          SizedBox(width: 12.w),
+                          const Text('Impor Siswa Excel'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'export_excel',
+                      enabled: !_isExporting && filteredStudents.isNotEmpty,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.table_view_rounded,
+                            color: (!_isExporting && filteredStudents.isNotEmpty)
+                                ? const Color(0xFF10B981)
+                                : Colors.grey,
+                            size: 20.r,
+                          ),
+                          SizedBox(width: 12.w),
+                          const Text('Ekspor Excel'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'promotions',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.trending_up_rounded,
+                            color: const Color(0xFFF59E0B),
+                            size: 20.r,
+                          ),
+                          SizedBox(width: 12.w),
+                          const Text('Kenaikan & Mutasi Kelas'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    PopupMenuItem(
+                      value: 'batch_select',
+                      enabled: filteredStudents.isNotEmpty,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.checklist_rounded,
+                            color: filteredStudents.isNotEmpty
+                                ? Theme.of(context).colorScheme.onSurface
+                                : Colors.grey,
+                            size: 20.r,
+                          ),
+                          SizedBox(width: 12.w),
+                          const Text('Pilih Massal'),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1105,34 +1139,25 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                           ),
                                         ),
 
-                                        // Compact action icons
                                         if (!_isSelectionMode)
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              _actionIcon(
-                                                Icons.history_edu_outlined,
-                                                const Color(0xFF8B5CF6),
-                                                () => StudentHistoryModal.show(
-                                                  context,
-                                                  student: student,
-                                                ),
-                                                tooltip: 'Histori Pendidikan',
-                                              ),
-                                              _actionIcon(
-                                                Icons.edit_outlined,
-                                                isDark
-                                                    ? const Color(0xFF93C5FD)
-                                                    : const Color(0xFF2563EB),
-                                                () => _showFormDialog(
-                                                  studentItem: student,
-                                                ),
-                                                tooltip: 'Edit Siswa',
-                                              ),
-                                              _actionIcon(
-                                                Icons.delete_outline,
-                                                Colors.red,
-                                                () async {
+                                          PopupMenuButton<String>(
+                                            icon: const Icon(Icons.more_vert_rounded),
+                                            tooltip: 'Opsi Siswa',
+                                            padding: EdgeInsets.zero,
+                                            onSelected: (value) async {
+                                              switch (value) {
+                                                case 'history':
+                                                  StudentHistoryModal.show(
+                                                    context,
+                                                    student: student,
+                                                  );
+                                                  break;
+                                                case 'edit':
+                                                  _showFormDialog(
+                                                    studentItem: student,
+                                                  );
+                                                  break;
+                                                case 'delete':
                                                   final confirm = await showDialog<bool>(
                                                     context: context,
                                                     builder: (context) =>
@@ -1173,8 +1198,57 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                                   );
                                                   if (confirm == true) {
                                                     _handleDelete(student.id);
-                                                   }
-                                                },
+                                                  }
+                                                  break;
+                                              }
+                                            },
+                                            itemBuilder: (context) => [
+                                              PopupMenuItem(
+                                                value: 'history',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.history_edu_outlined,
+                                                      color: const Color(0xFF8B5CF6),
+                                                      size: 20.r,
+                                                    ),
+                                                    SizedBox(width: 12.w),
+                                                    const Text('Histori Pendidikan'),
+                                                  ],
+                                                ),
+                                              ),
+                                              PopupMenuItem(
+                                                value: 'edit',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.edit_outlined,
+                                                      color: isDark
+                                                          ? const Color(0xFF93C5FD)
+                                                          : const Color(0xFF2563EB),
+                                                      size: 20.r,
+                                                    ),
+                                                    SizedBox(width: 12.w),
+                                                    const Text('Edit Siswa'),
+                                                  ],
+                                                ),
+                                              ),
+                                              PopupMenuItem(
+                                                value: 'delete',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.delete_outline,
+                                                      color: Colors.red,
+                                                      size: 20.r,
+                                                    ),
+                                                    SizedBox(width: 12.w),
+                                                    const Text(
+                                                      'Hapus Siswa',
+                                                      style: TextStyle(color: Colors.red),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                             ],
                                           ),

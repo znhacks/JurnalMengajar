@@ -467,8 +467,8 @@ void main() {
       // 1. AdminJurnalListScreen
       await tester.pumpWidget(createTestApp(child: const AdminJurnalListScreen()));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
-      expect(find.byTooltip('Kembali'), findsOneWidget);
+      expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
+      expect(find.byTooltip('Menu'), findsOneWidget);
 
       // 2. MasterSubjectScreen
       await tester.pumpWidget(createTestApp(child: const MasterSubjectScreen()));
