@@ -602,8 +602,12 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
 
                         if (mounted) {
                           if (ok) {
-                            // Reload schedules in schedule provider so substitute links take effect
-                            scheduleProvider.loadAllSchedules(schoolId);
+                            // Tunggu reload jadwal selesai dulu agar data pengganti benar-benar tampil,
+                            // baru tampilkan notifikasi berhasil dan tutup dialog.
+                            try {
+                              await scheduleProvider.loadAllSchedules(schoolId);
+                            } catch (_) {}
+                            if (!mounted) return;
                             messenger.showSnackBar(
                               const SnackBar(
                                 content: Text('Data cuti dan guru pengganti berhasil disimpan!'),
@@ -1124,10 +1128,21 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                                               schoolId,
                                               item.substitutes,
                                             );
-                                            if (ok && context.mounted) {
-                                              Provider.of<ScheduleProvider>(context, listen: false).loadAllSchedules(schoolId);
+                                            if (!context.mounted) return;
+                                            if (ok) {
+                                              try {
+                                                await Provider.of<ScheduleProvider>(context, listen: false).loadAllSchedules(schoolId);
+                                              } catch (_) {}
+                                              if (!context.mounted) return;
                                               messenger.showSnackBar(
                                                 const SnackBar(content: Text('Data cuti berhasil dihapus')),
+                                              );
+                                            } else {
+                                              messenger.showSnackBar(
+                                                SnackBar(
+                                                  content: Text(leaveProvider.errorMessage ?? 'Gagal menghapus data cuti.'),
+                                                  backgroundColor: Colors.red,
+                                                ),
                                               );
                                             }
                                           }

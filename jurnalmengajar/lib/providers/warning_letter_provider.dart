@@ -113,7 +113,7 @@ class WarningLetterProvider with ChangeNotifier {
     }
   }
 
-  Future<void> markWarningLetterAsRead(String id) async {
+  Future<bool> markWarningLetterAsRead(String id) async {
     try {
       await warningLetterRepository.markAsRead(id);
       final index = _warningLetters.indexWhere((w) => w.id == id);
@@ -121,9 +121,11 @@ class WarningLetterProvider with ChangeNotifier {
         _warningLetters[index] = _warningLetters[index].copyWith(status: 'read');
         notifyListeners();
       }
+      return true;
     } catch (e) {
       _errorMessage = e.toString();
       notifyListeners();
+      return false;
     }
   }
 
@@ -292,12 +294,15 @@ class WarningLetterProvider with ChangeNotifier {
     }
   }
 
-  Future<void> confirmAllWarnings(String teacherId) async {
+  Future<bool> confirmAllWarnings(String teacherId) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
       final unreadWarnings = _warningLetters.where((w) => w.status == 'unread' && w.teacherId == teacherId).toList();
+      if (unreadWarnings.isEmpty) {
+        return true;
+      }
       for (final w in unreadWarnings) {
         await warningLetterRepository.markAsRead(w.id);
         final index = _warningLetters.indexWhere((item) => item.id == w.id);
@@ -305,26 +310,33 @@ class WarningLetterProvider with ChangeNotifier {
           _warningLetters[index] = _warningLetters[index].copyWith(status: 'read');
         }
       }
+      return true;
     } catch (e) {
       _errorMessage = e.toString();
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> deleteConfirmedWarnings(String teacherId) async {
+  Future<bool> deleteConfirmedWarnings(String teacherId) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
       final confirmedWarnings = _warningLetters.where((w) => w.status == 'read' && w.teacherId == teacherId).toList();
+      if (confirmedWarnings.isEmpty) {
+        return true;
+      }
       for (final w in confirmedWarnings) {
         await warningLetterRepository.delete(w.id);
       }
       _warningLetters.removeWhere((w) => w.status == 'read' && w.teacherId == teacherId);
+      return true;
     } catch (e) {
       _errorMessage = e.toString();
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();

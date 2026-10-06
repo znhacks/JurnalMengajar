@@ -182,14 +182,30 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
               final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
               final currentUser = authProvider.currentUser;
               if (currentUser != null) {
-                final teacher = masterProvider.teachers.firstWhere(
-                  (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
-                );
-                if (value == 'confirm_all') {
-                  await warningProvider.confirmAllWarnings(teacher.id);
+                TeacherModel? teacher;
+                try {
+                  teacher = masterProvider.teachers.firstWhere(
+                    (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
+                  );
+                } catch (_) {
+                  teacher = null;
+                }
+                if (teacher == null) {
                   if (context.mounted) {
+                    AppHelper.showSnackBar(context, 'Data guru tidak ditemukan. Coba muat ulang.', isError: true);
+                  }
+                  return;
+                }
+                if (value == 'confirm_all') {
+                  final ok = await warningProvider.confirmAllWarnings(teacher.id);
+                  if (!context.mounted) return;
+                  if (ok && warningProvider.errorMessage == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Semua pengingat berhasil dikonfirmasi.')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(warningProvider.errorMessage ?? 'Gagal mengonfirmasi pengingat.'), backgroundColor: Colors.red),
                     );
                   }
                 } else if (value == 'delete_all') {
@@ -211,10 +227,15 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                     ),
                   );
                   if (confirmDelete == true && context.mounted) {
-                    await warningProvider.deleteConfirmedWarnings(teacher.id);
-                    if (context.mounted) {
+                    final ok = await warningProvider.deleteConfirmedWarnings(teacher.id);
+                    if (!context.mounted) return;
+                    if (ok && warningProvider.errorMessage == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Pengingat yang dikonfirmasi berhasil dihapus.')),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(warningProvider.errorMessage ?? 'Gagal menghapus pengingat.'), backgroundColor: Colors.red),
                       );
                     }
                   }
@@ -453,11 +474,23 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                         SizedBox(
                                           width: double.infinity,
                                           child: ElevatedButton.icon(
-                                            onPressed: () async {
-                                              for (final w in unreadList) {
-                                                await warningProvider.markWarningLetterAsRead(w.id);
-                                              }
-                                            },
+                                            onPressed: warningProvider.isLoading
+                                                ? null
+                                                : () async {
+                                                    bool allOk = true;
+                                                    for (final w in unreadList) {
+                                                      final ok = await warningProvider.markWarningLetterAsRead(w.id);
+                                                      if (!ok) allOk = false;
+                                                    }
+                                                    if (!allOk && context.mounted) {
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(warningProvider.errorMessage ?? 'Gagal mengonfirmasi sebagian pengingat.'),
+                                                          backgroundColor: Colors.red,
+                                                        ),
+                                                      );
+                                                    }
+                                                  },
                                             icon: const Icon(Icons.check_circle_outline, size: 16),
                                             label: const Text('Konfirmasi'),
                                             style: ElevatedButton.styleFrom(

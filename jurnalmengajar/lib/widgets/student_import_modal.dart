@@ -157,6 +157,7 @@ class _StudentImportModalState extends State<StudentImportModal> {
   }
 
   Future<void> _handleStartImport() async {
+    if (_isImporting) return;
     if (_selectedClass == null) {
       AppHelper.showSnackBar(context, 'Pilih kelas tujuan terlebih dahulu', isError: true);
       return;
@@ -186,21 +187,27 @@ class _StudentImportModalState extends State<StudentImportModal> {
 
       final success = await masterProvider.createMultipleStudents(models, _selectedClass!.id);
 
-      if (mounted) {
-        if (success) {
-          Navigator.pop(context);
-          AppHelper.showSnackBar(
-            context,
-            'Berhasil mengimpor ${models.length} data siswa ke ${_selectedClass!.name}!',
-          );
-          widget.onImportSuccess?.call();
-        } else {
-          AppHelper.showSnackBar(
-            context,
-            masterProvider.errorMessage ?? 'Gagal mengimpor data siswa.',
-            isError: true,
-          );
-        }
+      if (!mounted) return;
+      if (success) {
+        final messenger = ScaffoldMessenger.of(context);
+        final importedCount = models.length;
+        final className = _selectedClass!.name;
+        final onSuccess = widget.onImportSuccess;
+        Navigator.pop(context);
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              'Berhasil mengimpor $importedCount data siswa ke $className!',
+            ),
+          ),
+        );
+        onSuccess?.call();
+      } else {
+        AppHelper.showSnackBar(
+          context,
+          masterProvider.errorMessage ?? 'Gagal mengimpor data siswa.',
+          isError: true,
+        );
       }
     } catch (e) {
       if (mounted) {

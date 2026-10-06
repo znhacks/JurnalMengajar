@@ -514,7 +514,11 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     }
 
     setState(() => _isExportingExcel = true);
-    AppHelper.showSnackBar(context, 'Mempersiapkan file Excel...');
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Mempersiapkan file Excel...'), duration: Duration(seconds: 2)),
+    );
 
     try {
       final selectedSchool = _selectedSchoolId != null
@@ -543,10 +547,12 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
       );
 
       if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         AppHelper.showSnackBar(context, 'Data berhasil diekspor ke Excel.');
       }
     } catch (e) {
       if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         AppHelper.showSnackBar(
           context,
           'Ekspor gagal. Silakan coba lagi.',

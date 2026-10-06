@@ -613,9 +613,14 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         }
 
         if (success && mounted) {
+          // Jika lampiran gagal sebagian, provider mengisi errorMessage walau return true.
+          // Jangan klaim sukses penuh sebelum cek ini.
+          final primaryPartialError = journalProvider.errorMessage;
           CacheService().remove('draft_journal_${schedule.id}');
 
           // Multi-schedule batch apply if checked
+          int batchFailCount = 0;
+          int batchTotal = 0;
           if (_applyToAllSchedulesToday) {
             final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
             final sourceSchedules = scheduleProvider.cachedTeacherSchedules.isNotEmpty
@@ -669,6 +674,8 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
               existingOther ??= await journalProvider.getJournalForSchedule(otherSched.id, date: targetDate);
 
+              batchTotal++;
+              bool otherOk = false;
               if (existingOther != null) {
                 final updatedOther = JournalModel(
                   id: existingOther.id,
@@ -690,7 +697,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                   schoolId: effectiveSchoolId,
                   teacherAttendanceStatus: _teacherAttendanceStatus,
                 );
-                await journalProvider.updateJournal(updatedOther);
+                otherOk = await journalProvider.updateJournal(updatedOther);
               } else {
                 final multiJournal = JournalModel(
                   id: '',
@@ -711,8 +718,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                   schoolId: effectiveSchoolId,
                   teacherAttendanceStatus: _teacherAttendanceStatus,
                 );
-                await journalProvider.createJournal(multiJournal);
+                otherOk = await journalProvider.createJournal(multiJournal);
               }
+              if (!otherOk) batchFailCount++;
 
               CacheService().remove('draft_journal_${otherSched.id}');
               for (final sid in otherGroup.scheduleIds) {
@@ -727,14 +735,24 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           }
 
           if (mounted) {
-            AppHelper.showSnackBar(
-              context,
-              _applyToAllSchedulesToday
-                  ? 'Surat ${_teacherAttendanceStatus == "sakit" ? "sakit" : "izin"} berhasil diterapkan untuk seluruh jadwal hari ini!'
-                  : (_isEditing
-                      ? 'Surat keterangan berhasil diperbarui & dikirim!'
-                      : 'Surat ${_teacherAttendanceStatus == "sakit" ? "sakit" : "izin"} berhasil dikirim untuk verifikasi!'),
-            );
+            if (primaryPartialError != null && primaryPartialError.isNotEmpty) {
+              AppHelper.showSnackBar(context, primaryPartialError, isError: true);
+            } else if (batchFailCount > 0) {
+              AppHelper.showSnackBar(
+                context,
+                'Jurnal utama tersimpan, namun $batchFailCount dari $batchTotal jadwal lain gagal diterapkan. Silakan cek ulang.',
+                isError: true,
+              );
+            } else {
+              AppHelper.showSnackBar(
+                context,
+                _applyToAllSchedulesToday
+                    ? 'Surat ${_teacherAttendanceStatus == "sakit" ? "sakit" : "izin"} berhasil diterapkan untuk seluruh jadwal hari ini!'
+                    : (_isEditing
+                        ? 'Surat keterangan berhasil diperbarui & dikirim!'
+                        : 'Surat ${_teacherAttendanceStatus == "sakit" ? "sakit" : "izin"} berhasil dikirim untuk verifikasi!'),
+              );
+            }
             if (context.canPop()) {
               context.pop();
             }
@@ -911,7 +929,18 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             }
 
             if (absenceFutures.isNotEmpty) {
-              await Future.wait(absenceFutures);
+              try {
+                final waResults = await Future.wait(absenceFutures);
+                final waOk = waResults.where((e) => e == true).length;
+                // Simpan hasil untuk pesan jujur di bawah (tidak klaim terkirim jika gagal).
+                absentCount = waOk;
+                if (waOk < waResults.length) {
+                  debugPrint('Sebagian notifikasi WA gagal: $waOk/${waResults.length} berhasil');
+                }
+              } catch (_) {
+                // Jika WA gagal total, jurnal tetap sukses — jangan klaim WA terkirim.
+                absentCount = 0;
+              }
             }
 
             if (!mounted) return;
@@ -925,10 +954,14 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             } else {
               final msg = absentCount > 0
                   ? 'Revisi jurnal berhasil dikirim & notifikasi WA otomatis dikirim ke orang tua ($absentCount siswa)!'
-                  : 'Revisi jurnal berhasil dikirim!';
+                  : (_studentAttendance.values.any((v) => v == 'S' || v == 'I' || v == 'A')
+                      ? 'Revisi jurnal berhasil dikirim! (Notifikasi WA gagal dikirim, jurnal tetap tersimpan)'
+                      : 'Revisi jurnal berhasil dikirim!');
               AppHelper.showSnackBar(context, msg);
             }
-            context.pop();
+            if (context.canPop()) {
+              context.pop();
+            }
           } else if (mounted) {
             AppHelper.showSnackBar(
               context,
@@ -1009,7 +1042,16 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             }
 
             if (absenceFutures.isNotEmpty) {
-              await Future.wait(absenceFutures);
+              try {
+                final waResults = await Future.wait(absenceFutures);
+                final waOk = waResults.where((e) => e == true).length;
+                absentCount = waOk;
+                if (waOk < waResults.length) {
+                  debugPrint('Sebagian notifikasi WA gagal: $waOk/${waResults.length} berhasil');
+                }
+              } catch (_) {
+                absentCount = 0;
+              }
             }
 
             if (!mounted) return;
@@ -1021,16 +1063,21 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 isError: true,
               );
             } else {
+              final hasAbsent = _studentAttendance.values.any((v) => v == 'S' || v == 'I' || v == 'A');
               final msg = absentCount > 0
                   ? 'Jurnal berhasil dikirim & notifikasi WA otomatis dikirim ke orang tua ($absentCount siswa)!'
-                  : 'Jurnal berhasil dikirim untuk verifikasi!';
+                  : (hasAbsent
+                      ? 'Jurnal berhasil dikirim untuk verifikasi! (Notifikasi WA gagal dikirim, jurnal tetap tersimpan)'
+                      : 'Jurnal berhasil dikirim untuk verifikasi!');
               AppHelper.showSnackBar(
                 context,
                 msg,
               );
             }
             CacheService().remove('draft_journal_${schedule.id}');
-            context.pop();
+            if (context.canPop()) {
+              context.pop();
+            }
           } else if (mounted) {
             AppHelper.showSnackBar(
               context,
@@ -1162,6 +1209,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     );
 
     final isLoading = journalProvider.isLoading;
+    final isBusy = isLoading || _isSaving;
 
     return Scaffold(
       appBar: AppBar(
@@ -1759,7 +1807,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
                 // Submit Button
                 ElevatedButton(
-                  onPressed: isLoading ? null : () => _submitForm(schedule!),
+                  onPressed: isBusy ? null : () => _submitForm(schedule!),
                   style: _teacherAttendanceStatus != 'hadir'
                       ? ElevatedButton.styleFrom(
                           backgroundColor: _teacherAttendanceStatus == 'sakit'
@@ -1768,7 +1816,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                           foregroundColor: Colors.white,
                         )
                       : null,
-                  child: isLoading
+                  child: isBusy
                       ? SizedBox(
                           height: 24.w,
                           width: 24.w,

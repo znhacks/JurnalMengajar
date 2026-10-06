@@ -214,6 +214,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   }
 
   Future<void> _handleSaveSupervisor() async {
+    if (_isSavingSupervisor) return;
     final name = _supervisorNameController.text.trim();
     final nip = _supervisorNipController.text.trim();
 
@@ -235,7 +236,17 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         supervisorNip: nip.isNotEmpty ? nip : null,
         clearSupervisor: name.isEmpty && nip.isEmpty,
       );
-      await settingsProvider.saveSettings(updatedSettings);
+      final settingsOk = await settingsProvider.saveSettings(updatedSettings);
+      if (!settingsOk) {
+        if (mounted) {
+          AppHelper.showSnackBar(
+            context,
+            settingsProvider.errorMessage ?? 'Gagal menyimpan data supervisor.',
+            isError: true,
+          );
+        }
+        return;
+      }
 
       // 2. Update schools table if activeSchoolId exists
       if (activeSchoolId != null && activeSchoolId.isNotEmpty) {

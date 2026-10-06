@@ -97,6 +97,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
   }
 
   void _showFormDialog({GroupedMasterSchedule? groupedSchedule, String? initialTeacherId}) {
+    final outerContext = context;
     final noteController = TextEditingController(text: groupedSchedule?.note ?? '');
     DateTime startDate = groupedSchedule?.startDate ?? DateTime.now();
     bool isRoutine = groupedSchedule != null
@@ -118,6 +119,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
     List<int> selectedHours = groupedSchedule != null 
         ? List<int>.from(groupedSchedule.teachingHours) 
         : [masterProvider.hours.isNotEmpty ? masterProvider.hours.first.teachingHour : 1];
+    bool isSavingSchedule = false;
 
     showModalBottomSheet(
       context: context,
@@ -603,7 +605,11 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                   SizedBox(height: 24.h),
 
                   ElevatedButton(
-                    onPressed: () async {
+                    onPressed: isSavingSchedule
+                        ? null
+                        : () async {
+                      if (isSavingSchedule) return;
+                      setDialogState(() => isSavingSchedule = true);
                       if (selectedPeriodId == null || selectedTeacherId == null || selectedClassId == null || selectedSubjectId == null) {
                         FocusScope.of(context).unfocus();
                         await showDialog(
@@ -614,6 +620,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                             actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Oke'))],
                           ),
                         );
+                        setDialogState(() => isSavingSchedule = false);
                         return;
                       }
 
@@ -662,7 +669,10 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                             ],
                           ),
                         );
-                        if (confirmExpertise != true) return;
+                        if (confirmExpertise != true) {
+                          setDialogState(() => isSavingSchedule = false);
+                          return;
+                        }
                       }
 
                       if (!context.mounted) return;
@@ -712,6 +722,9 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                               actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Oke'))],
                             ),
                           );
+                          if (dialogContext.mounted) {
+                            setDialogState(() => isSavingSchedule = false);
+                          }
                           return;
                         }
 
@@ -762,7 +775,12 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                               ],
                             ),
                           );
-                          if (confirmChange != true) return;
+                          if (confirmChange != true) {
+                            if (dialogContext.mounted) {
+                              setDialogState(() => isSavingSchedule = false);
+                            }
+                            return;
+                          }
                         }
 
                         if (hasJournal && sameDates && sameWeekdays && sameHours) {
@@ -799,6 +817,9 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                 actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Oke'))],
                               ),
                             );
+                            if (dialogContext.mounted) {
+                              setDialogState(() => isSavingSchedule = false);
+                            }
                             return;
                           }
                           
@@ -836,6 +857,9 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                 actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Oke'))],
                               ),
                             );
+                            if (dialogContext.mounted) {
+                              setDialogState(() => isSavingSchedule = false);
+                            }
                             return;
                           }
                           success = await scheduleProvider.createMultipleSchedules(schedulesToCreate, masterProvider.teachers, masterProvider.classes);
@@ -845,8 +869,13 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                       if (!context.mounted || !dialogContext.mounted) return;
 
                       if (success) {
+                        final messenger = ScaffoldMessenger.of(outerContext);
                         Navigator.pop(dialogContext);
-                        AppHelper.showSnackBar(context, 'Jadwal berhasil disimpan!');
+                        if (outerContext.mounted) {
+                          messenger.showSnackBar(
+                            const SnackBar(content: Text('Jadwal berhasil disimpan!')),
+                          );
+                        }
                       } else {
                         // Dismiss keyboard first
                         FocusScope.of(context).unfocus();
@@ -865,6 +894,9 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                             ],
                           ),
                         );
+                        if (dialogContext.mounted) {
+                          setDialogState(() => isSavingSchedule = false);
+                        }
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -876,8 +908,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: Text(
-                      'Simpan',
+                    child: isSavingSchedule
+                        ? SizedBox(
+                            width: 18.w,
+                            height: 18.h,
+                            child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : Text(
+                            'Simpan',
                       style: TextStyle(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.bold,
@@ -1302,7 +1340,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                         : const Color(0xFFE2E8F0),
                                                   ),
                                                 ),
-                                                child: Row(
+                                                child: Row( 
                                                   children: [
                                                     Icon(
                                                       Icons.event_busy_rounded,

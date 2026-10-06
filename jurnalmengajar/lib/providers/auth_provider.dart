@@ -1213,10 +1213,32 @@ class AuthProvider with ChangeNotifier {
       // On web: this triggers the browser redirect to Google.
       // The session will be captured by onAuthStateChange when the user returns.
       // On mobile: the deep link callback will trigger onAuthStateChange as well.
+      // IMPORTANT: at this point login is NOT yet complete — never claim success here.
       await authRepository.loginWithGoogle();
+
+      // Only claim success if a real session + authenticated user actually exists.
+      try {
+        final session = Supabase.instance.client.auth.currentSession;
+        if (session != null) {
+          await _loadCurrentUser();
+          if (_currentUser != null && _errorMessage == null) {
+            _isLoading = false;
+            notifyListeners();
+            return true;
+          }
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        }
+      } catch (_) {
+        // Supabase unavailable (e.g. tests): fall through to silent in-progress.
+      }
+
+      // No session yet = OAuth redirect still in progress (or cancelled without
+      // error). Stay silent: no success snackbar, no error snackbar.
       _isLoading = false;
       notifyListeners();
-      return true;
+      return false;
     } catch (e) {
       _errorMessage = _cleanErrorMessage(e);
       _isLoading = false;

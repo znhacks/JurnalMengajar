@@ -104,10 +104,17 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleGoogleLogin() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.loginWithGoogle();
-    if (success && mounted) {
+    if (!mounted) return;
+    // Only claim success when login is truly complete (real session + user).
+    if (success && authProvider.currentUser != null) {
       AppHelper.showSnackBar(context, 'Login Google Berhasil!');
-    } else if (mounted) {
-      final errMsg = authProvider.errorMessage ?? 'Gagal login dengan Google.';
+      return;
+    }
+    // Redirect still in progress (no session yet, no error): stay silent.
+    // Never show success — and never show a false failure either.
+    final errMsg = authProvider.errorMessage;
+    if (errMsg == null || errMsg.isEmpty) return;
+    if (mounted) {
       if (errMsg.contains('menunggu persetujuan') ||
           errMsg.contains('verifikasi')) {
         showDialog(

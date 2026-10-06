@@ -656,10 +656,18 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                                   startDate: item.startDate,
                                   endDate: item.endDate,
                                 );
-                                if (ok && mounted) {
+                                if (!mounted) return;
+                                if (ok) {
                                   messenger.showSnackBar(
                                     const SnackBar(
                                       content: Text('Hari libur berhasil dihapus'),
+                                    ),
+                                  );
+                                } else {
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text(holidayProvider.errorMessage ?? 'Gagal menghapus hari libur.'),
+                                      backgroundColor: Colors.red,
                                     ),
                                   );
                                 }
