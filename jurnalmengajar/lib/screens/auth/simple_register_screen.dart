@@ -307,6 +307,58 @@ class _SimpleRegisterScreenState extends State<SimpleRegisterScreen> {
     }
 
     final searchCode = cleanCode.toUpperCase().replaceAll(RegExp(r'\s+'), '');
+
+    // Kode gabung guru: kode sederhana dari admin agar guru bisa bergabung
+    // tanpa kode asli (tidak berlaku untuk pendaftaran Admin Sekolah).
+    if (!isAdmin) {
+      try {
+        final joinMatched =
+            await masterProvider.validateTeacherJoinCode(cleanCode);
+        if (joinMatched != null && !joinMatched.isInactive) {
+          final joinName = joinMatched.name.trim();
+          if (joinName.isNotEmpty && joinName.toLowerCase() != 'sekolah') {
+            setState(() {
+              _selectedSchools.clear();
+              _selectedSchools.add(joinName);
+              _resolvedSchoolId = joinMatched.id;
+              _detectedPlan = null;
+              _schoolErrorMessage = null;
+              _positionController.clear();
+            });
+            if (joinMatched.id.isNotEmpty) {
+              masterProvider.loadAllData(joinMatched.id);
+            }
+            if (showSnackBar && mounted) {
+              AppHelper.showSnackBar(
+                context,
+                'Sekolah ditemukan: $joinName',
+              );
+            }
+            return;
+          }
+        }
+      } catch (e) {
+        if (e.toString().contains('dinonaktifkan')) {
+          setState(() {
+            _selectedSchools.clear();
+            _resolvedSchoolId = null;
+            _detectedPlan = null;
+            _positionController.clear();
+            _schoolErrorMessage =
+                'Aktivasi sekolah sedang dinonaktifkan oleh administrator.';
+          });
+          if (showSnackBar && mounted) {
+            AppHelper.showSnackBar(
+              context,
+              'Aktivasi sekolah sedang dinonaktifkan oleh administrator.',
+              isError: true,
+            );
+          }
+          return;
+        }
+      }
+    }
+
     SchoolModel? matchedSchool;
     for (final s in masterProvider.schools) {
       final sCode = s.code?.toUpperCase().replaceAll(RegExp(r'\s+'), '') ?? '';
@@ -314,10 +366,13 @@ class _SimpleRegisterScreenState extends State<SimpleRegisterScreen> {
       final sNss = s.nss?.toUpperCase().replaceAll(RegExp(r'\s+'), '') ?? '';
       final sId = s.id.toUpperCase().replaceAll(RegExp(r'\s+'), '');
       final sName = s.name.toUpperCase().replaceAll(RegExp(r'\s+'), '');
+      final sJoin =
+          s.joinCode?.toUpperCase().replaceAll(RegExp(r'\s+'), '') ?? '';
       final isCodeMatch = (sCode.isNotEmpty && sCode == searchCode) ||
           (sNpsn.isNotEmpty && sNpsn == searchCode) ||
           (sNss.isNotEmpty && sNss == searchCode) ||
-          (sId.isNotEmpty && sId == searchCode);
+          (sId.isNotEmpty && sId == searchCode) ||
+          (sJoin.isNotEmpty && sJoin == searchCode);
       final isNameMatch =
           isAdmin && (sName.isNotEmpty && sName == searchCode);
       if (isCodeMatch || isNameMatch) {

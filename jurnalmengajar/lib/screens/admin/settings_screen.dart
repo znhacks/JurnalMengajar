@@ -37,6 +37,12 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   bool _isEditingApiKey = false;
   bool _isEditingAccountId = false;
 
+  // ── Kode Gabung Guru (1 tabel berisi kode agar guru bisa
+  // bergabung tanpa kode asli) ──
+  final _joinCodeController = TextEditingController();
+  String? _teachingPlaceSchoolId;
+  bool _isSavingTeachingPlace = false;
+
   @override
   void initState() {
     super.initState();
@@ -173,6 +179,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     _noboxAccountIdController.dispose();
     _supervisorNameController.dispose();
     _supervisorNipController.dispose();
+    _joinCodeController.dispose();
     super.dispose();
   }
 
@@ -281,6 +288,120 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       if (mounted) {
         setState(() {
           _isSavingSupervisor = false;
+        });
+      }
+    }
+  }
+
+  /// Isi field Kode Gabung Guru dari data sekolah aktif.
+  /// Dipanggil sekali setiap ganti sekolah agar ketikan admin tidak tertimpa.
+  void _syncTeachingPlaceControllers(SchoolModel s) {
+    _joinCodeController.text = s.joinCode ?? '';
+  }
+
+  Future<void> _handleSaveTeachingPlace(String? schoolId) async {
+    if (_isSavingTeachingPlace) return;
+    if (schoolId == null || schoolId.isEmpty) {
+      AppHelper.showSnackBar(
+        context,
+        'Data sekolah belum tersedia.',
+        isError: true,
+      );
+      return;
+    }
+    final code = _joinCodeController.text.trim();
+    final norm =
+        code.toUpperCase().replaceAll(RegExp(r'\s+'), '');
+
+    setState(() {
+      _isSavingTeachingPlace = true;
+    });
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+
+    try {
+      // Kode tidak boleh dipakai sekolah lain.
+      if (norm.isNotEmpty) {
+        try {
+          final dup = await Supabase.instance.client
+              .from('schools')
+              .select('id, join_code')
+              .ilike('join_code', code);
+          for (final item in (dup as List)) {
+            final m = item as Map<String, dynamic>;
+            final j = (m['join_code'] as String? ?? '')
+                .toUpperCase()
+                .replaceAll(RegExp(r'\s+'), '');
+            if (j.isNotEmpty &&
+                j == norm &&
+                (m['id'] as String?) != schoolId) {
+              if (mounted) {
+                AppHelper.showSnackBar(
+                  context,
+                  'Kode sudah dipakai sekolah lain.',
+                  isError: true,
+                );
+              }
+              return;
+            }
+          }
+        } catch (e) {
+          if (e.toString().contains('join_code')) {
+            if (mounted) {
+              AppHelper.showSnackBar(
+                context,
+                'Kolom kode gabung belum tersedia. Jalankan migration_teacher_join_code.sql di SQL Editor Supabase.',
+                isError: true,
+              );
+            }
+            return;
+          }
+        }
+      }
+
+      try {
+        await Supabase.instance.client.from('schools').update({
+          'join_code': norm.isNotEmpty ? code : null,
+        }).eq('id', schoolId);
+      } catch (e) {
+        if (e.toString().contains('join_code')) {
+          if (mounted) {
+            AppHelper.showSnackBar(
+              context,
+              'Kolom kode gabung belum tersedia. Jalankan migration_teacher_join_code.sql di SQL Editor Supabase.',
+              isError: true,
+            );
+          }
+          return;
+        }
+        rethrow;
+      }
+
+      await CacheService().remove('active_school_$schoolId');
+      await authProvider.fetchActiveSchoolDetails();
+      await masterProvider.loadAllData(schoolId);
+
+      if (mounted) {
+        AppHelper.showSnackBar(
+          context,
+          norm.isNotEmpty
+              ? 'Kode gabung guru berhasil disimpan!'
+              : 'Kode gabung guru dinonaktifkan.',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AppHelper.showSnackBar(
+          context,
+          'Gagal menyimpan kode gabung: $e',
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingTeachingPlace = false;
         });
       }
     }
@@ -681,56 +802,76 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     }
   }
 
-  Widget _buildPerkItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    bool isHighlighted = false,
+  /// Satu baris tabel Kode Gabung Guru: kolom label + kolom isian.
+  TableRow _teachingPlaceInputRow({
+    required String label,
+    required TextEditingController controller,
+    required String hint,
+    TextInputType keyboardType = TextInputType.text,
+    int maxLines = 1,
+    bool showCopy = false,
   }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 6.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: EdgeInsets.all(6.w),
-            decoration: BoxDecoration(
-              color: isHighlighted
-                  ? const Color(0xFFD97706).withValues(alpha: 0.12)
-                  : const Color(0xFF2563EB).withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              size: 16.sp,
-              color: isHighlighted ? const Color(0xFFD97706) : const Color(0xFF2563EB),
+    return TableRow(
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
+          child: Text(
+            label,
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 12.5.sp,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w700,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 11.5.sp,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+          child: TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            maxLines: maxLines,
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(
+                fontSize: 12.sp,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 10.w,
+                vertical: 9.h,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              suffixIcon: showCopy
+                  ? IconButton(
+                      icon: const Icon(Icons.copy_rounded, size: 18),
+                      tooltip: 'Salin Kode',
+                      onPressed: () {
+                        final t = controller.text.trim();
+                        if (t.isEmpty) {
+                          AppHelper.showSnackBar(
+                            context,
+                            'Belum ada kode untuk disalin.',
+                            isError: true,
+                          );
+                          return;
+                        }
+                        Clipboard.setData(ClipboardData(text: t));
+                        AppHelper.showSnackBar(
+                            context, 'Kode gabung disalin!');
+                      },
+                    )
+                  : null,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -763,6 +904,20 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _loadNoboxForSchool(activeSchoolId);
+        }
+      });
+    }
+
+    // Sinkronkan tabel Tempat Mengajar setiap ganti sekolah (sekali saja
+    // agar ketikan admin tidak tertimpa saat rebuild).
+    final tpSchool = school;
+    if (tpSchool != null && tpSchool.id != _teachingPlaceSchoolId) {
+      _teachingPlaceSchoolId = tpSchool.id;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _syncTeachingPlaceControllers(tpSchool);
+          });
         }
       });
     }
@@ -1046,80 +1201,86 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                             ),
                             SizedBox(height: 18.h),
 
-                            // Perks Breakdown
+                            // Kode Gabung Guru: 1 tabel berisi kode agar guru
+                            // bisa bergabung tanpa kode asli.
                             Text(
-                              'Keuntungan & Fitur Paket:',
+                              'Kode Gabung Guru:',
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 13.5.sp,
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
+                            SizedBox(height: 4.h),
+                            Text(
+                              'Buat 1 kode sederhana untuk sekolah ini. Guru memakai kode ini saat mendaftar tanpa perlu kode asli / kode aktivasi. Kosongkan lalu simpan untuk menonaktifkan.',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                height: 1.4,
+                              ),
+                            ),
                             SizedBox(height: 8.h),
-
-                            _buildPerkItem(
-                              icon: Icons.groups_rounded,
-                              title: isUltra
-                                  ? 'Maksimal 150 Guru'
-                                  : (isEnterprise
-                                      ? 'Maksimal 999 Guru'
-                                      : (isPro ? 'Maksimal 50 Guru' : 'Maksimal 30 Guru')),
-                              subtitle: isUltra
-                                  ? 'Kapasitas Ultra hingga 150 guru di aplikasi Jurnal Mengajar'
-                                  : (isEnterprise
-                                      ? 'Kapasitas penuh hingga 999 guru di aplikasi Jurnal Mengajar'
-                                      : (isPro
-                                          ? 'Kapasitas Pro hingga 50 guru di aplikasi Jurnal Mengajar'
-                                          : 'Kapasitas Free plan maksimal 30 guru (Upgrade ke Pro/Ultra untuk lebih)')),
-                              isHighlighted: !isFree,
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                                borderRadius: BorderRadius.circular(12.r),
+                                border: Border.all(
+                                  color: Colors.grey.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Table(
+                                columnWidths: const {
+                                  0: FlexColumnWidth(1.1),
+                                  1: FlexColumnWidth(1.9),
+                                },
+                                defaultVerticalAlignment:
+                                    TableCellVerticalAlignment.middle,
+                                children: [
+                                  _teachingPlaceInputRow(
+                                    label: 'Kode',
+                                    controller: _joinCodeController,
+                                    hint: 'Contoh: SMKN11-GURU',
+                                    showCopy: true,
+                                  ),
+                                ],
+                              ),
                             ),
-                            _buildPerkItem(
-                              icon: Icons.domain_rounded,
-                              title: isUltra
-                                  ? 'Kontrol Banyak Sekolah di JM-Panel'
-                                  : (isEnterprise
-                                      ? 'Kontrol Sekolah Tanpa Batas'
-                                      : (isPro ? 'Kontrol 2 Sekolah di JM-Panel' : 'Kontrol 1 Sekolah')),
-                              subtitle: isUltra
-                                  ? 'Dapat mengelola hingga 10 instansi/sekolah di JM-Panel'
-                                  : (isEnterprise
-                                      ? 'Dapat mengelola multi-sekolah tanpa batasan cabang'
-                                      : (isPro
-                                          ? 'Dapat mengelola hingga 2 instansi/sekolah sekaligus'
-                                          : 'Hanya dapat mengelola 1 instansi sekolah')),
-                              isHighlighted: !isFree,
-                            ),
-                            _buildPerkItem(
-                              icon: Icons.support_agent_rounded,
-                              title: isUltra
-                                  ? 'Dukungan Prioritas Khusus'
-                                  : (isEnterprise
-                                      ? 'Dukungan Prioritas 24/7 Dedicated'
-                                      : (isPro ? 'Dukungan Prioritas (Priority Support)' : 'Dukungan Komunitas')),
-                              subtitle: isUltra
-                                  ? 'Respon secepat kilat dan penanganan prioritas khusus admin Ultra'
-                                  : (isEnterprise
-                                      ? 'Dedicated account manager dan penanganan prioritas 24 jam'
-                                      : (isPro
-                                          ? 'Respon cepat dan penanganan langsung untuk admin Pro'
-                                          : 'Dukungan standar aplikasi')),
-                              isHighlighted: !isFree,
-                            ),
-                            _buildPerkItem(
-                              icon: isUltra ? Icons.analytics_rounded : Icons.manage_accounts_rounded,
-                              title: isUltra
-                                  ? 'Laporan & Rekap Lengkap'
-                                  : (isEnterprise
-                                      ? 'Akses Multi-Admin Organisasi'
-                                      : (isPro ? '2 Pengguna di Organisasi' : '1 Pengguna di Organisasi')),
-                              subtitle: isUltra
-                                  ? 'Akses analitik mendalam, ekspor data, dan rekap lengkap data jurnal'
-                                  : (isEnterprise
-                                      ? 'Multi-user tak terbatas dan fitur organisasi lengkap'
-                                      : (isPro
-                                          ? 'Akses multi-admin untuk pengelolaan sekolah'
-                                          : '1 akun pengelola organisasi')),
-                              isHighlighted: !isFree,
+                            SizedBox(height: 12.h),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: (_isSavingTeachingPlace || isLoading)
+                                    ? null
+                                    : () => _handleSaveTeachingPlace(activeSchoolId),
+                                icon: _isSavingTeachingPlace
+                                    ? SizedBox(
+                                        width: 18.w,
+                                        height: 18.w,
+                                        child: const CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Icon(Icons.key_rounded),
+                                label: Text(
+                                  _isSavingTeachingPlace
+                                      ? 'Menyimpan...'
+                                      : 'Simpan Kode Gabung',
+                                  style: GoogleFonts.hankenGrotesk(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2563EB),
+                                  foregroundColor: Colors.white,
+                                  padding:
+                                      EdgeInsets.symmetric(vertical: 12.h),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12.r),
+                                  ),
+                                ),
+                              ),
                             ),
 
                             SizedBox(height: 18.h),

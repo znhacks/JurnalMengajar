@@ -247,6 +247,74 @@ class SupabaseSchoolRepository implements SchoolRepository {
   }
 
   @override
+  Future<SchoolModel?> validateTeacherJoinCode(String code) async {
+    final norm =
+        code.trim().toUpperCase().replaceAll(RegExp(r'\s+'), '');
+    if (norm.isEmpty) return null;
+    // 1. Cocok persis (case-insensitive) pada sekolah aktif.
+    try {
+      final res = await _supabase
+          .from('schools')
+          .select()
+          .ilike('join_code', code.trim())
+          .eq('status', 'active');
+
+      if ((res as List).isNotEmpty) {
+        final school =
+            SchoolModel.fromJson((res as List).first as Map<String, dynamic>);
+        if (school.isInactive) {
+          throw Exception(
+            'Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).',
+          );
+        }
+        return school;
+      }
+    } catch (e) {
+      if (e.toString().contains('dinonaktifkan')) rethrow;
+      // Kolom join_code belum ada (migrasi belum dijalankan): abaikan.
+      if (e.toString().contains('join_code')) return null;
+    }
+    // 2. Cocok dinormalisasi (abaikan spasi & kapital).
+    try {
+      final res = await _supabase
+          .from('schools')
+          .select('id, join_code')
+          .eq('status', 'active');
+
+      String? matchId;
+      for (final item in (res as List)) {
+        final m = item as Map<String, dynamic>;
+        final j = (m['join_code'] as String? ?? '')
+            .toUpperCase()
+            .replaceAll(RegExp(r'\s+'), '');
+        if (j.isNotEmpty && j == norm) {
+          matchId = m['id'] as String?;
+          break;
+        }
+      }
+      if (matchId != null) {
+        final full = await _supabase
+            .from('schools')
+            .select()
+            .eq('id', matchId)
+            .maybeSingle();
+        if (full != null) {
+          final school = SchoolModel.fromJson(full);
+          if (school.isInactive) {
+            throw Exception(
+              'Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).',
+            );
+          }
+          return school;
+        }
+      }
+    } catch (e) {
+      if (e.toString().contains('dinonaktifkan')) rethrow;
+    }
+    return null;
+  }
+
+  @override
   Future<SchoolModel> activateSchoolWithCode({
     required String currentSchoolId,
     required String activationCode,

@@ -45,6 +45,9 @@ class FakeSchoolRepo implements SchoolRepository {
     }
     return null;
   }
+
+  @override
+  Future<SchoolModel?> validateTeacherJoinCode(String code) async => null;
 }
 
 class FakeAuthRepo implements AuthRepository {

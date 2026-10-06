@@ -15,6 +15,9 @@ class SchoolModel {
   final String? logoUrl;
   final String plan; // 'free', 'pro', or 'enterprise'
   final String? activationCode;
+  /// Kode gabung sederhana dari admin agar guru bisa bergabung
+  /// tanpa memakai kode asli / kode aktivasi.
+  final String? joinCode;
   final int maxTeachers;
   final DateTime? subscriptionUntil;
   final String? supervisorName;
@@ -40,6 +43,7 @@ class SchoolModel {
     this.logoUrl,
     this.plan = 'free',
     this.activationCode,
+    this.joinCode,
     this.maxTeachers = 30,
     this.subscriptionUntil,
     this.supervisorName,
@@ -107,6 +111,7 @@ class SchoolModel {
       logoUrl: json['logo_url'] as String? ?? json['logoUrl'] as String?,
       plan: parsedPlan,
       activationCode: json['code'] as String? ?? json['activation_code'] as String? ?? json['activationCode'] as String?,
+      joinCode: json['join_code'] as String? ?? json['joinCode'] as String?,
       maxTeachers: json['max_teachers'] as int? ?? defaultMax,
       subscriptionUntil: effectiveSubscriptionUntil,
       supervisorName: json['supervisor_name'] as String? ?? json['headmaster_name'] as String? ?? json['supervisorName'] as String?,
@@ -131,6 +136,7 @@ class SchoolModel {
       'postal_code': postalCode,
       'logo_url': logoUrl,
       'subscription_plan': plan,
+      'join_code': joinCode,
       'max_teachers': maxTeachers,
       'subscription_until': subscriptionUntil?.toIso8601String(),
       'supervisor_name': supervisorName,
@@ -157,6 +163,8 @@ class SchoolModel {
     String? logoUrl,
     String? plan,
     String? activationCode,
+    String? joinCode,
+    bool clearJoinCode = false,
     int? maxTeachers,
     DateTime? subscriptionUntil,
     String? supervisorName,
@@ -180,6 +188,7 @@ class SchoolModel {
       logoUrl: logoUrl ?? this.logoUrl,
       plan: plan ?? this.plan,
       activationCode: activationCode ?? this.activationCode,
+      joinCode: clearJoinCode ? null : (joinCode ?? this.joinCode),
       maxTeachers: maxTeachers ?? this.maxTeachers,
       subscriptionUntil: subscriptionUntil ?? this.subscriptionUntil,
       supervisorName: clearSupervisor ? null : (supervisorName ?? this.supervisorName),

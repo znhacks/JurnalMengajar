@@ -500,6 +500,14 @@ class MasterDataProvider with ChangeNotifier {
     return null;
   }
 
+  /// Cari sekolah dari kode gabung guru (boleh null jika tidak ada).
+  Future<SchoolModel?> validateTeacherJoinCode(String code) async {
+    if (schoolRepository != null) {
+      return await schoolRepository!.validateTeacherJoinCode(code);
+    }
+    return null;
+  }
+
   Future<SchoolModel> activateSchoolWithCode({
     required String currentSchoolId,
     required String activationCode,

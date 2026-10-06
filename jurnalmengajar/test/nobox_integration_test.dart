@@ -220,6 +220,8 @@ class FakeSchoolRepo implements SchoolRepository {
   @override
   Future<SchoolModel?> validateActivationCode(String code) async => null;
   @override
+  Future<SchoolModel?> validateTeacherJoinCode(String code) async => null;
+  @override
   Future<SchoolModel> activateSchoolWithCode({
     required String currentSchoolId,
     required String activationCode,
