@@ -9,6 +9,7 @@ import '../../../providers/master_data_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/helper.dart';
 import '../../../widgets/state_widgets.dart';
+import '../../../widgets/admin_drawer.dart';
 
 class StudentPromotionScreen extends StatefulWidget {
   final String? initialClassId;
@@ -329,7 +330,17 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
     final targetClasses = classes.where((c) => c.periodId == _targetPeriodId).toList();
 
     return Scaffold(
+      drawer: const AdminDrawer(
+        currentRoute: '/admin/master-data/student-promotions',
+      ),
       appBar: AppBar(
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded),
+            tooltip: 'Menu',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
         title: Text(
           'Kenaikan & Mutasi Kelas',
           style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
