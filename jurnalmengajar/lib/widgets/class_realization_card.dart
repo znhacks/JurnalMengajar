@@ -47,7 +47,7 @@ class _ClassRealizationCardState extends State<ClassRealizationCard> {
     final primaryAccent = const Color(0xFF2563EB);
 
     final titleText = widget.selectedTeacherId != null && widget.selectedTeacherName != null
-        ? 'Realisasi Mengajar — ${widget.selectedTeacherName}'
+        ? 'Realisasi Mengajar: ${widget.selectedTeacherName}'
         : 'Realisasi Mengajar Per Kelas';
 
     return Container(

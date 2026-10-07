@@ -319,7 +319,6 @@ class _StudentImportModalState extends State<StudentImportModal> {
     );
   }
 
-  // --- STEP 1: Simple & Compact Upload ---
   Widget _buildSimpleUploadStep(bool isDark) {
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
@@ -487,7 +486,6 @@ class _StudentImportModalState extends State<StudentImportModal> {
     );
   }
 
-  // --- STEP 2: Preview & Confirmation ---
   Widget _buildPreviewStep(bool isDark) {
     final result = _parseResult!;
     final validItems = result.items.where((i) => i.isValid).toList();

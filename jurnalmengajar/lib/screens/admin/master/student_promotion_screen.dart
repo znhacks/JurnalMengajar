@@ -500,7 +500,6 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
     }
   }
 
-  // --- STEP 1: PILIH SUMBER & TUJUAN ---
   Widget _buildStep1SourceAndTarget(
     List<PeriodModel> periods,
     List<ClassModel> sourceClasses,
@@ -802,7 +801,6 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
     );
   }
 
-  // --- STEP 2: PILIH SISWA & STATUS ---
   Widget _buildStep2SelectStudents(List<ClassModel> targetClasses, bool isDark) {
     final filtered = _sourceStudents.where((s) {
       if (_searchQuery.isEmpty) return true;
@@ -1103,7 +1101,6 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
     );
   }
 
-  // --- STEP 3: VERIFIKASI & RINGKASAN ---
   Widget _buildStep3Verification(List<PeriodModel> periods, bool isDark) {
     final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
     final classes = masterProvider.classes;
@@ -1393,7 +1390,6 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
     );
   }
 
-  // --- BOTTOM ACTION NAVIGATION BAR ---
   Widget _buildBottomBar(bool isDark) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),

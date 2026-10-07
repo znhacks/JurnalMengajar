@@ -768,8 +768,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               children: [
                                 _buildSectionTitle(
                                   _selectedTeacherId == null
-                                      ? 'Jadwal — ${AppHelper.formatDateShort(_selectedDay)}'
-                                      : '${selectedTeacher?.name} — ${AppHelper.formatDateShort(_selectedDay)}',
+                                      ? 'Jadwal: ${AppHelper.formatDateShort(_selectedDay)}'
+                                      : '${selectedTeacher?.name}: ${AppHelper.formatDateShort(_selectedDay)}',
                                 ),
                                 SizedBox(height: 8.h),
                                 _buildScheduleSection(

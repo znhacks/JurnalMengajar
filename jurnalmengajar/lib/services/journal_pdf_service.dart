@@ -763,9 +763,7 @@ class JournalPdfService {
     );
   }
 
-  // ===========================================================================
-  // REKAPITULASI PRESENSI KEHADIRAN KELAS (PDF)
-  // ===========================================================================
+  // Rekapitulasi presensi kehadiran kelas (PDF).
   static Future<Uint8List> generateClassAttendancePdf({
     required String className,
     required String periodName,

@@ -248,7 +248,7 @@ class MasterDataProvider with ChangeNotifier {
     }
   }
 
-  // --- PERIOD CRUD ---
+  // Periods.
   Future<bool> createPeriod(PeriodModel model) async {
     _isLoading = true;
     notifyListeners();
@@ -309,7 +309,7 @@ class MasterDataProvider with ChangeNotifier {
     }
   }
 
-  // --- SUBJECT CRUD ---
+  // Subjects.
   Future<bool> createSubject(SubjectModel model) async {
     _isLoading = true;
     notifyListeners();
@@ -370,7 +370,7 @@ class MasterDataProvider with ChangeNotifier {
     }
   }
 
-  // --- HOUR CRUD ---
+  // Hours.
   Future<bool> createHour(HourModel model) async {
     _isLoading = true;
     notifyListeners();
@@ -431,7 +431,7 @@ class MasterDataProvider with ChangeNotifier {
     }
   }
 
-  // --- CLASS CRUD ---
+  // Classes.
   Future<bool> createClass(ClassModel model) async {
     _isLoading = true;
     notifyListeners();
@@ -492,7 +492,7 @@ class MasterDataProvider with ChangeNotifier {
     }
   }
 
-  // --- SCHOOL CRUD (Plan) ---
+  // Schools (plan).
   Future<SchoolModel?> validateActivationCode(String code) async {
     if (schoolRepository != null) {
       return await schoolRepository!.validateActivationCode(code);
@@ -551,7 +551,7 @@ class MasterDataProvider with ChangeNotifier {
     }
   }
 
-  // --- TEACHER CRUD ---
+  // Teachers.
   Future<bool> createTeacher(TeacherModel model) async {
     _isLoading = true;
     notifyListeners();
@@ -633,7 +633,7 @@ class MasterDataProvider with ChangeNotifier {
     }
   }
 
-  // --- STUDENT CRUD ---
+  // Students.
   Future<void> loadStudentsForClass(String classId) async {
     _isLoading = true;
     _errorMessage = null;

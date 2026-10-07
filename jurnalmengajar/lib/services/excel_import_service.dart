@@ -362,8 +362,6 @@ class ExcelImportService {
     );
   }
 
-  // --- Helper Methods ---
-
   static String _cellToString(Data? cell) {
     if (cell == null || cell.value == null) return '';
     final val = cell.value;

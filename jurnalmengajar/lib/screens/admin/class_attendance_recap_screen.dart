@@ -959,30 +959,9 @@ class _AdminClassAttendanceRecapScreenState
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       drawer: const AdminDrawer(currentRoute: '/admin/class-attendance-recap'),
       appBar: AppBar(
-        title: Row(
-          children: [
-            Text(
-              'Rekap Kehadiran Kelas',
-              style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
-            ),
-            SizedBox(width: 8.w),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.h),
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(6.r),
-                border: Border.all(color: Colors.red, width: 0.8),
-              ),
-              child: Text(
-                'Admin',
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 10.5.sp,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.red,
-                ),
-              ),
-            ),
-          ],
+        title: Text(
+          'Rekap Kehadiran Kelas',
+          style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(

@@ -441,7 +441,6 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                   ),
                   SizedBox(height: 28.h),
 
-                  // Save Button
                   ElevatedButton(
                     onPressed: () async {
                       if (nameController.text.trim().isEmpty) {

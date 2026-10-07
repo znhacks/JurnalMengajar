@@ -69,10 +69,7 @@ class ExcelExportService {
       verticalAlign: VerticalAlign.Center,
     );
   }
-
-  // ===========================================================================
-  // 1. EXPORT JURNAL MENGAJAR
-  // ===========================================================================
+  // Export jurnal mengajar.
   static Future<void> exportJournals({
     required List<JournalModel> journals,
     required MasterDataProvider masterProvider,
@@ -86,7 +83,6 @@ class ExcelExportService {
     excel.rename(defaultSheet, sheetName);
     final sheet = excel[sheetName];
 
-    // Build header row
     final headers = [
       'No',
       'Tanggal',
@@ -199,10 +195,7 @@ class ExcelExportService {
       downloadOrShareExcel(bytes, fileName);
     }
   }
-
-  // ===========================================================================
-  // 2. EXPORT JADWAL MENGAJAR
-  // ===========================================================================
+  // Export jadwal mengajar.
   static Future<void> exportSchedules({
     required List<ScheduleModel> schedules,
     required MasterDataProvider masterProvider,
@@ -290,10 +283,7 @@ class ExcelExportService {
       downloadOrShareExcel(bytes, fileName);
     }
   }
-
-  // ===========================================================================
-  // 3. EXPORT DATA GURU (DENGAN MATA PELAJARAN & JADWAL JIKA TERSEDIA)
-  // ===========================================================================
+  // Export data guru.
   static Future<void> exportTeachers({
     required List<TeacherModel> teachers,
     required String schoolName,
@@ -449,10 +439,7 @@ class ExcelExportService {
       downloadOrShareExcel(bytes, fileName);
     }
   }
-
-  // ===========================================================================
-  // 4. EXPORT MASTER KELAS
-  // ===========================================================================
+  // Export master kelas.
   static Future<void> exportClasses({
     required List<ClassModel> classes,
     required MasterDataProvider masterProvider,
@@ -513,10 +500,7 @@ class ExcelExportService {
       downloadOrShareExcel(bytes, fileName);
     }
   }
-
-  // ===========================================================================
-  // 5. EXPORT SISWA PER KELAS
-  // ===========================================================================
+  // Export siswa per kelas.
   static Future<void> exportStudents({
     required List<StudentModel> students,
     required String className,
@@ -582,10 +566,7 @@ class ExcelExportService {
       downloadOrShareExcel(bytes, fileName);
     }
   }
-
-  // ===========================================================================
-  // 6. EXPORT MASTER USER & HAK AKSES
-  // ===========================================================================
+  // Export master user dan hak akses.
   static Future<void> exportUsers({
     required List<UserModel> users,
     required String schoolName,
@@ -665,10 +646,7 @@ class ExcelExportService {
       downloadOrShareExcel(bytes, fileName);
     }
   }
-
-  // ===========================================================================
-  // 7. EXPORT REKAP KEHADIRAN KELAS
-  // ===========================================================================
+  // Export rekap kehadiran kelas.
   static Future<void> exportClassAttendanceRecap({
     required String className,
     required String periodName,

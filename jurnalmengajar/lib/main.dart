@@ -44,17 +44,14 @@ void main() async {
   usePathUrlStrategy();
   GoRouter.optionURLReflectsImperativeAPIs = true;
 
-  // Initialize Firebase
   try {
     await Firebase.initializeApp();
   } catch (e) {
     debugPrint('Firebase init info: $e');
   }
 
-  // Initialize Indonesian date formatting for intl
   await initializeDateFormatting('id_ID', null);
 
-  // Initialize Supabase
   await Supabase.initialize(
     url: 'https://egcxjuudphnbjwqhhbra.supabase.co',
     publishableKey: 'sb_publishable_8VGYplCO-QO1kTLhhEfJKw_On4QCQ4u',

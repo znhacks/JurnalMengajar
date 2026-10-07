@@ -850,7 +850,6 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
       drawer: const AdminDrawer(currentRoute: '/admin/master-data/teachers'),
       body: Column(
         children: [
-          // --- Search & Position Filter Bar ---
           AdminSearchFilterBar(
             searchController: _searchController,
             searchHint: 'Cari nama guru, jabatan, atau email...',
@@ -876,7 +875,6 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
           ),
           SizedBox(height: 12.h),
 
-          // --- List ---
           Expanded(
             child: RefreshIndicator(
               onRefresh: _refreshData,

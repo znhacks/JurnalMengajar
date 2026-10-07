@@ -328,7 +328,7 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
                       ),
                       SizedBox(height: 2.h),
                       Text(
-                        '${subject.name} — ${journal.material}',
+                        '${subject.name}: ${journal.material}',
                         style: GoogleFonts.hankenGrotesk(
                           fontSize: 12.sp,
                           color: secondaryTextColor,

@@ -39,10 +39,6 @@ Future<({Uint8List bytes, String name})?> pickAndCropImage({
   return (bytes: croppedBytes, name: picked.name);
 }
 
-// ---------------------------------------------------------------------------
-// Proportional Profile Crop Screen
-// ---------------------------------------------------------------------------
-
 class _ProfileCropScreen extends StatefulWidget {
   final Uint8List imageBytes;
   const _ProfileCropScreen({required this.imageBytes});
@@ -547,10 +543,6 @@ class _ProfileCropScreenState extends State<_ProfileCropScreen> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Circular Overlay Painter
-// ---------------------------------------------------------------------------
-
 class _CircularCropOverlayPainter extends CustomPainter {
   final Offset center;
   final double radius;
@@ -590,10 +582,7 @@ class _CircularCropOverlayPainter extends CustomPainter {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Background Processing Tasks
-// ---------------------------------------------------------------------------
-
+// Tugas background.
 img.Image? _decodeAndOrientTask(Uint8List bytes) {
   final decoded = img.decodeImage(bytes);
   if (decoded == null) return null;

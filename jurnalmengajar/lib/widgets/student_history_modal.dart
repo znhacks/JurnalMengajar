@@ -133,7 +133,6 @@ class _StudentHistorySheetState extends State<_StudentHistorySheet> {
             ),
           ),
 
-          // Header
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
             child: Row(
@@ -190,7 +189,6 @@ class _StudentHistorySheetState extends State<_StudentHistorySheet> {
           ),
           Divider(height: 1, color: isDark ? Colors.grey[800] : Colors.grey[200]),
 
-          // Content
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())

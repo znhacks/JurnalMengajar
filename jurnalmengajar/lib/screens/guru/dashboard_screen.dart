@@ -2471,7 +2471,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                           SizedBox(height: 2.h),
                           Text(
                             journal.material.isNotEmpty
-                                ? '${subject.name} — ${journal.material}'
+                                ? '${subject.name}: ${journal.material}'
                                 : subject.name,
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 11.5.sp,
