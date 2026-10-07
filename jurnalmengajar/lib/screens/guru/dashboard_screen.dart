@@ -378,59 +378,37 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             isActive: false,
                           ),
                         );
-                        final hoursLabel = hours.length == 1
-                            ? 'Jam ${hours.first}'
-                            : 'Jam ${hours.join(', ')}';
-                        return Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8.w,
-                                vertical: 4.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF4F7CFF,
-                                ).withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(6.r),
-                              ),
-                              child: Text(
-                                hoursLabel,
+                        final hoursStr = AppHelper.formatTeachingHours(hours);
+                        return SizedBox(
+                          width: double.infinity,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${cls.name} • Jam Ke-$hoursStr',
                                 style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 10.sp,
-                                  color: const Color(0xFF4F7CFF),
+                                  fontSize: 13.sp,
                                   fontWeight: FontWeight.w700,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            SizedBox(width: 10.w),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    cls.name,
-                                    style: GoogleFonts.hankenGrotesk(
-                                      fontSize: 13.sp,
-                                      fontWeight: FontWeight.w700,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  Text(
-                                    subject.name,
-                                    style: GoogleFonts.hankenGrotesk(
-                                      fontSize: 11.sp,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
+                              Text(
+                                subject.name,
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 11.sp,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         );
                       }),
                     ),
@@ -1937,8 +1915,6 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       }
     }
 
-    final timeBadgeText = 'Jam $hoursStr';
-
     final now = DateTime.now();
     final todayOnly = DateTime(now.year, now.month, now.day);
     final scheduleDateOnly = DateTime(
@@ -2002,9 +1978,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 children: [
                   Row(
                     children: [
-                      Flexible(
+                      Expanded(
                         child: Text(
-                          cls.name,
+                          '${cls.name} • Jam Ke-$hoursStr',
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w800,
@@ -2012,26 +1988,6 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      SizedBox(width: 8.w),
-                      // Single blue Jam badge positioned next to class name
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 7.w,
-                          vertical: 2.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4F7CFF).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6.r),
-                        ),
-                        child: Text(
-                          timeBadgeText,
-                          style: GoogleFonts.hankenGrotesk(
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF4F7CFF),
-                          ),
                         ),
                       ),
                       if (matchingJournal != null) ...[

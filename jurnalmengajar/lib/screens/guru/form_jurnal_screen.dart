@@ -1208,6 +1208,27 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
       ),
     );
 
+    // Kelompok jam pada hari yang sama (kelas + mapel sama) agar tampil rentang, mis. Jam Ke-9-11 (13:00 - 15:00)
+    final nonNullSchedule = schedule;
+    GroupedDailySchedule? currentGroup;
+    try {
+      currentGroup = availableGroupedSchedules.firstWhere(
+        (g) => g.scheduleIds.contains(nonNullSchedule.id),
+      );
+    } catch (_) {
+      currentGroup = null;
+    }
+    final groupTeachingHours =
+        currentGroup?.teachingHours ?? [nonNullSchedule.teachingHour];
+    final jamLabel = AppHelper.formatTeachingHours(groupTeachingHours);
+    final matchedJamHours = masterProvider.hours
+        .where((h) => groupTeachingHours.contains(h.teachingHour))
+        .toList()
+      ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
+    final jamTimeRange = matchedJamHours.isNotEmpty
+        ? '${matchedJamHours.first.startTime} - ${matchedJamHours.last.endTime}'
+        : '${hr.startTime} - ${hr.endTime}';
+
     final isLoading = journalProvider.isLoading;
     final isBusy = isLoading || _isSaving;
 
@@ -1308,7 +1329,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                             _buildSummaryRow(
                               context,
                               'Jam Pelajaran',
-                              'Jam Ke-${schedule?.teachingHour ?? 1} (${hr.startTime} - ${hr.endTime})',
+                              'Jam Ke-$jamLabel ($jamTimeRange)',
                             ),
                           ],
                         ),
