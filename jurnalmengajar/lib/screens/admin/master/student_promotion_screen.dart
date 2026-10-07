@@ -235,7 +235,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
           ],
         ),
         content: Text(
-          'Apakah Anda yakin ingin memproses ${_selectedStudentIds.length} data siswa ini? Sistem akan membuat histori akademik baru dan memperbarui status akademik tanpa menghapus data sebelumnya.',
+          'Yakin ingin memproses ${_selectedStudentIds.length} data siswa ini?',
         ),
         actions: [
           TextButton(
@@ -248,7 +248,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Ya, Proses Sekarang'),
+            child: const Text('Proses'),
           ),
         ],
       ),
@@ -1167,7 +1167,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                 SizedBox(width: 10.w),
                 Expanded(
                   child: Text(
-                    'Pastikan data kenaikan kelas sudah benar. Setelah dikonfirmasi, sistem akan membuat histori akademik siswa berdasarkan tahun ajaran dan kelas tujuan tanpa menghapus data sebelumnya.',
+                    'Pastikan data sudah benar sebelum konfirmasi.',
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 12.sp,
                       color: const Color(0xFF92400E),
@@ -1450,7 +1450,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
               ),
               label: Text(
                 _currentStep == 2
-                    ? 'Konfirmasi & Proses (${_selectedStudentIds.length} Siswa)'
+                    ? 'Konfirmasi'
                     : (_currentStep == 0 ? 'Pilih Siswa' : 'Verifikasi'),
                 style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold, fontSize: 13.sp),
               ),
