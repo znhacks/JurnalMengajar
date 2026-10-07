@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import '../../../models/period_model.dart';
 import '../../../models/class_model.dart';
 import '../../../models/student_model.dart';
@@ -288,32 +287,21 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
       setState(() => _isSubmitting = false);
 
       if (result['success'] == true) {
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            title: Row(
-              children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.green),
-                SizedBox(width: 8.w),
-                const Text('Proses Berhasil'),
-              ],
-            ),
-            content: Text(
-              result['message']?.toString() ??
-                  '${_selectedStudentIds.length} siswa berhasil diproses dan histori akademik telah diperbarui.',
-            ),
-            actions: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context); // Pop dialog
-                  context.pop(); // Pop promotion screen back
-                },
-                child: const Text('Selesai'),
-              ),
-            ],
-          ),
-        );
+        final successMessage = result['message']?.toString() ??
+            '${items.length} siswa berhasil diproses dan histori akademik telah diperbarui.';
+        AppHelper.showSnackBar(context, successMessage);
+        if (mounted) {
+          setState(() {
+            _selectedStudentIds.clear();
+            _studentStatusMap.clear();
+            _studentTargetClassMap.clear();
+            _studentNoteMap.clear();
+            _currentStep = 0;
+          });
+          if (_sourceClassId != null && _sourceClassId!.isNotEmpty) {
+            await _loadSourceStudents(_sourceClassId!);
+          }
+        }
       } else {
         AppHelper.showSnackBar(
           context,
