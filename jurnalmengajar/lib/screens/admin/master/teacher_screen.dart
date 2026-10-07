@@ -817,12 +817,12 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                 ],
               )
             : AppBar(
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  tooltip: 'Kembali',
-                  onPressed: () {
-                    context.go('/admin/dashboard');
-                  },
+                leading: Builder(
+                  builder: (ctx) => IconButton(
+                    icon: const Icon(Icons.menu_rounded),
+                    tooltip: 'Menu',
+                    onPressed: () => Scaffold.of(ctx).openDrawer(),
+                  ),
                 ),
                 title: const Text('Master Data Guru'),
                 actions: [

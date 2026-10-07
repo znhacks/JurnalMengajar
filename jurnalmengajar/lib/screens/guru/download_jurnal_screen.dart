@@ -1396,7 +1396,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         masterProvider,
                         authProvider,
                       ),
-                      icon: const Icon(Icons.remove_red_eye_rounded),
+                      icon: const Icon(Icons.remove_red_eye_rounded, size: 18),
                       label: Text(
                         'Preview',
                         style: GoogleFonts.hankenGrotesk(
@@ -1404,6 +1404,8 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                         ),
                       ),
                       style: OutlinedButton.styleFrom(
+                        minimumSize: Size(0, 48.h),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         padding: EdgeInsets.symmetric(vertical: 14.h),
                         side: const BorderSide(
                           color: AppTheme.primaryColor,
@@ -1437,6 +1439,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                             )
                           : const Icon(
                               Icons.download_rounded,
+                              size: 18,
                               color: Colors.white,
                             ),
                       label: Text(
@@ -1448,6 +1451,8 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
+                        minimumSize: Size(0, 48.h),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         padding: EdgeInsets.symmetric(vertical: 14.h),
                         elevation: 2,
                         shape: RoundedRectangleBorder(
