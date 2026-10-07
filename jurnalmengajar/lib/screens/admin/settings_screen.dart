@@ -1213,7 +1213,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                             ),
                             SizedBox(height: 4.h),
                             Text(
-                              'Buat 1 kode sederhana untuk sekolah ini. Guru memakai kode ini saat mendaftar tanpa perlu kode asli / kode aktivasi. Kosongkan lalu simpan untuk menonaktifkan.',
+                              'Guru menggunakan kode ini saat mendaftar.',
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 color: Theme.of(context).colorScheme.onSurfaceVariant,
