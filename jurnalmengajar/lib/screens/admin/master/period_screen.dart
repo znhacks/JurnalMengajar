@@ -358,7 +358,7 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                     onPressed: () => Scaffold.of(ctx).openDrawer(),
                   ),
                 ),
-                title: const Text('Master Periode'),
+                title: const Text('Periode'),
                 actions: [
                   AdminSelectionActionButton(
                     onPressed: periods.isEmpty ? null : () => _toggleSelectionMode(),

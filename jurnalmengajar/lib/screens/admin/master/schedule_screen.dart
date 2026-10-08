@@ -331,7 +331,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                       SizedBox(height: 8.h),
                       if (masterProvider.hours.isEmpty)
                         Text(
-                          'Belum ada master jam pelajaran',
+                          'Belum ada jam pelajaran',
                           style: TextStyle(color: Colors.red[600], fontSize: 13.sp),
                         )
                       else ...[
@@ -616,7 +616,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           context: context,
                           builder: (ctx) => AlertDialog(
                             title: const Text('Form Belum Lengkap'),
-                            content: const Text('Harap isi semua pilihan master (Periode, Guru, Kelas, Mata Pelajaran).'),
+                            content: const Text('Harap isi semua pilihan (Periode, Guru, Kelas, Mata Pelajaran).'),
                             actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Oke'))],
                           ),
                         );

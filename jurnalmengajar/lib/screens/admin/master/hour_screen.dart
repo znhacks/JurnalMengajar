@@ -389,7 +389,7 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                     onPressed: () => Scaffold.of(ctx).openDrawer(),
                   ),
                 ),
-                title: const Text('Master Jam Pelajaran'),
+                title: const Text('Jam Pelajaran'),
                 actions: [
                   AdminSelectionActionButton(
                     onPressed: hours.isEmpty ? null : () => _toggleSelectionMode(),

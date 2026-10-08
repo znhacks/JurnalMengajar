@@ -374,7 +374,7 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                     onPressed: () => Scaffold.of(ctx).openDrawer(),
                   ),
                 ),
-                title: const Text('Master Kelas & Siswa'),
+                title: const Text('Kelas & Siswa'),
                 actions: [
                   if (_isExporting)
                     Padding(

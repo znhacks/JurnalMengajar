@@ -1035,7 +1035,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                       onPressed: () => Scaffold.of(ctx).openDrawer(),
                     ),
                   ),
-                  title: const Text('Master User & Hak Akses'),
+                  title: const Text('User & Hak Akses'),
                   actions: [
                     IconButton(
                       icon: _isExporting

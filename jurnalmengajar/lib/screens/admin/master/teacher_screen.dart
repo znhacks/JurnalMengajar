@@ -824,7 +824,7 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                     onPressed: () => Scaffold.of(ctx).openDrawer(),
                   ),
                 ),
-                title: const Text('Master Data Guru'),
+                title: const Text('Data Guru'),
                 actions: [
                   IconButton(
                     icon: _isExporting

@@ -285,7 +285,7 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                     onPressed: () => Scaffold.of(ctx).openDrawer(),
                   ),
                 ),
-                title: const Text('Master Pelajaran'),
+                title: const Text('Pelajaran'),
                 actions: [
                   AdminSelectionActionButton(
                     onPressed: subjects.isEmpty ? null : () => _toggleSelectionMode(),
