@@ -508,7 +508,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           ),
                           SizedBox(height: 16.h),
 
-                          // 4. Shortcut ke Halaman Statistik & Kedisiplinan Guru
+                          // Shortcut ke halaman statistik kedisiplinan guru
                           FadeSlideIn(
                             delay: const Duration(milliseconds: 175),
                             child: InkWell(
@@ -518,55 +518,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               child: Container(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 14.w,
-                                  vertical: 10.h,
+                                  vertical: 12.h,
                                 ),
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: isDark
-                                        ? [
-                                            const Color(0xFF1E293B),
-                                            const Color(0xFF0F172A),
-                                          ]
-                                        : [
-                                            const Color(0xFFEFF6FF),
-                                            const Color(0xFFDBEAFE),
-                                          ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
+                                  color: isDark
+                                      ? const Color(0xFF1E293B)
+                                      : Colors.white,
                                   borderRadius: BorderRadius.circular(14.r),
                                   border: Border.all(
                                     color: isDark
                                         ? const Color(0xFF334155)
                                         : const Color(0xFFBFDBFE),
                                   ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(
-                                        alpha: isDark ? 0.2 : 0.04,
-                                      ),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
                                 ),
                                 child: Row(
                                   children: [
-                                    Container(
-                                      padding: EdgeInsets.all(9.r),
-                                      decoration: BoxDecoration(
-                                        color: primaryColor.withValues(
-                                          alpha: 0.15,
-                                        ),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Icons.analytics_rounded,
-                                        color: primaryColor,
-                                        size: 20.r,
-                                      ),
-                                    ),
-                                    SizedBox(width: 12.w),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment:
@@ -595,11 +561,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                         ],
                                       ),
                                     ),
-                                    SizedBox(width: 8.w),
+                                    SizedBox(width: 10.w),
                                     Container(
                                       padding: EdgeInsets.symmetric(
-                                        horizontal: 10.w,
-                                        vertical: 5.h,
+                                        horizontal: 12.w,
+                                        vertical: 8.h,
                                       ),
                                       decoration: BoxDecoration(
                                         color: primaryColor,
@@ -613,7 +579,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                           Text(
                                             'Buka',
                                             style: TextStyle(
-                                              fontSize: 11.sp,
+                                              fontSize: 12.sp,
                                               fontWeight: FontWeight.bold,
                                               color: Colors.white,
                                             ),
@@ -621,7 +587,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                           SizedBox(width: 4.w),
                                           Icon(
                                             Icons.arrow_forward_rounded,
-                                            size: 13.r,
+                                            size: 14.r,
                                             color: Colors.white,
                                           ),
                                         ],
@@ -634,7 +600,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           ),
                           SizedBox(height: 10.h),
 
-                          // 4b. Shortcut ke Halaman Rekap Kehadiran Siswa per Kelas
+                          // Shortcut ke halaman rekap kehadiran siswa per kelas
                           FadeSlideIn(
                             delay: const Duration(milliseconds: 185),
                             child: InkWell(
@@ -644,55 +610,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               child: Container(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 14.w,
-                                  vertical: 10.h,
+                                  vertical: 12.h,
                                 ),
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: isDark
-                                        ? [
-                                            const Color(0xFF132E27),
-                                            const Color(0xFF0F172A),
-                                          ]
-                                        : [
-                                            const Color(0xFFECFDF5),
-                                            const Color(0xFFD1FAE5),
-                                          ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
+                                  color: isDark
+                                      ? const Color(0xFF132E27)
+                                      : Colors.white,
                                   borderRadius: BorderRadius.circular(14.r),
                                   border: Border.all(
                                     color: isDark
                                         ? const Color(0xFF065F46)
                                         : const Color(0xFFA7F3D0),
                                   ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(
-                                        alpha: isDark ? 0.2 : 0.04,
-                                      ),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
                                 ),
                                 child: Row(
                                   children: [
-                                    Container(
-                                      padding: EdgeInsets.all(9.r),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF059669).withValues(
-                                          alpha: 0.15,
-                                        ),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Icons.fact_check_rounded,
-                                        color: const Color(0xFF059669),
-                                        size: 20.r,
-                                      ),
-                                    ),
-                                    SizedBox(width: 12.w),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment:
@@ -721,11 +653,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                         ],
                                       ),
                                     ),
-                                    SizedBox(width: 8.w),
+                                    SizedBox(width: 10.w),
                                     Container(
                                       padding: EdgeInsets.symmetric(
-                                        horizontal: 10.w,
-                                        vertical: 5.h,
+                                        horizontal: 12.w,
+                                        vertical: 8.h,
                                       ),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFF059669),
@@ -739,7 +671,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                           Text(
                                             'Buka',
                                             style: TextStyle(
-                                              fontSize: 11.sp,
+                                              fontSize: 12.sp,
                                               fontWeight: FontWeight.bold,
                                               color: Colors.white,
                                             ),
@@ -747,7 +679,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                           SizedBox(width: 4.w),
                                           Icon(
                                             Icons.arrow_forward_rounded,
-                                            size: 13.r,
+                                            size: 14.r,
                                             color: Colors.white,
                                           ),
                                         ],
