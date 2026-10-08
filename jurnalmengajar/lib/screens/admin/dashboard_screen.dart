@@ -584,7 +584,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                           ),
                                           SizedBox(height: 2.h),
                                           Text(
-                                            'Lihat guru yang paling sering tepat waktu dan paling sering terlambat mengisi jurnal.',
+                                            'Pantau ketepatan waktu guru mengisi jurnal.',
                                             style: TextStyle(
                                               fontSize: 11.sp,
                                               color: Theme.of(
@@ -710,7 +710,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                           ),
                                           SizedBox(height: 2.h),
                                           Text(
-                                            'Pantau persentase kehadiran, siswa sakit, izin, dan alpa per kelas.',
+                                            'Pantau kehadiran, sakit, izin, dan alpa per kelas.',
                                             style: TextStyle(
                                               fontSize: 11.sp,
                                               color: Theme.of(

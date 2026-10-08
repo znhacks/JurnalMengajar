@@ -342,4 +342,28 @@ class WarningLetterProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Hapus pengingat berdasarkan daftar id tertentu.
+  /// Dipakai agar penghapusan riwayat hanya menghapus pengingat yang
+  /// jurnalnya sudah diisi & sudah dikonfirmasi (hasil filter di UI).
+  /// Metode lama [deleteConfirmedWarnings] tetap dipertahankan apa adanya.
+  Future<bool> deleteWarningsByIds(List<String> ids) async {
+    if (ids.isEmpty) return true;
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      for (final id in ids) {
+        await warningLetterRepository.delete(id);
+      }
+      _warningLetters.removeWhere((w) => ids.contains(w.id));
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

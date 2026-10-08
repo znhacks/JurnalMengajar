@@ -4,9 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/warning_letter_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/journal_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../models/teacher_model.dart';
+import '../../models/journal_model.dart';
 import '../../models/schedule_model.dart';
 import '../../models/warning_letter_model.dart';
 import '../../core/theme/app_theme.dart';
@@ -66,6 +68,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
     final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
     final warningProvider = Provider.of<WarningLetterProvider>(context, listen: false);
     final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
 
     final currentUser = authProvider.currentUser;
     if (currentUser != null) {
@@ -78,9 +81,11 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
       if (teacher.id.isNotEmpty) {
         final activeSchoolId = authProvider.activeSchoolId;
         scheduleProvider.setSchoolId(activeSchoolId);
+        journalProvider.setSchoolId(activeSchoolId);
         await Future.wait([
           warningProvider.loadTeacherWarningLetters(teacher.id, activeSchoolId),
           scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
+          journalProvider.loadTeacherJournals(teacher.id),
         ]);
       }
     }
@@ -110,10 +115,62 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
     );
   }
 
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  bool _hasJournalForSchedule({
+    required ScheduleModel schedule,
+    required List<JournalModel> journals,
+  }) {
+    for (final j in journals) {
+      // Jurnal yang ditolak (perlu revisi) belum dianggap mengisi.
+      if (j.status == 'rejected') continue;
+      if (j.scheduleId == schedule.id) {
+        if (_isSameDay(j.date, schedule.date)) return true;
+        // scheduleId cocok walau tanggal geser sedikit tetap dianggap mengisi.
+        return true;
+      }
+      if (_isSameDay(j.date, schedule.date) &&
+          j.classId == schedule.classId &&
+          j.subjectId == schedule.subjectId) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// True bila SELURUH jadwal mengajar pada [groupDate] sudah memiliki jurnal
+  /// (non-rejected). Satu pengingat bisa mencakup beberapa kelas sekaligus,
+  /// sehingga pengecekan dilakukan per tanggal, bukan per satu scheduleId.
+  /// Bila jadwal tanggal tersebut tidak ada di cache, fallback ke
+  /// pencocokan scheduleId tiap pengingat; bila tetap tidak terbukti terisi,
+  /// kembalikan false (fail-closed: belum bisa dikonfirmasi/dihapus).
+  bool _isGroupJournalFilled({
+    required DateTime groupDate,
+    required List<WarningLetterModel> groupWarnings,
+    required List<ScheduleModel> schedules,
+    required List<JournalModel> journals,
+  }) {
+    final daySchedules = schedules.where((s) => _isSameDay(s.date, groupDate)).toList();
+    if (daySchedules.isNotEmpty) {
+      for (final s in daySchedules) {
+        if (!_hasJournalForSchedule(schedule: s, journals: journals)) return false;
+      }
+      return true;
+    }
+    for (final w in groupWarnings) {
+      final found = journals.any((j) => j.status != 'rejected' && j.scheduleId == w.scheduleId);
+      if (!found) return false;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final warningProvider = context.watch<WarningLetterProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
+    final journalProvider = context.watch<JournalProvider>();
     final isLoading = warningProvider.isLoading || scheduleProvider.isLoading;
     final activeSchoolId = AppHelper.parseSingleCleanSchoolId(context.watch<AuthProvider>().activeSchoolId);
     final schoolWarnings = warningProvider.warningLetters.where((w) {
@@ -197,11 +254,54 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                   return;
                 }
                 if (value == 'confirm_all') {
-                  final ok = await warningProvider.confirmAllWarnings(teacher.id);
+                  final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+                  final schedProvider = Provider.of<ScheduleProvider>(context, listen: false);
+                  final journals = journalProvider.teacherJournals;
+                  final schedules = schedProvider.cachedTeacherSchedules;
+                  final List<String> fillableIds = [];
+                  int skippedGroups = 0;
+                  for (final entry in groupedMap.entries) {
+                    final gDate = dateMap[entry.key]!;
+                    final gWarnings = entry.value;
+                    final unread = gWarnings.where((w) => w.status == 'unread').toList();
+                    if (unread.isEmpty) continue;
+                    final filled = _isGroupJournalFilled(
+                      groupDate: gDate,
+                      groupWarnings: gWarnings,
+                      schedules: schedules,
+                      journals: journals,
+                    );
+                    if (filled) {
+                      fillableIds.addAll(unread.map((w) => w.id));
+                    } else {
+                      skippedGroups++;
+                    }
+                  }
+                  if (fillableIds.isEmpty) {
+                    if (context.mounted) {
+                      AppHelper.showSnackBar(
+                        context,
+                        'Belum bisa dikonfirmasi. Isi jurnal mengajar terlebih dahulu sampai tuntas.',
+                        isError: true,
+                      );
+                    }
+                    return;
+                  }
+                  bool allOk = true;
+                  for (final id in fillableIds) {
+                    final ok = await warningProvider.markWarningLetterAsRead(id);
+                    if (!ok) allOk = false;
+                  }
                   if (!context.mounted) return;
-                  if (ok && warningProvider.errorMessage == null) {
+                  if (allOk && warningProvider.errorMessage == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Semua pengingat berhasil dikonfirmasi.')),
+                      SnackBar(
+                        content: Text(
+                          skippedGroups > 0
+                              ? 'Pengingat yang jurnalnya sudah diisi berhasil dikonfirmasi. $skippedGroups pengingat lain dilewati karena jurnalnya belum diisi.'
+                              : 'Semua pengingat berhasil dikonfirmasi.',
+                        ),
+                      ),
                     );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -209,11 +309,54 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                     );
                   }
                 } else if (value == 'delete_all') {
+                  final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+                  final schedProvider = Provider.of<ScheduleProvider>(context, listen: false);
+                  final journals = journalProvider.teacherJournals;
+                  final schedules = schedProvider.cachedTeacherSchedules;
+                  final List<String> deletableIds = [];
+                  int blockedConfirmed = 0;
+                  for (final entry in groupedMap.entries) {
+                    final gDate = dateMap[entry.key]!;
+                    final gWarnings = entry.value;
+                    final filled = _isGroupJournalFilled(
+                      groupDate: gDate,
+                      groupWarnings: gWarnings,
+                      schedules: schedules,
+                      journals: journals,
+                    );
+                    for (final w in gWarnings) {
+                      if (w.status != 'read') continue;
+                      if (filled) {
+                        deletableIds.add(w.id);
+                      } else {
+                        blockedConfirmed++;
+                      }
+                    }
+                  }
+                  final unreadCount = schoolWarnings.where((w) => w.status == 'unread').length;
+                  if (deletableIds.isEmpty) {
+                    if (context.mounted) {
+                      AppHelper.showSnackBar(
+                        context,
+                        unreadCount > 0
+                            ? 'Belum bisa dihapus. Pastikan jurnal sudah diisi dan pengingat sudah dikonfirmasi.'
+                            : (blockedConfirmed > 0
+                                ? 'Belum bisa dihapus. Jurnal pada pengingat yang dikonfirmasi belum terisi lengkap.'
+                                : 'Belum ada riwayat pengingat yang bisa dihapus.'),
+                        isError: true,
+                      );
+                    }
+                    return;
+                  }
                   final confirmDelete = await showDialog<bool>(
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Hapus Riwayat Pengingat'),
-                      content: const Text('Apakah Anda yakin ingin menghapus semua pengingat yang sudah dikonfirmasi? Pengingat yang belum dikonfirmasi tidak akan dihapus.'),
+                      content: Text(
+                        'Hanya ${deletableIds.length} pengingat yang jurnalnya sudah diisi & sudah dikonfirmasi yang akan dihapus.'
+                        '${blockedConfirmed > 0 ? ' $blockedConfirmed pengingat dikonfirmasi lainnya dilewati karena jurnalnya belum terisi lengkap.' : ''}'
+                        '${unreadCount > 0 ? ' Pengingat yang belum dikonfirmasi tidak akan dihapus.' : ''}',
+                      ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context, false),
@@ -227,7 +370,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                     ),
                   );
                   if (confirmDelete == true && context.mounted) {
-                    final ok = await warningProvider.deleteConfirmedWarnings(teacher.id);
+                    final ok = await warningProvider.deleteWarningsByIds(deletableIds);
                     if (!context.mounted) return;
                     if (ok && warningProvider.errorMessage == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -331,6 +474,8 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                           _currentTotalCount = sortedGroups.length;
                           final visibleGroups = sortedGroups.take(_displayedCount).toList();
                           final hasMore = _displayedCount < sortedGroups.length;
+                          final journals = journalProvider.teacherJournals;
+                          final allSchedules = scheduleProvider.cachedTeacherSchedules;
 
                           return ListView.separated(
                             controller: _scrollController,
@@ -368,6 +513,14 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
 
                               final hasUnread = groupWarnings.any((w) => w.status == 'unread');
                               final unreadList = groupWarnings.where((w) => w.status == 'unread').toList();
+                              // Kunci konfirmasi: hanya bisa dikonfirmasi bila seluruh
+                              // jurnal pada tanggal ini sudah terisi (non-rejected).
+                              final isJournalFilled = _isGroupJournalFilled(
+                                groupDate: groupDate,
+                                groupWarnings: groupWarnings,
+                                schedules: allSchedules,
+                                journals: journals,
+                              );
 
                               final theme = Theme.of(context);
                               return Card(
@@ -471,10 +624,34 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                       ),
                                       if (hasUnread) ...[
                                         SizedBox(height: 12.h),
+                                        if (!isJournalFilled)
+                                          Padding(
+                                            padding: EdgeInsets.only(bottom: 8.h),
+                                            child: Row(
+                                              children: [
+                                                const Icon(
+                                                  Icons.info_outline_rounded,
+                                                  size: 14,
+                                                  color: Color(0xFFB91C1C),
+                                                ),
+                                                SizedBox(width: 6.w),
+                                                Expanded(
+                                                  child: Text(
+                                                    'Jurnal belum diisi. Isi jurnal mengajar terlebih dahulu sebelum konfirmasi.',
+                                                    style: GoogleFonts.hankenGrotesk(
+                                                      fontSize: 11.5.sp,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: const Color(0xFFB91C1C),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                         SizedBox(
                                           width: double.infinity,
                                           child: ElevatedButton.icon(
-                                            onPressed: warningProvider.isLoading
+                                            onPressed: (warningProvider.isLoading || !isJournalFilled)
                                                 ? null
                                                 : () async {
                                                     bool allOk = true;
