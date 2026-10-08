@@ -63,6 +63,11 @@ class _AdminClassAttendanceRecapScreenState
   String? _selectedTeacherId;
   StudentSortBy _studentSortBy = StudentSortBy.nameAsc;
 
+  // Apakah pengguna sudah pernah membuka/melihat sebuah kelas.
+  // Dipakai untuk mengunci tab "Detail Rekap Kelas" sebelum ada kelas terpilih.
+  bool get _hasViewedClass =>
+      _selectedClassId != null && _selectedClassId!.isNotEmpty;
+
   // Local cache of students per class: classId -> List<StudentModel>
   final Map<String, List<StudentModel>> _studentsCache = {};
   bool _isLoadingStudents = false;
@@ -1030,15 +1035,15 @@ class _AdminClassAttendanceRecapScreenState
                           title: 'Detail Rekap Kelas',
                           icon: Icons.view_agenda_rounded,
                           isSelected: _viewModeIndex == 1,
-                          onTap: () {
-                            setState(() {
-                              _viewModeIndex = 1;
-                              if (_selectedClassId == null && classesForPeriod.isNotEmpty) {
-                                _selectedClassId = classesForPeriod.first.id;
-                                _loadStudentsForClass(_selectedClassId!);
-                              }
-                            });
-                          },
+                          enabled: _hasViewedClass,
+                          onTap: _hasViewedClass
+                              ? () {
+                                  setState(() {
+                                    _viewModeIndex = 1;
+                                  });
+                                  _loadStudentsForClass(_selectedClassId!);
+                                }
+                              : null,
                         ),
                       ),
                     ],
@@ -1202,35 +1207,45 @@ class _AdminClassAttendanceRecapScreenState
     required String title,
     required IconData icon,
     required bool isSelected,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
+    bool enabled = true,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10.r),
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 8.h),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(10.r),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 16.sp,
-              color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            SizedBox(width: 6.w),
-            Text(
-              title,
-              style: GoogleFonts.hankenGrotesk(
-                fontSize: 12.5.sp,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
+    final effectiveOnTap = enabled ? onTap : null;
+    final disabledColor = Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.45);
+    return Opacity(
+      opacity: enabled ? 1.0 : 0.55,
+      child: InkWell(
+        onTap: effectiveOnTap,
+        borderRadius: BorderRadius.circular(10.r),
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 8.h),
+          decoration: BoxDecoration(
+            color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 16.sp,
+                color: isSelected
+                    ? Colors.white
+                    : (enabled ? Theme.of(context).colorScheme.onSurfaceVariant : disabledColor),
               ),
-            ),
-          ],
+              SizedBox(width: 6.w),
+              Text(
+                title,
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 12.5.sp,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                  color: isSelected
+                      ? Colors.white
+                      : (enabled ? Theme.of(context).colorScheme.onSurfaceVariant : disabledColor),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1317,6 +1332,14 @@ class _AdminClassAttendanceRecapScreenState
     );
   }
 
+  void _openClassDetail(ClassAttendanceSummary cs) {
+    setState(() {
+      _selectedClassId = cs.classModel.id;
+      _viewModeIndex = 1;
+    });
+    _loadStudentsForClass(cs.classModel.id);
+  }
+
   Widget _buildClassCard(ClassAttendanceSummary cs, PeriodModel? period, bool isDark) {
     final rate = cs.attendanceRate;
     Color statusColor = Colors.green;
@@ -1328,134 +1351,132 @@ class _AdminClassAttendanceRecapScreenState
       statusColor = Colors.blue;
     }
 
-    return Container(
-      padding: EdgeInsets.all(14.w),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+    return InkWell(
+      onTap: () => _openClassDetail(cs),
+      borderRadius: BorderRadius.circular(14.r),
+      child: Container(
+        padding: EdgeInsets.all(14.w),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: BorderRadius.circular(14.r),
+          border: Border.all(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(10.r),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(10.r),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: Icon(Icons.class_rounded, color: AppTheme.primaryColor, size: 20.sp),
                 ),
-                child: Icon(Icons.class_rounded, color: AppTheme.primaryColor, size: 20.sp),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      cs.classModel.name,
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        cs.classModel.name,
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
+                      Text(
+                        '${cs.totalStudents} Siswa  ·  ${cs.totalMeetings} Pertemuan Pembelajaran',
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 12.sp,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: statusColor, width: 0.8),
+                  ),
+                  child: Text(
+                    '${rate.toStringAsFixed(1)}%',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.bold,
+                      color: statusColor,
                     ),
-                    Text(
-                      '${cs.totalStudents} Siswa  ·  ${cs.totalMeetings} Pertemuan Pembelajaran',
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 12.sp,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12.h),
+
+            // Progress Bar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4.r),
+              child: LinearProgressIndicator(
+                value: (rate / 100.0).clamp(0.0, 1.0),
+                backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+                minHeight: 6.h,
+              ),
+            ),
+            SizedBox(height: 10.h),
+
+            // Absence Counters
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'H: ${cs.totalPresent}  ·  S: ${cs.totalSick}  ·  I: ${cs.totalPermission}  ·  A: ${cs.totalAlpha}',
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Row(
+                  children: [
+                    if (period != null)
+                      IconButton(
+                        icon: const Icon(Icons.file_download_outlined, size: 20),
+                        tooltip: 'Unduh Rekap Kelas',
+                        onPressed: () => _handleExport(cs.classModel, period),
+                        visualDensity: VisualDensity.compact,
                       ),
+                    TextButton.icon(
+                      icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                      label: const Text('Detail Siswa'),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                        textStyle: GoogleFonts.hankenGrotesk(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      onPressed: () => _openClassDetail(cs),
                     ),
                   ],
                 ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8.r),
-                  border: Border.all(color: statusColor, width: 0.8),
-                ),
-                child: Text(
-                  '${rate.toStringAsFixed(1)}%',
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.bold,
-                    color: statusColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-
-          // Progress Bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4.r),
-            child: LinearProgressIndicator(
-              value: (rate / 100.0).clamp(0.0, 1.0),
-              backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-              valueColor: AlwaysStoppedAnimation<Color>(statusColor),
-              minHeight: 6.h,
+              ],
             ),
-          ),
-          SizedBox(height: 10.h),
-
-          // Absence Counters
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'H: ${cs.totalPresent}  ·  S: ${cs.totalSick}  ·  I: ${cs.totalPermission}  ·  A: ${cs.totalAlpha}',
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              Row(
-                children: [
-                  if (period != null)
-                    IconButton(
-                      icon: const Icon(Icons.file_download_outlined, size: 20),
-                      tooltip: 'Unduh Rekap Kelas',
-                      onPressed: () => _handleExport(cs.classModel, period),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  TextButton.icon(
-                    icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-                    label: const Text('Detail Siswa'),
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                      textStyle: GoogleFonts.hankenGrotesk(
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _selectedClassId = cs.classModel.id;
-                        _viewModeIndex = 1;
-                      });
-                      _loadStudentsForClass(cs.classModel.id);
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1464,18 +1485,37 @@ class _AdminClassAttendanceRecapScreenState
   Widget _buildClassDetailView({
     required ClassModel? currentClass,
     required List<ClassModel> classesForPeriod,
-    required List<JournalModel> allPeriodJournals,
     required PeriodModel? selectedPeriod,
     required MasterDataProvider masterProvider,
     required bool isDark,
+    required List<JournalModel> allPeriodJournals,
   }) {
-    if (currentClass == null) {
+    // Kunci: jangan tampilkan detail kelas apabila pengguna belum pernah
+    // membuka/melihat sebuah kelas sebelumnya.
+    if (!_hasViewedClass || currentClass == null) {
       return Center(
         child: Padding(
           padding: EdgeInsets.all(32.w),
-          child: Text(
-            'Silakan pilih kelas terlebih dahulu.',
-            style: GoogleFonts.hankenGrotesk(fontSize: 14.sp),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.touch_app_rounded, size: 40.r, color: Colors.grey),
+              SizedBox(height: 8.h),
+              Text(
+                'Silakan pilih kelas terlebih dahulu.',
+                style: GoogleFonts.hankenGrotesk(fontSize: 14.sp),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 4.h),
+              Text(
+                'Ketuk salah satu kartu kelas pada tab Ringkasan untuk melihat rekapnya.',
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 12.sp,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       );
