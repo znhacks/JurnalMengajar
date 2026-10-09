@@ -1681,7 +1681,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               ),
                               SizedBox(height: 2.h),
                               Text(
-                                'Guru: ${teacher.name}',
+                                teacher.name,
                                 style: GoogleFonts.hankenGrotesk(
                                   fontSize: 11.5.sp,
                                   color: Theme.of(
