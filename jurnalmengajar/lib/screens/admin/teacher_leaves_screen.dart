@@ -16,7 +16,8 @@ class AdminTeacherLeavesScreen extends StatefulWidget {
   const AdminTeacherLeavesScreen({super.key});
 
   @override
-  State<AdminTeacherLeavesScreen> createState() => _AdminTeacherLeavesScreenState();
+  State<AdminTeacherLeavesScreen> createState() =>
+      _AdminTeacherLeavesScreenState();
 }
 
 class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
@@ -50,10 +51,20 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
 
   Future<void> _loadData() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final leaveProvider = Provider.of<TeacherLeaveProvider>(context, listen: false);
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-    final schoolId = authProvider.activeSchoolId ?? 'a1111111-1111-1111-1111-111111111111';
+    final leaveProvider = Provider.of<TeacherLeaveProvider>(
+      context,
+      listen: false,
+    );
+    final masterProvider = Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    );
+    final scheduleProvider = Provider.of<ScheduleProvider>(
+      context,
+      listen: false,
+    );
+    final schoolId =
+        authProvider.activeSchoolId ?? 'a1111111-1111-1111-1111-111111111111';
     await leaveProvider.loadLeaves(schoolId);
     await masterProvider.loadAllData(schoolId);
     await scheduleProvider.loadAllSchedules(schoolId);
@@ -78,8 +89,14 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
 
   void _showLeaveDialog({TeacherLeaveModel? leave}) {
     final isEdit = leave != null;
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+    final masterProvider = Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    );
+    final scheduleProvider = Provider.of<ScheduleProvider>(
+      context,
+      listen: false,
+    );
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     final teachers = masterProvider.teachers;
@@ -92,7 +109,8 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
       return;
     }
 
-    String? selectedTeacherId = leave?.teacherId ?? (teachers.isNotEmpty ? teachers.first.id : null);
+    String? selectedTeacherId =
+        leave?.teacherId ?? (teachers.isNotEmpty ? teachers.first.id : null);
     DateTime startDate = leave?.startDate ?? DateTime.now();
     DateTime endDate = leave?.endDate ?? DateTime.now();
 
@@ -100,7 +118,9 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
     final isPredefinedReason = _leaveReasons.contains(initialReason);
     String selectedReason = isPredefinedReason ? initialReason : 'Lainnya';
     final customReasonController = TextEditingController(
-      text: !isPredefinedReason && initialReason.isNotEmpty ? initialReason : '',
+      text: !isPredefinedReason && initialReason.isNotEmpty
+          ? initialReason
+          : '',
     );
 
     // Map: scheduleId -> substituteTeacherId
@@ -121,18 +141,29 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
         builder: (context, setDialogState) {
           final isDark = Theme.of(context).brightness == Brightness.dark;
 
-          final startFormatted = DateFormat('dd MMM yyyy', 'id_ID').format(startDate);
-          final endFormatted = DateFormat('dd MMM yyyy', 'id_ID').format(endDate);
+          final startFormatted = DateFormat(
+            'dd MMM yyyy',
+            'id_ID',
+          ).format(startDate);
+          final endFormatted = DateFormat(
+            'dd MMM yyyy',
+            'id_ID',
+          ).format(endDate);
 
           // Filter schedules for the selected teacher within startDate and endDate
-          final startDay = DateTime(startDate.year, startDate.month, startDate.day);
+          final startDay = DateTime(
+            startDate.year,
+            startDate.month,
+            startDate.day,
+          );
           final endDay = DateTime(endDate.year, endDate.month, endDate.day);
 
           final teacherSchedules = scheduleProvider.schedules.where((s) {
             if (s.teacherId != selectedTeacherId) return false;
             final sDay = DateTime(s.date.year, s.date.month, s.date.day);
-            return (sDay.isAfter(startDay) || sDay.isAtSameMomentAs(startDay)) &&
-                   (sDay.isBefore(endDay) || sDay.isAtSameMomentAs(endDay));
+            return (sDay.isAfter(startDay) ||
+                    sDay.isAtSameMomentAs(startDay)) &&
+                (sDay.isBefore(endDay) || sDay.isAtSameMomentAs(endDay));
           }).toList();
 
           // Sort schedules chronologically
@@ -143,7 +174,9 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
           });
 
           // Teachers available as substitute (exclude the teacher on leave)
-          final substituteCandidates = teachers.where((t) => t.id != selectedTeacherId).toList();
+          final substituteCandidates = teachers
+              .where((t) => t.id != selectedTeacherId)
+              .toList();
 
           return AlertDialog(
             shape: RoundedRectangleBorder(
@@ -160,15 +193,22 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                     borderRadius: BorderRadius.circular(10.r),
                   ),
                   child: Icon(
-                    isEdit ? Icons.edit_calendar_rounded : Icons.person_off_rounded,
-                    color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                    isEdit
+                        ? Icons.edit_calendar_rounded
+                        : Icons.person_off_rounded,
+                    color: isDark
+                        ? const Color(0xFF60A5FA)
+                        : const Color(0xFF2563EB),
                   ),
                 ),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Text(
                     isEdit ? 'Edit Cuti & Guru Pengganti' : 'Tambah Cuti Guru',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -203,7 +243,10 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                         return DropdownMenuItem(
                           value: t.id,
                           child: Text(
-                            t.name + (t.nip != null && t.nip!.isNotEmpty ? ' (${t.nip})' : ''),
+                            t.name +
+                                (t.nip != null && t.nip!.isNotEmpty
+                                    ? ' (${t.nip})'
+                                    : ''),
                             overflow: TextOverflow.ellipsis,
                           ),
                         );
@@ -313,10 +356,7 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                         prefixIcon: const Icon(Icons.badge_outlined),
                       ),
                       items: _leaveReasons.map((r) {
-                        return DropdownMenuItem(
-                          value: r,
-                          child: Text(r),
-                        );
+                        return DropdownMenuItem(value: r, child: Text(r));
                       }).toList(),
                       onChanged: isSubmitting
                           ? null
@@ -377,7 +417,9 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                                   style: TextStyle(
                                     fontSize: 13.sp,
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
                                   ),
                                 ),
                               ),
@@ -388,7 +430,9 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                             'Pilih guru pengganti untuk menggantikan seluruh jadwal mengajar selama masa cuti.',
                             style: TextStyle(
                               fontSize: 11.sp,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                           SizedBox(height: 10.h),
@@ -398,7 +442,9 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                               padding: EdgeInsets.all(12.w),
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? const Color(0xFF064E3B).withValues(alpha: 0.25)
+                                    ? const Color(
+                                        0xFF064E3B,
+                                      ).withValues(alpha: 0.25)
                                     : const Color(0xFFECFDF5),
                                 borderRadius: BorderRadius.circular(10.r),
                                 border: Border.all(
@@ -448,23 +494,33 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         'Total Jadwal Terdampak',
                                         style: TextStyle(
                                           fontSize: 12.sp,
                                           fontWeight: FontWeight.w600,
-                                          color: Theme.of(context).colorScheme.onSurface,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
                                         ),
                                       ),
                                       Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 8.w,
+                                          vertical: 3.h,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: isDark
-                                              ? const Color(0xFF1E3A8A).withValues(alpha: 0.4)
+                                              ? const Color(
+                                                  0xFF1E3A8A,
+                                                ).withValues(alpha: 0.4)
                                               : const Color(0xFFDBEAFE),
-                                          borderRadius: BorderRadius.circular(6.r),
+                                          borderRadius: BorderRadius.circular(
+                                            6.r,
+                                          ),
                                         ),
                                         child: Text(
                                           '${teacherSchedules.length} Sesi Jam Pelajaran',
@@ -485,7 +541,9 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                                     style: TextStyle(
                                       fontSize: 12.sp,
                                       fontWeight: FontWeight.w600,
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
                                     ),
                                   ),
                                   SizedBox(height: 6.h),
@@ -494,9 +552,13 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                                     isExpanded: true,
                                     decoration: InputDecoration(
                                       border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(10.r),
+                                        borderRadius: BorderRadius.circular(
+                                          10.r,
+                                        ),
                                       ),
-                                      prefixIcon: const Icon(Icons.swap_horiz_rounded),
+                                      prefixIcon: const Icon(
+                                        Icons.swap_horiz_rounded,
+                                      ),
                                       hintText: 'Pilih guru pengganti...',
                                     ),
                                     items: [
@@ -511,7 +573,11 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                                         return DropdownMenuItem<String>(
                                           value: t.id,
                                           child: Text(
-                                            t.name + (t.nip != null && t.nip!.isNotEmpty ? ' (${t.nip})' : ''),
+                                            t.name +
+                                                (t.nip != null &&
+                                                        t.nip!.isNotEmpty
+                                                    ? ' (${t.nip})'
+                                                    : ''),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         );
@@ -545,25 +611,36 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                 onPressed: isSubmitting
                     ? null
                     : () async {
-                        if (selectedTeacherId == null || selectedTeacherId!.isEmpty) {
-                          AppHelper.showSnackBar(context, 'Pilih guru yang cuti', isError: true);
+                        if (selectedTeacherId == null ||
+                            selectedTeacherId!.isEmpty) {
+                          AppHelper.showSnackBar(
+                            context,
+                            'Pilih guru yang cuti',
+                            isError: true,
+                          );
                           return;
                         }
 
                         final finalReason = selectedReason == 'Lainnya'
                             ? (customReasonController.text.trim().isNotEmpty
-                                ? customReasonController.text.trim()
-                                : 'Cuti Lainnya')
+                                  ? customReasonController.text.trim()
+                                  : 'Cuti Lainnya')
                             : selectedReason;
 
-                        final leaveProvider = Provider.of<TeacherLeaveProvider>(context, listen: false);
-                        final schoolId = authProvider.activeSchoolId ?? 'a1111111-1111-1111-1111-111111111111';
+                        final leaveProvider = Provider.of<TeacherLeaveProvider>(
+                          context,
+                          listen: false,
+                        );
+                        final schoolId =
+                            authProvider.activeSchoolId ??
+                            'a1111111-1111-1111-1111-111111111111';
 
                         setDialogState(() => isSubmitting = true);
 
                         // Build substitute items for all teacherSchedules using bulkSubstituteTeacherId
                         final List<LeaveSubstituteItem> substituteList = [];
-                        if (bulkSubstituteTeacherId != null && bulkSubstituteTeacherId!.isNotEmpty) {
+                        if (bulkSubstituteTeacherId != null &&
+                            bulkSubstituteTeacherId!.isNotEmpty) {
                           final subTeacher = teachers.firstWhere(
                             (t) => t.id == bulkSubstituteTeacherId,
                             orElse: () => TeacherModel(
@@ -613,14 +690,19 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                             if (!mounted) return;
                             messenger.showSnackBar(
                               const SnackBar(
-                                content: Text('Data cuti dan guru pengganti berhasil disimpan!'),
+                                content: Text(
+                                  'Data cuti dan guru pengganti berhasil disimpan!',
+                                ),
                               ),
                             );
                             navigator.pop();
                           } else {
                             messenger.showSnackBar(
                               SnackBar(
-                                content: Text(leaveProvider.errorMessage ?? 'Gagal menyimpan data cuti.'),
+                                content: Text(
+                                  leaveProvider.errorMessage ??
+                                      'Gagal menyimpan data cuti.',
+                                ),
                                 backgroundColor: Colors.red,
                               ),
                             );
@@ -658,7 +740,9 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
 
     final startStr = DateFormat('dd MMM yyyy', 'id_ID').format(leave.startDate);
     final endStr = DateFormat('dd MMM yyyy', 'id_ID').format(leave.endDate);
-    final dateRangeLabel = startStr == endStr ? startStr : '$startStr s/d $endStr';
+    final dateRangeLabel = startStr == endStr
+        ? startStr
+        : '$startStr s/d $endStr';
 
     showDialog(
       context: context,
@@ -701,7 +785,9 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                 Container(
                   padding: EdgeInsets.all(12.w),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                    color: isDark
+                        ? const Color(0xFF1E293B)
+                        : const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Column(
@@ -709,7 +795,10 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                     children: [
                       Text(
                         teacher?.name ?? 'Guru Tidak Ditemukan',
-                        style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       if (teacher?.nip != null && teacher!.nip!.isNotEmpty) ...[
                         SizedBox(height: 2.h),
@@ -721,18 +810,28 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                       SizedBox(height: 6.h),
                       Row(
                         children: [
-                          Icon(Icons.calendar_today, size: 12, color: Colors.grey),
+                          Icon(
+                            Icons.calendar_today,
+                            size: 12,
+                            color: Colors.grey,
+                          ),
                           SizedBox(width: 4.w),
                           Text(
                             dateRangeLabel,
-                            style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                       ),
                       SizedBox(height: 4.h),
                       Text(
                         'Alasan: ${leave.reason ?? "-"}',
-                        style: TextStyle(fontSize: 12.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -741,7 +840,10 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
 
                 Text(
                   'Penugasan Guru Pengganti (${leave.substitutes.length} Sesi)',
-                  style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 SizedBox(height: 8.h),
 
@@ -762,7 +864,9 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                       color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(10.r),
                       border: Border.all(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0),
                       ),
                     ),
                     child: Column(
@@ -770,15 +874,23 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.swap_horiz_rounded, size: 16, color: Color(0xFF10B981)),
+                            const Icon(
+                              Icons.swap_horiz_rounded,
+                              size: 16,
+                              color: Color(0xFF10B981),
+                            ),
                             SizedBox(width: 6.w),
                             Text(
                               'Guru Pengganti: ',
-                              style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: Colors.grey,
+                              ),
                             ),
                             Expanded(
                               child: Text(
-                                leave.substitutes.first.substituteTeacherName ?? 'Guru Pengganti',
+                                leave.substitutes.first.substituteTeacherName ??
+                                    'Guru Pengganti',
                                 style: TextStyle(
                                   fontSize: 13.sp,
                                   fontWeight: FontWeight.bold,
@@ -791,14 +903,22 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                         SizedBox(height: 8.h),
                         Row(
                           children: [
-                            Icon(Icons.check_circle_outline_rounded, size: 14, color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB)),
+                            Icon(
+                              Icons.check_circle_outline_rounded,
+                              size: 14,
+                              color: isDark
+                                  ? const Color(0xFF60A5FA)
+                                  : const Color(0xFF2563EB),
+                            ),
                             SizedBox(width: 6.w),
                             Text(
                               'Menggantikan ${leave.substitutes.length} Sesi Jam Mengajar',
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                                color: isDark
+                                    ? const Color(0xFF60A5FA)
+                                    : const Color(0xFF2563EB),
                               ),
                             ),
                           ],
@@ -837,14 +957,22 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
 
     final filteredLeaves = allLeaves.where((l) {
       if (_selectedLeaveFilter == 'active') {
-        final s = DateTime(l.startDate.year, l.startDate.month, l.startDate.day);
+        final s = DateTime(
+          l.startDate.year,
+          l.startDate.month,
+          l.startDate.day,
+        );
         final e = DateTime(l.endDate.year, l.endDate.month, l.endDate.day);
         if (!((today.isAfter(s) || today.isAtSameMomentAs(s)) &&
-              (today.isBefore(e) || today.isAtSameMomentAs(e)))) {
+            (today.isBefore(e) || today.isAtSameMomentAs(e)))) {
           return false;
         }
       } else if (_selectedLeaveFilter == 'upcoming') {
-        final s = DateTime(l.startDate.year, l.startDate.month, l.startDate.day);
+        final s = DateTime(
+          l.startDate.year,
+          l.startDate.month,
+          l.startDate.day,
+        );
         if (!s.isAfter(today)) return false;
       } else if (_selectedLeaveFilter == 'past') {
         final e = DateTime(l.endDate.year, l.endDate.month, l.endDate.day);
@@ -854,10 +982,21 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
       if (_searchQuery.isEmpty) return true;
       final t = teachers.firstWhere(
         (teach) => teach.id == l.teacherId,
-        orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
+        orElse: () => TeacherModel(
+          id: '',
+          name: '',
+          position: '',
+          address: '',
+          phoneNumber: '',
+          email: '',
+        ),
       );
-      final matchTeacher = t.name.toLowerCase().contains(_searchQuery.toLowerCase());
-      final matchReason = (l.reason ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchTeacher = t.name.toLowerCase().contains(
+        _searchQuery.toLowerCase(),
+      );
+      final matchReason = (l.reason ?? '').toLowerCase().contains(
+        _searchQuery.toLowerCase(),
+      );
       return matchTeacher || matchReason;
     }).toList();
 
@@ -866,7 +1005,7 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
       final s = DateTime(l.startDate.year, l.startDate.month, l.startDate.day);
       final e = DateTime(l.endDate.year, l.endDate.month, l.endDate.day);
       return (today.isAfter(s) || today.isAtSameMomentAs(s)) &&
-             (today.isBefore(e) || today.isAtSameMomentAs(e));
+          (today.isBefore(e) || today.isAtSameMomentAs(e));
     }).length;
 
     final upcomingLeavesCount = allLeaves.where((l) {
@@ -881,8 +1020,16 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
 
     final filterItems = [
       AdminFilterItem(id: 'all', label: 'Semua', count: allLeaves.length),
-      AdminFilterItem(id: 'active', label: 'Cuti Hari Ini', count: activeLeavesCount),
-      AdminFilterItem(id: 'upcoming', label: 'Akan Datang', count: upcomingLeavesCount),
+      AdminFilterItem(
+        id: 'active',
+        label: 'Cuti Hari Ini',
+        count: activeLeavesCount,
+      ),
+      AdminFilterItem(
+        id: 'upcoming',
+        label: 'Akan Datang',
+        count: upcomingLeavesCount,
+      ),
       AdminFilterItem(id: 'past', label: 'Selesai', count: pastLeavesCount),
     ];
 
@@ -892,9 +1039,7 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kelola Cuti Guru'),
-      ),
+      appBar: AppBar(title: const Text('Kelola Cuti Guru')),
       drawer: const AdminDrawer(currentRoute: '/admin/teacher-leaves'),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showLeaveDialog(),
@@ -902,345 +1047,438 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
         child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Top Overview Stats
-            Padding(
-              padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 8.h),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      context,
-                      title: 'Total Cuti',
-                      count: allLeaves.length.toString(),
-                      icon: Icons.list_alt_rounded,
-                      color: const Color(0xFF2563EB),
-                      isDark: isDark,
-                    ),
-                  ),
-                  SizedBox(width: 10.w),
-                  Expanded(
-                    child: _buildStatCard(
-                      context,
-                      title: 'Cuti Hari Ini',
-                      count: activeLeavesCount.toString(),
-                      icon: Icons.person_off_rounded,
-                      color: const Color(0xFFDC2626),
-                      isDark: isDark,
-                    ),
-                  ),
-                  SizedBox(width: 10.w),
-                  Expanded(
-                    child: _buildStatCard(
-                      context,
-                      title: 'Sesi Digantikan',
-                      count: totalSubstitutedSessions.toString(),
-                      icon: Icons.swap_horiz_rounded,
-                      color: const Color(0xFF059669),
-                      isDark: isDark,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Search & Filter Bar
-            AdminSearchFilterBar(
-              hintText: 'Cari guru atau alasan cuti...',
-              searchController: _searchController,
-              onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
-              filterItems: filterItems,
-              selectedFilterId: _selectedLeaveFilter,
-              onFilterSelected: (id) => setState(() => _selectedLeaveFilter = id),
-            ),
-
-            // Content List
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _loadData,
-                child: leaveProvider.isLoading
-                    ? ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: [
-                          SizedBox(height: 200.h),
-                          const Center(child: CircularProgressIndicator()),
-                        ],
-                      )
-                    : filteredLeaves.isEmpty
-                    ? SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        child: Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24.w),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(height: 60.h),
-                            Icon(
-                              Icons.event_available_rounded,
-                              size: 64.w,
-                              color: Colors.grey[400],
-                            ),
-                            SizedBox(height: 16.h),
-                            Text(
-                              _searchQuery.isNotEmpty
-                                  ? 'Tidak Ada Hasil yang Cocok'
-                                  : 'Belum Ada Cuti Guru Ditambahkan',
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                            SizedBox(height: 6.h),
-                            Text(
-                              _searchQuery.isNotEmpty
-                                  ? 'Coba kata kunci pencarian yang lain.'
-                                  : 'Catat cuti guru dan pilih guru pengganti untuk jadwal mengajarnya agar kegiatan belajar tetap terkelola.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
+        child: RefreshIndicator(
+          onRefresh: _loadData,
+          color: const Color(0xFF2563EB),
+          displacement: 40.0,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                // Top Overview Stats
+                Padding(
+                  padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 8.h),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          context,
+                          title: 'Total Cuti',
+                          count: allLeaves.length.toString(),
+                          icon: Icons.list_alt_rounded,
+                          color: const Color(0xFF2563EB),
+                          isDark: isDark,
                         ),
                       ),
-                    ),
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        child: _buildStatCard(
+                          context,
+                          title: 'Cuti Hari Ini',
+                          count: activeLeavesCount.toString(),
+                          icon: Icons.person_off_rounded,
+                          color: const Color(0xFFDC2626),
+                          isDark: isDark,
+                        ),
+                      ),
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        child: _buildStatCard(
+                          context,
+                          title: 'Sesi Digantikan',
+                          count: totalSubstitutedSessions.toString(),
+                          icon: Icons.swap_horiz_rounded,
+                          color: const Color(0xFF059669),
+                          isDark: isDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Search & Filter Bar
+                AdminSearchFilterBar(
+                  hintText: 'Cari guru atau alasan cuti...',
+                  searchController: _searchController,
+                  onSearchChanged: (val) =>
+                      setState(() => _searchQuery = val.trim()),
+                  filterItems: filterItems,
+                  selectedFilterId: _selectedLeaveFilter,
+                  onFilterSelected: (id) =>
+                      setState(() => _selectedLeaveFilter = id),
+                ),
+
+                // Content List
+                leaveProvider.isLoading
+                    ? SizedBox(
+                        height: 300.h,
+                        child: const Center(child: CircularProgressIndicator()),
+                      )
+                    : filteredLeaves.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24.w),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(height: 60.h),
+                              Icon(
+                                Icons.event_available_rounded,
+                                size: 64.w,
+                                color: Colors.grey[400],
+                              ),
+                              SizedBox(height: 16.h),
+                              Text(
+                                _searchQuery.isNotEmpty
+                                    ? 'Tidak Ada Hasil yang Cocok'
+                                    : 'Belum Ada Cuti Guru Ditambahkan',
+                                style: TextStyle(
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                              ),
+                              SizedBox(height: 6.h),
+                              Text(
+                                _searchQuery.isNotEmpty
+                                    ? 'Coba kata kunci pencarian yang lain.'
+                                    : 'Catat cuti guru dan pilih guru pengganti untuk jadwal mengajarnya agar kegiatan belajar tetap terkelola.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       )
                     : ListView.builder(
-                        physics: const AlwaysScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
                         padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 80.h),
-                      itemCount: filteredLeaves.length,
-                      itemBuilder: (context, index) {
-                        final item = filteredLeaves[index];
-                        final teacher = teachers.firstWhere(
-                          (t) => t.id == item.teacherId,
-                          orElse: () => TeacherModel(
-                            id: '',
-                            name: 'Guru Tidak Dikenal',
-                            position: '',
-                            address: '',
-                            phoneNumber: '',
-                            email: '',
-                          ),
-                        );
+                        itemCount: filteredLeaves.length,
+                        itemBuilder: (context, index) {
+                          final item = filteredLeaves[index];
+                          final teacher = teachers.firstWhere(
+                            (t) => t.id == item.teacherId,
+                            orElse: () => TeacherModel(
+                              id: '',
+                              name: 'Guru Tidak Dikenal',
+                              position: '',
+                              address: '',
+                              phoneNumber: '',
+                              email: '',
+                            ),
+                          );
 
-                        final startStr = DateFormat('dd MMM yyyy', 'id_ID').format(item.startDate);
-                        final endStr = DateFormat('dd MMM yyyy', 'id_ID').format(item.endDate);
-                        final dateRangeLabel = startStr == endStr ? startStr : '$startStr - $endStr';
-                        final durationDays = item.endDate.difference(item.startDate).inDays + 1;
+                          final startStr = DateFormat(
+                            'dd MMM yyyy',
+                            'id_ID',
+                          ).format(item.startDate);
+                          final endStr = DateFormat(
+                            'dd MMM yyyy',
+                            'id_ID',
+                          ).format(item.endDate);
+                          final dateRangeLabel = startStr == endStr
+                              ? startStr
+                              : '$startStr - $endStr';
+                          final durationDays =
+                              item.endDate.difference(item.startDate).inDays +
+                              1;
 
-                        final reason = item.reason ?? 'Cuti Tahunan';
-                        final reasonColor = _getReasonColor(reason, isDark);
+                          final reason = item.reason ?? 'Cuti Tahunan';
+                          final reasonColor = _getReasonColor(reason, isDark);
 
-                        return Card(
-                          margin: EdgeInsets.only(bottom: 12.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14.r),
-                          ),
-                          child: InkWell(
-                            onTap: () => _showDetailDialog(item, teacher),
-                            borderRadius: BorderRadius.circular(14.r),
-                            child: Padding(
-                              padding: EdgeInsets.all(14.w),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 20.r,
-                                        backgroundColor: isDark
-                                            ? const Color(0xFF1E3A8A).withValues(alpha: 0.4)
-                                            : const Color(0xFFDBEAFE),
-                                        child: Text(
-                                          teacher.name.isNotEmpty
-                                              ? teacher.name.substring(0, 1).toUpperCase()
-                                              : 'G',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: isDark
-                                                ? const Color(0xFF60A5FA)
-                                                : const Color(0xFF2563EB),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(width: 12.w),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              teacher.name,
-                                              style: TextStyle(
-                                                fontSize: 14.sp,
-                                                fontWeight: FontWeight.bold,
-                                                color: Theme.of(context).colorScheme.onSurface,
-                                              ),
-                                            ),
-                                            SizedBox(height: 2.h),
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.calendar_today_rounded,
-                                                  size: 11,
-                                                  color: Theme.of(context).colorScheme.outline,
-                                                ),
-                                                SizedBox(width: 4.w),
-                                                Text(
-                                                  '$dateRangeLabel ($durationDays hari)',
-                                                  style: TextStyle(
-                                                    fontSize: 11.sp,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: isDark
-                                                        ? const Color(0xFF60A5FA)
-                                                        : const Color(0xFF2563EB),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
-                                        tooltip: 'Hapus Cuti',
-                                        onPressed: () async {
-                                          final schoolId = authProvider.activeSchoolId ?? 'a1111111-1111-1111-1111-111111111111';
-                                          final confirm = await showDialog<bool>(
-                                            context: context,
-                                            builder: (ctx) => AlertDialog(
-                                              title: const Text('Hapus Cuti Guru?'),
-                                              content: Text(
-                                                'Menghapus cuti "${teacher.name}" akan membatalkan penugasan guru pengganti dan mengembalikan jadwal semula.',
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () => Navigator.pop(ctx, false),
-                                                  child: const Text('Batal'),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () => Navigator.pop(ctx, true),
-                                                  child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-
-                                          if (confirm == true && context.mounted) {
-                                            final messenger = ScaffoldMessenger.of(context);
-                                            final ok = await leaveProvider.deleteLeave(
-                                              item.id,
-                                              schoolId,
-                                              item.substitutes,
-                                            );
-                                            if (!context.mounted) return;
-                                            if (ok) {
-                                              try {
-                                                await Provider.of<ScheduleProvider>(context, listen: false).loadAllSchedules(schoolId);
-                                              } catch (_) {}
-                                              if (!context.mounted) return;
-                                              messenger.showSnackBar(
-                                                const SnackBar(content: Text('Data cuti berhasil dihapus')),
-                                              );
-                                            } else {
-                                              messenger.showSnackBar(
-                                                SnackBar(
-                                                  content: Text(leaveProvider.errorMessage ?? 'Gagal menghapus data cuti.'),
-                                                  backgroundColor: Colors.red,
-                                                ),
-                                              );
-                                            }
-                                          }
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 8.h),
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                                        decoration: BoxDecoration(
-                                          color: reasonColor.withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(6.r),
-                                          border: Border.all(
-                                            color: reasonColor.withValues(alpha: 0.35),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          reason,
-                                          style: TextStyle(
-                                            fontSize: 10.sp,
-                                            fontWeight: FontWeight.w600,
-                                            color: reasonColor,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(width: 8.w),
-                                      Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                                        decoration: BoxDecoration(
-                                          color: isDark
-                                              ? const Color(0xFF064E3B).withValues(alpha: 0.25)
-                                              : const Color(0xFFECFDF5),
-                                          borderRadius: BorderRadius.circular(6.r),
-                                          border: Border.all(
-                                            color: isDark
-                                                ? const Color(0xFF047857)
-                                                : const Color(0xFFA7F3D0),
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.swap_horiz_rounded,
-                                              size: 12,
+                          return Card(
+                            margin: EdgeInsets.only(bottom: 12.h),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14.r),
+                            ),
+                            child: InkWell(
+                              onTap: () => _showDetailDialog(item, teacher),
+                              borderRadius: BorderRadius.circular(14.r),
+                              child: Padding(
+                                padding: EdgeInsets.all(14.w),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 20.r,
+                                          backgroundColor: isDark
+                                              ? const Color(
+                                                  0xFF1E3A8A,
+                                                ).withValues(alpha: 0.4)
+                                              : const Color(0xFFDBEAFE),
+                                          child: Text(
+                                            teacher.name.isNotEmpty
+                                                ? teacher.name
+                                                      .substring(0, 1)
+                                                      .toUpperCase()
+                                                : 'G',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
                                               color: isDark
-                                                  ? const Color(0xFF34D399)
-                                                  : const Color(0xFF059669),
+                                                  ? const Color(0xFF60A5FA)
+                                                  : const Color(0xFF2563EB),
                                             ),
-                                            SizedBox(width: 4.w),
-                                            Text(
-                                              '${item.substitutes.length} Sesi Digantikan',
-                                              style: TextStyle(
-                                                fontSize: 10.sp,
-                                                fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        SizedBox(width: 12.w),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                teacher.name,
+                                                style: TextStyle(
+                                                  fontSize: 14.sp,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).colorScheme.onSurface,
+                                                ),
+                                              ),
+                                              SizedBox(height: 2.h),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons
+                                                        .calendar_today_rounded,
+                                                    size: 11,
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).colorScheme.outline,
+                                                  ),
+                                                  SizedBox(width: 4.w),
+                                                  Text(
+                                                    '$dateRangeLabel ($durationDays hari)',
+                                                    style: TextStyle(
+                                                      fontSize: 11.sp,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: isDark
+                                                          ? const Color(
+                                                              0xFF60A5FA,
+                                                            )
+                                                          : const Color(
+                                                              0xFF2563EB,
+                                                            ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.delete_outline_rounded,
+                                            color: Colors.red,
+                                          ),
+                                          tooltip: 'Hapus Cuti',
+                                          onPressed: () async {
+                                            final schoolId =
+                                                authProvider.activeSchoolId ??
+                                                'a1111111-1111-1111-1111-111111111111';
+                                            final confirm = await showDialog<bool>(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                title: const Text(
+                                                  'Hapus Cuti Guru?',
+                                                ),
+                                                content: Text(
+                                                  'Menghapus cuti "${teacher.name}" akan membatalkan penugasan guru pengganti dan mengembalikan jadwal semula.',
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                          ctx,
+                                                          false,
+                                                        ),
+                                                    child: const Text('Batal'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                          ctx,
+                                                          true,
+                                                        ),
+                                                    child: const Text(
+                                                      'Hapus',
+                                                      style: TextStyle(
+                                                        color: Colors.red,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+
+                                            if (confirm == true &&
+                                                context.mounted) {
+                                              final messenger =
+                                                  ScaffoldMessenger.of(context);
+                                              final ok = await leaveProvider
+                                                  .deleteLeave(
+                                                    item.id,
+                                                    schoolId,
+                                                    item.substitutes,
+                                                  );
+                                              if (!context.mounted) return;
+                                              if (ok) {
+                                                try {
+                                                  await Provider.of<
+                                                        ScheduleProvider
+                                                      >(context, listen: false)
+                                                      .loadAllSchedules(
+                                                        schoolId,
+                                                      );
+                                                } catch (_) {}
+                                                if (!context.mounted) return;
+                                                messenger.showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Data cuti berhasil dihapus',
+                                                    ),
+                                                  ),
+                                                );
+                                              } else {
+                                                messenger.showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      leaveProvider
+                                                              .errorMessage ??
+                                                          'Gagal menghapus data cuti.',
+                                                    ),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 8.h),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 8.w,
+                                            vertical: 3.h,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: reasonColor.withValues(
+                                              alpha: 0.15,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              6.r,
+                                            ),
+                                            border: Border.all(
+                                              color: reasonColor.withValues(
+                                                alpha: 0.35,
+                                              ),
+                                            ),
+                                          ),
+                                          child: Text(
+                                            reason,
+                                            style: TextStyle(
+                                              fontSize: 10.sp,
+                                              fontWeight: FontWeight.w600,
+                                              color: reasonColor,
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 8.w),
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 8.w,
+                                            vertical: 3.h,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isDark
+                                                ? const Color(
+                                                    0xFF064E3B,
+                                                  ).withValues(alpha: 0.25)
+                                                : const Color(0xFFECFDF5),
+                                            borderRadius: BorderRadius.circular(
+                                              6.r,
+                                            ),
+                                            border: Border.all(
+                                              color: isDark
+                                                  ? const Color(0xFF047857)
+                                                  : const Color(0xFFA7F3D0),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.swap_horiz_rounded,
+                                                size: 12,
                                                 color: isDark
                                                     ? const Color(0xFF34D399)
                                                     : const Color(0xFF059669),
                                               ),
+                                              SizedBox(width: 4.w),
+                                              Text(
+                                                '${item.substitutes.length} Sesi Digantikan',
+                                                style: TextStyle(
+                                                  fontSize: 10.sp,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: isDark
+                                                      ? const Color(0xFF34D399)
+                                                      : const Color(0xFF059669),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        TextButton.icon(
+                                          onPressed: () =>
+                                              _showDetailDialog(item, teacher),
+                                          icon: const Icon(
+                                            Icons.info_outline,
+                                            size: 14,
+                                          ),
+                                          label: const Text(
+                                            'Detail',
+                                            style: TextStyle(fontSize: 11),
+                                          ),
+                                          style: TextButton.styleFrom(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 8.w,
+                                              vertical: 2.h,
                                             ),
-                                          ],
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize
+                                                .shrinkWrap,
+                                          ),
                                         ),
-                                      ),
-                                      const Spacer(),
-                                      TextButton.icon(
-                                        onPressed: () => _showDetailDialog(item, teacher),
-                                        icon: const Icon(Icons.info_outline, size: 14),
-                                        label: const Text('Detail', style: TextStyle(fontSize: 11)),
-                                        style: TextButton.styleFrom(
-                                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                                          minimumSize: Size.zero,
-                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
-              ),
+                          );
+                        },
+                      ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -1261,9 +1499,7 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
             ? color.withValues(alpha: 0.15)
             : color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: color.withValues(alpha: 0.25),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

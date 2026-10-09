@@ -439,19 +439,6 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     );
   }
 
-  String _getTimeGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 11) {
-      return 'Selamat pagi';
-    } else if (hour < 15) {
-      return 'Selamat siang';
-    } else if (hour < 18) {
-      return 'Selamat sore';
-    } else {
-      return 'Selamat malam';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
@@ -733,8 +720,6 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
   // ─── 1. HEADER ─────────────────────────────────────────────────────────────
   Widget _buildModernHeader(TeacherModel teacher, int monthScheduleCount) {
-    final greeting = _getTimeGreeting();
-
     return Container(
       width: double.infinity,
       color: Theme.of(context).scaffoldBackgroundColor,
@@ -894,12 +879,14 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
           // Greeting Subtitle
           Text(
-            greeting,
+            'Halo, ${teacher.name}',
             style: GoogleFonts.hankenGrotesk(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
 
           SizedBox(height: 4.h),
