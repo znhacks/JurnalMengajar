@@ -48,12 +48,15 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
     super.dispose();
   }
 
-  void _loadData() {
+  Future<void> _loadData() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final leaveProvider = Provider.of<TeacherLeaveProvider>(context, listen: false);
+    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
     final schoolId = authProvider.activeSchoolId ?? 'a1111111-1111-1111-1111-111111111111';
-    Provider.of<TeacherLeaveProvider>(context, listen: false).loadLeaves(schoolId);
-    Provider.of<MasterDataProvider>(context, listen: false).loadAllData(schoolId);
-    Provider.of<ScheduleProvider>(context, listen: false).loadAllSchedules(schoolId);
+    await leaveProvider.loadLeaves(schoolId);
+    await masterProvider.loadAllData(schoolId);
+    await scheduleProvider.loadAllSchedules(schoolId);
   }
 
   Color _getReasonColor(String reason, bool isDark) {
@@ -891,13 +894,6 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kelola Cuti Guru'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Muat Ulang',
-            onPressed: _loadData,
-          ),
-        ],
       ),
       drawer: const AdminDrawer(currentRoute: '/admin/teacher-leaves'),
       floatingActionButton: FloatingActionButton(
@@ -961,15 +957,26 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
 
             // Content List
             Expanded(
-              child: leaveProvider.isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : filteredLeaves.isEmpty
-                  ? Center(
+              child: RefreshIndicator(
+                onRefresh: _loadData,
+                child: leaveProvider.isLoading
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(height: 200.h),
+                          const Center(child: CircularProgressIndicator()),
+                        ],
+                      )
+                    : filteredLeaves.isEmpty
+                    ? SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Center(
                       child: Padding(
                         padding: EdgeInsets.all(24.w),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            SizedBox(height: 60.h),
                             Icon(
                               Icons.event_available_rounded,
                               size: 64.w,
@@ -1000,9 +1007,11 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                           ],
                         ),
                       ),
-                    )
-                  : ListView.builder(
-                      padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 80.h),
+                    ),
+                      )
+                    : ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 80.h),
                       itemCount: filteredLeaves.length,
                       itemBuilder: (context, index) {
                         final item = filteredLeaves[index];
@@ -1229,6 +1238,7 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                         );
                       },
                     ),
+              ),
             ),
           ],
         ),

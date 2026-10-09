@@ -273,11 +273,6 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
                 ),
               ),
             ),
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Segarkan Data',
-            onPressed: _loadData,
-          ),
           SizedBox(width: 6.w),
         ],
       ),

@@ -292,8 +292,6 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
         ? ((totalSchoolOnTime / totalSchoolSessions) * 100.0)
         : (totalSchoolJournals > 0 ? ((totalSchoolOnTime / totalSchoolJournals) * 100.0) : 0.0);
 
-    final isLoading = masterProvider.isLoading || journalProvider.isLoading || scheduleProvider.isLoading;
-
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -306,14 +304,6 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
         ),
         elevation: 0,
         centerTitle: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Segarkan Data',
-            onPressed: isLoading ? null : _refreshData,
-          ),
-          SizedBox(width: 8.w),
-        ],
       ),
       drawer: const AdminDrawer(currentRoute: '/admin/teacher-statistics'),
       body: RefreshIndicator(

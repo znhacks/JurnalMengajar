@@ -969,11 +969,6 @@ class _AdminClassAttendanceRecapScreenState
           style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Segarkan Data',
-            onPressed: () => _initData(),
-          ),
           if (currentClass != null && selectedPeriod != null)
             IconButton(
               icon: _isExporting

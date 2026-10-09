@@ -37,11 +37,11 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
     });
   }
 
-  void _loadHolidays() {
+  Future<void> _loadHolidays() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final schoolId =
         authProvider.activeSchoolId ?? 'a1111111-1111-1111-1111-111111111111';
-    Provider.of<HolidayProvider>(context, listen: false).loadHolidays(schoolId);
+    await Provider.of<HolidayProvider>(context, listen: false).loadHolidays(schoolId);
   }
 
   static const List<String> _holidayCategories = [
@@ -423,10 +423,6 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
             tooltip: 'Kelola Cuti Guru',
             onPressed: () => context.push('/admin/teacher-leaves'),
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: _loadHolidays,
-          ),
         ],
       ),
       drawer: const AdminDrawer(currentRoute: '/admin/holidays'),
@@ -437,14 +433,28 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
       ),
       body: SafeArea(
         child: holidayProvider.isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? RefreshIndicator(
+                onRefresh: _loadHolidays,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(height: 200.h),
+                    const Center(child: CircularProgressIndicator()),
+                  ],
+                ),
+              )
             : holidays.isEmpty
-            ? Center(
+            ? RefreshIndicator(
+                onRefresh: _loadHolidays,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Center(
                 child: Padding(
                   padding: EdgeInsets.all(24.w),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      SizedBox(height: 80.h),
                       Icon(
                         Icons.event_available_rounded,
                         size: 64.w,
@@ -471,6 +481,8 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                     ],
                   ),
                 ),
+              ),
+                ),
               )
             : Column(
                 children: [
@@ -483,20 +495,23 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                     onFilterSelected: (id) => setState(() => _selectedCategory = id),
                   ),
                   Expanded(
-                    child: filteredHolidays.isEmpty
-                        ? ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            children: [
-                              SizedBox(height: 60.h),
-                              const AppEmptyWidget(
-                                title: 'Hari Libur Tidak Ditemukan',
-                                subtitle: 'Tidak ada hari libur yang cocok dengan pencarian atau kategori.',
-                                icon: Icons.search_off_rounded,
-                              ),
-                            ],
-                          )
-                        : ListView.builder(
-                            padding: EdgeInsets.all(16.w),
+                    child: RefreshIndicator(
+                      onRefresh: _loadHolidays,
+                      child: filteredHolidays.isEmpty
+                          ? ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              children: [
+                                SizedBox(height: 60.h),
+                                const AppEmptyWidget(
+                                  title: 'Hari Libur Tidak Ditemukan',
+                                  subtitle: 'Tidak ada hari libur yang cocok dengan pencarian atau kategori.',
+                                  icon: Icons.search_off_rounded,
+                                ),
+                              ],
+                            )
+                          : ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: EdgeInsets.all(16.w),
                             itemCount: filteredHolidays.length,
                             itemBuilder: (context, index) {
                               final item = filteredHolidays[index];
@@ -679,10 +694,11 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                     ),
                   );
                 },
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
