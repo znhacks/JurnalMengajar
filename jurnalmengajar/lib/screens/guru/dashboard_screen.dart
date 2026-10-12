@@ -1035,15 +1035,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 duration: const Duration(milliseconds: 200),
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
                 decoration: BoxDecoration(
-                  gradient: isSelected
-                      ? const LinearGradient(
-                          colors: [Color(0xFF4F7CFF), Color(0xFF8B7CFF)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : null,
                   color: isSelected
-                      ? null
+                      ? const Color(0xFF2563EB)
                       : Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(24.r),
                   border: Border.all(
@@ -1056,8 +1049,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       ? [
                           BoxShadow(
                             color: const Color(
-                              0xFF4F7CFF,
-                            ).withValues(alpha: 0.3),
+                              0xFF2563EB,
+                            ).withValues(alpha: 0.25),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),

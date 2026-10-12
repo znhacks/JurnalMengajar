@@ -595,14 +595,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                 width: double.infinity,
                 padding: EdgeInsets.all(16.w),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFF0F172A), // Slate 900
-                      Color(0xFF2563EB), // Teal 600
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: const Color(0xFF1E40AF),
                   borderRadius: BorderRadius.circular(16.r),
                   boxShadow: [
                     BoxShadow(
@@ -951,6 +944,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         horizontal: 16.w,
                         vertical: 2.h,
                       ),
+                      onTap: () {
+                        themeProvider.toggleTheme(!themeProvider.isDarkMode);
+                      },
                       leading: Icon(
                         themeProvider.isDarkMode
                             ? Icons.dark_mode_rounded

@@ -154,14 +154,7 @@ class _SchoolExpiredScreenState extends State<SchoolExpiredScreen> {
                         child: Container(
                           height: kIsWeb ? 130 : 155.h,
                           decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Color.fromARGB(255, 239, 68, 68),
-                                Color.fromARGB(255, 220, 38, 38),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
+                            color: Color(0xFFDC2626),
                           ),
                         ),
                       ),

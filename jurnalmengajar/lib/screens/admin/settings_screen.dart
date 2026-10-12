@@ -971,29 +971,13 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                       Container(
                                         padding: EdgeInsets.all(10.w),
                                         decoration: BoxDecoration(
-                                          gradient: isUltra
-                                              ? const LinearGradient(
-                                                  colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
-                                                )
+                                          color: isUltra
+                                              ? const Color(0xFF6D28D9)
                                               : (isEnterprise
-                                                  ? const LinearGradient(
-                                                      colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
-                                                      begin: Alignment.topLeft,
-                                                      end: Alignment.bottomRight,
-                                                    )
+                                                  ? const Color(0xFF0369A1)
                                                   : (isPro
-                                                      ? const LinearGradient(
-                                                          colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                                                          begin: Alignment.topLeft,
-                                                          end: Alignment.bottomRight,
-                                                        )
-                                                      : const LinearGradient(
-                                                          colors: [Color(0xFF64748B), Color(0xFF475569)],
-                                                          begin: Alignment.topLeft,
-                                                          end: Alignment.bottomRight,
-                                                        ))),
+                                                      ? const Color(0xFFD97706)
+                                                      : const Color(0xFF64748B))),
                                           borderRadius: BorderRadius.circular(14.r),
                                         ),
                                         child: Icon(

@@ -159,14 +159,7 @@ class GuruDrawer extends StatelessWidget {
           20.h,
         ),
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF4F46E5), // Vibrant Indigo
-              Color(0xFF3730A3),
-            ],
-          ),
+          color: Color(0xFF1D4ED8),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,6 +423,9 @@ class GuruDrawer extends StatelessWidget {
                   horizontal: 14.w,
                   vertical: 0,
                 ),
+                onTap: () {
+                  themeProvider.toggleTheme(!themeProvider.isDarkMode);
+                },
                 leading: Icon(
                   themeProvider.isDarkMode
                       ? Icons.dark_mode_rounded

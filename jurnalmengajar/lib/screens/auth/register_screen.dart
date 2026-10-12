@@ -456,14 +456,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: Container(
                               height: kIsWeb ? 130 : 155.h,
                               decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Color.fromARGB(255, 30, 64, 175),
-                                    Color.fromARGB(255, 29, 78, 216),
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
+                                color: Color(0xFF1D4ED8),
                               ),
                             ),
                           ),

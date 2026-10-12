@@ -531,11 +531,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
           Container(
             padding: EdgeInsets.all(16.w),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: const Color(0xFF1D4ED8),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(

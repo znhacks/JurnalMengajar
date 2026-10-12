@@ -314,6 +314,9 @@ class AdminDrawer extends StatelessWidget {
                     horizontal: 12.w,
                     vertical: 0,
                   ),
+                  onTap: () {
+                    themeProvider.toggleTheme(!themeProvider.isDarkMode);
+                  },
                   leading: Icon(
                     themeProvider.isDarkMode
                         ? Icons.dark_mode_rounded
