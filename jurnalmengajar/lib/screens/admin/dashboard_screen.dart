@@ -1678,6 +1678,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     context,
                                   ).colorScheme.onSurface,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                               SizedBox(height: 2.h),
                               Text(
@@ -1689,6 +1691,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   ).colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.w500,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
