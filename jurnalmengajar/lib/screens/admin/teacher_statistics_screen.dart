@@ -296,7 +296,7 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          'Statistik & Disiplin Guru',
+          'Disiplin Guru',
           style: GoogleFonts.hankenGrotesk(
             fontWeight: FontWeight.bold,
             fontSize: kIsWeb ? 17 : 18.sp,
@@ -399,12 +399,14 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Pemantauan Kedisiplinan Guru',
+                      'Disiplin Guru',
                       style: GoogleFonts.hankenGrotesk(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(height: 2.h),
                     Text(
@@ -425,7 +427,7 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
           const Divider(height: 1),
           SizedBox(height: 12.h),
           Text(
-            'Rentang Waktu',
+            'Periode',
             style: TextStyle(
               fontSize: 12.5.sp,
               fontWeight: FontWeight.w600,
@@ -435,28 +437,6 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
           SizedBox(height: 8.h),
           LayoutBuilder(
             builder: (context, constraints) {
-              final narrow = constraints.maxWidth < 420;
-              final chips = [
-                _buildTimeFilterChip('Semua Waktu', StatTimeFilter.all, isDark, primaryColor, narrow: narrow),
-                _buildTimeFilterChip('Bulan Ini', StatTimeFilter.thisMonth, isDark, primaryColor, narrow: narrow),
-                _buildTimeFilterChip('Semester Ini', StatTimeFilter.thisSemester, isDark, primaryColor, narrow: narrow),
-              ];
-              if (narrow) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(child: chips[0]),
-                        SizedBox(width: 8.w),
-                        Expanded(child: chips[1]),
-                      ],
-                    ),
-                    SizedBox(height: 8.h),
-                    SizedBox(width: double.infinity, child: chips[2]),
-                  ],
-                );
-              }
               return Container(
                 padding: EdgeInsets.all(4.r),
                 decoration: BoxDecoration(
@@ -465,11 +445,11 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
                 ),
                 child: Row(
                   children: [
-                    Expanded(child: chips[0]),
+                    Expanded(child: _buildTimeFilterChip('Semua', StatTimeFilter.all, isDark, primaryColor)),
                     SizedBox(width: 4.w),
-                    Expanded(child: chips[1]),
+                    Expanded(child: _buildTimeFilterChip('Bulan Ini', StatTimeFilter.thisMonth, isDark, primaryColor)),
                     SizedBox(width: 4.w),
-                    Expanded(child: chips[2]),
+                    Expanded(child: _buildTimeFilterChip('Semester', StatTimeFilter.thisSemester, isDark, primaryColor)),
                   ],
                 ),
               );
@@ -554,6 +534,7 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
                     padding: EdgeInsets.all(9.r),
@@ -569,28 +550,33 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Tingkat Disiplin Sekolah',
+                          'Disiplin Sekolah',
                           style: TextStyle(
                             fontSize: 12.5.sp,
                             fontWeight: FontWeight.w600,
                             color: Colors.white.withValues(alpha: 0.75),
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         SizedBox(height: 2.h),
                         Text(
-                          '$totalOnTime tepat dari $totalFilled jurnal terisi',
+                          '$totalOnTime dari $totalFilled jurnal tepat',
                           style: TextStyle(
                             fontSize: 11.sp,
                             color: Colors.white.withValues(alpha: 0.55),
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
+                  SizedBox(width: 8.w),
                   Text(
                     '${onTimeRate.toStringAsFixed(1)}%',
                     style: GoogleFonts.hankenGrotesk(
-                      fontSize: 30.sp,
+                      fontSize: 28.sp,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
                       height: 1.0,
@@ -613,11 +599,13 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
               ),
               SizedBox(height: 8.h),
               Text(
-                '$teachersCount guru tercatat pada periode ini',
+                '$teachersCount guru • periode ini',
                 style: TextStyle(
                   fontSize: 11.sp,
                   color: Colors.white.withValues(alpha: 0.55),
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -625,15 +613,13 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
         SizedBox(height: 12.h),
         LayoutBuilder(
           builder: (context, constraints) {
-            final gap = 10.w;
-            final cardWidth = (constraints.maxWidth - gap * 2) / 3;
+            final gap = 8.w;
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: cardWidth,
+                Expanded(
                   child: _buildKpiCard(
-                    title: 'Tepat Waktu',
+                    title: 'Tepat',
                     value: '$totalOnTime',
                     subtitle: 'Hari H',
                     icon: Icons.check_circle_rounded,
@@ -642,24 +628,22 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
                   ),
                 ),
                 SizedBox(width: gap),
-                SizedBox(
-                  width: cardWidth,
+                Expanded(
                   child: _buildKpiCard(
-                    title: 'Terlambat',
+                    title: 'Telat',
                     value: '$totalLate',
-                    subtitle: 'Lewat hari H',
+                    subtitle: '> Hari H',
                     icon: Icons.history_toggle_off_rounded,
                     color: const Color(0xFFF59E0B),
                     isDark: isDark,
                   ),
                 ),
                 SizedBox(width: gap),
-                SizedBox(
-                  width: cardWidth,
+                Expanded(
                   child: _buildKpiCard(
-                    title: 'Belum Terisi',
+                    title: 'Kosong',
                     value: '$totalUnsubmitted',
-                    subtitle: 'Jadwal kosong',
+                    subtitle: 'Belum isi',
                     icon: Icons.warning_amber_rounded,
                     color: const Color(0xFFEF4444),
                     isDark: isDark,
@@ -682,7 +666,7 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
     required bool isDark,
   }) {
     return Container(
-      padding: EdgeInsets.all(12.w),
+      padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF15202B) : Colors.white,
         borderRadius: BorderRadius.circular(14.r),
@@ -692,6 +676,7 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             padding: EdgeInsets.all(7.r),
@@ -702,28 +687,34 @@ class _AdminTeacherStatisticsScreenState extends State<AdminTeacherStatisticsScr
             child: Icon(icon, color: color, size: 17.r),
           ),
           SizedBox(height: 10.h),
-          Text(
-            value,
-            style: GoogleFonts.hankenGrotesk(
-              fontSize: 21.sp,
-              fontWeight: FontWeight.w800,
-              height: 1.0,
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 21.sp,
+                fontWeight: FontWeight.w800,
+                height: 1.0,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
+              ),
             ),
           ),
           SizedBox(height: 3.h),
           Text(
             title,
             style: TextStyle(
-              fontSize: 11.5.sp,
+              fontSize: 11.sp,
               fontWeight: FontWeight.w700,
               color: color,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           Text(
             subtitle,
             style: TextStyle(
-              fontSize: 10.5.sp,
+              fontSize: 10.sp,
               color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
             ),
             maxLines: 1,
