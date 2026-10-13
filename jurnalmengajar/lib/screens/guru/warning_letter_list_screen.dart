@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/warning_letter_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -8,11 +10,14 @@ import '../../providers/journal_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../models/teacher_model.dart';
+import '../../models/class_model.dart';
+import '../../models/subject_model.dart';
 import '../../models/journal_model.dart';
 import '../../models/schedule_model.dart';
 import '../../models/warning_letter_model.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/helper.dart';
+import '../../core/utils/schedule_grouper.dart';
 import '../../widgets/guru_drawer.dart';
 
 class GuruWarningLetterListScreen extends StatefulWidget {
@@ -164,6 +169,464 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
       if (!found) return false;
     }
     return true;
+  }
+
+  JournalModel? _findJournalForGroup(
+    GroupedDailySchedule group,
+    List<JournalModel> journals,
+  ) {
+    final s = group.primarySchedule;
+    for (final j in journals) {
+      final sameDate = _isSameDay(j.date, group.date);
+      if (!sameDate) continue;
+      final sameSchedule = j.scheduleId == s.id ||
+          group.scheduleIds.contains(j.scheduleId) ||
+          (j.classId == s.classId && j.subjectId == s.subjectId);
+      if (sameSchedule) return j;
+    }
+    return null;
+  }
+
+  Future<void> _handleDayScheduleTap({
+    required BuildContext sheetContext,
+    required ScheduleModel schedule,
+    required JournalModel? matchingJournal,
+    required DateTime day,
+  }) async {
+    final dateStr = DateFormat('yyyy-MM-dd').format(day);
+    Navigator.pop(sheetContext);
+    if (!mounted) return;
+    if (matchingJournal != null) {
+      if (matchingJournal.status == 'rejected') {
+        await context.push(
+          '/guru/journal-form?scheduleId=${schedule.id}&journalId=${matchingJournal.id}&date=$dateStr',
+        );
+      } else {
+        await context.push('/guru/journal/${matchingJournal.id}');
+      }
+    } else {
+      final now = DateTime.now();
+      final todayOnly = DateTime(now.year, now.month, now.day);
+      final targetOnly = DateTime(day.year, day.month, day.day);
+      if (targetOnly.isAfter(todayOnly)) {
+        if (!mounted) return;
+        AppHelper.showSnackBar(
+          context,
+          'Belum bisa mengisi jurnal mengajar, tunggu sampai hari tersebut tiba.',
+          isError: false,
+        );
+        return;
+      }
+      await context.push(
+        '/guru/journal-form?scheduleId=${schedule.id}&date=$dateStr',
+      );
+    }
+    if (mounted) await _loadData();
+  }
+
+  void _openDayJournals({
+    required DateTime groupDate,
+    required List<WarningLetterModel> groupWarnings,
+  }) {
+    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+
+    final daySchedules = scheduleProvider.cachedTeacherSchedules
+        .where((s) => _isSameDay(s.date, groupDate))
+        .toList();
+    final activeDaySchedules = daySchedules.where((s) => s.isActive).toList();
+    final journals = journalProvider.teacherJournals;
+    final grouped = groupDailySchedules(
+      activeDaySchedules.isNotEmpty ? activeDaySchedules : daySchedules,
+    );
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final formattedDate = AppHelper.formatDate(groupDate);
+    final dateStr = DateFormat('yyyy-MM-dd').format(groupDate);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.65,
+          minChildSize: 0.4,
+          maxChildSize: 0.92,
+          expand: false,
+          builder: (ctx, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    margin: EdgeInsets.only(top: 10.h, bottom: 6.h),
+                    width: 38.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(2.r),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 8.h),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(8.w),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withValues(
+                              alpha: isDark ? 0.2 : 0.1,
+                            ),
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                          child: Icon(
+                            Icons.calendar_today_rounded,
+                            size: 16.sp,
+                            color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
+                          ),
+                        ),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                formattedDate,
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w800,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                grouped.isNotEmpty
+                                    ? '${grouped.length} jadwal pada hari ini • Ketuk untuk isi/lihat jurnal'
+                                    : 'Ketuk untuk isi/lihat jurnal hari ini',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 11.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () => Navigator.pop(sheetContext),
+                          tooltip: 'Tutup',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                      children: [
+                        if (grouped.isNotEmpty)
+                          for (int i = 0; i < grouped.length; i++)
+                            _buildDayJournalTile(
+                              sheetContext: sheetContext,
+                              group: grouped[i],
+                              journals: journals,
+                              master: masterProvider,
+                              isDark: isDark,
+                            )
+                        else
+                          for (final w in groupWarnings)
+                            _buildFallbackWarningTile(
+                              sheetContext: sheetContext,
+                              warning: w,
+                              journals: journals,
+                              master: masterProvider,
+                              groupDate: groupDate,
+                              dateStr: dateStr,
+                              isDark: isDark,
+                            ),
+                        if (grouped.isEmpty && groupWarnings.isEmpty)
+                          Padding(
+                            padding: EdgeInsets.symmetric(vertical: 32.h),
+                            child: Center(
+                              child: Text(
+                                'Tidak ada jadwal pada tanggal ini.',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 13.sp,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildDayJournalTile({
+    required BuildContext sheetContext,
+    required GroupedDailySchedule group,
+    required List<JournalModel> journals,
+    required MasterDataProvider master,
+    required bool isDark,
+  }) {
+    final schedule = group.primarySchedule;
+    final cls = master.classes.firstWhere(
+      (c) => c.id == group.classId,
+      orElse: () => ClassModel(id: '', name: 'Kelas --', periodId: '', studentCount: 0),
+    );
+    final subject = master.subjects.firstWhere(
+      (s) => s.id == group.subjectId,
+      orElse: () => SubjectModel(id: '', name: 'Mata Pelajaran', isActive: false),
+    );
+    final matchingJournal = _findJournalForGroup(group, journals);
+    final hoursStr = AppHelper.formatTeachingHours(group.teachingHours);
+
+    String statusText = 'Belum Diisi';
+    Color statusBg = isDark ? const Color(0xFF334155).withValues(alpha: 0.6) : const Color(0xFFF1F5F9);
+    Color statusColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    if (matchingJournal != null) {
+      if (matchingJournal.status == 'verified') {
+        statusText = 'Terverifikasi';
+        statusBg = const Color(0xFF10B981).withValues(alpha: isDark ? 0.22 : 0.12);
+        statusColor = const Color(0xFF10B981);
+      } else if (matchingJournal.status == 'pending') {
+        statusText = 'Menunggu Verifikasi';
+        statusBg = const Color(0xFFF59E0B).withValues(alpha: isDark ? 0.22 : 0.12);
+        statusColor = const Color(0xFFF59E0B);
+      } else if (matchingJournal.status == 'rejected') {
+        statusText = 'Perlu Revisi';
+        statusBg = Colors.red.withValues(alpha: isDark ? 0.22 : 0.12);
+        statusColor = Colors.red;
+      }
+    }
+
+    return InkWell(
+      onTap: () => _handleDayScheduleTap(
+        sheetContext: sheetContext,
+        schedule: schedule,
+        matchingJournal: matchingJournal,
+        day: group.date,
+      ),
+      borderRadius: BorderRadius.circular(12.r),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12.h),
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0F172A) : Colors.white,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    subject.name,
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w800,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                  decoration: BoxDecoration(
+                    color: statusBg,
+                    borderRadius: BorderRadius.circular(6.r),
+                  ),
+                  child: Text(
+                    statusText,
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w700,
+                      color: statusColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              'Kelas ${cls.name} • Jam ke-$hoursStr',
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              matchingJournal != null
+                  ? 'Jurnal: ${matchingJournal.material}'
+                  : 'Jurnal belum diisi. Ketuk untuk menginput jurnal.',
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 11.5.sp,
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.85),
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: 8.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 11.w, vertical: 6.h),
+                  decoration: BoxDecoration(
+                    color: matchingJournal == null
+                        ? const Color(0xFF2563EB)
+                        : const Color(0xFF2563EB).withValues(alpha: isDark ? 0.25 : 0.15),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        matchingJournal == null
+                            ? Icons.edit_note_rounded
+                            : (matchingJournal.status == 'rejected'
+                                ? Icons.edit_note_rounded
+                                : Icons.visibility_rounded),
+                        size: 14.sp,
+                        color: matchingJournal == null ? Colors.white : const Color(0xFF2563EB),
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        matchingJournal == null
+                            ? 'Isi Jurnal'
+                            : (matchingJournal.status == 'rejected' ? 'Revisi Jurnal' : 'Lihat Jurnal'),
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 11.5.sp,
+                          fontWeight: FontWeight.w700,
+                          color: matchingJournal == null ? Colors.white : const Color(0xFF2563EB),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFallbackWarningTile({
+    required BuildContext sheetContext,
+    required WarningLetterModel warning,
+    required List<JournalModel> journals,
+    required MasterDataProvider master,
+    required DateTime groupDate,
+    required String dateStr,
+    required bool isDark,
+  }) {
+    JournalModel? matching;
+    for (final j in journals) {
+      if (j.scheduleId == warning.scheduleId && j.status != 'rejected') {
+        matching = j;
+        break;
+      }
+    }
+    // Kalau hanya ada versi rejected, tetap tampilkan agar bisa revisi.
+    if (matching == null) {
+      for (final j in journals) {
+        if (j.scheduleId == warning.scheduleId) {
+          matching = j;
+          break;
+        }
+      }
+    }
+    final JournalModel? resolvedMatching = matching;
+
+    return InkWell(
+      onTap: () async {
+        Navigator.pop(sheetContext);
+        if (!mounted) return;
+        if (resolvedMatching != null && resolvedMatching.status != 'rejected') {
+          await context.push('/guru/journal/${resolvedMatching.id}');
+        } else if (resolvedMatching != null && resolvedMatching.status == 'rejected') {
+          await context.push(
+            '/guru/journal-form?scheduleId=${warning.scheduleId}&journalId=${resolvedMatching.id}&date=$dateStr',
+          );
+        } else {
+          await context.push(
+            '/guru/journal-form?scheduleId=${warning.scheduleId}&date=$dateStr',
+          );
+        }
+        if (mounted) await _loadData();
+      },
+      borderRadius: BorderRadius.circular(12.r),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12.h),
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0F172A) : Colors.white,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _formatReason(warning.reason),
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 12.5.sp,
+                color: Theme.of(context).colorScheme.onSurface,
+                height: 1.4,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 11.w, vertical: 6.h),
+                  decoration: BoxDecoration(
+                    color: resolvedMatching == null
+                        ? const Color(0xFF2563EB)
+                        : const Color(0xFF2563EB).withValues(alpha: isDark ? 0.25 : 0.15),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Text(
+                    resolvedMatching == null ? 'Isi Jurnal' : 'Lihat Jurnal',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 11.5.sp,
+                      fontWeight: FontWeight.w700,
+                      color: resolvedMatching == null ? Colors.white : const Color(0xFF2563EB),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -541,86 +1004,128 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: EdgeInsets.all(8.w),
-                                            decoration: BoxDecoration(
-                                              color: hasUnread
-                                                  ? const Color(0xFFFEE2E2)
-                                                  : const Color(0xFFF1F5F9),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Icon(
-                                              Icons.warning_amber_rounded,
-                                              color: hasUnread
-                                                  ? const Color(0xFFEF4444)
-                                                  : const Color(0xFF64748B),
-                                              size: 20,
-                                            ),
-                                          ),
-                                          SizedBox(width: 12.w),
-                                          Expanded(
-                                            child: Text(
-                                              AppHelper.formatDate(groupDate),
-                                              style: GoogleFonts.hankenGrotesk(
-                                                fontWeight: FontWeight.w800,
-                                                fontSize: 14.sp,
-                                                color: theme.colorScheme.onSurface,
-                                              ),
-                                            ),
-                                          ),
-                                          if (!hasUnread)
-                                            Container(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 8.w,
-                                                vertical: 4.h,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFDCFCE7),
-                                                borderRadius: BorderRadius.circular(999),
-                                              ),
-                                              child: Text(
-                                                'Dikonfirmasi',
-                                                style: GoogleFonts.hankenGrotesk(
-                                                  fontSize: 9.sp,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: const Color(0xFF15803D),
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                      const Divider(height: 24),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: groupWarnings.map((w) {
-                                          return Padding(
-                                            padding: EdgeInsets.only(bottom: 8.h),
-                                            child: Row(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  '• ',
-                                                  style: TextStyle(
-                                                    color: w.status == 'unread' ? const Color(0xFFB91C1C) : const Color(0xFF64748B),
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                Expanded(
-                                                  child: Text(
-                                                    _formatReason(w.reason),
-                                                    style: GoogleFonts.hankenGrotesk(
-                                                      fontSize: 13.sp,
-                                                      color: Theme.of(context).colorScheme.onSurface,
-                                                      height: 1.4,
+                                      InkWell(
+                                        onTap: () => _openDayJournals(
+                                          groupDate: groupDate,
+                                          groupWarnings: groupWarnings,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12.r),
+                                        child: Padding(
+                                          padding: EdgeInsets.symmetric(vertical: 2.h),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding: EdgeInsets.all(8.w),
+                                                    decoration: BoxDecoration(
+                                                      color: hasUnread
+                                                          ? const Color(0xFFFEE2E2)
+                                                          : const Color(0xFFF1F5F9),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: Icon(
+                                                      Icons.warning_amber_rounded,
+                                                      color: hasUnread
+                                                          ? const Color(0xFFEF4444)
+                                                          : const Color(0xFF64748B),
+                                                      size: 20,
                                                     ),
                                                   ),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        }).toList(),
+                                                  SizedBox(width: 12.w),
+                                                  Expanded(
+                                                    child: Text(
+                                                      AppHelper.formatDate(groupDate),
+                                                      style: GoogleFonts.hankenGrotesk(
+                                                        fontWeight: FontWeight.w800,
+                                                        fontSize: 14.sp,
+                                                        color: theme.colorScheme.onSurface,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  if (!hasUnread)
+                                                    Container(
+                                                      padding: EdgeInsets.symmetric(
+                                                        horizontal: 8.w,
+                                                        vertical: 4.h,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFDCFCE7),
+                                                        borderRadius: BorderRadius.circular(999),
+                                                      ),
+                                                      child: Text(
+                                                        'Dikonfirmasi',
+                                                        style: GoogleFonts.hankenGrotesk(
+                                                          fontSize: 9.sp,
+                                                          fontWeight: FontWeight.w700,
+                                                          color: const Color(0xFF15803D),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  SizedBox(width: 4.w),
+                                                  Icon(
+                                                    Icons.chevron_right_rounded,
+                                                    size: 22,
+                                                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                                                  ),
+                                                ],
+                                              ),
+                                              const Divider(height: 24),
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: groupWarnings.map((w) {
+                                                  return Padding(
+                                                    padding: EdgeInsets.only(bottom: 8.h),
+                                                    child: Row(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          '• ',
+                                                          style: TextStyle(
+                                                            color: w.status == 'unread' ? const Color(0xFFB91C1C) : const Color(0xFF64748B),
+                                                            fontWeight: FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                        Expanded(
+                                                          child: Text(
+                                                            _formatReason(w.reason),
+                                                            style: GoogleFonts.hankenGrotesk(
+                                                              fontSize: 13.sp,
+                                                              color: Theme.of(context).colorScheme.onSurface,
+                                                              height: 1.4,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                }).toList(),
+                                              ),
+                                              SizedBox(height: 4.h),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.touch_app_outlined,
+                                                    size: 13,
+                                                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                                                  ),
+                                                  SizedBox(width: 5.w),
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Ketuk untuk membuka jurnal hari ini',
+                                                      style: GoogleFonts.hankenGrotesk(
+                                                        fontSize: 11.sp,
+                                                        fontWeight: FontWeight.w600,
+                                                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
                                       if (hasUnread) ...[
                                         SizedBox(height: 12.h),
