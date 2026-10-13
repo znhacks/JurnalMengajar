@@ -41,14 +41,19 @@ class _ClassRealizationCardState extends State<ClassRealizationCard> {
     final cardBg = isDark
         ? Theme.of(context).colorScheme.surfaceContainerHighest
         : Colors.white;
-    final cardBorder = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final cardBorder = isDark
+        ? const Color(0xFF334155)
+        : const Color(0xFFE2E8F0);
     final textPrimary = Theme.of(context).colorScheme.onSurface;
-    final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final textSecondary = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF64748B);
     final primaryAccent = const Color(0xFF2563EB);
 
-    final titleText = widget.selectedTeacherId != null && widget.selectedTeacherName != null
+    final titleText =
+        widget.selectedTeacherId != null && widget.selectedTeacherName != null
         ? 'Realisasi Mengajar: ${widget.selectedTeacherName}'
-        : 'Realisasi Mengajar Per Kelas';
+        : 'Mengajar Per Kelas';
 
     return Container(
       width: double.infinity,
@@ -143,7 +148,10 @@ class _ClassRealizationCardState extends State<ClassRealizationCard> {
               builder: (context) {
                 final displayList = _isExpanded
                     ? widget.classes
-                    : widget.classes.sublist(0, math.min(widget.classes.length, 5));
+                    : widget.classes.sublist(
+                        0,
+                        math.min(widget.classes.length, 5),
+                      );
 
                 return ListView.separated(
                   shrinkWrap: true,
@@ -168,7 +176,9 @@ class _ClassRealizationCardState extends State<ClassRealizationCard> {
                     for (final s in classSchedules) {
                       final dateStr =
                           '${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}';
-                      uniqueScheduledSessions.add('${dateStr}_${s.subjectId}_${s.teacherId}');
+                      uniqueScheduledSessions.add(
+                        '${dateStr}_${s.subjectId}_${s.teacherId}',
+                      );
                     }
                     int targetCount = uniqueScheduledSessions.length;
 

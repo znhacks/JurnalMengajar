@@ -53,19 +53,37 @@ class FakeAuthRepo implements AuthRepository {
   @override
   Future<void> updateFcmToken(String userId, String token) async {}
   @override
-  Future<List<UserModel>> getAllUsers([String? schoolId]) async => mockUser != null ? [mockUser!] : [];
+  Future<List<UserModel>> getAllUsers([String? schoolId]) async =>
+      mockUser != null ? [mockUser!] : [];
   @override
-  Future<void> updateUserRole(String userId, String role, [String? schoolId]) async {}
+  Future<void> updateUserRole(
+    String userId,
+    String role, [
+    String? schoolId,
+  ]) async {}
   @override
   Future<void> deleteAccount(String userId) async {}
   @override
-  Future<void> requestExitFromSchool(String membershipId, {String? schoolId, String? role, String? userId}) async {}
+  Future<void> requestExitFromSchool(
+    String membershipId, {
+    String? schoolId,
+    String? role,
+    String? userId,
+  }) async {}
   @override
-  Future<void> cancelExitRequest(String membershipId, {String? schoolId, String? role, String? userId}) async {}
+  Future<void> cancelExitRequest(
+    String membershipId, {
+    String? schoolId,
+    String? role,
+    String? userId,
+  }) async {}
   @override
-  Future<List<Map<String, dynamic>>> getPendingExitRequests(String schoolId) async => [];
+  Future<List<Map<String, dynamic>>> getPendingExitRequests(
+    String schoolId,
+  ) async => [];
   @override
-  Future<List<UserModel>> getAllUsersForSchool(String schoolId) async => mockUser != null ? [mockUser!] : [];
+  Future<List<UserModel>> getAllUsersForSchool(String schoolId) async =>
+      mockUser != null ? [mockUser!] : [];
   @override
   Future<void> approveExitRequest(String membershipId) async {}
   @override
@@ -73,7 +91,11 @@ class FakeAuthRepo implements AuthRepository {
   @override
   Future<void> rejectJoinRequest(String userId, String schoolId) async {}
   @override
-  Future<void> leaveSchool({required String schoolId, required String userId, String? membershipId}) async {}
+  Future<void> leaveSchool({
+    required String schoolId,
+    required String userId,
+    String? membershipId,
+  }) async {}
 }
 
 class FakePeriodRepo implements PeriodRepository {
@@ -87,8 +109,6 @@ class FakePeriodRepo implements PeriodRepository {
   Future<void> delete(String id) async {}
   @override
   Future<void> deleteMultiple(List<String> ids) async {}
-
-
 }
 
 class FakeSubjectRepo implements SubjectRepository {
@@ -147,7 +167,9 @@ class FakeTeacherRepo implements TeacherRepository {
 
 class FakeStudentRepo implements StudentRepository {
   @override
-  Future<List<StudentAcademicHistoryModel>> getStudentHistories(String studentId) async => [];
+  Future<List<StudentAcademicHistoryModel>> getStudentHistories(
+    String studentId,
+  ) async => [];
   @override
   Future<Map<String, dynamic>> processPromotions({
     required String schoolId,
@@ -175,9 +197,13 @@ class FakeJournalRepo implements JournalRepository {
   @override
   Future<List<JournalModel>> getAll([String? schoolId]) async => [];
   @override
-  Future<List<JournalModel>> getJournalsForTeacher(String teacherId) async => [];
+  Future<List<JournalModel>> getJournalsForTeacher(String teacherId) async =>
+      [];
   @override
-  Future<JournalModel?> getJournalForSchedule(String scheduleId, {DateTime? date}) async => null;
+  Future<JournalModel?> getJournalForSchedule(
+    String scheduleId, {
+    DateTime? date,
+  }) async => null;
   @override
   Future<void> create(JournalModel journal) async {}
   @override
@@ -187,14 +213,21 @@ class FakeJournalRepo implements JournalRepository {
   @override
   Future<void> deleteMultiple(List<String> ids) async {}
   @override
-  Future<void> verifyJournal(String journalId, String status, {String? rejectionNote}) async {}
+  Future<void> verifyJournal(
+    String journalId,
+    String status, {
+    String? rejectionNote,
+  }) async {}
 }
 
 class FakeScheduleRepo implements ScheduleRepository {
   @override
   Future<List<ScheduleModel>> getAll([String? schoolId]) async => [];
   @override
-  Future<List<ScheduleModel>> getSchedulesForTeacher(String teacherId, {DateTime? date}) async => [];
+  Future<List<ScheduleModel>> getSchedulesForTeacher(
+    String teacherId, {
+    DateTime? date,
+  }) async => [];
   @override
   Future<void> create(ScheduleModel schedule) async {}
   @override
@@ -209,14 +242,16 @@ class FakeScheduleRepo implements ScheduleRepository {
 
 class MockScheduleProvider extends ScheduleProvider {
   final List<ScheduleModel> _mockSchedules;
-  MockScheduleProvider(this._mockSchedules) : super(scheduleRepository: FakeScheduleRepo());
+  MockScheduleProvider(this._mockSchedules)
+    : super(scheduleRepository: FakeScheduleRepo());
   @override
   List<ScheduleModel> get cachedTeacherSchedules => _mockSchedules;
 }
 
 class MockJournalProvider extends JournalProvider {
   final List<JournalModel> _mockJournals;
-  MockJournalProvider(this._mockJournals) : super(journalRepository: FakeJournalRepo());
+  MockJournalProvider(this._mockJournals)
+    : super(journalRepository: FakeJournalRepo());
   @override
   List<JournalModel> get teacherJournals => _mockJournals;
 }
@@ -224,14 +259,14 @@ class MockJournalProvider extends JournalProvider {
 class MockMasterDataProvider extends MasterDataProvider {
   final List<ClassModel> _mockClasses;
   MockMasterDataProvider(this._mockClasses)
-      : super(
-          periodRepository: FakePeriodRepo(),
-          subjectRepository: FakeSubjectRepo(),
-          hourRepository: FakeHourRepo(),
-          classRepository: FakeClassRepo(),
-          teacherRepository: FakeTeacherRepo(),
-          studentRepository: FakeStudentRepo(),
-        );
+    : super(
+        periodRepository: FakePeriodRepo(),
+        subjectRepository: FakeSubjectRepo(),
+        hourRepository: FakeHourRepo(),
+        classRepository: FakeClassRepo(),
+        teacherRepository: FakeTeacherRepo(),
+        studentRepository: FakeStudentRepo(),
+      );
   @override
   List<ClassModel> get classes => _mockClasses;
 }
@@ -322,58 +357,62 @@ void main() {
   }
 
   group('Guru Statistik Screen - Orientation Tests (Portrait & Landscape)', () {
-    testWidgets('Renders Status Verifikasi Jurnal and Ketidakhadiran in Portrait with original natural height', (tester) async {
-      const portraitSize = Size(390, 844);
-      tester.view.physicalSize = portraitSize;
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
+    testWidgets(
+      'Renders Status Jurnal and Ketidakhadiran in Portrait with original natural height',
+      (tester) async {
+        const portraitSize = Size(390, 844);
+        tester.view.physicalSize = portraitSize;
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
 
-      await tester.pumpWidget(buildTestApp(screenSize: portraitSize));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(buildTestApp(screenSize: portraitSize));
+        await tester.pumpAndSettle();
 
-      // Find titles
-      expect(find.text('Status Verifikasi Jurnal'), findsOneWidget);
-      expect(find.text('Distribusi Ketidakhadiran Siswa'), findsOneWidget);
+        // Find titles
+        expect(find.text('Status Jurnal'), findsOneWidget);
+        expect(find.text('Ketidakhadiran Siswa'), findsOneWidget);
 
-      // Verify labels inside
-      expect(find.text('Sakit'), findsOneWidget);
-      expect(find.text('Izin'), findsOneWidget);
-      expect(find.text('Alpha'), findsOneWidget);
+        // Verify labels inside
+        expect(find.text('Sakit'), findsOneWidget);
+        expect(find.text('Izin'), findsOneWidget);
+        expect(find.text('Alpha'), findsOneWidget);
 
-      // Verify absence card in portrait renders properly without forced enlargement
-      final sakitFinder = find.ancestor(
-        of: find.text('Sakit'),
-        matching: find.byType(Container),
-      ).first;
-      final portraitBox = tester.getSize(sakitFinder);
-      expect(portraitBox.height, greaterThanOrEqualTo(45.0));
-    });
+        // Verify absence card in portrait renders properly without forced enlargement
+        final sakitFinder = find
+            .ancestor(of: find.text('Sakit'), matching: find.byType(Container))
+            .first;
+        final portraitBox = tester.getSize(sakitFinder);
+        expect(portraitBox.height, greaterThanOrEqualTo(45.0));
+      },
+    );
 
-    testWidgets('Renders in Landscape mode with heightened card (>= 64.0) and wide width', (tester) async {
-      const landscapeSize = Size(844, 390);
-      tester.view.physicalSize = landscapeSize;
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
+    testWidgets(
+      'Renders in Landscape mode with heightened card (>= 64.0) and wide width',
+      (tester) async {
+        const landscapeSize = Size(844, 390);
+        tester.view.physicalSize = landscapeSize;
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
 
-      await tester.pumpWidget(buildTestApp(screenSize: landscapeSize));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(buildTestApp(screenSize: landscapeSize));
+        await tester.pumpAndSettle();
 
-      // Verify titles and cards exist without overflow
-      expect(find.text('Status Verifikasi Jurnal'), findsOneWidget);
-      expect(find.text('Distribusi Ketidakhadiran Siswa'), findsOneWidget);
-      expect(find.text('Sakit'), findsOneWidget);
-      expect(find.text('Izin'), findsOneWidget);
-      expect(find.text('Alpha'), findsOneWidget);
+        // Verify titles and cards exist without overflow
+        expect(find.text('Status Jurnal'), findsOneWidget);
+        expect(find.text('Ketidakhadiran Siswa'), findsOneWidget);
+        expect(find.text('Sakit'), findsOneWidget);
+        expect(find.text('Izin'), findsOneWidget);
+        expect(find.text('Alpha'), findsOneWidget);
 
-      // Verify absence card in landscape is heightened (>= 64.0) and wide width
-      final sakitFinder = find.ancestor(
-        of: find.text('Sakit'),
-        matching: find.byType(Container),
-      ).first;
-      final landscapeBox = tester.getSize(sakitFinder);
-      expect(landscapeBox.height, greaterThanOrEqualTo(64.0));
-      // In landscape (width 844), length is significantly wider than portrait
-      expect(landscapeBox.width, greaterThan(150.0));
-    });
+        // Verify absence card in landscape is heightened (>= 64.0) and wide width
+        final sakitFinder = find
+            .ancestor(of: find.text('Sakit'), matching: find.byType(Container))
+            .first;
+        final landscapeBox = tester.getSize(sakitFinder);
+        expect(landscapeBox.height, greaterThanOrEqualTo(64.0));
+        // In landscape (width 844), length is significantly wider than portrait
+        expect(landscapeBox.width, greaterThan(150.0));
+      },
+    );
   });
 }

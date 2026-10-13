@@ -35,8 +35,18 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
 
   String _getMonthName(DateTime date) {
     final List<String> months = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
     ];
     return "${months[date.month - 1]} ${date.year}";
   }
@@ -57,20 +67,26 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
     }
 
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final bool isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
     final Color cardBg = Theme.of(context).colorScheme.surface;
     final Color cardBorder = Theme.of(context).colorScheme.outlineVariant;
     final Color textPrimary = Theme.of(context).colorScheme.onSurface;
     final Color textSecondary = Theme.of(context).colorScheme.onSurfaceVariant;
 
-    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
+    final cleanActiveSchoolId =
+        AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
         authProvider.activeSchoolId?.trim();
 
     // 1. Filter active schedules for this teacher in the selected month
     final schedulesInMonth = scheduleProvider.cachedTeacherSchedules.where((s) {
       if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
-        final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
-        if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
+        final sSchoolId =
+            AppHelper.parseSingleCleanSchoolId(s.schoolId) ??
+            s.schoolId?.trim();
+        if (sSchoolId != null &&
+            sSchoolId.isNotEmpty &&
+            sSchoolId != cleanActiveSchoolId) {
           return false;
         }
       }
@@ -82,8 +98,12 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
     // 2. Filter journals for this teacher in the selected month
     final journalsInMonth = journalProvider.teacherJournals.where((j) {
       if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
-        final jSchoolId = AppHelper.parseSingleCleanSchoolId(j.schoolId) ?? j.schoolId?.trim();
-        if (jSchoolId != null && jSchoolId.isNotEmpty && jSchoolId != cleanActiveSchoolId) {
+        final jSchoolId =
+            AppHelper.parseSingleCleanSchoolId(j.schoolId) ??
+            j.schoolId?.trim();
+        if (jSchoolId != null &&
+            jSchoolId.isNotEmpty &&
+            jSchoolId != cleanActiveSchoolId) {
           return false;
         }
       }
@@ -94,13 +114,17 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
     // 3. Jurnal Terisi calculations (Grouped by unique session: date + classId + subjectId)
     final Set<String> uniqueScheduledSessions = {};
     for (final s in schedulesInMonth) {
-      uniqueScheduledSessions.add('${s.date.year}-${s.date.month}-${s.date.day}|${s.classId}|${s.subjectId}');
+      uniqueScheduledSessions.add(
+        '${s.date.year}-${s.date.month}-${s.date.day}|${s.classId}|${s.subjectId}',
+      );
     }
     final int totalMeetings = uniqueScheduledSessions.length;
 
     final Set<String> uniqueFilledSessions = {};
     for (final j in journalsInMonth) {
-      uniqueFilledSessions.add('${j.date.year}-${j.date.month}-${j.date.day}|${j.classId}|${j.subjectId}');
+      uniqueFilledSessions.add(
+        '${j.date.year}-${j.date.month}-${j.date.day}|${j.classId}|${j.subjectId}',
+      );
     }
     final int filledMeetings = uniqueFilledSessions.length;
 
@@ -114,7 +138,8 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
     for (final j in journalsInMonth) {
       final cls = masterProvider.classes.firstWhere(
         (c) => c.id == j.classId,
-        orElse: () => ClassModel(id: '', name: '', periodId: '', studentCount: 0),
+        orElse: () =>
+            ClassModel(id: '', name: '', periodId: '', studentCount: 0),
       );
       if (cls.id.isNotEmpty && cls.studentCount > 0) {
         final absents = j.sickCount + j.permissionCount + j.alphaCount;
@@ -123,15 +148,22 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
         totalStudents += cls.studentCount;
       }
     }
-    final double attendanceRate =
-        totalStudents > 0 ? (totalPresents / totalStudents) * 100 : 100.0;
+    final double attendanceRate = totalStudents > 0
+        ? (totalPresents / totalStudents) * 100
+        : 100.0;
 
     // 5. Status Verifikasi
-    final int disetujuiCount = journalsInMonth.where((j) => j.status == 'verified').length;
-    final int pendingCount = journalsInMonth.where((j) => j.status == 'pending').length;
-    final int ditolakCount = journalsInMonth.where((j) => j.status == 'rejected').length;
+    final int disetujuiCount = journalsInMonth
+        .where((j) => j.status == 'verified')
+        .length;
+    final int pendingCount = journalsInMonth
+        .where((j) => j.status == 'pending')
+        .length;
+    final int ditolakCount = journalsInMonth
+        .where((j) => j.status == 'rejected')
+        .length;
 
-    // 6. Distribusi Ketidakhadiran
+    // 6. Ketidakhadiran
     int sakitCount = 0;
     int izinCount = 0;
     int alphaCount = 0;
@@ -141,7 +173,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
       alphaCount += j.alphaCount;
     }
 
-    // 7. Realisasi per Kelas
+    // 7. per Kelas
     final classIds = {
       ...schedulesInMonth.map((s) => s.classId),
       ...journalsInMonth.map((j) => j.classId),
@@ -150,7 +182,8 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
     final List<ClassModel> classesInMonth = classIds.map((cid) {
       return masterProvider.classes.firstWhere(
         (c) => c.id == cid,
-        orElse: () => ClassModel(id: cid, name: 'Kelas--', periodId: '', studentCount: 0),
+        orElse: () =>
+            ClassModel(id: cid, name: 'Kelas--', periodId: '', studentCount: 0),
       );
     }).toList()..sort((a, b) => a.name.compareTo(b.name));
 
@@ -187,7 +220,10 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.chevron_left, color: AppTheme.primaryColor),
+                      icon: const Icon(
+                        Icons.chevron_left,
+                        color: AppTheme.primaryColor,
+                      ),
                       onPressed: _prevMonth,
                       constraints: const BoxConstraints(),
                       padding: EdgeInsets.symmetric(vertical: 8.h),
@@ -201,7 +237,10 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.chevron_right, color: AppTheme.primaryColor),
+                      icon: const Icon(
+                        Icons.chevron_right,
+                        color: AppTheme.primaryColor,
+                      ),
                       onPressed: _nextMonth,
                       constraints: const BoxConstraints(),
                       padding: EdgeInsets.symmetric(vertical: 8.h),
@@ -222,7 +261,10 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                         borderRadius: BorderRadius.circular(16.r),
                         border: Border.all(color: cardBorder),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 10.w),
+                      padding: EdgeInsets.symmetric(
+                        vertical: 12.h,
+                        horizontal: 10.w,
+                      ),
                       child: Column(
                         children: [
                           Text(
@@ -243,9 +285,13 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                                 child: CircularProgressIndicator(
                                   value: fillRate / 100,
                                   strokeWidth: 5.w,
-                                  backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
+                                  backgroundColor: isDark
+                                      ? const Color(0xFF1E293B)
+                                      : const Color(0xFFEFF6FF),
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                    isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E40AF),
+                                    isDark
+                                        ? const Color(0xFF60A5FA)
+                                        : const Color(0xFF1E40AF),
                                   ),
                                 ),
                               ),
@@ -281,7 +327,10 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                         borderRadius: BorderRadius.circular(16.r),
                         border: Border.all(color: cardBorder),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 10.w),
+                      padding: EdgeInsets.symmetric(
+                        vertical: 12.h,
+                        horizontal: 10.w,
+                      ),
                       child: Column(
                         children: [
                           Text(
@@ -296,7 +345,9 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                           Container(
                             padding: EdgeInsets.all(8.w),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
+                              color: isDark
+                                  ? const Color(0xFF1E293B)
+                                  : const Color(0xFFEFF6FF),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -320,7 +371,9 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                             child: LinearProgressIndicator(
                               value: attendanceRate / 100,
                               minHeight: 4.h,
-                              backgroundColor: isDark ? const Color(0xFF1A1D21) : const Color(0xFFEFF6FF),
+                              backgroundColor: isDark
+                                  ? const Color(0xFF1A1D21)
+                                  : const Color(0xFFEFF6FF),
                               valueColor: const AlwaysStoppedAnimation<Color>(
                                 Color(0xFF10B981),
                               ),
@@ -334,7 +387,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
               ),
               SizedBox(height: 10.h),
 
-              // ─── Status Verifikasi Jurnal ─────────────────────────────────────
+              // ─── Status Jurnal ─────────────────────────────────────
               Container(
                 decoration: BoxDecoration(
                   color: cardBg,
@@ -346,7 +399,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Status Verifikasi Jurnal',
+                      'Status Jurnal',
                       style: GoogleFonts.hankenGrotesk(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w800,
@@ -359,8 +412,14 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                         Expanded(
                           child: _buildVerificationCard(
                             icon: Icons.check_circle_outline,
-                            color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF10B981),
-                            bgColor: isDark ? const Color(0xFF10B981).withValues(alpha: 0.15) : const Color(0xFFE8F5E9),
+                            color: isDark
+                                ? const Color(0xFF4ADE80)
+                                : const Color(0xFF10B981),
+                            bgColor: isDark
+                                ? const Color(
+                                    0xFF10B981,
+                                  ).withValues(alpha: 0.15)
+                                : const Color(0xFFE8F5E9),
                             value: '$disetujuiCount',
                             isLandscape: isLandscape,
                           ),
@@ -369,8 +428,14 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                         Expanded(
                           child: _buildVerificationCard(
                             icon: Icons.hourglass_empty,
-                            color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
-                            bgColor: isDark ? const Color(0xFF2563EB).withValues(alpha: 0.15) : const Color(0xFFEBF5FF),
+                            color: isDark
+                                ? const Color(0xFF60A5FA)
+                                : const Color(0xFF2563EB),
+                            bgColor: isDark
+                                ? const Color(
+                                    0xFF2563EB,
+                                  ).withValues(alpha: 0.15)
+                                : const Color(0xFFEBF5FF),
                             value: '$pendingCount',
                             isLandscape: isLandscape,
                           ),
@@ -379,8 +444,14 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                         Expanded(
                           child: _buildVerificationCard(
                             icon: Icons.cancel_outlined,
-                            color: isDark ? const Color(0xFFF87171) : Colors.red,
-                            bgColor: isDark ? const Color(0xFFDC2626).withValues(alpha: 0.15) : const Color(0xFFFFEBEE),
+                            color: isDark
+                                ? const Color(0xFFF87171)
+                                : Colors.red,
+                            bgColor: isDark
+                                ? const Color(
+                                    0xFFDC2626,
+                                  ).withValues(alpha: 0.15)
+                                : const Color(0xFFFFEBEE),
                             value: '$ditolakCount',
                             isLandscape: isLandscape,
                           ),
@@ -392,7 +463,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
               ),
               SizedBox(height: 10.h),
 
-              // ─── Distribusi Ketidakhadiran Siswa ──────────────────────────────
+              // ─── Ketidakhadiran Siswa ──────────────────────────────
               Container(
                 decoration: BoxDecoration(
                   color: cardBg,
@@ -404,7 +475,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Distribusi Ketidakhadiran Siswa',
+                      'Ketidakhadiran Siswa',
                       style: GoogleFonts.hankenGrotesk(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w800,
@@ -418,8 +489,14 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                           child: _buildAbsenceCard(
                             label: 'Sakit',
                             value: sakitCount,
-                            bgColor: isDark ? const Color(0xFFD97706).withValues(alpha: 0.15) : const Color(0xFFFEF3C7),
-                            textColor: isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+                            bgColor: isDark
+                                ? const Color(
+                                    0xFFD97706,
+                                  ).withValues(alpha: 0.15)
+                                : const Color(0xFFFEF3C7),
+                            textColor: isDark
+                                ? const Color(0xFFFBBF24)
+                                : const Color(0xFFD97706),
                             isLandscape: isLandscape,
                           ),
                         ),
@@ -428,8 +505,14 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                           child: _buildAbsenceCard(
                             label: 'Izin',
                             value: izinCount,
-                            bgColor: isDark ? const Color(0xFF0284C7).withValues(alpha: 0.15) : const Color(0xFFE0F2FE),
-                            textColor: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
+                            bgColor: isDark
+                                ? const Color(
+                                    0xFF0284C7,
+                                  ).withValues(alpha: 0.15)
+                                : const Color(0xFFE0F2FE),
+                            textColor: isDark
+                                ? const Color(0xFF38BDF8)
+                                : const Color(0xFF0284C7),
                             isLandscape: isLandscape,
                           ),
                         ),
@@ -438,8 +521,14 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                           child: _buildAbsenceCard(
                             label: 'Alpha',
                             value: alphaCount,
-                            bgColor: isDark ? const Color(0xFFDC2626).withValues(alpha: 0.15) : const Color(0xFFFEE2E2),
-                            textColor: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                            bgColor: isDark
+                                ? const Color(
+                                    0xFFDC2626,
+                                  ).withValues(alpha: 0.15)
+                                : const Color(0xFFFEE2E2),
+                            textColor: isDark
+                                ? const Color(0xFFF87171)
+                                : const Color(0xFFDC2626),
                             isLandscape: isLandscape,
                           ),
                         ),
@@ -450,7 +539,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
               ),
               SizedBox(height: 10.h),
 
-              // ─── Realisasi Mengajar Per Kelas ──────────────────────────────
+              // ─── Mengajar Per Kelas ──────────────────────────────
               Container(
                 decoration: BoxDecoration(
                   color: cardBg,
@@ -462,7 +551,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Realisasi Mengajar Per Kelas',
+                      'Mengajar Per Kelas',
                       style: GoogleFonts.hankenGrotesk(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w800,
@@ -488,18 +577,27 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: classesInMonth.length,
-                        separatorBuilder: (context, _) => SizedBox(height: 10.h),
+                        separatorBuilder: (context, _) =>
+                            SizedBox(height: 10.h),
                         itemBuilder: (context, index) {
                           final cls = classesInMonth[index];
                           final Set<String> clsScheduledSessions = {};
-                          for (final s in schedulesInMonth.where((s) => s.classId == cls.id)) {
-                            clsScheduledSessions.add('${s.date.year}-${s.date.month}-${s.date.day}|${s.subjectId}');
+                          for (final s in schedulesInMonth.where(
+                            (s) => s.classId == cls.id,
+                          )) {
+                            clsScheduledSessions.add(
+                              '${s.date.year}-${s.date.month}-${s.date.day}|${s.subjectId}',
+                            );
                           }
                           final scheduledCount = clsScheduledSessions.length;
 
                           final Set<String> clsFilledSessions = {};
-                          for (final j in journalsInMonth.where((j) => j.classId == cls.id)) {
-                            clsFilledSessions.add('${j.date.year}-${j.date.month}-${j.date.day}|${j.subjectId}');
+                          for (final j in journalsInMonth.where(
+                            (j) => j.classId == cls.id,
+                          )) {
+                            clsFilledSessions.add(
+                              '${j.date.year}-${j.date.month}-${j.date.day}|${j.subjectId}',
+                            );
                           }
                           final filledCount = clsFilledSessions.length;
 
@@ -511,7 +609,8 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     cls.name,
@@ -526,7 +625,9 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 12.sp,
                                       fontWeight: FontWeight.w800,
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
                                     ),
                                   ),
                                 ],
@@ -537,7 +638,9 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                                 child: LinearProgressIndicator(
                                   value: rate,
                                   minHeight: 3.h,
-                                  backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
+                                  backgroundColor: isDark
+                                      ? const Color(0xFF1E293B)
+                                      : const Color(0xFFEFF6FF),
                                   valueColor: AlwaysStoppedAnimation<Color>(
                                     Theme.of(context).colorScheme.primary,
                                   ),
@@ -576,11 +679,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: isLandscape ? 18.0 : 14.w,
-          ),
+          Icon(icon, color: color, size: isLandscape ? 18.0 : 14.w),
           SizedBox(height: isLandscape ? 6.0 : 6.h),
           Text(
             value,

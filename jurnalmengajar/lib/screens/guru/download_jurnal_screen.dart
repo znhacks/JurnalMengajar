@@ -1202,7 +1202,7 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                     DropdownButtonFormField<String>(
                       initialValue: _selectedStatus,
                       decoration: InputDecoration(
-                        labelText: 'Status Verifikasi Jurnal',
+                        labelText: 'Status Jurnal',
                         prefixIcon: const Icon(
                           Icons.verified_rounded,
                           size: 20,
