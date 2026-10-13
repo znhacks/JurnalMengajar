@@ -678,113 +678,119 @@ class _SimpleRegisterScreenState extends State<SimpleRegisterScreen> {
                                   child: Row(
                                     children: [
                                       Expanded(
-                                        child: GestureDetector(
-                                          onTap: () => setState(() {
-                                            _registerType = 'guru';
-                                            _schoolErrorMessage = null;
-                                          }),
-                                          child: AnimatedContainer(
-                                            duration: const Duration(
-                                              milliseconds: 200,
-                                            ),
-                                            padding: EdgeInsets.symmetric(
-                                              vertical: 10.h,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: _registerType == 'guru'
-                                                  ? const Color.fromARGB(
-                                                      255, 37, 99, 235)
-                                                  : Colors.transparent,
-                                              borderRadius:
-                                                  BorderRadius.circular(12.r),
-                                            ),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Icon(
-                                                  Icons.school_rounded,
-                                                  size: 16.r,
-                                                  color: _registerType == 'guru'
-                                                      ? Colors.white
-                                                      : Theme.of(context)
-                                                          .colorScheme
-                                                          .onSurfaceVariant,
-                                                ),
-                                                SizedBox(width: 6.w),
-                                                Text(
-                                                  'Pendaftaran Guru',
-                                                  style: TextStyle(
-                                                    fontSize: kIsWeb
-                                                        ? 13
-                                                        : 13.5.sp,
-                                                    fontWeight: FontWeight.bold,
-                                                    color:
-                                                        _registerType == 'guru'
-                                                            ? Colors.white
-                                                            : Theme.of(context)
-                                                                .colorScheme
-                                                                .onSurfaceVariant,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: GestureDetector(
-                                          onTap: () => setState(() {
-                                            _registerType = 'admin';
-                                            _schoolErrorMessage = null;
-                                          }),
-                                          child: AnimatedContainer(
-                                            duration: const Duration(
-                                              milliseconds: 200,
-                                            ),
-                                            padding: EdgeInsets.symmetric(
-                                              vertical: 10.h,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: _registerType == 'admin'
-                                                  ? const Color.fromARGB(
-                                                      255, 37, 99, 235)
-                                                  : Colors.transparent,
-                                              borderRadius:
-                                                  BorderRadius.circular(12.r),
-                                            ),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Icon(
-                                                  Icons
-                                                      .admin_panel_settings_rounded,
-                                                  size: 16.r,
-                                                  color:
-                                                      _registerType == 'admin'
-                                                          ? Colors.white
-                                                          : Theme.of(context)
-                                                              .colorScheme
-                                                              .onSurfaceVariant,
-                                                ),
-                                                SizedBox(width: 6.w),
-                                                Text(
-                                                  'Admin Sekolah',
-                                                  style: TextStyle(
-                                                    fontSize: kIsWeb
-                                                        ? 13
-                                                        : 13.5.sp,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: _registerType ==
-                                                            'admin'
+                                        child: MouseRegion(
+                                          cursor: SystemMouseCursors.click,
+                                          child: GestureDetector(
+                                            onTap: () => setState(() {
+                                              _registerType = 'guru';
+                                              _schoolErrorMessage = null;
+                                            }),
+                                            child: AnimatedContainer(
+                                              duration: const Duration(
+                                                milliseconds: 200,
+                                              ),
+                                              padding: EdgeInsets.symmetric(
+                                                vertical: 10.h,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: _registerType == 'guru'
+                                                    ? const Color.fromARGB(
+                                                        255, 37, 99, 235)
+                                                    : Colors.transparent,
+                                                borderRadius:
+                                                    BorderRadius.circular(12.r),
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(
+                                                    Icons.school_rounded,
+                                                    size: 16.r,
+                                                    color: _registerType == 'guru'
                                                         ? Colors.white
                                                         : Theme.of(context)
                                                             .colorScheme
                                                             .onSurfaceVariant,
                                                   ),
-                                                ),
-                                              ],
+                                                  SizedBox(width: 6.w),
+                                                  Text(
+                                                    'Pendaftaran Guru',
+                                                    style: TextStyle(
+                                                      fontSize: kIsWeb
+                                                          ? 13
+                                                          : 13.5.sp,
+                                                      fontWeight: FontWeight.bold,
+                                                      color:
+                                                          _registerType == 'guru'
+                                                              ? Colors.white
+                                                              : Theme.of(context)
+                                                                  .colorScheme
+                                                                  .onSurfaceVariant,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: MouseRegion(
+                                          cursor: SystemMouseCursors.click,
+                                          child: GestureDetector(
+                                            onTap: () => setState(() {
+                                              _registerType = 'admin';
+                                              _schoolErrorMessage = null;
+                                            }),
+                                            child: AnimatedContainer(
+                                              duration: const Duration(
+                                                milliseconds: 200,
+                                              ),
+                                              padding: EdgeInsets.symmetric(
+                                                vertical: 10.h,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: _registerType == 'admin'
+                                                    ? const Color.fromARGB(
+                                                        255, 37, 99, 235)
+                                                    : Colors.transparent,
+                                                borderRadius:
+                                                    BorderRadius.circular(12.r),
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(
+                                                    Icons
+                                                        .admin_panel_settings_rounded,
+                                                    size: 16.r,
+                                                    color:
+                                                        _registerType == 'admin'
+                                                            ? Colors.white
+                                                            : Theme.of(context)
+                                                                .colorScheme
+                                                                .onSurfaceVariant,
+                                                  ),
+                                                  SizedBox(width: 6.w),
+                                                  Text(
+                                                    'Admin Sekolah',
+                                                    style: TextStyle(
+                                                      fontSize: kIsWeb
+                                                          ? 13
+                                                          : 13.5.sp,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: _registerType ==
+                                                              'admin'
+                                                          ? Colors.white
+                                                          : Theme.of(context)
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -827,23 +833,26 @@ class _SimpleRegisterScreenState extends State<SimpleRegisterScreen> {
                                       Positioned(
                                         bottom: 0,
                                         right: 0,
-                                        child: GestureDetector(
-                                          onTap: _showImageSourceSheet,
-                                          child: Container(
-                                            padding: EdgeInsets.all(6.w),
-                                            decoration: const BoxDecoration(
-                                              color: Color.fromARGB(
-                                                255,
-                                                37,
-                                                99,
-                                                235,
+                                        child: MouseRegion(
+                                          cursor: SystemMouseCursors.click,
+                                          child: GestureDetector(
+                                            onTap: _showImageSourceSheet,
+                                            child: Container(
+                                              padding: EdgeInsets.all(6.w),
+                                              decoration: const BoxDecoration(
+                                                color: Color.fromARGB(
+                                                  255,
+                                                  37,
+                                                  99,
+                                                  235,
+                                                ),
+                                                shape: BoxShape.circle,
                                               ),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Icon(
-                                              Icons.camera_alt,
-                                              size: 16.r,
-                                              color: Colors.white,
+                                              child: Icon(
+                                                Icons.camera_alt,
+                                                size: 16.r,
+                                                color: Colors.white,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -1143,8 +1152,10 @@ class _SimpleRegisterScreenState extends State<SimpleRegisterScreen> {
                                   SizedBox(height: 16.h),
                                   _buildFieldLabel('JABATAN'),
                                 if (_selectedSchools.isNotEmpty) ...[
-                                  GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
+                                  MouseRegion(
+                                    cursor: SystemMouseCursors.click,
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
                                     onTap: () async {
                                       final effectiveSchoolId =
                                           _resolvedSchoolId;
@@ -1210,7 +1221,8 @@ class _SimpleRegisterScreenState extends State<SimpleRegisterScreen> {
                                       ),
                                     ),
                                   ),
-                                ] else ...[
+                                ),
+                              ] else ...[
                                   Container(
                                     padding: EdgeInsets.symmetric(
                                       horizontal: 14.w,
@@ -1341,8 +1353,10 @@ class _SimpleRegisterScreenState extends State<SimpleRegisterScreen> {
                                             .onSurfaceVariant,
                                       ),
                                     ),
-                                    GestureDetector(
-                                      onTap: widget.onBackToLogin,
+                                    MouseRegion(
+                                      cursor: SystemMouseCursors.click,
+                                      child: GestureDetector(
+                                        onTap: widget.onBackToLogin,
                                       child: Text(
                                         'Masuk Sekarang',
                                         style: TextStyle(
@@ -1356,7 +1370,8 @@ class _SimpleRegisterScreenState extends State<SimpleRegisterScreen> {
                                         ),
                                       ),
                                     ),
-                                  ],
+                                  ),
+                                ],
                                 ),
                               ],
                             ),

@@ -710,15 +710,18 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
             ),
           ),
           if (actionIcon != null && onTap != null)
-            GestureDetector(
-              onTap: onTap,
-              child: Container(
-                padding: EdgeInsets.all(4.w),
-                decoration: BoxDecoration(
-                  color: (actionColor ?? AppTheme.primaryColor).withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: onTap,
+                child: Container(
+                  padding: EdgeInsets.all(4.w),
+                  decoration: BoxDecoration(
+                    color: (actionColor ?? AppTheme.primaryColor).withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(actionIcon, size: 12.w, color: actionColor ?? AppTheme.primaryColor),
                 ),
-                child: Icon(actionIcon, size: 12.w, color: actionColor ?? AppTheme.primaryColor),
               ),
             ),
         ],

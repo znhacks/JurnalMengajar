@@ -358,18 +358,21 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         Positioned(
                           bottom: 0,
                           right: 0,
-                          child: GestureDetector(
-                            onTap: showImageSourceSheet,
-                            child: Container(
-                              padding: EdgeInsets.all(8.w),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF2563EB),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.camera_alt,
-                                size: 16.r,
-                                color: Colors.white,
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: GestureDetector(
+                              onTap: showImageSourceSheet,
+                              child: Container(
+                                padding: EdgeInsets.all(8.w),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF2563EB),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.camera_alt,
+                                  size: 16.r,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -412,39 +415,42 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     ),
                   ),
                   SizedBox(height: 16.h),
-                  GestureDetector(
-                    onTap: isSaving
-                        ? null
-                        : () {
-                            final masterProvider =
-                                Provider.of<MasterDataProvider>(
-                                  context,
-                                  listen: false,
-                                );
-                            final subjectNames = masterProvider.subjects
-                                .map((s) => s.name)
-                                .toList();
-                            _showPositionSelector(
-                              context,
-                              subjectNames,
-                              posController.text,
-                              (selected) {
-                                setDialogState(() {
-                                  posController.text = selected;
-                                });
-                              },
-                            );
-                          },
-                    child: AbsorbPointer(
-                      child: TextField(
-                        controller: posController,
-                        enabled: !isSaving,
-                        decoration: const InputDecoration(
-                          labelText: 'Jabatan',
-                          hintText:
-                              'Ketuk untuk memilih jabatan / guru mapel...',
-                          prefixIcon: Icon(Icons.badge_outlined),
-                          suffixIcon: Icon(Icons.arrow_drop_down),
+                  MouseRegion(
+                    cursor: isSaving ? MouseCursor.defer : SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: isSaving
+                          ? null
+                          : () {
+                              final masterProvider =
+                                  Provider.of<MasterDataProvider>(
+                                    context,
+                                    listen: false,
+                                  );
+                              final subjectNames = masterProvider.subjects
+                                  .map((s) => s.name)
+                                  .toList();
+                              _showPositionSelector(
+                                context,
+                                subjectNames,
+                                posController.text,
+                                (selected) {
+                                  setDialogState(() {
+                                    posController.text = selected;
+                                  });
+                                },
+                              );
+                            },
+                      child: AbsorbPointer(
+                        child: TextField(
+                          controller: posController,
+                          enabled: !isSaving,
+                          decoration: const InputDecoration(
+                            labelText: 'Jabatan',
+                            hintText:
+                                'Ketuk untuk memilih jabatan / guru mapel...',
+                            prefixIcon: Icon(Icons.badge_outlined),
+                            suffixIcon: Icon(Icons.arrow_drop_down),
+                          ),
                         ),
                       ),
                     ),
@@ -739,10 +745,12 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     children: [
                       // Role Card: Guru
                       Expanded(
-                        child: GestureDetector(
-                          onTap: isSubmitting
-                              ? null
-                              : () => setDialogState(() => requestedRole = 'guru'),
+                        child: MouseRegion(
+                          cursor: isSubmitting ? MouseCursor.defer : SystemMouseCursors.click,
+                          child: GestureDetector(
+                            onTap: isSubmitting
+                                ? null
+                                : () => setDialogState(() => requestedRole = 'guru'),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
                             padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
@@ -793,13 +801,16 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                           ),
                         ),
                       ),
-                      SizedBox(width: 10.w),
+                    ),
+                    SizedBox(width: 10.w),
                       // Role Card: Admin Sekolah
                       Expanded(
-                        child: GestureDetector(
-                          onTap: isSubmitting
-                              ? null
-                              : () => setDialogState(() => requestedRole = 'admin'),
+                        child: MouseRegion(
+                          cursor: isSubmitting ? MouseCursor.defer : SystemMouseCursors.click,
+                          child: GestureDetector(
+                            onTap: isSubmitting
+                                ? null
+                                : () => setDialogState(() => requestedRole = 'admin'),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
                             padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
@@ -850,7 +861,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                           ),
                         ),
                       ),
-                    ],
+                    ),
+                  ],
                   ),
                   if (requestedRole == 'admin') ...[
                     SizedBox(height: 12.h),
@@ -1172,41 +1184,44 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                     ? teacher.photoUrl
                                     : null);
 
-                            return GestureDetector(
-                              onTap: displayUrl != null
-                                  ? () {
-                                      FullScreenImageViewer.show(
-                                        context,
-                                        displayUrl,
-                                        'guru_profile_avatar',
-                                      );
-                                    }
-                                  : null,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 2.5.r,
-                                  ),
-                                ),
-                                child: Hero(
-                                  tag: 'guru_profile_avatar',
-                                  child: CircleAvatar(
-                                    radius: 36.r,
-                                    backgroundColor: Colors.white.withValues(
-                                      alpha: 0.2,
+                            return MouseRegion(
+                              cursor: displayUrl != null ? SystemMouseCursors.click : MouseCursor.defer,
+                              child: GestureDetector(
+                                onTap: displayUrl != null
+                                    ? () {
+                                        FullScreenImageViewer.show(
+                                          context,
+                                          displayUrl,
+                                          'guru_profile_avatar',
+                                        );
+                                      }
+                                    : null,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2.5.r,
                                     ),
-                                    backgroundImage: displayUrl != null
-                                        ? CachedNetworkImageProvider(displayUrl)
-                                        : null,
-                                    child: displayUrl == null
-                                        ? const Icon(
-                                            Icons.person,
-                                            size: 36,
-                                            color: Colors.white,
-                                          )
-                                        : null,
+                                  ),
+                                  child: Hero(
+                                    tag: 'guru_profile_avatar',
+                                    child: CircleAvatar(
+                                      radius: 36.r,
+                                      backgroundColor: Colors.white.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                      backgroundImage: displayUrl != null
+                                          ? CachedNetworkImageProvider(displayUrl)
+                                          : null,
+                                      child: displayUrl == null
+                                          ? const Icon(
+                                              Icons.person,
+                                              size: 36,
+                                              color: Colors.white,
+                                            )
+                                          : null,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -1216,19 +1231,22 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         Positioned(
                           bottom: 0,
                           right: 0,
-                          child: GestureDetector(
-                            onTap: () =>
-                                _showEditProfileDialog(currentUser, teacher),
-                            child: Container(
-                              padding: EdgeInsets.all(5.w),
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.camera_alt,
-                                size: 12.r,
-                                color: const Color(0xFF2563EB),
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: GestureDetector(
+                              onTap: () =>
+                                  _showEditProfileDialog(currentUser, teacher),
+                              child: Container(
+                                padding: EdgeInsets.all(5.w),
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.camera_alt,
+                                  size: 12.r,
+                                  color: const Color(0xFF2563EB),
+                                ),
                               ),
                             ),
                           ),
@@ -1240,22 +1258,25 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _showFullName = !_showFullName;
-                              });
-                            },
-                            child: Text(
-                              teacher.name.isNotEmpty ? teacher.name : currentUser.fullName,
-                              maxLines: _showFullName ? null : 1,
-                              overflow: _showFullName
-                                  ? TextOverflow.visible
-                                  : TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                          MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _showFullName = !_showFullName;
+                                });
+                              },
+                              child: Text(
+                                teacher.name.isNotEmpty ? teacher.name : currentUser.fullName,
+                                maxLines: _showFullName ? null : 1,
+                                overflow: _showFullName
+                                    ? TextOverflow.visible
+                                    : TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),

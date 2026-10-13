@@ -749,16 +749,18 @@ class DetailJurnalScreen extends StatelessWidget {
 
   Widget _buildPhotoThumbnail(BuildContext context, JournalAttachmentModel attachment, bool isDark) {
     final isNetwork = attachment.filePath.startsWith('http');
-    return GestureDetector(
-      onTap: isNetwork
-          ? () {
-              FullScreenImageViewer.show(
-                context,
-                attachment.filePath,
-                'journal_attachment_${attachment.id}',
-              );
-            }
-          : null,
+    return MouseRegion(
+      cursor: isNetwork ? SystemMouseCursors.click : MouseCursor.defer,
+      child: GestureDetector(
+        onTap: isNetwork
+            ? () {
+                FullScreenImageViewer.show(
+                  context,
+                  attachment.filePath,
+                  'journal_attachment_${attachment.id}',
+                );
+              }
+            : null,
       child: Container(
         width: 80.w,
         height: 80.w,
@@ -794,7 +796,8 @@ class DetailJurnalScreen extends StatelessWidget {
                 ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildPdfAttachment(BuildContext context, JournalAttachmentModel attachment, bool isDark) {

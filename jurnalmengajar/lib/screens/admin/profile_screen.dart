@@ -220,18 +220,21 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         Positioned(
                           bottom: 0,
                           right: 0,
-                          child: GestureDetector(
-                            onTap: showImageSourceSheet,
-                            child: Container(
-                              padding: EdgeInsets.all(8.w),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF2563EB),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.camera_alt,
-                                size: 16.r,
-                                color: Colors.white,
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: GestureDetector(
+                              onTap: showImageSourceSheet,
+                              child: Container(
+                                padding: EdgeInsets.all(8.w),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF2563EB),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.camera_alt,
+                                  size: 16.r,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -610,51 +613,57 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                     Stack(
                       alignment: Alignment.center,
                       children: [
-                        GestureDetector(
-                          onTap:
-                              currentUser.photoUrl != null &&
+                        MouseRegion(
+                          cursor: currentUser.photoUrl != null &&
                                   currentUser.photoUrl!.startsWith('http')
-                              ? () {
-                                  FullScreenImageViewer.show(
-                                    context,
-                                    currentUser.photoUrl!,
-                                    'admin_profile_avatar',
-                                  );
-                                }
-                              : null,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 2.5.r,
-                              ),
-                            ),
-                            child: Hero(
-                              tag: 'admin_profile_avatar',
-                              child: CircleAvatar(
-                                radius: 36.r,
-                                backgroundColor: Colors.white.withValues(
-                                  alpha: 0.2,
+                              ? SystemMouseCursors.click
+                              : MouseCursor.defer,
+                          child: GestureDetector(
+                            onTap:
+                                currentUser.photoUrl != null &&
+                                    currentUser.photoUrl!.startsWith('http')
+                                ? () {
+                                    FullScreenImageViewer.show(
+                                      context,
+                                      currentUser.photoUrl!,
+                                      'admin_profile_avatar',
+                                    );
+                                  }
+                                : null,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2.5.r,
                                 ),
-                                backgroundImage:
-                                    currentUser.photoUrl != null &&
-                                        currentUser.photoUrl!.startsWith('http')
-                                    ? CachedNetworkImageProvider(
-                                        currentUser.photoUrl!,
-                                      )
-                                    : null,
-                                child:
-                                    (currentUser.photoUrl == null ||
-                                        !currentUser.photoUrl!.startsWith(
-                                          'http',
-                                        ))
-                                    ? Icon(
-                                        Icons.person,
-                                        size: 36.r,
-                                        color: Colors.white,
-                                      )
-                                    : null,
+                              ),
+                              child: Hero(
+                                tag: 'admin_profile_avatar',
+                                child: CircleAvatar(
+                                  radius: 36.r,
+                                  backgroundColor: Colors.white.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                  backgroundImage:
+                                      currentUser.photoUrl != null &&
+                                          currentUser.photoUrl!.startsWith('http')
+                                      ? CachedNetworkImageProvider(
+                                          currentUser.photoUrl!,
+                                        )
+                                      : null,
+                                  child:
+                                      (currentUser.photoUrl == null ||
+                                          !currentUser.photoUrl!.startsWith(
+                                            'http',
+                                          ))
+                                      ? Icon(
+                                          Icons.person,
+                                          size: 36.r,
+                                          color: Colors.white,
+                                        )
+                                      : null,
+                                ),
                               ),
                             ),
                           ),
@@ -662,18 +671,21 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         Positioned(
                           bottom: 0,
                           right: 0,
-                          child: GestureDetector(
-                            onTap: () => _showEditProfileDialog(currentUser),
-                            child: Container(
-                              padding: EdgeInsets.all(5.w),
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.camera_alt,
-                                size: 12.r,
-                                color: const Color(0xFF2563EB),
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: GestureDetector(
+                              onTap: () => _showEditProfileDialog(currentUser),
+                              child: Container(
+                                padding: EdgeInsets.all(5.w),
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.camera_alt,
+                                  size: 12.r,
+                                  color: const Color(0xFF2563EB),
+                                ),
                               ),
                             ),
                           ),
@@ -685,22 +697,25 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _showFullName = !_showFullName;
-                              });
-                            },
-                            child: Text(
-                              currentUser.fullName,
-                              maxLines: _showFullName ? null : 1,
-                              overflow: _showFullName
-                                  ? TextOverflow.visible
-                                  : TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                          MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _showFullName = !_showFullName;
+                                });
+                              },
+                              child: Text(
+                                currentUser.fullName,
+                                maxLines: _showFullName ? null : 1,
+                                overflow: _showFullName
+                                    ? TextOverflow.visible
+                                    : TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),

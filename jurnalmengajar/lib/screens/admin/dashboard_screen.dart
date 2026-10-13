@@ -2270,35 +2270,41 @@ class _AdminTeacherSearchSelectorState
             mainAxisSize: MainAxisSize.min,
             children: [
               if (hasSelection || hasText)
-                GestureDetector(
-                  onTap: _clearInput,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 6.w),
-                    child: Icon(
-                      Icons.close_rounded,
-                      size: 18.sp,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: _clearInput,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 6.w),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 18.sp,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ),
-              GestureDetector(
-                onTap: () {
-                  if (_isOpen) {
-                    _closeDropdown();
-                    _focusNode.unfocus();
-                  } else {
-                    _focusNode.requestFocus();
-                    _openDropdown();
-                  }
-                },
-                child: Padding(
-                  padding: EdgeInsets.only(right: 12.w, left: 4.w),
-                  child: Icon(
-                    _isOpen
-                        ? Icons.keyboard_arrow_up_rounded
-                        : Icons.keyboard_arrow_down_rounded,
-                    size: 20.sp,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: () {
+                    if (_isOpen) {
+                      _closeDropdown();
+                      _focusNode.unfocus();
+                    } else {
+                      _focusNode.requestFocus();
+                      _openDropdown();
+                    }
+                  },
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 12.w, left: 4.w),
+                    child: Icon(
+                      _isOpen
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      size: 20.sp,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ),

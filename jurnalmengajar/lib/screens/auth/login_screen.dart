@@ -443,18 +443,21 @@ class _LoginScreenState extends State<LoginScreen> {
                               // Forgot Password
                               Align(
                                 alignment: Alignment.centerRight,
-                                child: GestureDetector(
-                                  onTap: () => context.push('/reset-password'),
-                                  child: Text(
-                                    'Lupa Password?',
-                                    style: TextStyle(
-                                      fontSize: kIsWeb ? 13 : 13.5.sp,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color.fromARGB(
-                                        255,
-                                        37,
-                                        99,
-                                        235,
+                                child: MouseRegion(
+                                  cursor: SystemMouseCursors.click,
+                                  child: GestureDetector(
+                                    onTap: () => context.push('/reset-password'),
+                                    child: Text(
+                                      'Lupa Password?',
+                                      style: TextStyle(
+                                        fontSize: kIsWeb ? 13 : 13.5.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color.fromARGB(
+                                          255,
+                                          37,
+                                          99,
+                                          235,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -593,20 +596,23 @@ class _LoginScreenState extends State<LoginScreen> {
                                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
-                                  GestureDetector(
-                                    // Langsung tampilkan halaman register
-                                    // (route /register) — tidak kembali ke awal.
-                                    onTap: () => context.push('/register'),
-                                    child: Text(
-                                      'Daftar Sekarang',
-                                      style: TextStyle(
-                                        fontSize: kIsWeb ? 13.5 : 14.sp,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color.fromARGB(
-                                          255,
-                                          37,
-                                          99,
-                                          235,
+                                  MouseRegion(
+                                    cursor: SystemMouseCursors.click,
+                                    child: GestureDetector(
+                                      // Langsung tampilkan halaman register
+                                      // (route /register) — tidak kembali ke awal.
+                                      onTap: () => context.push('/register'),
+                                      child: Text(
+                                        'Daftar Sekarang',
+                                        style: TextStyle(
+                                          fontSize: kIsWeb ? 13.5 : 14.sp,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color.fromARGB(
+                                            255,
+                                            37,
+                                            99,
+                                            235,
+                                          ),
                                         ),
                                       ),
                                     ),

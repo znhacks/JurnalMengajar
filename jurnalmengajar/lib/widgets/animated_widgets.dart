@@ -45,18 +45,22 @@ class _ScaleTapState extends State<ScaleTap> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedScale(
-        scale: _isPressed ? widget.pressedScale : 1.0,
-        duration: widget.duration,
-        curve: Curves.easeOutCubic,
-        child: widget.child,
+    final bool isClickable = widget.onTap != null || widget.onLongPress != null;
+    return MouseRegion(
+      cursor: isClickable ? SystemMouseCursors.click : MouseCursor.defer,
+      child: GestureDetector(
+        onTapDown: _onTapDown,
+        onTapUp: _onTapUp,
+        onTapCancel: _onTapCancel,
+        onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedScale(
+          scale: _isPressed ? widget.pressedScale : 1.0,
+          duration: widget.duration,
+          curve: Curves.easeOutCubic,
+          child: widget.child,
+        ),
       ),
     );
   }

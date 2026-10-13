@@ -140,6 +140,8 @@ class AppTheme {
           ),
           textStyle: GoogleFonts.hankenGrotesk(
               fontSize: 15, fontWeight: FontWeight.w600),
+          enabledMouseCursor: SystemMouseCursors.click,
+          disabledMouseCursor: SystemMouseCursors.basic,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -152,7 +154,34 @@ class AppTheme {
           ),
           textStyle: GoogleFonts.hankenGrotesk(
               fontSize: 14, fontWeight: FontWeight.w600),
+          enabledMouseCursor: SystemMouseCursors.click,
+          disabledMouseCursor: SystemMouseCursors.basic,
         ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primaryColor,
+          textStyle: GoogleFonts.hankenGrotesk(
+              fontSize: 14, fontWeight: FontWeight.w600),
+          enabledMouseCursor: SystemMouseCursors.click,
+          disabledMouseCursor: SystemMouseCursors.basic,
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          enabledMouseCursor: SystemMouseCursors.click,
+          disabledMouseCursor: SystemMouseCursors.basic,
+        ),
+      ),
+
+      // ─── List Tile ────────────────────────────────────────────────────────
+      listTileTheme: ListTileThemeData(
+        mouseCursor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) {
+            return SystemMouseCursors.basic;
+          }
+          return SystemMouseCursors.click;
+        }),
       ),
 
       // ─── Input Fields ─────────────────────────────────────────────────────
@@ -193,6 +222,26 @@ class AppTheme {
             fontSize: 11, fontWeight: FontWeight.w700),
       ),
 
+      // ─── Selection Controls ───────────────────────────────────────────────
+      switchTheme: SwitchThemeData(
+        mouseCursor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.disabled)
+                ? SystemMouseCursors.basic
+                : SystemMouseCursors.click),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        mouseCursor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.disabled)
+                ? SystemMouseCursors.basic
+                : SystemMouseCursors.click),
+      ),
+      radioTheme: RadioThemeData(
+        mouseCursor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.disabled)
+                ? SystemMouseCursors.basic
+                : SystemMouseCursors.click),
+      ),
+
       // ─── Divider ──────────────────────────────────────────────────────────
       dividerTheme: const DividerThemeData(
         color: outlineVariant,
@@ -226,6 +275,10 @@ class AppTheme {
 
       // ─── TabBar ───────────────────────────────────────────────────────────
       tabBarTheme: TabBarThemeData(
+        mouseCursor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.disabled)
+                ? SystemMouseCursors.basic
+                : SystemMouseCursors.click),
         labelColor: primaryColor,
         unselectedLabelColor: outline,
         indicatorColor: primaryColor,
@@ -383,6 +436,8 @@ class AppTheme {
           ),
           textStyle: GoogleFonts.hankenGrotesk(
               fontSize: 15, fontWeight: FontWeight.w600),
+          enabledMouseCursor: SystemMouseCursors.click,
+          disabledMouseCursor: SystemMouseCursors.basic,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -395,7 +450,34 @@ class AppTheme {
           ),
           textStyle: GoogleFonts.hankenGrotesk(
               fontSize: 14, fontWeight: FontWeight.w600),
+          enabledMouseCursor: SystemMouseCursors.click,
+          disabledMouseCursor: SystemMouseCursors.basic,
         ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primaryColor,
+          textStyle: GoogleFonts.hankenGrotesk(
+              fontSize: 14, fontWeight: FontWeight.w600),
+          enabledMouseCursor: SystemMouseCursors.click,
+          disabledMouseCursor: SystemMouseCursors.basic,
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          enabledMouseCursor: SystemMouseCursors.click,
+          disabledMouseCursor: SystemMouseCursors.basic,
+        ),
+      ),
+
+      // ─── List Tile ────────────────────────────────────────────────────────
+      listTileTheme: ListTileThemeData(
+        mouseCursor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) {
+            return SystemMouseCursors.basic;
+          }
+          return SystemMouseCursors.click;
+        }),
       ),
 
       inputDecorationTheme: InputDecorationTheme(
@@ -434,6 +516,26 @@ class AppTheme {
             fontSize: 11, fontWeight: FontWeight.w700),
       ),
 
+      // ─── Selection Controls ───────────────────────────────────────────────
+      switchTheme: SwitchThemeData(
+        mouseCursor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.disabled)
+                ? SystemMouseCursors.basic
+                : SystemMouseCursors.click),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        mouseCursor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.disabled)
+                ? SystemMouseCursors.basic
+                : SystemMouseCursors.click),
+      ),
+      radioTheme: RadioThemeData(
+        mouseCursor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.disabled)
+                ? SystemMouseCursors.basic
+                : SystemMouseCursors.click),
+      ),
+
       dividerTheme: const DividerThemeData(
         color: darkOutlineVariant,
         thickness: 1,
@@ -464,6 +566,10 @@ class AppTheme {
       ),
 
       tabBarTheme: TabBarThemeData(
+        mouseCursor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.disabled)
+                ? SystemMouseCursors.basic
+                : SystemMouseCursors.click),
         labelColor: Colors.white,
         unselectedLabelColor: darkOnSurfaceVariant,
         indicatorColor: Colors.white,

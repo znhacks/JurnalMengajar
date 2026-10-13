@@ -377,33 +377,36 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
               : const Color(0xFF2563EB).withValues(alpha: 0.06))
         : Colors.transparent;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        _onDayTapped(
-          context,
-          day,
-          teacher,
-          scheduleProvider,
-          journalProvider,
-          masterProvider,
-          holidayProvider,
-        );
-      },
-      child: Container(
-        alignment: Alignment.topCenter,
-        decoration: BoxDecoration(
-          color: cellBgColor,
-          border: Border.all(color: cellBorderColor, width: 0.5),
-        ),
-        padding: EdgeInsets.only(top: 4.h),
-        child: Text(
-          '${properties.dayNumber}',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.hankenGrotesk(
-            fontSize: 12.sp,
-            fontWeight: fontWeight,
-            color: textColor,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          _onDayTapped(
+            context,
+            day,
+            teacher,
+            scheduleProvider,
+            journalProvider,
+            masterProvider,
+            holidayProvider,
+          );
+        },
+        child: Container(
+          alignment: Alignment.topCenter,
+          decoration: BoxDecoration(
+            color: cellBgColor,
+            border: Border.all(color: cellBorderColor, width: 0.5),
+          ),
+          padding: EdgeInsets.only(top: 4.h),
+          child: Text(
+            '${properties.dayNumber}',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 12.sp,
+              fontWeight: fontWeight,
+              color: textColor,
+            ),
           ),
         ),
       ),

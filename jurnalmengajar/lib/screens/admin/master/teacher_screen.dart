@@ -315,12 +315,15 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                         Positioned(
                           bottom: 0,
                           right: 0,
-                          child: GestureDetector(
-                            onTap: showImageSourceSheet,
-                            child: Container(
-                              padding: EdgeInsets.all(6.w),
-                              decoration: const BoxDecoration(color: Color(0xFF2563EB), shape: BoxShape.circle),
-                              child: Icon(Icons.camera_alt, size: 14.r, color: Colors.white),
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: GestureDetector(
+                              onTap: showImageSourceSheet,
+                              child: Container(
+                                padding: EdgeInsets.all(6.w),
+                                decoration: const BoxDecoration(color: Color(0xFF2563EB), shape: BoxShape.circle),
+                                child: Icon(Icons.camera_alt, size: 14.r, color: Colors.white),
+                              ),
                             ),
                           ),
                         ),
@@ -334,28 +337,31 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                     decoration: const InputDecoration(labelText: 'Nama Lengkap', hintText: 'Nama lengkap beserta gelar'),
                   ),
                   SizedBox(height: 12.h),
-                  GestureDetector(
-                    onTap: () {
-                      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-                      final subjectNames = masterProvider.subjects.map((s) => s.name).toList();
-                      _showPositionSelector(
-                        context,
-                        subjectNames,
-                        posController.text,
-                        (selected) {
-                          setDialogState(() {
-                            posController.text = selected;
-                          });
-                        },
-                      );
-                    },
-                    child: AbsorbPointer(
-                      child: TextField(
-                        controller: posController,
-                        decoration: const InputDecoration(
-                          labelText: 'Jabatan',
-                          hintText: 'Ketuk untuk memilih jabatan / guru mapel...',
-                          suffixIcon: Icon(Icons.arrow_drop_down),
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () {
+                        final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+                        final subjectNames = masterProvider.subjects.map((s) => s.name).toList();
+                        _showPositionSelector(
+                          context,
+                          subjectNames,
+                          posController.text,
+                          (selected) {
+                            setDialogState(() {
+                              posController.text = selected;
+                            });
+                          },
+                        );
+                      },
+                      child: AbsorbPointer(
+                        child: TextField(
+                          controller: posController,
+                          decoration: const InputDecoration(
+                            labelText: 'Jabatan',
+                            hintText: 'Ketuk untuk memilih jabatan / guru mapel...',
+                            suffixIcon: Icon(Icons.arrow_drop_down),
+                          ),
                         ),
                       ),
                     ),

@@ -655,11 +655,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   child: Row(
                                     children: [
                                       Expanded(
-                                        child: GestureDetector(
-                                          onTap: () => setState(() {
-                                            _registerType = 'guru';
-                                            _schoolErrorMessage = null;
-                                          }),
+                                        child: MouseRegion(
+                                          cursor: SystemMouseCursors.click,
+                                          child: GestureDetector(
+                                            onTap: () => setState(() {
+                                              _registerType = 'guru';
+                                              _schoolErrorMessage = null;
+                                            }),
                                           child: AnimatedContainer(
                                             duration: const Duration(
                                               milliseconds: 200,
@@ -713,12 +715,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           ),
                                         ),
                                       ),
-                                      Expanded(
-                                        child: GestureDetector(
-                                          onTap: () => setState(() {
-                                            _registerType = 'admin';
-                                            _schoolErrorMessage = null;
-                                          }),
+                                    ),
+                                    Expanded(
+                                        child: MouseRegion(
+                                          cursor: SystemMouseCursors.click,
+                                          child: GestureDetector(
+                                            onTap: () => setState(() {
+                                              _registerType = 'admin';
+                                              _schoolErrorMessage = null;
+                                            }),
                                           child: AnimatedContainer(
                                             duration: const Duration(
                                               milliseconds: 200,
@@ -774,7 +779,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           ),
                                         ),
                                       ),
-                                    ],
+                                    ),
+                                  ],
                                   ),
                                 ),
                                 SizedBox(height: 8.h),
@@ -814,8 +820,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       Positioned(
                                         bottom: 0,
                                         right: 0,
-                                        child: GestureDetector(
-                                          onTap: _showImageSourceSheet,
+                                        child: MouseRegion(
+                                          cursor: SystemMouseCursors.click,
+                                          child: GestureDetector(
+                                            onTap: _showImageSourceSheet,
                                           child: Container(
                                             padding: EdgeInsets.all(6.w),
                                             decoration: const BoxDecoration(
@@ -835,7 +843,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           ),
                                         ),
                                       ),
-                                    ],
+                                    ),
+                                  ],
                                   ),
                                 ),
                                 SizedBox(height: 24.h),
@@ -1367,8 +1376,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 if (_registerType == 'guru') ...[
                                   _buildFieldLabel('JABATAN'),
                                   if (_selectedSchools.isNotEmpty) ...[
-                                    GestureDetector(
-                                      behavior: HitTestBehavior.opaque,
+                                    MouseRegion(
+                                      cursor: SystemMouseCursors.click,
+                                      child: GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
                                       onTap: () async {
                                         final effectiveSchoolId =
                                             _resolvedSchoolId;
@@ -1445,7 +1456,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         ),
                                       ),
                                     ),
-                                  ] else ...[
+                                  ),
+                                ] else ...[
                                     Container(
                                       padding: EdgeInsets.symmetric(
                                         horizontal: 14.w,
@@ -1819,8 +1831,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         ).colorScheme.onSurfaceVariant,
                                       ),
                                     ),
-                                    GestureDetector(
-                                      onTap: () {
+                                    MouseRegion(
+                                      cursor: SystemMouseCursors.click,
+                                      child: GestureDetector(
+                                        onTap: () {
                                         // Mode embedded: kembali ke form login
                                         // tanpa navigasi route.
                                         if (widget.onBackToLogin != null) {
@@ -1851,7 +1865,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         ),
                                       ),
                                     ),
-                                  ],
+                                  ),
+                                ],
                                 ),
                               ],
                             ),

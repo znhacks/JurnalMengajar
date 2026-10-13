@@ -415,15 +415,18 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         Positioned(
           top: 2,
           right: 2,
-          child: GestureDetector(
-            onTap: onDelete,
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: onDelete,
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 12),
               ),
-              child: const Icon(Icons.close, color: Colors.white, size: 12),
             ),
           ),
         ),

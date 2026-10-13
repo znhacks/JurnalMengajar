@@ -465,24 +465,27 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                       ).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      if (context.canPop()) {
-                                        context.pop();
-                                      } else {
-                                        context.go('/login');
-                                      }
-                                    },
-                                    child: Text(
-                                      'Kembali Login',
-                                      style: TextStyle(
-                                        fontSize: kIsWeb ? 13.5 : 14.sp,
-                                        fontWeight: FontWeight.bold,
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                    Brightness.dark
-                                                ? const Color(0xFF60A5FA)
-                                                : const Color(0xFF2563EB),
+                                  MouseRegion(
+                                    cursor: SystemMouseCursors.click,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        if (context.canPop()) {
+                                          context.pop();
+                                        } else {
+                                          context.go('/login');
+                                        }
+                                      },
+                                      child: Text(
+                                        'Kembali Login',
+                                        style: TextStyle(
+                                          fontSize: kIsWeb ? 13.5 : 14.sp,
+                                          fontWeight: FontWeight.bold,
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                      Brightness.dark
+                                                  ? const Color(0xFF60A5FA)
+                                                  : const Color(0xFF2563EB),
+                                        ),
                                       ),
                                     ),
                                   ),
