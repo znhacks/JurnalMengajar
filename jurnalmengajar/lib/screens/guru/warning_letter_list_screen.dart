@@ -145,12 +145,8 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
     return false;
   }
 
-  /// True bila SELURUH jadwal mengajar pada [groupDate] sudah memiliki jurnal
-  /// (non-rejected). Satu pengingat bisa mencakup beberapa kelas sekaligus,
-  /// sehingga pengecekan dilakukan per tanggal, bukan per satu scheduleId.
-  /// Bila jadwal tanggal tersebut tidak ada di cache, fallback ke
-  /// pencocokan scheduleId tiap pengingat; bila tetap tidak terbukti terisi,
-  /// kembalikan false (fail-closed: belum bisa dikonfirmasi/dihapus).
+  /// Terisi bila seluruh jadwal [groupDate] punya jurnal non-rejected.
+  /// Tanpa cache jadwal, fallback ke scheduleId dan fail-closed bila tak terbukti.
   bool _isGroupJournalFilled({
     required DateTime groupDate,
     required List<WarningLetterModel> groupWarnings,
@@ -307,8 +303,8 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                               ),
                               Text(
                                 grouped.isNotEmpty
-                                    ? '${grouped.length} jadwal pada hari ini • Ketuk untuk isi/lihat jurnal'
-                                    : 'Ketuk untuk isi/lihat jurnal hari ini',
+                                    ? '${grouped.length} jadwal'
+                                    : 'Jurnal hari ini',
                                 style: GoogleFonts.hankenGrotesk(
                                   fontSize: 11.sp,
                                   fontWeight: FontWeight.w600,
@@ -480,7 +476,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
             Text(
               matchingJournal != null
                   ? 'Jurnal: ${matchingJournal.material}'
-                  : 'Jurnal belum diisi. Ketuk untuk menginput jurnal.',
+                  : 'Belum diisi.',
               style: GoogleFonts.hankenGrotesk(
                 fontSize: 11.5.sp,
                 color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.85),
@@ -990,6 +986,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                 margin: EdgeInsets.zero,
                                 color: theme.colorScheme.surface,
                                 elevation: 0,
+                                clipBehavior: Clip.antiAlias,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16.r),
                                   side: BorderSide(
@@ -999,136 +996,111 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                     width: hasUnread ? 1.5 : 1.0,
                                   ),
                                 ),
-                                child: Padding(
-                                  padding: EdgeInsets.all(16.w),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      InkWell(
-                                        onTap: () => _openDayJournals(
-                                          groupDate: groupDate,
-                                          groupWarnings: groupWarnings,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    InkWell(
+                                      onTap: () => _openDayJournals(
+                                        groupDate: groupDate,
+                                        groupWarnings: groupWarnings,
+                                      ),
+                                      borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+                                      child: Padding(
+                                        padding: EdgeInsets.fromLTRB(16.w, 16.w, 16.w, 12.w),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  padding: EdgeInsets.all(8.w),
+                                                  decoration: BoxDecoration(
+                                                    color: hasUnread
+                                                        ? const Color(0xFFFEE2E2)
+                                                        : const Color(0xFFF1F5F9),
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.warning_amber_rounded,
+                                                    color: hasUnread
+                                                        ? const Color(0xFFEF4444)
+                                                        : const Color(0xFF64748B),
+                                                    size: 20,
+                                                  ),
+                                                ),
+                                                SizedBox(width: 12.w),
+                                                Expanded(
+                                                  child: Text(
+                                                    AppHelper.formatDate(groupDate),
+                                                    style: GoogleFonts.hankenGrotesk(
+                                                      fontWeight: FontWeight.w800,
+                                                      fontSize: 14.sp,
+                                                      color: theme.colorScheme.onSurface,
+                                                    ),
+                                                  ),
+                                                ),
+                                                if (!hasUnread)
+                                                  Container(
+                                                    padding: EdgeInsets.symmetric(
+                                                      horizontal: 8.w,
+                                                      vertical: 4.h,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFFDCFCE7),
+                                                      borderRadius: BorderRadius.circular(999),
+                                                    ),
+                                                    child: Text(
+                                                      'Dikonfirmasi',
+                                                      style: GoogleFonts.hankenGrotesk(
+                                                        fontSize: 9.sp,
+                                                        fontWeight: FontWeight.w700,
+                                                        color: const Color(0xFF15803D),
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                            const Divider(height: 24),
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: groupWarnings.map((w) {
+                                                return Padding(
+                                                  padding: EdgeInsets.only(bottom: 8.h),
+                                                  child: Row(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        '• ',
+                                                        style: TextStyle(
+                                                          color: w.status == 'unread' ? const Color(0xFFB91C1C) : const Color(0xFF64748B),
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        child: Text(
+                                                          _formatReason(w.reason),
+                                                          style: GoogleFonts.hankenGrotesk(
+                                                            fontSize: 13.sp,
+                                                            color: Theme.of(context).colorScheme.onSurface,
+                                                            height: 1.4,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ],
                                         ),
-                                        borderRadius: BorderRadius.circular(12.r),
-                                        child: Padding(
-                                          padding: EdgeInsets.symmetric(vertical: 2.h),
+                                      ),
+                                    ),
+                                      if (hasUnread)
+                                        Padding(
+                                          padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.w),
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Row(
-                                                children: [
-                                                  Container(
-                                                    padding: EdgeInsets.all(8.w),
-                                                    decoration: BoxDecoration(
-                                                      color: hasUnread
-                                                          ? const Color(0xFFFEE2E2)
-                                                          : const Color(0xFFF1F5F9),
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                    child: Icon(
-                                                      Icons.warning_amber_rounded,
-                                                      color: hasUnread
-                                                          ? const Color(0xFFEF4444)
-                                                          : const Color(0xFF64748B),
-                                                      size: 20,
-                                                    ),
-                                                  ),
-                                                  SizedBox(width: 12.w),
-                                                  Expanded(
-                                                    child: Text(
-                                                      AppHelper.formatDate(groupDate),
-                                                      style: GoogleFonts.hankenGrotesk(
-                                                        fontWeight: FontWeight.w800,
-                                                        fontSize: 14.sp,
-                                                        color: theme.colorScheme.onSurface,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  if (!hasUnread)
-                                                    Container(
-                                                      padding: EdgeInsets.symmetric(
-                                                        horizontal: 8.w,
-                                                        vertical: 4.h,
-                                                      ),
-                                                      decoration: BoxDecoration(
-                                                        color: const Color(0xFFDCFCE7),
-                                                        borderRadius: BorderRadius.circular(999),
-                                                      ),
-                                                      child: Text(
-                                                        'Dikonfirmasi',
-                                                        style: GoogleFonts.hankenGrotesk(
-                                                          fontSize: 9.sp,
-                                                          fontWeight: FontWeight.w700,
-                                                          color: const Color(0xFF15803D),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  SizedBox(width: 4.w),
-                                                  Icon(
-                                                    Icons.chevron_right_rounded,
-                                                    size: 22,
-                                                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                                                  ),
-                                                ],
-                                              ),
-                                              const Divider(height: 24),
-                                              Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: groupWarnings.map((w) {
-                                                  return Padding(
-                                                    padding: EdgeInsets.only(bottom: 8.h),
-                                                    child: Row(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Text(
-                                                          '• ',
-                                                          style: TextStyle(
-                                                            color: w.status == 'unread' ? const Color(0xFFB91C1C) : const Color(0xFF64748B),
-                                                            fontWeight: FontWeight.bold,
-                                                          ),
-                                                        ),
-                                                        Expanded(
-                                                          child: Text(
-                                                            _formatReason(w.reason),
-                                                            style: GoogleFonts.hankenGrotesk(
-                                                              fontSize: 13.sp,
-                                                              color: Theme.of(context).colorScheme.onSurface,
-                                                              height: 1.4,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-                                                }).toList(),
-                                              ),
-                                              SizedBox(height: 4.h),
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.touch_app_outlined,
-                                                    size: 13,
-                                                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                                                  ),
-                                                  SizedBox(width: 5.w),
-                                                  Expanded(
-                                                    child: Text(
-                                                      'Ketuk untuk membuka jurnal hari ini',
-                                                      style: GoogleFonts.hankenGrotesk(
-                                                        fontSize: 11.sp,
-                                                        fontWeight: FontWeight.w600,
-                                                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      if (hasUnread) ...[
-                                        SizedBox(height: 12.h),
                                         if (!isJournalFilled)
                                           Padding(
                                             padding: EdgeInsets.only(bottom: 8.h),
@@ -1185,11 +1157,12 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                             ),
                                           ),
                                         ),
-                                      ],
+                                            ],
+                                          ),
+                                        ),
                                     ],
                                   ),
-                                ),
-                              );
+                                );
                             },
                           );
                         },
