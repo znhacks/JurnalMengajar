@@ -9,6 +9,8 @@ import 'package:go_router/go_router.dart';
 /// - Escape key (Esc to go back / unfocus)
 /// - Mouse Back Button (side button on gaming/productivity mice)
 /// - Trackpad horizontal two-finger swipe back
+/// - Forward counterparts (Alt/Cmd/Ctrl + Right Arrow, mouse forward button,
+///   trackpad swipe left) return to the page left via the back actions above.
 class WebNavigationShortcutWrapper extends StatefulWidget {
   final Widget child;
   final GoRouter router;
@@ -27,18 +29,81 @@ class WebNavigationShortcutWrapper extends StatefulWidget {
 class _WebNavigationShortcutWrapperState
     extends State<WebNavigationShortcutWrapper> {
   DateTime _lastPopTime = DateTime.now();
+  DateTime _lastForwardTime = DateTime.fromMillisecondsSinceEpoch(0);
   double _trackpadScrollAcc = 0.0;
+  double _trackpadForwardScrollAcc = 0.0;
+
+  /// Locations left behind when a page leaves the route stack, newest last.
+  /// Powers the forward (swipe-to-return) gesture. A fresh push navigation
+  /// clears it, so forward never jumps somewhere surprising.
+  final List<String> _forwardStack = [];
+  String? _pendingForwardTo;
+  String _lastLocation = '';
 
   @override
   void initState() {
     super.initState();
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
+    _lastLocation = _currentLocation() ?? '';
+    widget.router.routerDelegate.addListener(_handleRouteChange);
   }
 
   @override
   void dispose() {
+    widget.router.routerDelegate.removeListener(_handleRouteChange);
     HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
     super.dispose();
+  }
+
+  String? _currentLocation() {
+    try {
+      final config = widget.router.routerDelegate.currentConfiguration;
+      final matches = config.matches;
+      if (matches.isEmpty) {
+        final uri = config.uri.toString();
+        return uri.isEmpty ? null : uri;
+      }
+      final last = matches.last;
+      if (last is ImperativeRouteMatch) {
+        // Pushed pages keep the list uri stale; the inner list holds the page uri.
+        return last.matches.uri.toString();
+      }
+      return config.uri.toString();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _handleRouteChange() {
+    if (!mounted) return;
+    final current = _currentLocation();
+    if (current == null || current == _lastLocation || _lastLocation.isEmpty) {
+      if (current != null) _lastLocation = current;
+      return;
+    }
+    if (_pendingForwardTo != null) {
+      // Arrival from our own forward action: entry already consumed.
+      _pendingForwardTo = null;
+    } else if (_departureStillInStack(_lastLocation)) {
+      // Fresh navigation pushed on top: forward history is invalid.
+      _forwardStack.clear();
+    } else {
+      // Departed page left the stack (back pop, fallback, browser back):
+      // it becomes a forward target.
+      _forwardStack.add(_lastLocation);
+      if (_forwardStack.length > 20) _forwardStack.removeAt(0);
+    }
+    _lastLocation = current;
+  }
+
+  bool _departureStillInStack(String departure) {
+    try {
+      final departurePath = Uri.parse(departure).path;
+      final matches = widget.router.routerDelegate.currentConfiguration.matches;
+      return matches.any((m) => m.matchedLocation == departurePath);
+    } catch (_) {
+      return true;
+    }
   }
 
   bool _isEditingText() {
@@ -47,8 +112,10 @@ class _WebNavigationShortcutWrapperState
     final context = focus.context;
     if (context == null) return false;
     if (context.widget is EditableText) return true;
-    if (context.findAncestorStateOfType<EditableTextState>() != null) return true;
-    if (context.findAncestorWidgetOfExactType<EditableText>() != null) return true;
+    if (context.findAncestorStateOfType<EditableTextState>() != null)
+      return true;
+    if (context.findAncestorWidgetOfExactType<EditableText>() != null)
+      return true;
     return false;
   }
 
@@ -64,6 +131,7 @@ class _WebNavigationShortcutWrapperState
       return;
     }
 
+    final from = _currentLocation();
     if (widget.router.canPop()) {
       widget.router.pop();
       return;
@@ -71,19 +139,40 @@ class _WebNavigationShortcutWrapperState
 
     try {
       final location =
+          from ??
           widget.router.routerDelegate.currentConfiguration.uri.toString();
+      String? fallback;
       if (location.startsWith('/admin') && location != '/admin/dashboard') {
-        widget.router.go('/admin/dashboard');
+        fallback = '/admin/dashboard';
       } else if (location.startsWith('/guru') &&
           location != '/guru/dashboard') {
-        widget.router.go('/guru/dashboard');
+        fallback = '/guru/dashboard';
       } else if (location == '/register' || location == '/reset-password') {
-        widget.router.go('/login');
+        fallback = '/login';
       } else if (location == '/about') {
-        widget.router.go('/guru/dashboard');
+        fallback = '/guru/dashboard';
+      }
+      if (fallback != null && fallback != location) {
+        widget.router.go(fallback);
       }
     } catch (e) {
       debugPrint('Navigation shortcut fallback error: $e');
+    }
+  }
+
+  void _triggerGoForward() {
+    final now = DateTime.now();
+    if (now.difference(_lastForwardTime).inMilliseconds < 300) return;
+    _lastForwardTime = now;
+
+    if (_forwardStack.isEmpty) return;
+    final target = _forwardStack.removeLast();
+    if (target == _currentLocation()) return;
+    _pendingForwardTo = target;
+    try {
+      widget.router.go(target);
+    } catch (e) {
+      debugPrint('Navigation shortcut forward error: $e');
     }
   }
 
@@ -108,6 +197,23 @@ class _WebNavigationShortcutWrapperState
     if (isControl && key == LogicalKeyboardKey.arrowLeft) {
       if (!_isEditingText()) {
         _triggerGoBack();
+        return true;
+      }
+    }
+
+    // 1b. Alt + Right Arrow or Cmd + Right Arrow or Cmd + ] or BrowserForward key
+    if ((isAlt && key == LogicalKeyboardKey.arrowRight) ||
+        (isMeta && key == LogicalKeyboardKey.arrowRight) ||
+        (isMeta && key == LogicalKeyboardKey.bracketRight) ||
+        key == LogicalKeyboardKey.browserForward) {
+      _triggerGoForward();
+      return true;
+    }
+
+    // 2b. Ctrl + Right Arrow (navigates forward when not actively editing text)
+    if (isControl && key == LogicalKeyboardKey.arrowRight) {
+      if (!_isEditingText()) {
+        _triggerGoForward();
         return true;
       }
     }
@@ -139,6 +245,10 @@ class _WebNavigationShortcutWrapperState
     if (event.buttons == kBackMouseButton || event.buttons == 8) {
       _triggerGoBack();
     }
+    // Check for mouse forward button (button 16 or kForwardMouseButton)
+    if (event.buttons == kForwardMouseButton || event.buttons == 16) {
+      _triggerGoForward();
+    }
   }
 
   void _handlePointerSignal(PointerSignalEvent event) {
@@ -146,12 +256,22 @@ class _WebNavigationShortcutWrapperState
       // Detect trackpad horizontal swipe (swiping right creates negative scrollDelta.dx)
       if (event.scrollDelta.dx < -30 && event.scrollDelta.dy.abs() < 30) {
         _trackpadScrollAcc += event.scrollDelta.dx.abs();
+        _trackpadForwardScrollAcc = 0.0;
         if (_trackpadScrollAcc > 60) {
           _trackpadScrollAcc = 0.0;
           _triggerGoBack();
         }
+      } else if (event.scrollDelta.dx > 30 && event.scrollDelta.dy.abs() < 30) {
+        // Opposite direction: trackpad swipe left returns forward.
+        _trackpadForwardScrollAcc += event.scrollDelta.dx.abs();
+        _trackpadScrollAcc = 0.0;
+        if (_trackpadForwardScrollAcc > 60) {
+          _trackpadForwardScrollAcc = 0.0;
+          _triggerGoForward();
+        }
       } else {
         _trackpadScrollAcc = 0.0;
+        _trackpadForwardScrollAcc = 0.0;
       }
     }
   }
@@ -160,6 +280,8 @@ class _WebNavigationShortcutWrapperState
     // Two-finger swipe on trackpad
     if (event.pan.dx > 30 && event.pan.dy.abs() < 30) {
       _triggerGoBack();
+    } else if (event.pan.dx < -30 && event.pan.dy.abs() < 30) {
+      _triggerGoForward();
     }
   }
 

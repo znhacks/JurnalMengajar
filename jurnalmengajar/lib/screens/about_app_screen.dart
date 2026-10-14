@@ -38,197 +38,205 @@ class AboutAppScreen extends StatelessWidget {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Logo
-              Center(
-                child: Image.asset(
-                  'assets/logoAboutApp.png',
-                  width: 200.w,
-                  fit: BoxFit.contain,
-                ),
-              ),
-              SizedBox(height: 24.h),
-
-              // App Name & Version
-              Text(
-                'Jurnal Mengajar',
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.bold,
-                  color: isDark
-                      ? const Color(0xFF60A5FA)
-                      : const Color(0xFF1E3A5F),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 6.h),
-              FutureBuilder<PackageInfo>(
-                future: PackageInfo.fromPlatform(),
-                builder: (context, snapshot) {
-                  final versionText = snapshot.hasData
-                      ? 'Versi ${snapshot.data!.version} (${snapshot.data!.buildNumber})'
-                      : 'Versi ...';
-                  return Text(
-                    versionText,
-                    style: GoogleFonts.hankenGrotesk(
-                      fontSize: 13.sp,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 720),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Logo
+                  Center(
+                    child: Image.asset(
+                      'assets/logoAboutApp.png',
+                      width: 200.w,
+                      fit: BoxFit.contain,
                     ),
-                  );
-                },
-              ),
-              SizedBox(height: 24.h),
-
-              Divider(
-                color: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFE2E8F0),
-              ),
-              SizedBox(height: 16.h),
-
-              // Description Card
-              Card(
-                margin: EdgeInsets.zero,
-                elevation: 0,
-                color:
-                    Theme.of(context).cardTheme.color ??
-                    Theme.of(context).colorScheme.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(
-                    color: isDark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFE2E8F0),
                   ),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(16.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSectionTitle(context, 'Deskripsi'),
-                      SizedBox(height: 8.h),
-                      Text(
-                        'Jurnal Mengajar adalah aplikasi manajemen jurnal dan jadwal mengajar yang dirancang untuk memudahkan guru dalam mendokumentasikan kegiatan belajar mengajar secara digital.',
+                  SizedBox(height: 24.h),
+
+                  // App Name & Version
+                  Text(
+                    'Jurnal Mengajar',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 22.sp,
+                      fontWeight: FontWeight.bold,
+                      color: isDark
+                          ? const Color(0xFF60A5FA)
+                          : const Color(0xFF1E3A5F),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 6.h),
+                  FutureBuilder<PackageInfo>(
+                    future: PackageInfo.fromPlatform(),
+                    builder: (context, snapshot) {
+                      final versionText = snapshot.hasData
+                          ? 'Versi ${snapshot.data!.version} (${snapshot.data!.buildNumber})'
+                          : 'Versi ...';
+                      return Text(
+                        versionText,
+                        textAlign: TextAlign.center,
                         style: GoogleFonts.hankenGrotesk(
                           fontSize: 13.sp,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          height: 1.6,
                         ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
-                ),
-              ),
-              SizedBox(height: 16.h),
+                  SizedBox(height: 24.h),
 
-              // Features Card
-              Card(
-                margin: EdgeInsets.zero,
-                elevation: 0,
-                color:
-                    Theme.of(context).cardTheme.color ??
-                    Theme.of(context).colorScheme.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(
+                  Divider(
                     color: isDark
                         ? const Color(0xFF334155)
                         : const Color(0xFFE2E8F0),
                   ),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(16.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSectionTitle(context, 'Fitur Utama'),
-                      SizedBox(height: 12.h),
-                      _buildFeatureItem(
-                        context,
-                        Icons.assignment_outlined,
-                        'Pencatatan jurnal mengajar harian',
-                      ),
-                      _buildFeatureItem(
-                        context,
-                        Icons.calendar_month_outlined,
-                        'Manajemen jadwal pelajaran',
-                      ),
-                      _buildFeatureItem(
-                        context,
-                        Icons.people_outline,
-                        'Pengelolaan data guru & kelas',
-                      ),
-                      _buildFeatureItem(
-                        context,
-                        Icons.check_circle_outline,
-                        'Persetujuan jurnal oleh admin',
-                      ),
-                      _buildFeatureItem(
-                        context,
-                        Icons.bar_chart_outlined,
-                        'Rekap & laporan kegiatan',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 16.h),
+                  SizedBox(height: 16.h),
 
-              // Developer Card
-              Card(
-                margin: EdgeInsets.zero,
-                elevation: 0,
-                color:
-                    Theme.of(context).cardTheme.color ??
-                    Theme.of(context).colorScheme.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(
-                    color: isDark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFE2E8F0),
-                  ),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(16.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSectionTitle(context, 'Pengembang'),
-                      SizedBox(height: 8.h),
-                      _buildInfoRow(
-                        context,
-                        Icons.code_outlined,
-                        'Tim Pengembang',
-                        'UBIG, Ordi, Fawwas',
+                  // Description Card
+                  Card(
+                    margin: EdgeInsets.zero,
+                    elevation: 0,
+                    color:
+                        Theme.of(context).cardTheme.color ??
+                        Theme.of(context).colorScheme.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0),
                       ),
-                      SizedBox(height: 8.h),
-                      _buildInfoRow(
-                        context,
-                        Icons.phone_android_outlined,
-                        'Platform',
-                        'Mobile',
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(16.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionTitle(context, 'Deskripsi'),
+                          SizedBox(height: 8.h),
+                          Text(
+                            'Jurnal Mengajar adalah aplikasi manajemen jurnal dan jadwal mengajar yang dirancang untuk memudahkan guru dalam mendokumentasikan kegiatan belajar mengajar secara digital.',
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 13.sp,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                              height: 1.6,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
+                  SizedBox(height: 16.h),
 
-              SizedBox(height: 40.h),
-              Text(
-                '© 2025 Jurnal Mengajar - UBIG. All rights reserved.',
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 11.sp,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
+                  // Features Card
+                  Card(
+                    margin: EdgeInsets.zero,
+                    elevation: 0,
+                    color:
+                        Theme.of(context).cardTheme.color ??
+                        Theme.of(context).colorScheme.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(16.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionTitle(context, 'Fitur Utama'),
+                          SizedBox(height: 12.h),
+                          _buildFeatureItem(
+                            context,
+                            Icons.assignment_outlined,
+                            'Pencatatan jurnal mengajar harian',
+                          ),
+                          _buildFeatureItem(
+                            context,
+                            Icons.calendar_month_outlined,
+                            'Manajemen jadwal pelajaran',
+                          ),
+                          _buildFeatureItem(
+                            context,
+                            Icons.people_outline,
+                            'Pengelolaan data guru & kelas',
+                          ),
+                          _buildFeatureItem(
+                            context,
+                            Icons.check_circle_outline,
+                            'Persetujuan jurnal oleh admin',
+                          ),
+                          _buildFeatureItem(
+                            context,
+                            Icons.bar_chart_outlined,
+                            'Rekap & laporan kegiatan',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // Developer Card
+                  Card(
+                    margin: EdgeInsets.zero,
+                    elevation: 0,
+                    color:
+                        Theme.of(context).cardTheme.color ??
+                        Theme.of(context).colorScheme.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(16.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionTitle(context, 'Pengembang'),
+                          SizedBox(height: 8.h),
+                          _buildInfoRow(
+                            context,
+                            Icons.code_outlined,
+                            'Tim Pengembang',
+                            'UBIG, Ordi, Fawwas',
+                          ),
+                          SizedBox(height: 8.h),
+                          _buildInfoRow(
+                            context,
+                            Icons.phone_android_outlined,
+                            'Platform',
+                            'Mobile',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: 40.h),
+                  Text(
+                    '© 2025 Jurnal Mengajar - UBIG. All rights reserved.',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 11.sp,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -251,6 +259,7 @@ class AboutAppScreen extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: 10.h),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 20.w, color: const Color(0xFF2563EB)),
           SizedBox(width: 12.w),
@@ -275,17 +284,30 @@ class AboutAppScreen extends StatelessWidget {
     String value,
   ) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, size: 18.w, color: const Color(0xFF2563EB)),
         SizedBox(width: 10.w),
+        SizedBox(
+          width: 120.w,
+          child: Text(
+            label,
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 13.sp,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
         Text(
-          '$label: ',
+          ': ',
           style: GoogleFonts.hankenGrotesk(
             fontSize: 13.sp,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
+        SizedBox(width: 4.w),
         Expanded(
           child: Text(
             value,
