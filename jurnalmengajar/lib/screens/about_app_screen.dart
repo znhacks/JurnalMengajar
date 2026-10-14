@@ -54,21 +54,9 @@ class AboutAppScreen extends StatelessWidget {
                       fit: BoxFit.contain,
                     ),
                   ),
-                  SizedBox(height: 24.h),
+                  SizedBox(height: 12.h),
 
-                  // App Name & Version
-                  Text(
-                    'Jurnal Mengajar',
-                    style: GoogleFonts.hankenGrotesk(
-                      fontSize: 22.sp,
-                      fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? const Color(0xFF60A5FA)
-                          : const Color(0xFF1E3A5F),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 6.h),
+                  // App Version
                   FutureBuilder<PackageInfo>(
                     future: PackageInfo.fromPlatform(),
                     builder: (context, snapshot) {

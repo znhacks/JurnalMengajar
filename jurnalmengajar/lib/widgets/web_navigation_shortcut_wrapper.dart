@@ -112,10 +112,12 @@ class _WebNavigationShortcutWrapperState
     final context = focus.context;
     if (context == null) return false;
     if (context.widget is EditableText) return true;
-    if (context.findAncestorStateOfType<EditableTextState>() != null)
+    if (context.findAncestorStateOfType<EditableTextState>() != null) {
       return true;
-    if (context.findAncestorWidgetOfExactType<EditableText>() != null)
+    }
+    if (context.findAncestorWidgetOfExactType<EditableText>() != null) {
       return true;
+    }
     return false;
   }
 
