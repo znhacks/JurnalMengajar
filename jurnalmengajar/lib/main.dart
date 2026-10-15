@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -188,9 +189,38 @@ class _JurnalMengajarAppState extends State<JurnalMengajarApp> {
               // Injecting GoRouter table
               routerConfig: _router,
               builder: (context, child) {
+                Widget content = child ?? const SizedBox.shrink();
+                // Web mobile browsers often report bottom inset as 0 while the
+                // gesture bar / URL bar still covers the lowest pixels, making
+                // footers look cut off on narrow (mobile-view) widths. Guarantee
+                // a small breathing room for every SafeArea without touching
+                // any screen logic.
+                if (kIsWeb) {
+                  final media = MediaQuery.of(context);
+                  const minBottomInset = 24.0;
+                  if (media.padding.bottom < minBottomInset) {
+                    content = MediaQuery(
+                      data: media.copyWith(
+                        padding: media.padding.copyWith(
+                          bottom: minBottomInset,
+                        ),
+                        viewPadding: EdgeInsets.only(
+                          left: media.viewPadding.left,
+                          top: media.viewPadding.top,
+                          right: media.viewPadding.right,
+                          bottom: math.max(
+                            media.viewPadding.bottom,
+                            minBottomInset,
+                          ),
+                        ),
+                      ),
+                      child: content,
+                    );
+                  }
+                }
                 return WebNavigationShortcutWrapper(
                   router: _router,
-                  child: child ?? const SizedBox.shrink(),
+                  child: content,
                 );
               },
             );

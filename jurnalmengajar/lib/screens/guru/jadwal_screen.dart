@@ -1,6 +1,7 @@
 import 'package:cr_calendar/cr_calendar.dart';
 // ignore: implementation_imports
 import 'package:cr_calendar/src/cr_date_picker_dialog.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -1169,6 +1170,8 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       _selectedDay = now;
     });
     _calendarController.selectedDate = now;
+    // Move the visible page; previously this relied on widget recreation.
+    _calendarController.goToDate(now, selectDate: true);
     if (teacher.id.isNotEmpty) {
       scheduleProvider.loadTeacherSchedules(teacher.id, now);
     }
@@ -1404,6 +1407,12 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                                 _selectedDay = targetDate;
                               });
                               _calendarController.selectedDate = targetDate;
+                              // Move the visible page; previously this relied
+                              // on widget recreation.
+                              _calendarController.goToDate(
+                                targetDate,
+                                selectDate: true,
+                              );
                               if (teacher.id.isNotEmpty) {
                                 scheduleProvider.loadTeacherSchedules(
                                   teacher.id,
@@ -1582,6 +1591,10 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                                 _selectedDay = prevMonth;
                               });
                               _calendarController.selectedDate = prevMonth;
+                              // Animate the calendar page instead of relying
+                              // on widget recreation (stable key keeps the
+                              // internal PageView alive for press-drag on web).
+                              _calendarController.swipeToPreviousPage();
                               if (teacher.id.isNotEmpty) {
                                 scheduleProvider.loadTeacherSchedules(
                                   teacher.id,
@@ -1639,6 +1652,10 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                                 _selectedDay = nextMonth;
                               });
                               _calendarController.selectedDate = nextMonth;
+                              // Animate the calendar page instead of relying
+                              // on widget recreation (stable key keeps the
+                              // internal PageView alive for press-drag on web).
+                              _calendarController.swipeToNextMonth();
                               if (teacher.id.isNotEmpty) {
                                 scheduleProvider.loadTeacherSchedules(
                                   teacher.id,
@@ -1681,45 +1698,63 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                         child: DatePickerSettings(
                           landscapeDaysResizeMode:
                               LandscapeDaysResizeMode.adaptive,
-                          child: CrCalendar(
-                            key: ValueKey<String>(
-                              'cr_cal_${_focusedMonth.year}_${_focusedMonth.month}',
+                          child: ScrollConfiguration(
+                            // Enable press-hold-drag month switching with a
+                            // mouse on web (PageView ignores mouse drag by
+                            // default). Touch behavior is unchanged.
+                            behavior: ScrollConfiguration.of(context).copyWith(
+                              dragDevices: {
+                                PointerDeviceKind.touch,
+                                PointerDeviceKind.mouse,
+                                PointerDeviceKind.stylus,
+                                PointerDeviceKind.trackpad,
+                                PointerDeviceKind.unknown,
+                              },
                             ),
-                            firstDayOfWeek: WeekDay.monday,
-                            // Positioned neatly below centered date number (top 4.h, font 12.sp)
-                            eventsTopPadding: 24.h,
-                            initialDate: _focusedMonth,
-                            maxEventLines: 1,
-                            controller: _calendarController,
-                            forceSixWeek: true,
-                            dayItemBuilder: (properties) => _buildDayItemCell(
-                              properties: properties,
-                              schedules:
-                                  scheduleProvider.cachedTeacherSchedules,
-                              journals: journalProvider.teacherJournals,
-                              teacher: teacher,
-                              scheduleProvider: scheduleProvider,
-                              journalProvider: journalProvider,
-                              masterProvider: masterProvider,
-                              holidayProvider: holidayProvider,
-                            ),
-                            weekDaysBuilder: (day) => _buildWeekDayHeader(day),
-                            eventBuilder: (drawer) =>
-                                _buildEventBar(drawer, isDark),
-                            onDayClicked: (events, day) => _onDayTapped(
-                              context,
-                              day,
-                              teacher,
-                              scheduleProvider,
-                              journalProvider,
-                              masterProvider,
-                              holidayProvider,
-                            ),
-                            minDate: DateTime.now().subtract(
-                              const Duration(days: 365 * 2),
-                            ),
-                            maxDate: DateTime.now().add(
-                              const Duration(days: 365 * 2),
+                            child: CrCalendar(
+                              // Stable key: keeps the internal PageView alive
+                              // across setState so drag gestures are not
+                              // cancelled by widget recreation.
+                              key: const ValueKey<String>(
+                                'guru_jadwal_calendar',
+                              ),
+                              firstDayOfWeek: WeekDay.monday,
+                              // Positioned neatly below centered date number (top 4.h, font 12.sp)
+                              eventsTopPadding: 24.h,
+                              initialDate: _focusedMonth,
+                              maxEventLines: 1,
+                              controller: _calendarController,
+                              forceSixWeek: true,
+                              dayItemBuilder: (properties) => _buildDayItemCell(
+                                properties: properties,
+                                schedules:
+                                    scheduleProvider.cachedTeacherSchedules,
+                                journals: journalProvider.teacherJournals,
+                                teacher: teacher,
+                                scheduleProvider: scheduleProvider,
+                                journalProvider: journalProvider,
+                                masterProvider: masterProvider,
+                                holidayProvider: holidayProvider,
+                              ),
+                              weekDaysBuilder: (day) =>
+                                  _buildWeekDayHeader(day),
+                              eventBuilder: (drawer) =>
+                                  _buildEventBar(drawer, isDark),
+                              onDayClicked: (events, day) => _onDayTapped(
+                                context,
+                                day,
+                                teacher,
+                                scheduleProvider,
+                                journalProvider,
+                                masterProvider,
+                                holidayProvider,
+                              ),
+                              minDate: DateTime.now().subtract(
+                                const Duration(days: 365 * 2),
+                              ),
+                              maxDate: DateTime.now().add(
+                                const Duration(days: 365 * 2),
+                              ),
                             ),
                           ),
                         ),

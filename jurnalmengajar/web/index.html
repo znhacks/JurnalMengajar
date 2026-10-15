@@ -19,7 +19,7 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -33,6 +33,18 @@
   <title>jurnalmengajar</title>
   <link rel="manifest" href="manifest.json">
   <style>
+    html, body {
+      height: 100%;
+      overscroll-behavior-y: none;
+    }
+    body {
+      margin: 0;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      background-color: #F8FAFF;
+    }
     /* Clean, non-intrusive cursor pointer styles for interactive web elements */
     button,
     [role="button"],
