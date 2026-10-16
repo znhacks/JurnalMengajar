@@ -212,16 +212,23 @@ class SupabaseAuthRepository implements AuthRepository {
 
         // 1. Check schools table with comprehensive matching
         try {
-          final schoolsRes = await _supabase.from('schools').select('id, name, code, npsn, status, subscription_plan, max_teachers');
+          final schoolsRes = await _supabase.from('schools').select('id, name, code, join_code, npsn, status, subscription_plan, max_teachers');
           for (final s in (schoolsRes as List)) {
             final sId = ((s['id'] as String?) ?? '').trim();
             final sName = ((s['name'] as String?) ?? '').toUpperCase().trim();
             final sCode = ((s['code'] as String?) ?? '').toUpperCase().trim();
+            final sJoin = ((s['join_code'] as String?) ?? '').toUpperCase().trim();
             final sNpsn = ((s['npsn'] as String?) ?? '').toUpperCase().trim();
             final cleanSName = sName.replaceAll(RegExp(r'[^A-Z0-9]'), '');
 
+            // For guru registration, never match an unnamed dummy voucher school
+            if (user.role == 'pending_guru' && sName.isEmpty) {
+              continue;
+            }
+
             if ((targetId.isNotEmpty && sId.toLowerCase() == targetId.toLowerCase()) ||
                 (sCode.isNotEmpty && (targetName == sCode || targetId.toUpperCase() == sCode)) ||
+                (sJoin.isNotEmpty && (targetName == sJoin || targetId.toUpperCase() == sJoin)) ||
                 (sNpsn.isNotEmpty && (targetName == sNpsn || targetId.toUpperCase() == sNpsn)) ||
                 (sName.isNotEmpty && (targetName == sName || (cleanTargetName.isNotEmpty && cleanSName == cleanTargetName))) ||
                 (targetName.length >= 5 && (sName.contains(targetName) || targetName.contains(sName)))) {
@@ -435,6 +442,24 @@ class SupabaseAuthRepository implements AuthRepository {
         } catch (schoolRelErr) {
           debugPrint('Error inserting user_schools during registration: $schoolRelErr');
         }
+
+        // Notify Admin Sekolah via FCM Edge Function for new pending teacher registration
+        if (user.role == 'pending_guru') {
+          try {
+            await _supabase.functions.invoke('send-fcm-notification', body: {
+              'table': 'user_schools',
+              'type': 'TEACHER_JOIN_REQUEST',
+              'record': {
+                'school_id': schoolId,
+                'teacher_name': user.fullName,
+                'role': 'guru',
+                'status': 'pending',
+              },
+            });
+          } catch (fcmErr) {
+            debugPrint('FCM Notification to admin log: $fcmErr');
+          }
+        }
       }
     } catch (e) {
       if (e.toString().contains('Pendaftaran Anda sedang menunggu') || 
@@ -645,32 +670,46 @@ class SupabaseAuthRepository implements AuthRepository {
           }
 
           // 1. Emit pending memberships (so admin sees join requests for both Guru and Admin Cadangan)
-          final pendingMems = userMems.where((m) => (m['status']?.toString().toLowerCase() == 'pending')).toList();
-          for (final pMem in pendingMems) {
-            final pRole = pMem['role']?.toString() ?? 'guru';
+          final isUserPending = json['role']?.toString().toLowerCase() == 'pending_guru';
+          final pendingMems = userMems.where((m) {
+            final s = m['status']?.toString().toLowerCase();
+            final r = m['role']?.toString().toLowerCase();
+            return s == 'pending' || r == 'pending_guru' || isUserPending;
+          }).toList();
+
+          if (pendingMems.isNotEmpty || isUserPending) {
+            final pRole = pendingMems.isNotEmpty ? (pendingMems.first['role']?.toString() ?? 'guru') : 'guru';
+            final cleanRole = (pRole == 'pending_guru' || pRole.isEmpty) ? 'guru' : pRole;
             result.add(UserModel.fromJson({
               ...json,
-              'role': pRole,
-              'membership_role': pRole,
+              'role': cleanRole,
+              'membership_role': cleanRole,
               'status': 'pending',
               'school_id': cleanSchoolId,
               'school_name': schoolName.isNotEmpty ? schoolName : json['school_name'],
             }));
           }
 
-          // 2. Emit active membership for the active users tab
-          final activeMems = userMems.where((m) => (m['status']?.toString().toLowerCase() == 'active')).toList();
-          if (activeMems.isNotEmpty) {
-            final hasAdmin = activeMems.any((m) => m['role']?.toString().toLowerCase() == 'admin');
-            final effectiveRole = hasAdmin ? 'admin' : (activeMems.first['role']?.toString() ?? 'guru');
-            result.add(UserModel.fromJson({
-              ...json,
-              'role': effectiveRole,
-              'membership_role': effectiveRole,
-              'status': 'active',
-              'school_id': cleanSchoolId,
-              'school_name': schoolName.isNotEmpty ? schoolName : json['school_name'],
-            }));
+          // 2. Emit active membership for the active users tab only if user is not globally pending
+          if (!isUserPending) {
+            final activeMems = userMems.where((m) {
+              final s = m['status']?.toString().toLowerCase();
+              final r = m['role']?.toString().toLowerCase();
+              return s == 'active' && r != 'pending_guru';
+            }).toList();
+
+            if (activeMems.isNotEmpty) {
+              final hasAdmin = activeMems.any((m) => m['role']?.toString().toLowerCase() == 'admin');
+              final effectiveRole = hasAdmin ? 'admin' : (activeMems.first['role']?.toString() ?? 'guru');
+              result.add(UserModel.fromJson({
+                ...json,
+                'role': effectiveRole,
+                'membership_role': effectiveRole,
+                'status': 'active',
+                'school_id': cleanSchoolId,
+                'school_name': schoolName.isNotEmpty ? schoolName : json['school_name'],
+              }));
+            }
           }
         } catch (_) {}
       }
@@ -901,6 +940,23 @@ class SupabaseAuthRepository implements AuthRepository {
             'role': role ?? 'guru',
             'status': 'requested_exit',
           }, onConflict: 'user_id, school_id, role');
+        }
+      }
+
+      // Notify school admin about exit request via FCM Edge Function
+      if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+        try {
+          await _supabase.functions.invoke('send-fcm-notification', body: {
+            'table': 'user_schools',
+            'type': 'TEACHER_EXIT_REQUEST',
+            'record': {
+              'school_id': cleanSchoolId,
+              'teacher_name': _supabase.auth.currentUser?.userMetadata?['full_name'] ?? 'Guru',
+              'status': 'requested_exit',
+            },
+          });
+        } catch (fcmErr) {
+          debugPrint('FCM exit notification log: $fcmErr');
         }
       }
     } catch (e) {

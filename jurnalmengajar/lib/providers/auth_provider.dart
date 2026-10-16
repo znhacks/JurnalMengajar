@@ -648,6 +648,22 @@ class AuthProvider with ChangeNotifier {
           debugPrint('Note inserting user_schools: $insertErr');
           rethrow;
         }
+
+        // Notify target school admin via FCM Edge Function
+        try {
+          await supabase.functions.invoke('send-fcm-notification', body: {
+            'table': 'user_schools',
+            'type': 'TEACHER_JOIN_REQUEST',
+            'record': {
+              'school_id': schoolId,
+              'teacher_name': _currentUser?.fullName ?? 'Guru',
+              'role': 'guru',
+              'status': 'pending',
+            },
+          });
+        } catch (fcmErr) {
+          debugPrint('FCM Notification to admin log: $fcmErr');
+        }
       }
 
       // For guru join request: user stays in their current school until approved!

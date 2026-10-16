@@ -195,6 +195,58 @@ serve(async (req: Request) => {
         warningLetterId: record.id,
       };
     }
+    // 3. User Schools / Join / Exit Request Trigger (Notify Admins)
+    else if (table === "user_schools" || type === "TEACHER_JOIN_REQUEST" || type === "TEACHER_EXIT_REQUEST") {
+      const isExit = type === "TEACHER_EXIT_REQUEST" || record?.status === "requested_exit";
+      const teacherName = record?.teacher_name || "Seorang guru";
+      const schoolId = record?.school_id;
+
+      const notifTitle = isExit ? "Permintaan Keluar Sekolah 🚪" : "Permintaan Bergabung Baru 👤";
+      const notifBody = isExit
+        ? `${teacherName} mengajukan permohonan keluar dari sekolah Anda.`
+        : `${teacherName} mengajukan permohonan bergabung ke sekolah Anda.`;
+      const notifRoute = "/admin/master-data/users";
+
+      // Query admin users for this school (or superadmin)
+      let adminQuery = supabase
+        .from("users")
+        .select("id, fcm_token")
+        .or("role.eq.admin,role.eq.superadmin");
+
+      if (schoolId) {
+        adminQuery = adminQuery.or(`school_id.eq.${schoolId},role.eq.superadmin`);
+      }
+
+      const { data: adminUsers } = await adminQuery;
+
+      if (adminUsers && adminUsers.length > 0) {
+        const accessToken = await getAccessToken();
+        let sentCount = 0;
+
+        for (const admin of adminUsers) {
+          if (admin.fcm_token) {
+            await sendFcmMessage(
+              accessToken,
+              admin.fcm_token,
+              notifTitle,
+              notifBody,
+              { route: notifRoute }
+            );
+            sentCount++;
+          }
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, message: `Notifications sent to ${sentCount} admins` }),
+          { headers: { "Content-Type": "application/json" } }
+        );
+      } else {
+        return new Response(
+          JSON.stringify({ success: true, message: "No admins with FCM token found" }),
+          { headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }
     // 3. Direct API Call (Explicit parameters)
     else if (payload.fcm_token || payload.user_id) {
       if (payload.user_id) {
