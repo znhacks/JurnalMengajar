@@ -193,7 +193,7 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
         bgColor = const Color(0xFF3B82F6).withValues(alpha: isDark ? 0.22 : 0.15);
         textColor = isOutside
             ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
-            : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8));
+            : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB));
         fontWeight = FontWeight.w700;
         border = Border.all(
           color: const Color(0xFF3B82F6),

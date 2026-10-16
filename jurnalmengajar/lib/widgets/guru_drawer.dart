@@ -159,7 +159,7 @@ class GuruDrawer extends StatelessWidget {
           20.h,
         ),
         decoration: const BoxDecoration(
-          color: Color(0xFF1D4ED8),
+          color: Color(0xFF2563EB),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

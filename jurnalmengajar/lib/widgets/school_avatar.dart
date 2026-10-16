@@ -20,7 +20,7 @@ class SchoolAvatar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final Color backgroundColor = isSelected 
-        ? const Color(0xFF4F46E5) 
+        ? const Color(0xFF2563EB) 
         : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0));
 
     final Color iconColor = isSelected

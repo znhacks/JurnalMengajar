@@ -787,14 +787,14 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                         color: isPendingTab
                             ? (isDark ? const Color(0xFF78350F).withValues(alpha: 0.35) : const Color(0xFFFFFBEB))
                             : (isAdmin 
-                                ? (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEEF2FF)) 
+                                ? (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEFF6FF)) 
                                 : (isDark ? const Color(0xFF134E4A).withValues(alpha: 0.35) : const Color(0xFFF0FDFA))),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: isPendingTab
                               ? (isDark ? const Color(0xFF92400E) : const Color(0xFFFDE68A))
                               : (isAdmin 
-                                  ? (isDark ? const Color(0xFF3730A3) : const Color(0xFFC7D2FE)) 
+                                  ? (isDark ? const Color(0xFF1E40AF) : const Color(0xFFC7D2FE)) 
                                   : (isDark ? const Color(0xFF115E59) : const Color(0xFFCCFBF1)))
                         ),
                       ),
@@ -806,7 +806,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                           color: isPendingTab
                               ? (isDark ? const Color(0xFFFED7AA) : const Color(0xFFD97706))
                               : (isAdmin 
-                                  ? (isDark ? const Color(0xFFA5B4FC) : const Color(0xFF4F46E5)) 
+                                  ? (isDark ? const Color(0xFFDBEAFE) : const Color(0xFF2563EB)) 
                                   : (isDark ? const Color(0xFF5EEAD4) : const Color(0xFF0D9488))),
                         ),
                       ),
@@ -920,7 +920,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                           scale: 0.75,
                           child: Switch(
                             value: isAdmin,
-                            activeThumbColor: const Color(0xFF4F46E5),
+                            activeThumbColor: const Color(0xFF2563EB),
                             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             onChanged: (isSuperAdmin || isCurrentUser || user.email.toLowerCase() == 'admin@jurnal.com')
                                 ? null

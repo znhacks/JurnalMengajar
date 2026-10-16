@@ -262,14 +262,14 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
               icon: Icon(
                 Icons.today_rounded,
                 size: 16.sp,
-                color: const Color(0xFF4F7CFF),
+                color: const Color(0xFF2563EB),
               ),
               label: Text(
                 'Bulan Ini',
                 style: GoogleFonts.hankenGrotesk(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF4F7CFF),
+                  color: const Color(0xFF2563EB),
                 ),
               ),
             ),
@@ -278,7 +278,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,
-        color: const Color(0xFF4F7CFF),
+        color: const Color(0xFF2563EB),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 14.h),
@@ -310,7 +310,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 40.h),
                   child: const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF4F7CFF)),
+                    child: CircularProgressIndicator(color: Color(0xFF2563EB)),
                   ),
                 )
               else if (filteredSchedules.isEmpty)
@@ -375,7 +375,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
               Icon(
                 Icons.calendar_month_rounded,
                 size: 20.sp,
-                color: const Color(0xFF4F7CFF),
+                color: const Color(0xFF2563EB),
               ),
               SizedBox(width: 8.w),
               Text(
@@ -407,7 +407,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
             label: 'Jadwal',
             count: total,
             icon: Icons.calendar_today_rounded,
-            color: const Color(0xFF4F7CFF),
+            color: const Color(0xFF2563EB),
             isDark: isDark,
           ),
         ),
@@ -542,7 +542,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
               borderSide: const BorderSide(
-                color: Color(0xFF4F7CFF),
+                color: Color(0xFF2563EB),
                 width: 1.5,
               ),
             ),
@@ -585,7 +585,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
     Color? color,
   }) {
     final isSelected = _selectedFilter == key;
-    final activeColor = color ?? const Color(0xFF4F7CFF);
+    final activeColor = color ?? const Color(0xFF2563EB);
 
     return InkWell(
       onTap: () => setState(() => _selectedFilter = key),
@@ -735,7 +735,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
             color:
                 (matchingJournal.status == 'rejected'
                         ? Colors.red
-                        : const Color(0xFF4F7CFF))
+                        : const Color(0xFF2563EB))
                     .withValues(alpha: isDark ? 0.2 : 0.1),
             borderRadius: BorderRadius.circular(8.r),
           ),
@@ -749,7 +749,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
                 size: 13.sp,
                 color: matchingJournal.status == 'rejected'
                     ? Colors.red
-                    : const Color(0xFF4F7CFF),
+                    : const Color(0xFF2563EB),
               ),
               SizedBox(width: 4.w),
               Text(
@@ -761,7 +761,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
                   fontWeight: FontWeight.w700,
                   color: matchingJournal.status == 'rejected'
                       ? Colors.red
-                      : const Color(0xFF4F7CFF),
+                      : const Color(0xFF2563EB),
                 ),
               ),
             ],
@@ -788,11 +788,11 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 11.w, vertical: 6.h),
             decoration: BoxDecoration(
-              color: const Color(0xFF4F7CFF),
+              color: const Color(0xFF2563EB),
               borderRadius: BorderRadius.circular(8.r),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF4F7CFF).withValues(alpha: 0.3),
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.3),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -883,7 +883,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
                       Icon(
                         Icons.event_note_rounded,
                         size: 13.sp,
-                        color: const Color(0xFF4F7CFF),
+                        color: const Color(0xFF2563EB),
                       ),
                       SizedBox(width: 5.w),
                       Text(
@@ -917,7 +917,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: const Color(
-                            0xFF4F7CFF,
+                            0xFF2563EB,
                           ).withValues(alpha: isDark ? 0.2 : 0.1),
                           borderRadius: BorderRadius.circular(6.r),
                         ),
@@ -927,7 +927,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
                             Icon(
                               Icons.meeting_room_outlined,
                               size: 12.sp,
-                              color: const Color(0xFF4F7CFF),
+                              color: const Color(0xFF2563EB),
                             ),
                             SizedBox(width: 4.w),
                             Text(
@@ -935,7 +935,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 11.sp,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF4F7CFF),
+                                color: const Color(0xFF2563EB),
                               ),
                             ),
                           ],

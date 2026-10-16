@@ -769,7 +769,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                       vertical: 12.h,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1D4ED8),
+                      color: const Color(0xFF2563EB),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(

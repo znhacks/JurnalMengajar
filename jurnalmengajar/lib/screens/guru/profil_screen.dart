@@ -1855,7 +1855,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                   decoration: BoxDecoration(
                                     color: isDark
                                         ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                        : const Color(0xFFEEF2FF),
+                                        : const Color(0xFFEFF6FF),
                                     borderRadius: BorderRadius.circular(12.r),
                                     border: Border.all(
                                       color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),

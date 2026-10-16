@@ -1259,7 +1259,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                         radius: 20.r,
                                         backgroundColor: isDark
                                             ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
-                                            : const Color(0xFFEEF2FF),
+                                            : const Color(0xFFEFF6FF),
                                         backgroundImage: teacher.photoUrl != null &&
                                                 teacher.photoUrl!.startsWith('http')
                                             ? NetworkImage(teacher.photoUrl!)
@@ -1268,7 +1268,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                 !teacher.photoUrl!.startsWith('http')
                                             ? Icon(
                                                 Icons.person_rounded,
-                                                color: isDark ? const Color(0xFF818CF8) : const Color(0xFF4F46E5),
+                                                color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB),
                                                 size: 20.r,
                                               )
                                             : null,

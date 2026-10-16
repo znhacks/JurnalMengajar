@@ -238,7 +238,7 @@ class AboutAppScreen extends StatelessWidget {
       style: GoogleFonts.hankenGrotesk(
         fontSize: 15.sp,
         fontWeight: FontWeight.bold,
-        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A5F),
+        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0F172A),
       ),
     );
   }

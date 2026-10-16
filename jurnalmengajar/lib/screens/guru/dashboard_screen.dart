@@ -418,7 +418,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 ElevatedButton(
                   onPressed: () => Navigator.pop(dialogContext),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4F7CFF),
+                    backgroundColor: const Color(0xFF2563EB),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
@@ -565,7 +565,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         onRefresh: _refreshData,
-        color: const Color(0xFF4F7CFF),
+        color: const Color(0xFF2563EB),
         child: SafeArea(
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -754,15 +754,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surface,
                         shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(
-                              0xFF4F7CFF,
-                            ).withValues(alpha: 0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                          width: 1,
+                        ),
                       ),
                       child: Center(
                         child: Icon(
@@ -793,7 +788,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   SizedBox(width: 8.w),
                   Text(
                     'Jurnal Mengajar',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.hankenGrotesk(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w800,
                       color: Theme.of(context).colorScheme.onSurface,
@@ -819,19 +814,12 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   width: 46.w,
                   height: 46.w,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEAF2FF),
+                    color: const Color(0xFFEFF6FF),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: const Color(0xFF4F7CFF).withValues(alpha: 0.2),
-                      width: 1.5,
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                      width: 1,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF4F7CFF).withValues(alpha: 0.12),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(50.r),
@@ -856,14 +844,14 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                 errorBuilder: (context, error, stackTrace) =>
                                     const Icon(
                                       Icons.face_rounded,
-                                      color: Color(0xFF4F7CFF),
+                                      color: Color(0xFF2563EB),
                                       size: 26,
                                     ),
                               )
                             : const Center(
                                 child: Icon(
                                   Icons.face_rounded,
-                                  color: Color(0xFF4F7CFF),
+                                  color: Color(0xFF2563EB),
                                   size: 26,
                                 ),
                               );
@@ -915,7 +903,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     TextSpan(
                       text: '$monthScheduleCount jadwal ',
                       style: const TextStyle(
-                        color: Color(0xFF4F7CFF),
+                        color: Color(0xFF2563EB),
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -944,19 +932,12 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         ? const Color(0xFF334155)
                         : const Color(0xFFE2E8F0),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF4F7CFF).withValues(alpha: 0.06),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
                 ),
                 child: Row(
                   children: [
                     const Icon(
                       Icons.business_rounded,
-                      color: Color(0xFF4F7CFF),
+                      color: Color(0xFF2563EB),
                       size: 18,
                     ),
                     SizedBox(width: 8.w),
@@ -1041,29 +1022,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   borderRadius: BorderRadius.circular(24.r),
                   border: Border.all(
                     color: isSelected
-                        ? Colors.transparent
-                        : const Color(0xFFEAF2FF),
+                        ? const Color(0xFF1E40AF)
+                        : Theme.of(context).colorScheme.outlineVariant,
                     width: 1.5,
                   ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: const Color(
-                              0xFF2563EB,
-                            ).withValues(alpha: 0.25),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
-                      : [
-                          BoxShadow(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.02),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
                 ),
                 child: Text(
                   filter,
@@ -1113,13 +1075,6 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           color: Theme.of(context).colorScheme.outlineVariant,
           width: 1.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF4F7CFF).withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Column(
         children: [
@@ -1137,12 +1092,12 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 child: Container(
                   padding: EdgeInsets.all(8.w),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4F7CFF).withValues(alpha: 0.1),
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.chevron_left_rounded,
-                    color: Color(0xFF4F7CFF),
+                    color: Color(0xFF2563EB),
                     size: 20,
                   ),
                 ),
@@ -1179,7 +1134,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       Icon(
                         Icons.calendar_month_rounded,
                         size: 16.sp,
-                        color: const Color(0xFF4F7CFF),
+                        color: const Color(0xFF2563EB),
                       ),
                     ],
                   ),
@@ -1196,12 +1151,12 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 child: Container(
                   padding: EdgeInsets.all(8.w),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4F7CFF).withValues(alpha: 0.1),
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.chevron_right_rounded,
-                    color: Color(0xFF4F7CFF),
+                    color: Color(0xFF2563EB),
                     size: 20,
                   ),
                 ),
@@ -1348,7 +1303,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   );
                   textColor = isDark
                       ? const Color(0xFF93C5FD)
-                      : const Color(0xFF1D4ED8);
+                      : const Color(0xFF2563EB);
                   fontWeight = FontWeight.w700;
                   bottomIndicator = SizedBox(height: 3.h);
                 } else {
@@ -1621,7 +1576,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         ).withValues(alpha: isDark ? 0.22 : 0.15);
         textColor = isOutside
             ? (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
-            : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8));
+            : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB));
         fontWeight = FontWeight.w700;
         border = Border.all(color: const Color(0xFF3B82F6), width: 1.5);
       } else {
@@ -1682,7 +1637,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
               style: GoogleFonts.hankenGrotesk(
                 fontSize: 13.sp,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF4F7CFF),
+                color: const Color(0xFF2563EB),
               ),
             ),
           ),
@@ -1700,7 +1655,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(24),
-          child: CircularProgressIndicator(color: Color(0xFF4F7CFF)),
+          child: CircularProgressIndicator(color: Color(0xFF2563EB)),
         ),
       );
     }
@@ -1738,7 +1693,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF4F7CFF).withValues(alpha: 0.05),
+              color: const Color(0xFF2563EB).withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -1749,12 +1704,12 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
             Container(
               padding: EdgeInsets.all(14.w),
               decoration: BoxDecoration(
-                color: const Color(0xFF4F7CFF).withValues(alpha: 0.1),
+                color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.event_available_rounded,
-                color: Color(0xFF4F7CFF),
+                color: Color(0xFF2563EB),
                 size: 28,
               ),
             ),
@@ -1943,7 +1898,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF4F7CFF).withValues(alpha: 0.05),
+              color: const Color(0xFF2563EB).withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -2053,7 +2008,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 ),
                 child: const Icon(
                   Icons.arrow_forward_ios_rounded,
-                  color: Color(0xFF4F7CFF),
+                  color: Color(0xFF2563EB),
                   size: 11,
                 ),
               ),
@@ -2144,12 +2099,12 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 Container(
                   padding: EdgeInsets.all(6.w),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4F7CFF).withValues(alpha: 0.1),
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.description_outlined,
-                    color: Color(0xFF4F7CFF),
+                    color: Color(0xFF2563EB),
                     size: 18,
                   ),
                 ),
@@ -2182,7 +2137,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF4F7CFF),
+                    color: const Color(0xFF2563EB),
                   ),
                 ),
               ),
@@ -2304,7 +2259,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4F7CFF).withValues(alpha: 0.05),
+            color: const Color(0xFF2563EB).withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),

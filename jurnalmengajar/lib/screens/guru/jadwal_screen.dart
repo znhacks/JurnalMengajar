@@ -360,7 +360,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       textColor = isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB);
       fontWeight = FontWeight.w800;
     } else if (isSelected) {
-      textColor = isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8);
+      textColor = isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB);
       fontWeight = FontWeight.w800;
     } else {
       textColor = isDark ? Colors.white : const Color(0xFF1E293B);

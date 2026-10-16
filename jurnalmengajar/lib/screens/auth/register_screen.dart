@@ -436,8 +436,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: kIsWeb ? 420 : 480),
                 child: Card(
-                  elevation: 12,
-                  shadowColor: Colors.black.withValues(alpha: 0.2),
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24.r),
                   ),
@@ -456,7 +455,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: Container(
                               height: kIsWeb ? 130 : 155.h,
                               decoration: const BoxDecoration(
-                                color: Color(0xFF1D4ED8),
+                                color: Color(0xFF2563EB),
                               ),
                             ),
                           ),
@@ -1757,13 +1756,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       235,
                                     ),
                                     foregroundColor: Colors.white,
-                                    elevation: 4,
-                                    shadowColor: const Color.fromARGB(
-                                      255,
-                                      37,
-                                      99,
-                                      235,
-                                    ).withValues(alpha: 0.4),
+                                    elevation: 0,
                                     padding: EdgeInsets.symmetric(
                                       vertical: kIsWeb ? 10 : 13.h,
                                     ),
@@ -1806,13 +1799,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         235,
                                       ),
                                       foregroundColor: Colors.white,
-                                      elevation: 4,
-                                      shadowColor: const Color.fromARGB(
-                                        255,
-                                        37,
-                                        99,
-                                        235,
-                                      ).withValues(alpha: 0.4),
+                                      elevation: 0,
                                       padding: EdgeInsets.symmetric(
                                         vertical: kIsWeb ? 10 : 13.h,
                                       ),

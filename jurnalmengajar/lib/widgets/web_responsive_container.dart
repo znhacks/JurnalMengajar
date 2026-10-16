@@ -14,7 +14,7 @@ class WebResponsiveContainer extends StatelessWidget {
     super.key,
     required this.child,
     this.maxWidth = 900.0,
-    this.backgroundColor = const Color(0xFFF8FAFF),
+    this.backgroundColor = const Color(0xFFF8FAFC),
   });
 
   @override
@@ -27,7 +27,7 @@ class WebResponsiveContainer extends StatelessWidget {
       builder: (context, constraints) {
         if (constraints.maxWidth > maxWidth) {
           return Container(
-            color: const Color(0xFF0F172A), // Sleek modern dark backdrop for desktop
+            color: const Color(0xFFE2E8F0),
             child: Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
@@ -36,12 +36,16 @@ class WebResponsiveContainer extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     color: backgroundColor,
+                    border: Border.all(
+                      color: const Color(0xFFE2E8F0),
+                      width: 1,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.25),
-                        blurRadius: 24,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 8),
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 16,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),

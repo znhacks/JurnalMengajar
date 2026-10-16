@@ -1001,7 +1001,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ).withValues(alpha: isDark ? 0.22 : 0.15);
         textColor = isOutside
             ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
-            : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8));
+            : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB));
         fontWeight = FontWeight.w700;
         border = Border.all(color: const Color(0xFF3B82F6), width: 1.5);
       } else {
@@ -1644,7 +1644,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 ? const Color(
                                     0xFF1E3A8A,
                                   ).withValues(alpha: 0.35)
-                                : const Color(0xFFEEF2FF),
+                                : const Color(0xFFEFF6FF),
                             backgroundImage:
                                 teacher.photoUrl != null &&
                                     teacher.photoUrl!.startsWith('http')
@@ -1656,8 +1656,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 ? Icon(
                                     Icons.person_rounded,
                                     color: isDark
-                                        ? const Color(0xFF818CF8)
-                                        : const Color(0xFF4F46E5),
+                                        ? const Color(0xFF93C5FD)
+                                        : const Color(0xFF2563EB),
                                     size: 18.r,
                                   )
                                 : null,

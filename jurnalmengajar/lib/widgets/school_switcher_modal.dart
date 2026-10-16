@@ -181,13 +181,13 @@ class SchoolSwitcherModal extends StatelessWidget {
                 padding: EdgeInsets.all(10.w),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF312E81).withValues(alpha: 0.5)
-                      : const Color(0xFFEEF2FF),
+                      ? const Color(0xFF1E3A8A).withValues(alpha: 0.5)
+                      : const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Icon(
                   Icons.business_rounded,
-                  color: isDark ? const Color(0xFF818CF8) : const Color(0xFF4F46E5),
+                  color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB),
                   size: 24,
                 ),
               ),
@@ -256,15 +256,15 @@ class SchoolSwitcherModal extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? (isDark
-                              ? const Color(0xFF312E81).withValues(alpha: 0.35)
-                              : const Color(0xFFEEF2FF))
+                              ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
+                              : const Color(0xFFEFF6FF))
                           : (isDark
                               ? Theme.of(context).colorScheme.surfaceContainerHighest
                               : const Color(0xFFF8FAFC)),
                       borderRadius: BorderRadius.circular(16.r),
                       border: Border.all(
                         color: isSelected
-                            ? const Color(0xFF6366F1)
+                            ? const Color(0xFF2563EB)
                             : (isDark
                                 ? const Color(0xFF334155)
                                 : const Color(0xFFE2E8F0)),
@@ -315,8 +315,8 @@ class SchoolSwitcherModal extends StatelessWidget {
                                 isSelected ? FontWeight.w800 : FontWeight.w600,
                             color: isSelected
                                 ? (isDark
-                                    ? const Color(0xFFA5B4FC)
-                                    : const Color(0xFF312E81))
+                                    ? const Color(0xFFDBEAFE)
+                                    : const Color(0xFF1E3A8A))
                                 : Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
@@ -400,7 +400,7 @@ class SchoolSwitcherModal extends StatelessWidget {
                             ? Container(
                                 padding: EdgeInsets.all(4.w),
                                 decoration: const BoxDecoration(
-                                  color: Color(0xFF4F46E5),
+                                  color: Color(0xFF2563EB),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(

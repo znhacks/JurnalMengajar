@@ -128,7 +128,7 @@ class AdminDrawer extends StatelessWidget {
                   children: [
                     const Icon(
                       Icons.business_rounded,
-                      color: Color(0xFF4F46E5),
+                      color: Color(0xFF2563EB),
                       size: 16,
                     ),
                     SizedBox(width: 8.w),

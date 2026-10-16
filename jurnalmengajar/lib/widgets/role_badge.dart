@@ -49,14 +49,14 @@ class RoleBadge extends StatelessWidget {
       label = 'ADMIN';
     } else if (isTenant) {
       bgColor = isDark
-          ? const Color(0xFF312E81).withValues(alpha: 0.35)
-          : const Color(0xFFEEF2FF); // Tenant Indigo
+          ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
+          : const Color(0xFFEFF6FF); // Tenant Indigo
       borderColor = isDark
-          ? const Color(0xFF6366F1).withValues(alpha: 0.55)
-          : const Color(0xFFA5B4FC);
+          ? const Color(0xFF2563EB).withValues(alpha: 0.55)
+          : const Color(0xFFDBEAFE);
       textColor = isDark
-          ? const Color(0xFFA5B4FC)
-          : const Color(0xFF3730A3);
+          ? const Color(0xFFDBEAFE)
+          : const Color(0xFF1E40AF);
       label = 'TENANT';
     }
 
@@ -66,15 +66,6 @@ class RoleBadge extends StatelessWidget {
         color: bgColor,
         borderRadius: BorderRadius.circular(20.r),
         border: Border.all(color: borderColor, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.25)
-                : textColor.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          )
-        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -136,8 +136,7 @@ class _SchoolExpiredScreenState extends State<SchoolExpiredScreen> {
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: kIsWeb ? 380 : 440),
             child: Card(
-              elevation: 12,
-              shadowColor: Colors.black.withValues(alpha: 0.2),
+              elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24.r),
               ),

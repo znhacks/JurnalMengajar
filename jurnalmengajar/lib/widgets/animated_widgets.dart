@@ -94,27 +94,3 @@ class FadeSlideIn extends StatelessWidget {
         );
   }
 }
-
-/// A widget that gently pulses (scales up and down continuously) to draw attention to badges or status indicators.
-class PulsingBadge extends StatelessWidget {
-  final Widget child;
-  final Duration duration;
-  final double maxScale;
-
-  const PulsingBadge({
-    super.key,
-    required this.child,
-    this.duration = const Duration(milliseconds: 1200),
-    this.maxScale = 1.08,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return child.animate(onPlay: (controller) => controller.repeat(reverse: true)).scale(
-          begin: const Offset(1.0, 1.0),
-          end: Offset(maxScale, maxScale),
-          duration: duration,
-          curve: Curves.easeInOut,
-        );
-  }
-}

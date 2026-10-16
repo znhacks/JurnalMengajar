@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppLoadingWidget extends StatelessWidget {
   final String? message;
@@ -18,11 +19,12 @@ class AppLoadingWidget extends StatelessWidget {
             SizedBox(height: 16.h),
             Text(
               message!,
-              style: TextStyle(
+              style: GoogleFonts.hankenGrotesk(
                 fontSize: 14.sp,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ],
@@ -54,23 +56,23 @@ class AppEmptyWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: EdgeInsets.all(16.w),
+              padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
-                size: 64.w,
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                size: 36.w,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             SizedBox(height: 20.h),
             Text(
               title,
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.bold,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w800,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
@@ -78,9 +80,10 @@ class AppEmptyWidget extends StatelessWidget {
             SizedBox(height: 8.h),
             Text(
               subtitle,
-              style: TextStyle(
-                fontSize: 14.sp,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 13.sp,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 1.5,
               ),
               textAlign: TextAlign.center,
             ),
@@ -88,10 +91,10 @@ class AppEmptyWidget extends StatelessWidget {
               SizedBox(height: 24.h),
               ElevatedButton.icon(
                 onPressed: onRefresh,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Refresh'),
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Muat Ulang'),
                 style: ElevatedButton.styleFrom(
-                  minimumSize: Size(150.w, 40.h),
+                  minimumSize: Size(150.w, 44.h),
                 ),
               ),
             ],
@@ -121,44 +124,45 @@ class AppErrorWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: EdgeInsets.all(16.w),
+              padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.errorContainer,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.error_outline,
-                size: 64.w,
+                size: 36.w,
                 color: Theme.of(context).colorScheme.error,
               ),
             ),
             SizedBox(height: 20.h),
             Text(
               'Terjadi Kesalahan',
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.error,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w800,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             SizedBox(height: 8.h),
             Text(
               message,
-              style: TextStyle(
-                fontSize: 14.sp,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 13.sp,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 1.5,
               ),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 24.h),
             ElevatedButton.icon(
               onPressed: onRetry,
-              icon: const Icon(Icons.replay),
+              icon: const Icon(Icons.replay, size: 18),
               label: const Text('Coba Lagi'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.error,
                 foregroundColor: Theme.of(context).colorScheme.onError,
-                minimumSize: Size(150.w, 40.h),
+                minimumSize: Size(150.w, 44.h),
               ),
             ),
           ],

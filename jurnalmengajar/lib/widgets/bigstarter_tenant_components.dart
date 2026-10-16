@@ -43,26 +43,17 @@ class BigstarterTenantFilterChips extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFF4F46E5)
+                    ? const Color(0xFF2563EB)
                     : (isDark
                         ? Theme.of(context).colorScheme.surfaceContainerHighest
                         : const Color(0xFFF1F5F9)),
                 borderRadius: BorderRadius.circular(20.r),
                 border: Border.all(
                   color: isSelected
-                      ? const Color(0xFF4338CA)
+                      ? const Color(0xFF1E40AF)
                       : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
                   width: isSelected ? 1.5 : 1,
                 ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: const Color(0xFF4F46E5).withValues(alpha: 0.25),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        )
-                      ]
-                    : [],
               ),
               child: Center(
                 child: Text(
@@ -158,11 +149,11 @@ class _BigstarterManageTenantSchoolsSheetState extends State<BigstarterManageTen
                 padding: EdgeInsets.all(10.w),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF312E81).withValues(alpha: 0.4)
-                      : const Color(0xFFEEF2FF),
+                      ? const Color(0xFF1E3A8A).withValues(alpha: 0.4)
+                      : const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(12.r),
                 ),
-                child: const Icon(Icons.tune_rounded, color: Color(0xFF4F46E5), size: 24),
+                child: const Icon(Icons.tune_rounded, color: Color(0xFF2563EB), size: 24),
               ),
               SizedBox(width: 12.w),
               Column(
@@ -205,7 +196,7 @@ class _BigstarterManageTenantSchoolsSheetState extends State<BigstarterManageTen
                 final isChecked = _selectedIds.contains(id);
 
                 return CheckboxListTile(
-                  activeColor: const Color(0xFF4F46E5),
+                  activeColor: const Color(0xFF2563EB),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
                   title: Text(
                     name,
@@ -236,7 +227,7 @@ class _BigstarterManageTenantSchoolsSheetState extends State<BigstarterManageTen
             height: 48.h,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4F46E5),
+                backgroundColor: const Color(0xFF2563EB),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
                 elevation: 0,
               ),
