@@ -368,6 +368,12 @@ class SupabaseAuthRepository implements AuthRepository {
         }
       }
 
+      // Clean and validate photoUrl
+      String? finalPhotoUrl = user.photoUrl;
+      if (finalPhotoUrl != null && !finalPhotoUrl.startsWith('http')) {
+        finalPhotoUrl = null;
+      }
+
       // 1. Create auth account with user metadata payload
       final authResponse = await _supabase.auth.signUp(
         email: user.email,
@@ -379,6 +385,9 @@ class SupabaseAuthRepository implements AuthRepository {
           'phone_number': user.phoneNumber,
           'position': user.position,
           'address': user.address,
+          if (finalPhotoUrl != null) 'photo_url': finalPhotoUrl,
+          if (finalPhotoUrl != null) 'photoUrl': finalPhotoUrl,
+          if (finalPhotoUrl != null) 'avatar_url': finalPhotoUrl,
           'school_name': canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
           'schoolName': canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
           'school': canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
@@ -391,13 +400,7 @@ class SupabaseAuthRepository implements AuthRepository {
       final userId = authResponse.user?.id;
       if (userId == null) throw Exception('Gagal membuat akun');
 
-      // 2. Set profile photo URL if valid remote URL
-      String? finalPhotoUrl = user.photoUrl;
-      if (finalPhotoUrl != null && !finalPhotoUrl.startsWith('http')) {
-        finalPhotoUrl = null;
-      }
-
-      // 3. Create or update user profile in database
+      // 2. Create or update user profile in database
       final userData = user.copyWith(
         id: userId,
         role: user.role,
@@ -413,13 +416,23 @@ class SupabaseAuthRepository implements AuthRepository {
         debugPrint('Note: Upserting public.users during registration skipped due to RLS: $upsertErr');
       }
 
-      // 4. Connect user to school in user_schools table & school_memberships
+      // Explicitly update photo_url if provided
+      if (finalPhotoUrl != null) {
+        try {
+          await _supabase.from('users').update({
+            'photo_url': finalPhotoUrl,
+          }).eq('id', userId);
+        } catch (_) {}
+      }
+
+      // 3. Connect user to school in user_schools table & school_memberships
       if (schoolId.isNotEmpty) {
         try {
           // Update users table with resolved school_id and canonical school_name
           await _supabase.from('users').update({
             'school_id': schoolId,
             'school_name': canonicalSchoolName,
+            if (finalPhotoUrl != null) 'photo_url': finalPhotoUrl,
             if (user.nip != null && user.nip!.isNotEmpty) 'nip': user.nip,
           }).eq('id', userId);
 

@@ -4,10 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../models/school_model.dart';
+import '../../repositories/supabase_auth_repository.dart';
 import '../../core/utils/helper.dart';
 import '../../core/utils/image_crop_helper.dart';
 import '../../widgets/wave_clipper.dart';
@@ -329,6 +331,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final schoolId = _resolvedSchoolId ?? _schoolCodeController.text.trim();
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      // Upload profile image if picked during registration
+      String? uploadedPhotoUrl;
+      if (_profileImageBytes != null) {
+        try {
+          final tempId = const Uuid().v4();
+          final authRepo = authProvider.authRepository;
+          if (authRepo is SupabaseAuthRepository) {
+            uploadedPhotoUrl = await authRepo.uploadProfilePhoto(
+              _profileImageBytes!,
+              'profile_$tempId.webp',
+              tempId,
+            );
+          }
+        } catch (uploadErr) {
+          debugPrint('Error uploading profile photo during registration: $uploadErr');
+        }
+      }
+
       final success = await authProvider.register(
         fullName: _fullNameController.text.trim(),
         email: _emailController.text.trim(),
@@ -339,7 +360,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             : 'Admin Sekolah ($schoolName)',
         address: _addressController.text.trim(),
         role: assignedRole,
-        photoUrl: null,
+        photoUrl: uploadedPhotoUrl,
         schoolName: schoolName,
         schoolId: schoolId,
         nip: isTeacherRegister
