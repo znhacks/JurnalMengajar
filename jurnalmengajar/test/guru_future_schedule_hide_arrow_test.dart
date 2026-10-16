@@ -300,7 +300,7 @@ void main() {
     await tester.tap(find.text(tomorrow.day.toString()).first);
     await tester.pumpAndSettle();
 
-    final cardFinder = find.text('XI RPL 1');
+    final cardFinder = find.textContaining('XI RPL 1');
     await tester.ensureVisible(cardFinder);
     await tester.pumpAndSettle();
 
@@ -376,7 +376,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    final cardFinder = find.text('XI RPL 1');
+    final cardFinder = find.textContaining('XI RPL 1');
     await tester.ensureVisible(cardFinder);
     await tester.pumpAndSettle();
 

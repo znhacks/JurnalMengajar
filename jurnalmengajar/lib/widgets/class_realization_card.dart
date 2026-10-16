@@ -52,7 +52,7 @@ class _ClassRealizationCardState extends State<ClassRealizationCard> {
 
     final titleText =
         widget.selectedTeacherId != null && widget.selectedTeacherName != null
-        ? 'Realisasi Mengajar: ${widget.selectedTeacherName}'
+        ? 'Realisasi Mengajar — ${widget.selectedTeacherName}'
         : 'Mengajar Per Kelas';
 
     return Container(

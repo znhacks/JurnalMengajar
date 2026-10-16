@@ -394,6 +394,8 @@ void main() {
       // Tap "Ada Keterlambatan"
       final lateChipFinder = find.text('Ada Keterlambatan');
       expect(lateChipFinder, findsOneWidget);
+      await tester.ensureVisible(lateChipFinder);
+      await tester.pumpAndSettle();
       await tester.tap(lateChipFinder);
       await tester.pumpAndSettle();
 
@@ -405,6 +407,8 @@ void main() {
       // Now MULTI-SELECT: Tap "Ada Tunggakan" as well
       final unsubmittedChipFinder = find.text('Ada Tunggakan');
       expect(unsubmittedChipFinder, findsOneWidget);
+      await tester.ensureVisible(unsubmittedChipFinder);
+      await tester.pumpAndSettle();
       await tester.tap(unsubmittedChipFinder);
       await tester.pumpAndSettle();
 

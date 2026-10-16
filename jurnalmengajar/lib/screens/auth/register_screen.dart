@@ -695,19 +695,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                             .onSurfaceVariant,
                                                 ),
                                                 SizedBox(width: 6.w),
-                                                Text(
-                                                  'Pendaftaran Guru',
-                                                  style: TextStyle(
-                                                    fontSize: kIsWeb
-                                                        ? 13
-                                                        : 13.5.sp,
-                                                    fontWeight: FontWeight.bold,
-                                                    color:
-                                                        _registerType == 'guru'
-                                                        ? Colors.white
-                                                        : Theme.of(context)
-                                                              .colorScheme
-                                                              .onSurfaceVariant,
+                                                Flexible(
+                                                  child: Text(
+                                                    'Pendaftaran Guru',
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      fontSize: kIsWeb
+                                                          ? 13
+                                                          : 13.5.sp,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color:
+                                                          _registerType ==
+                                                              'guru'
+                                                          ? Colors.white
+                                                          : Theme.of(context)
+                                                                .colorScheme
+                                                                .onSurfaceVariant,
+                                                    ),
                                                   ),
                                                 ),
                                               ],
@@ -717,13 +724,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       ),
                                     ),
                                     Expanded(
-                                        child: MouseRegion(
-                                          cursor: SystemMouseCursors.click,
-                                          child: GestureDetector(
-                                            onTap: () => setState(() {
-                                              _registerType = 'admin';
-                                              _schoolErrorMessage = null;
-                                            }),
+                                      child: MouseRegion(
+                                        cursor: SystemMouseCursors.click,
+                                        child: GestureDetector(
+                                          onTap: () => setState(() {
+                                            _registerType = 'admin';
+                                            _schoolErrorMessage = null;
+                                          }),
                                           child: AnimatedContainer(
                                             duration: const Duration(
                                               milliseconds: 200,
@@ -759,19 +766,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                             .onSurfaceVariant,
                                                 ),
                                                 SizedBox(width: 6.w),
-                                                Text(
-                                                  'Admin Sekolah',
-                                                  style: TextStyle(
-                                                    fontSize: kIsWeb
-                                                        ? 13
-                                                        : 13.5.sp,
-                                                    fontWeight: FontWeight.bold,
-                                                    color:
-                                                        _registerType == 'admin'
-                                                        ? Colors.white
-                                                        : Theme.of(context)
-                                                              .colorScheme
-                                                              .onSurfaceVariant,
+                                                Flexible(
+                                                  child: Text(
+                                                    'Admin Sekolah',
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      fontSize: kIsWeb
+                                                          ? 13
+                                                          : 13.5.sp,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color:
+                                                          _registerType ==
+                                                              'admin'
+                                                          ? Colors.white
+                                                          : Theme.of(context)
+                                                                .colorScheme
+                                                                .onSurfaceVariant,
+                                                    ),
                                                   ),
                                                 ),
                                               ],

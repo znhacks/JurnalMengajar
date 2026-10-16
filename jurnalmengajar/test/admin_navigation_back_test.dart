@@ -456,7 +456,7 @@ void main() {
       expect(find.text('Dashboard'), findsNothing);
     });
 
-    testWidgets('Admin screens render Back button with arrow_back_rounded & tooltip "Kembali"', (tester) async {
+    testWidgets('Admin screens render Menu button with menu_rounded & tooltip "Menu"', (tester) async {
       tester.view.physicalSize = const Size(1200, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -473,41 +473,41 @@ void main() {
       // 2. MasterSubjectScreen
       await tester.pumpWidget(createTestApp(child: const MasterSubjectScreen()));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
-      expect(find.byTooltip('Kembali'), findsOneWidget);
+      expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
+      expect(find.byTooltip('Menu'), findsOneWidget);
 
       // 3. MasterHourScreen
       await tester.pumpWidget(createTestApp(child: const MasterHourScreen()));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
-      expect(find.byTooltip('Kembali'), findsOneWidget);
+      expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
+      expect(find.byTooltip('Menu'), findsOneWidget);
 
       // 4. MasterClassScreen
       await tester.pumpWidget(createTestApp(child: const MasterClassScreen()));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
-      expect(find.byTooltip('Kembali'), findsOneWidget);
+      expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
+      expect(find.byTooltip('Menu'), findsOneWidget);
 
       // 5. MasterTeacherScreen
       await tester.pumpWidget(createTestApp(child: const MasterTeacherScreen()));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
-      expect(find.byTooltip('Kembali'), findsOneWidget);
+      expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
+      expect(find.byTooltip('Menu'), findsOneWidget);
 
       // 6. MasterUserScreen
       await tester.pumpWidget(createTestApp(child: const MasterUserScreen()));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
-      expect(find.byTooltip('Kembali'), findsOneWidget);
+      expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
+      expect(find.byTooltip('Menu'), findsOneWidget);
 
       // 7. MasterPeriodScreen
       await tester.pumpWidget(createTestApp(child: const MasterPeriodScreen()));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
-      expect(find.byTooltip('Kembali'), findsOneWidget);
+      expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
+      expect(find.byTooltip('Menu'), findsOneWidget);
     });
 
-    testWidgets('Back button pops navigation stack correctly when history exists', (tester) async {
+    testWidgets('PopScope navigates back to dashboard when system back is triggered with history', (tester) async {
       tester.view.physicalSize = const Size(1200, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -560,19 +560,18 @@ void main() {
       await tester.tap(find.text('Go to Subjects'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Master Pelajaran'), findsOneWidget);
-      expect(find.byTooltip('Kembali'), findsOneWidget);
+      expect(find.text('Pelajaran'), findsOneWidget);
 
-      // Tap Back button
-      await tester.tap(find.byTooltip('Kembali'));
+      // Trigger system back / PopScope
+      await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
 
       // Should return to dashboard
       expect(find.text('Go to Subjects'), findsOneWidget);
-      expect(find.text('Master Pelajaran'), findsNothing);
+      expect(find.text('Pelajaran'), findsNothing);
     });
 
-    testWidgets('Back button safely falls back to /admin/dashboard when canPop is false', (tester) async {
+    testWidgets('PopScope safely falls back to /admin/dashboard when canPop is false', (tester) async {
       tester.view.physicalSize = const Size(1200, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -616,11 +615,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Master Pelajaran'), findsOneWidget);
+      expect(find.text('Pelajaran'), findsOneWidget);
       expect(router.canPop(), isFalse);
 
-      // Tap Back button - canPop is false, triggers context.go('/admin/dashboard')
-      await tester.tap(find.byTooltip('Kembali'));
+      // Trigger system back / PopScope - canPop is false, triggers context.go('/admin/dashboard')
+      await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
 
       expect(find.text('Admin Dashboard Fallback Target'), findsOneWidget);
