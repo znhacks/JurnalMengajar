@@ -385,9 +385,9 @@ class SupabaseAuthRepository implements AuthRepository {
           'phone_number': user.phoneNumber,
           'position': user.position,
           'address': user.address,
-          if (finalPhotoUrl != null) 'photo_url': finalPhotoUrl,
-          if (finalPhotoUrl != null) 'photoUrl': finalPhotoUrl,
-          if (finalPhotoUrl != null) 'avatar_url': finalPhotoUrl,
+          'photo_url': ?finalPhotoUrl,
+          'photoUrl': ?finalPhotoUrl,
+          'avatar_url': ?finalPhotoUrl,
           'school_name': canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
           'schoolName': canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
           'school': canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
@@ -432,7 +432,7 @@ class SupabaseAuthRepository implements AuthRepository {
           await _supabase.from('users').update({
             'school_id': schoolId,
             'school_name': canonicalSchoolName,
-            if (finalPhotoUrl != null) 'photo_url': finalPhotoUrl,
+            'photo_url': ?finalPhotoUrl,
             if (user.nip != null && user.nip!.isNotEmpty) 'nip': user.nip,
           }).eq('id', userId);
 
