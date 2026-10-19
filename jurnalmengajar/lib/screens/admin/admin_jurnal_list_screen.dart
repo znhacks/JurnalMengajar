@@ -22,6 +22,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/schedule_grouper.dart';
 import '../../widgets/animated_widgets.dart';
 import '../../services/excel_export_service.dart';
+import '../../widgets/app_scaffold.dart';
 
 class AdminJurnalListScreen extends StatefulWidget {
   /// If non-null, jump directly to a specific tab index (0=Semua, 1=Belum Diisi, 2=Menunggu, 3=Terverifikasi)
@@ -252,7 +253,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
         if (didPop) return;
         context.go('/admin/dashboard');
       },
-      child: Scaffold(
+      child: AppScaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: _isSelectionMode
             ? AppBar(
@@ -283,11 +284,13 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                 ],
               )
             : AppBar(
-                leading: Builder(
-                  builder: (ctx) => IconButton(
-                    icon: const Icon(Icons.menu_rounded),
-                    tooltip: 'Menu',
-                    onPressed: () => Scaffold.of(ctx).openDrawer(),
+                leading: AppMenuButton(
+                  child: Builder(
+                    builder: (ctx) => IconButton(
+                      icon: const Icon(Icons.menu_rounded),
+                      tooltip: 'Menu',
+                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                    ),
                   ),
                 ),
                 title: const Text('Jurnal Mengajar'),

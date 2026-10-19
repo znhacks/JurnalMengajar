@@ -13,6 +13,7 @@ import '../../widgets/admin_drawer.dart';
 import '../../widgets/admin_search_filter_bar.dart';
 import '../../widgets/state_widgets.dart';
 import '../../core/utils/helper.dart';
+import '../../widgets/app_scaffold.dart';
 
 class ApprovalJurnalScreen extends StatefulWidget {
   const ApprovalJurnalScreen({super.key});
@@ -119,7 +120,7 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
     final isLoading = journalProvider.isLoading || masterProvider.isLoading;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         centerTitle: true,

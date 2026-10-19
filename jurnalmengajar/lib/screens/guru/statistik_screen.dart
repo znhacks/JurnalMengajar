@@ -10,6 +10,7 @@ import '../../models/class_model.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/helper.dart';
 import '../../widgets/guru_drawer.dart';
+import '../../widgets/app_scaffold.dart';
 
 class GuruStatistikScreen extends StatefulWidget {
   const GuruStatistikScreen({super.key});
@@ -187,16 +188,18 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
       );
     }).toList()..sort((a, b) => a.name.compareTo(b.name));
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: const GuruDrawer(currentRoute: '/guru/statistics'),
       appBar: AppBar(
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu_rounded),
-            onPressed: () {
-              Scaffold.of(ctx).openDrawer();
-            },
+        leading: AppMenuButton(
+          child: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded),
+              onPressed: () {
+                Scaffold.of(ctx).openDrawer();
+              },
+            ),
           ),
         ),
         title: const Text('Statistik Mengajar'),

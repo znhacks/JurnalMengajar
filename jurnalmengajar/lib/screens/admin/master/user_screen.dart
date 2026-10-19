@@ -15,6 +15,7 @@ import '../../../widgets/admin_search_filter_bar.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../services/excel_export_service.dart';
+import '../../../widgets/app_scaffold.dart';
 
 class MasterUserScreen extends StatefulWidget {
   const MasterUserScreen({super.key});
@@ -998,7 +999,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
         if (didPop) return;
         context.go('/admin/dashboard');
       },
-      child: Scaffold(
+      child: AppScaffold(
           appBar: _isSelectionMode
               ? AppBar(
                   backgroundColor: const Color(0xFF0F172A),
@@ -1028,11 +1029,13 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                   ],
                 )
               : AppBar(
-                  leading: Builder(
-                    builder: (ctx) => IconButton(
-                      icon: const Icon(Icons.menu_rounded),
-                      tooltip: 'Menu',
-                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                  leading: AppMenuButton(
+                    child: Builder(
+                      builder: (ctx) => IconButton(
+                        icon: const Icon(Icons.menu_rounded),
+                        tooltip: 'Menu',
+                        onPressed: () => Scaffold.of(ctx).openDrawer(),
+                      ),
                     ),
                   ),
                   title: const Text('User & Hak Akses'),

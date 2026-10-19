@@ -19,6 +19,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/helper.dart';
 import '../../core/utils/schedule_grouper.dart';
 import '../../widgets/guru_drawer.dart';
+import '../../widgets/app_scaffold.dart';
 
 class GuruWarningLetterListScreen extends StatefulWidget {
   const GuruWarningLetterListScreen({super.key});
@@ -672,16 +673,18 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
         return dateB.compareTo(dateA);
       });
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: const GuruDrawer(currentRoute: '/guru/warning-letters'),
       appBar: AppBar( 
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu_rounded),
-            onPressed: () {
-              Scaffold.of(ctx).openDrawer();
-            },
+        leading: AppMenuButton(
+          child: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded),
+              onPressed: () {
+                Scaffold.of(ctx).openDrawer();
+              },
+            ),
           ),
         ),
         title: Text(

@@ -21,6 +21,51 @@ class GuruDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return Drawer(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shadowColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(16.r),
+          bottomRight: Radius.circular(16.r),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: GuruDrawerPanel(
+        currentRoute: currentRoute,
+        selectedIndex: selectedIndex,
+      ),
+    );
+  }
+}
+
+/// Isi menu sidebar yang dipakai bersama oleh [GuruDrawer] (menu geser pada
+/// layar sempit) dan sidebar permanen pada web desktop.
+class GuruDrawerPanel extends StatelessWidget {
+  final String? currentRoute;
+  final int? selectedIndex;
+
+  /// True saat panel ini dirender sebagai sidebar permanen, bukan drawer.
+  /// Pada mode ini menekan menu tidak menutup route karena tidak ada drawer.
+  final bool isPermanentSidebar;
+
+  const GuruDrawerPanel({
+    super.key,
+    this.currentRoute,
+    this.selectedIndex,
+    this.isPermanentSidebar = false,
+  });
+
+  /// Menutup drawer saat panel ini dipakai sebagai drawer (bukan sidebar
+  /// permanen). Pada sidebar permanen tidak ada drawer yang perlu ditutup,
+  /// memanggil `Navigator.pop` justru akan mengeluarkan route yang aktif.
+  void _closeDrawer(BuildContext context) {
+    if (isPermanentSidebar) return;
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // ignore: no_leading_underscores_for_local_identifiers
     Widget _buildDrawerItem({
       required IconData icon,
@@ -309,7 +354,7 @@ class GuruDrawer extends StatelessWidget {
           label: 'Dashboard',
           isSelected: activeIndex == 0,
           onTap: () {
-            Navigator.pop(context);
+            _closeDrawer(context);
             if (shellState != null) {
               shellState.switchToTab(0);
             } else {
@@ -322,7 +367,7 @@ class GuruDrawer extends StatelessWidget {
           label: 'Jadwal Mengajar',
           isSelected: activeIndex == 1,
           onTap: () {
-            Navigator.pop(context);
+            _closeDrawer(context);
             if (shellState != null) {
               shellState.switchToTab(1);
             } else {
@@ -335,7 +380,7 @@ class GuruDrawer extends StatelessWidget {
           label: 'Daftar Jurnal',
           isSelected: activeIndex == 2,
           onTap: () {
-            Navigator.pop(context);
+            _closeDrawer(context);
             if (shellState != null) {
               shellState.switchToTab(2);
             } else {
@@ -348,7 +393,7 @@ class GuruDrawer extends StatelessWidget {
           label: 'Profil Saya',
           isSelected: activeIndex == 3,
           onTap: () {
-            Navigator.pop(context);
+            _closeDrawer(context);
             if (shellState != null) {
               shellState.switchToTab(3);
             } else {
@@ -367,7 +412,7 @@ class GuruDrawer extends StatelessWidget {
           label: 'Download Jurnal',
           isSelected: currentRoute == '/guru/download-jurnal',
           onTap: () {
-            Navigator.pop(context);
+            _closeDrawer(context);
             if (currentRoute != '/guru/download-jurnal') {
               context.go('/guru/download-jurnal');
             }
@@ -380,7 +425,7 @@ class GuruDrawer extends StatelessWidget {
               currentRoute == '/guru/statistics' ||
               currentRoute == '/guru/statistik',
           onTap: () {
-            Navigator.pop(context);
+            _closeDrawer(context);
             if (currentRoute != '/guru/statistics' &&
                 currentRoute != '/guru/statistik') {
               context.go('/guru/statistik');
@@ -393,7 +438,7 @@ class GuruDrawer extends StatelessWidget {
           badgeCount: unreadWarnings,
           isSelected: currentRoute == '/guru/warning-letters',
           onTap: () {
-            Navigator.pop(context);
+            _closeDrawer(context);
             if (currentRoute != '/guru/warning-letters') {
               context.go('/guru/warning-letters');
             }
@@ -460,7 +505,7 @@ class GuruDrawer extends StatelessWidget {
           label: 'Tentang Aplikasi',
           isSelected: currentRoute == '/about',
           onTap: () {
-            Navigator.pop(context);
+            _closeDrawer(context);
             if (currentRoute != '/about') {
               context.go('/about');
             }
@@ -498,17 +543,7 @@ class GuruDrawer extends StatelessWidget {
       );
     }
 
-    return Drawer(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shadowColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topRight: Radius.circular(16.r),
-          bottomRight: Radius.circular(16.r),
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: LayoutBuilder(
+    return LayoutBuilder(
         builder: (context, constraints) {
           final isCompactHeight = constraints.maxHeight < 560;
 
@@ -551,7 +586,6 @@ class GuruDrawer extends StatelessWidget {
             ],
           );
         },
-      ),
     );
   }
 
@@ -586,7 +620,7 @@ class GuruDrawer extends StatelessWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(dialogCtx); // Close Dialog
-              Navigator.pop(context); // Close Drawer
+              _closeDrawer(context); // Close Drawer
               GuruDashboardScreen.resetReminderFlag();
               await authProvider.logout();
               if (context.mounted) {

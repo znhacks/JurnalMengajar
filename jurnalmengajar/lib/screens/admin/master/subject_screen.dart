@@ -11,6 +11,7 @@ import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 
 import '../../../providers/auth_provider.dart';
+import '../../../widgets/app_scaffold.dart';
 
 class MasterSubjectScreen extends StatefulWidget {
   const MasterSubjectScreen({super.key});
@@ -248,7 +249,7 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
         if (didPop) return;
         context.go('/admin/dashboard');
       },
-      child: Scaffold(
+      child: AppScaffold(
         appBar: _isSelectionMode
             ? AppBar(
                 backgroundColor: const Color(0xFF0F172A),
@@ -278,11 +279,13 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                 ],
               )
             : AppBar(
-                leading: Builder(
-                  builder: (ctx) => IconButton(
-                    icon: const Icon(Icons.menu_rounded),
-                    tooltip: 'Menu',
-                    onPressed: () => Scaffold.of(ctx).openDrawer(),
+                leading: AppMenuButton(
+                  child: Builder(
+                    builder: (ctx) => IconButton(
+                      icon: const Icon(Icons.menu_rounded),
+                      tooltip: 'Menu',
+                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                    ),
                   ),
                 ),
                 title: const Text('Pelajaran'),

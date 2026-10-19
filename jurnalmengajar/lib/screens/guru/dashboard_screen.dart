@@ -24,6 +24,7 @@ import '../../widgets/animated_widgets.dart';
 import '../../widgets/role_badge.dart';
 import '../../widgets/school_switcher_modal.dart';
 import 'package:table_calendar/table_calendar.dart';
+import '../../widgets/app_scaffold.dart';
 
 class GuruDashboardScreen extends StatefulWidget {
   const GuruDashboardScreen({super.key});
@@ -561,7 +562,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
     final monthScheduleCount = unfinishedMonthSchedules.length;
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         onRefresh: _refreshData,

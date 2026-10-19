@@ -16,12 +16,6 @@ class AdminDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dividerColor = isDark
-        ? const Color(0xFF334155)
-        : const Color(0xFFE2E8F0);
-
     return Drawer(
       backgroundColor: Theme.of(context).colorScheme.surface,
       shadowColor: Colors.transparent,
@@ -32,57 +26,81 @@ class AdminDrawer extends StatelessWidget {
         ),
       ),
       clipBehavior: Clip.antiAlias,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // Jika tinggi layar terbatas (misal laptop kecil/landscape/split screen),
-          // gunakan single scrolling agar menu dan footer tidak bertumpuk/terjepit.
-          final isCompactHeight = constraints.maxHeight < 560;
+      child: AdminDrawerPanel(currentRoute: currentRoute),
+    );
+  }
+}
 
-          if (isCompactHeight) {
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildHeader(context, authProvider),
-                  Divider(height: 1, color: dividerColor, thickness: 1),
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12.w,
-                      vertical: 4.h,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: _buildMenuItems(context, dividerColor),
-                    ),
-                  ),
-                  _buildFooter(context, authProvider, dividerColor),
-                ],
-              ),
-            );
-          }
+/// Isi menu sidebar yang dipakai bersama oleh [AdminDrawer] (menu geser pada
+/// layar sempit) dan sidebar permanen pada web desktop.
+class AdminDrawerPanel extends StatelessWidget {
+  final String currentRoute;
 
-          // Tampilan standar dengan tinggi cukup:
-          // Header tetap di atas, Menu List di Expanded dengan scroll mandiri (overflow-y: auto),
-          // Footer (Profil Saya, Mode Gelap, Keluar) tetap di bawah rapi dengan area terpisah.
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeader(context, authProvider),
-              Divider(height: 1, color: dividerColor, thickness: 1),
-              Expanded(
-                child: ListView(
+  /// True saat panel ini dirender sebagai sidebar permanen, bukan drawer.
+  /// Pada mode ini menekan menu tidak menutup route karena tidak ada drawer.
+  final bool isPermanentSidebar;
+
+  const AdminDrawerPanel({
+    super.key,
+    required this.currentRoute,
+    this.isPermanentSidebar = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dividerColor = isDark
+        ? const Color(0xFF334155)
+        : const Color(0xFFE2E8F0);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Jika tinggi layar terbatas (misal laptop kecil/landscape/split screen),
+        // gunakan single scrolling agar menu dan footer tidak bertumpuk/terjepit.
+        final isCompactHeight = constraints.maxHeight < 560;
+
+        if (isCompactHeight) {
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeader(context, authProvider),
+                Divider(height: 1, color: dividerColor, thickness: 1),
+                Padding(
                   padding: EdgeInsets.symmetric(
                     horizontal: 12.w,
                     vertical: 4.h,
                   ),
-                  children: _buildMenuItems(context, dividerColor),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: _buildMenuItems(context, dividerColor),
+                  ),
                 ),
-              ),
-              _buildFooter(context, authProvider, dividerColor),
-            ],
+                _buildFooter(context, authProvider, dividerColor),
+              ],
+            ),
           );
-        },
-      ),
+        }
+
+        // Tampilan standar dengan tinggi cukup:
+        // Header tetap di atas, Menu List di Expanded dengan scroll mandiri (overflow-y: auto),
+        // Footer (Profil Saya, Mode Gelap, Keluar) tetap di bawah rapi dengan area terpisah.
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildHeader(context, authProvider),
+            Divider(height: 1, color: dividerColor, thickness: 1),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                children: _buildMenuItems(context, dividerColor),
+              ),
+            ),
+            _buildFooter(context, authProvider, dividerColor),
+          ],
+        );
+      },
     );
   }
 
@@ -433,7 +451,8 @@ class AdminDrawer extends StatelessWidget {
     String title,
     String route,
   ) {
-    final isSelected = currentRoute == route;
+    // Query string (mis. ?teacherId=..) tidak boleh mengganggu penanda menu.
+    final isSelected = currentRoute.split('?').first == route;
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 1.h),
       child: ListTile(
@@ -463,7 +482,9 @@ class AdminDrawer extends StatelessWidget {
         selected: isSelected,
         selectedTileColor: AppTheme.primaryColor.withValues(alpha: 0.08),
         onTap: () {
-          Navigator.pop(context); // Close drawer
+          if (!isPermanentSidebar) {
+            Navigator.pop(context); // Close drawer
+          }
           if (!isSelected) {
             if (route == '/admin/dashboard') {
               context.go(route);

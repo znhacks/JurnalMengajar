@@ -10,6 +10,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/helper.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../widgets/admin_drawer.dart';
+import '../../../widgets/app_scaffold.dart';
 
 class StudentPromotionScreen extends StatefulWidget {
   final String? initialClassId;
@@ -329,16 +330,18 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
     final sourceClasses = classes.where((c) => c.periodId == _sourcePeriodId).toList();
     final targetClasses = classes.where((c) => c.periodId == _targetPeriodId).toList();
 
-    return Scaffold(
+    return AppScaffold(
       drawer: const AdminDrawer(
         currentRoute: '/admin/master-data/student-promotions',
       ),
       appBar: AppBar(
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu_rounded),
-            tooltip: 'Menu',
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
+        leading: AppMenuButton(
+          child: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded),
+              tooltip: 'Menu',
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+            ),
           ),
         ),
         title: Text(

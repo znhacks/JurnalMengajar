@@ -18,6 +18,7 @@ import '../../repositories/supabase_auth_repository.dart';
 import '../../widgets/image_viewer.dart';
 import '../../widgets/school_avatar.dart';
 import '../../providers/warning_letter_provider.dart';
+import '../../widgets/app_scaffold.dart';
 
 class GuruProfilScreen extends StatefulWidget {
   const GuruProfilScreen({super.key});
@@ -1097,20 +1098,22 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
       );
     }
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu_rounded),
-            onPressed: () {
-              final rootScaffold = ctx.findRootAncestorStateOfType<ScaffoldState>();
-              if (rootScaffold != null && rootScaffold.hasDrawer) {
-                rootScaffold.openDrawer();
-              } else {
-                Scaffold.maybeOf(ctx)?.openDrawer();
-              }
-            },
+        leading: AppMenuButton(
+          child: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded),
+              onPressed: () {
+                final rootScaffold = ctx.findRootAncestorStateOfType<ScaffoldState>();
+                if (rootScaffold != null && rootScaffold.hasDrawer) {
+                  rootScaffold.openDrawer();
+                } else {
+                  Scaffold.maybeOf(ctx)?.openDrawer();
+                }
+              },
+            ),
           ),
         ),
         title: const Text('Profil Pengajar'),

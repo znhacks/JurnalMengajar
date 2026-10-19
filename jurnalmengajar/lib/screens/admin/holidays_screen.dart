@@ -10,6 +10,7 @@ import '../../widgets/admin_drawer.dart';
 import '../../widgets/admin_search_filter_bar.dart';
 import '../../widgets/state_widgets.dart';
 import '../../core/utils/helper.dart';
+import '../../widgets/app_scaffold.dart';
 
 class AdminHolidaysScreen extends StatefulWidget {
   const AdminHolidaysScreen({super.key});
@@ -432,7 +433,7 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
       ),
     ];
 
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(
         title: const Text('Kelola Hari Libur'),
         actions: [

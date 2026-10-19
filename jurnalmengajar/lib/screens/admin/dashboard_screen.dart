@@ -25,6 +25,7 @@ import '../../widgets/animated_widgets.dart';
 import '../../widgets/role_badge.dart';
 import '../../widgets/school_switcher_modal.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/app_scaffold.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final String? selectedTeacherId;
@@ -342,7 +343,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           SystemNavigator.pop();
         }
       },
-      child: Scaffold(
+      child: AppScaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           centerTitle: true,

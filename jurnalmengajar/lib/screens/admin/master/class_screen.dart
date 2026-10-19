@@ -13,6 +13,7 @@ import '../../../widgets/animated_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/excel_export_service.dart';
 import '../../../widgets/student_import_modal.dart';
+import '../../../widgets/app_scaffold.dart';
 
 class MasterClassScreen extends StatefulWidget {
   const MasterClassScreen({super.key});
@@ -337,7 +338,7 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
         if (didPop) return;
         context.go('/admin/dashboard');
       },
-      child: Scaffold(
+      child: AppScaffold(
         appBar: _isSelectionMode
             ? AppBar(
                 backgroundColor: const Color(0xFF0F172A),
@@ -367,11 +368,13 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                 ],
               )
             : AppBar(
-                leading: Builder(
-                  builder: (ctx) => IconButton(
-                    icon: const Icon(Icons.menu_rounded),
-                    tooltip: 'Menu',
-                    onPressed: () => Scaffold.of(ctx).openDrawer(),
+                leading: AppMenuButton(
+                  child: Builder(
+                    builder: (ctx) => IconButton(
+                      icon: const Icon(Icons.menu_rounded),
+                      tooltip: 'Menu',
+                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                    ),
                   ),
                 ),
                 title: const Text('Kelas & Siswa'),

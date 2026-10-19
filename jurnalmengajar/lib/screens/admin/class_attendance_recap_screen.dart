@@ -25,6 +25,7 @@ import '../../services/excel_export_service.dart';
 import '../../services/journal_pdf_service.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../widgets/admin_period_selector_bar.dart';
+import '../../widgets/app_scaffold.dart';
 
 enum AttendanceTimeFilter { allPeriod, thisMonth, lastMonth, custom }
 enum StudentSortBy { nameAsc, alphaDesc, sickDesc, permDesc, rateAsc, rateDesc }
@@ -960,7 +961,7 @@ class _AdminClassAttendanceRecapScreenState
       return cs.classModel.name.toLowerCase().contains(_classSearchQuery);
     }).toList();
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       drawer: const AdminDrawer(currentRoute: '/admin/class-attendance-recap'),
       appBar: AppBar(

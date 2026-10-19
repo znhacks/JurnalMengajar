@@ -15,6 +15,7 @@ import '../../core/utils/helper.dart';
 import '../../core/utils/image_crop_helper.dart';
 import '../../repositories/supabase_auth_repository.dart';
 import '../../widgets/image_viewer.dart';
+import '../../widgets/app_scaffold.dart';
 
 class AdminProfileScreen extends StatefulWidget {
   const AdminProfileScreen({super.key});
@@ -536,7 +537,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       );
     }
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Profil Administrator'),

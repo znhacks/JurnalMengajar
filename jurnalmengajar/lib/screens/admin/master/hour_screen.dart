@@ -12,6 +12,7 @@ import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../widgets/app_scaffold.dart';
 
 class MasterHourScreen extends StatefulWidget {
   const MasterHourScreen({super.key});
@@ -352,7 +353,7 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
         if (didPop) return;
         context.go('/admin/dashboard');
       },
-      child: Scaffold(
+      child: AppScaffold(
         appBar: _isSelectionMode
             ? AppBar(
                 backgroundColor: const Color(0xFF0F172A),
@@ -382,11 +383,13 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                 ],
               )
             : AppBar(
-                leading: Builder(
-                  builder: (ctx) => IconButton(
-                    icon: const Icon(Icons.menu_rounded),
-                    tooltip: 'Menu',
-                    onPressed: () => Scaffold.of(ctx).openDrawer(),
+                leading: AppMenuButton(
+                  child: Builder(
+                    builder: (ctx) => IconButton(
+                      icon: const Icon(Icons.menu_rounded),
+                      tooltip: 'Menu',
+                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                    ),
                   ),
                 ),
                 title: const Text('Jam Pelajaran'),

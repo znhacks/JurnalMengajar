@@ -18,6 +18,7 @@ import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/utils/schedule_grouper.dart';
 import '../../../services/excel_export_service.dart';
+import '../../../widgets/app_scaffold.dart';
 
 class MasterScheduleScreen extends StatefulWidget {
   const MasterScheduleScreen({super.key});
@@ -1117,7 +1118,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         centerTitle: true,

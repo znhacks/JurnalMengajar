@@ -12,6 +12,7 @@ import '../../providers/journal_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../widgets/admin_drawer.dart';
+import '../../widgets/app_scaffold.dart';
 
 enum StatTimeFilter { all, thisMonth, thisSemester }
 
@@ -347,7 +348,7 @@ class _AdminTeacherStatisticsScreenState
               ? ((totalSchoolOnTime / totalSchoolJournals) * 100.0)
               : 0.0);
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(

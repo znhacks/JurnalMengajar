@@ -13,6 +13,7 @@ import '../../providers/master_data_provider.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../core/utils/helper.dart';
 import '../../core/services/cache_service.dart';
+import '../../widgets/app_scaffold.dart';
 
 class AdminSettingsScreen extends StatefulWidget {
   const AdminSettingsScreen({super.key});
@@ -924,7 +925,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
     final noboxConfig = settingsProvider.noboxConfig;
 
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(
         title: Text(
           'Pengaturan Sekolah',

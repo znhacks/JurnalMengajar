@@ -20,6 +20,7 @@ import '../../../core/utils/image_crop_helper.dart';
 import '../../../repositories/supabase_auth_repository.dart';
 import '../../../widgets/animated_widgets.dart';
 import '../../../services/excel_export_service.dart';
+import '../../../widgets/app_scaffold.dart';
 
 class MasterTeacherScreen extends StatefulWidget {
   const MasterTeacherScreen({super.key});
@@ -793,7 +794,7 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
         if (didPop) return;
         context.go('/admin/dashboard');
       },
-      child: Scaffold(
+      child: AppScaffold(
         appBar: _isSelectionMode
             ? AppBar(
                 backgroundColor: const Color(0xFF0F172A),
@@ -823,11 +824,13 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                 ],
               )
             : AppBar(
-                leading: Builder(
-                  builder: (ctx) => IconButton(
-                    icon: const Icon(Icons.menu_rounded),
-                    tooltip: 'Menu',
-                    onPressed: () => Scaffold.of(ctx).openDrawer(),
+                leading: AppMenuButton(
+                  child: Builder(
+                    builder: (ctx) => IconButton(
+                      icon: const Icon(Icons.menu_rounded),
+                      tooltip: 'Menu',
+                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                    ),
                   ),
                 ),
                 title: const Text('Data Guru'),

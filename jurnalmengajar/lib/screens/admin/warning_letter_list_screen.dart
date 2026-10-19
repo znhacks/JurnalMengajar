@@ -12,6 +12,7 @@ import '../../widgets/admin_drawer.dart';
 import '../../widgets/admin_search_filter_bar.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/helper.dart';
+import '../../widgets/app_scaffold.dart';
 
 class AdminWarningLetterListScreen extends StatefulWidget {
   const AdminWarningLetterListScreen({super.key});
@@ -100,7 +101,7 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
       return latestB.compareTo(latestA);
     });
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(

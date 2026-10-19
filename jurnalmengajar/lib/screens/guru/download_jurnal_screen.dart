@@ -20,6 +20,7 @@ import '../../core/utils/helper.dart';
 import '../../services/journal_pdf_service.dart';
 import '../../services/excel_export_service.dart';
 import '../../widgets/guru_drawer.dart';
+import '../../widgets/app_scaffold.dart';
 
 class GuruDownloadJurnalScreen extends StatefulWidget {
   const GuruDownloadJurnalScreen({super.key});
@@ -864,21 +865,23 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         .where((j) => j.status == 'pending')
         .length;
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu_rounded),
-            onPressed: () {
-              final rootScaffold = ctx
-                  .findRootAncestorStateOfType<ScaffoldState>();
-              if (rootScaffold != null && rootScaffold.hasDrawer) {
-                rootScaffold.openDrawer();
-              } else {
-                Scaffold.maybeOf(ctx)?.openDrawer();
-              }
-            },
+        leading: AppMenuButton(
+          child: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded),
+              onPressed: () {
+                final rootScaffold = ctx
+                    .findRootAncestorStateOfType<ScaffoldState>();
+                if (rootScaffold != null && rootScaffold.hasDrawer) {
+                  rootScaffold.openDrawer();
+                } else {
+                  Scaffold.maybeOf(ctx)?.openDrawer();
+                }
+              },
+            ),
           ),
         ),
         title: const Text('Download Jurnal'),

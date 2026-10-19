@@ -13,6 +13,7 @@ import '../../models/subject_model.dart';
 import '../../core/utils/helper.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/state_widgets.dart';
+import '../../widgets/app_scaffold.dart';
 
 class GuruDaftarJurnalScreen extends StatefulWidget {
   const GuruDaftarJurnalScreen({super.key});
@@ -122,20 +123,22 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
     final hasData = allItems.isNotEmpty;
     final isInitialLoading = (journalProvider.isLoading || scheduleProvider.isLoading) && !hasData;
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu_rounded),
-            onPressed: () {
-              final rootScaffold = ctx.findRootAncestorStateOfType<ScaffoldState>();
-              if (rootScaffold != null && rootScaffold.hasDrawer) {
-                rootScaffold.openDrawer();
-              } else {
-                Scaffold.maybeOf(ctx)?.openDrawer();
-              }
-            },
+        leading: AppMenuButton(
+          child: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded),
+              onPressed: () {
+                final rootScaffold = ctx.findRootAncestorStateOfType<ScaffoldState>();
+                if (rootScaffold != null && rootScaffold.hasDrawer) {
+                  rootScaffold.openDrawer();
+                } else {
+                  Scaffold.maybeOf(ctx)?.openDrawer();
+                }
+              },
+            ),
           ),
         ),
         title: const Text('Riwayat Jurnal'),

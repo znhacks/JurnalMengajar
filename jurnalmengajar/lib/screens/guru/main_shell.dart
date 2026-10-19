@@ -16,6 +16,7 @@ import '../../models/teacher_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/journal_provider.dart';
+import '../../widgets/app_scaffold.dart';
 
 class GuruMainShell extends StatefulWidget {
   final int? initialIndex;
@@ -181,7 +182,7 @@ class GuruMainShellState extends State<GuruMainShell> {
           SystemNavigator.pop();
         }
       },
-      child: Scaffold(
+      child: AppScaffold(
         drawer: GuruDrawer(selectedIndex: _currentIndex),
         body: IndexedStack(index: _currentIndex, children: _screens),
       ),

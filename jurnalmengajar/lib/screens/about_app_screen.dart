@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/admin_drawer.dart';
 import '../widgets/guru_drawer.dart';
+import '../widgets/app_scaffold.dart';
 
 class AboutAppScreen extends StatelessWidget {
   const AboutAppScreen({super.key});
@@ -16,7 +17,7 @@ class AboutAppScreen extends StatelessWidget {
     final isAdmin = authProvider.activeRole == 'admin';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
+    return AppScaffold(
       drawer: isAdmin
           ? const AdminDrawer(currentRoute: '/about')
           : const GuruDrawer(currentRoute: '/about'),
@@ -28,12 +29,14 @@ class AboutAppScreen extends StatelessWidget {
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu_rounded),
-            onPressed: () {
-              Scaffold.of(ctx).openDrawer();
-            },
+        leading: AppMenuButton(
+          child: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded),
+              onPressed: () {
+                Scaffold.of(ctx).openDrawer();
+              },
+            ),
           ),
         ),
       ),

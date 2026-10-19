@@ -11,6 +11,7 @@ import '../../models/teacher_model.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../widgets/admin_search_filter_bar.dart';
 import '../../core/utils/helper.dart';
+import '../../widgets/app_scaffold.dart';
 
 class AdminTeacherLeavesScreen extends StatefulWidget {
   const AdminTeacherLeavesScreen({super.key});
@@ -1038,7 +1039,7 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
       totalSubstitutedSessions += l.substitutes.length;
     }
 
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(title: const Text('Kelola Cuti Guru')),
       drawer: const AdminDrawer(currentRoute: '/admin/teacher-leaves'),
       floatingActionButton: FloatingActionButton(
