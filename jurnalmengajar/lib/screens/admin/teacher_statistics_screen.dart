@@ -613,6 +613,13 @@ class _AdminTeacherStatisticsScreenState
         : const Color(0xFFF59E0B);
     final totalFilled = totalOnTime + totalLate;
     final onTimeShare = totalFilled > 0 ? totalOnTime / totalFilled : 0.0;
+    final titleColor = isDark
+        ? Colors.white.withValues(alpha: 0.75)
+        : const Color(0xFF0F172A);
+    final mutedColor = isDark
+        ? Colors.white.withValues(alpha: 0.55)
+        : const Color(0xFF64748B);
+    final valueColor = isDark ? Colors.white : const Color(0xFF0F172A);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -620,9 +627,13 @@ class _AdminTeacherStatisticsScreenState
         Container(
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF0F2537) : const Color(0xFF0F2A43),
+            color: isDark ? const Color(0xFF0F2537) : Colors.white,
             borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(color: disciplineColor.withValues(alpha: 0.35)),
+            border: Border.all(
+              color: isDark
+                  ? disciplineColor.withValues(alpha: 0.35)
+                  : disciplineColor.withValues(alpha: 0.45),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -633,7 +644,9 @@ class _AdminTeacherStatisticsScreenState
                   Container(
                     padding: EdgeInsets.all(9.r),
                     decoration: BoxDecoration(
-                      color: disciplineColor.withValues(alpha: 0.18),
+                      color: disciplineColor.withValues(
+                        alpha: isDark ? 0.18 : 0.12,
+                      ),
                       borderRadius: BorderRadius.circular(10.r),
                     ),
                     child: Icon(
@@ -652,7 +665,7 @@ class _AdminTeacherStatisticsScreenState
                           style: TextStyle(
                             fontSize: 12.5.sp,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.75),
+                            color: titleColor,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -662,7 +675,7 @@ class _AdminTeacherStatisticsScreenState
                           '$totalOnTime dari $totalFilled jurnal tepat',
                           style: TextStyle(
                             fontSize: 11.sp,
-                            color: Colors.white.withValues(alpha: 0.55),
+                            color: mutedColor,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -676,7 +689,7 @@ class _AdminTeacherStatisticsScreenState
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 28.sp,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      color: valueColor,
                       height: 1.0,
                     ),
                   ),
@@ -687,7 +700,9 @@ class _AdminTeacherStatisticsScreenState
                 borderRadius: BorderRadius.circular(99.r),
                 child: Container(
                   height: 8.h,
-                  color: Colors.white.withValues(alpha: 0.14),
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.14)
+                      : const Color(0xFFE2E8F0),
                   child: FractionallySizedBox(
                     alignment: Alignment.centerLeft,
                     widthFactor: onTimeShare.clamp(0.0, 1.0),
@@ -700,7 +715,7 @@ class _AdminTeacherStatisticsScreenState
                 '$teachersCount guru • periode ini',
                 style: TextStyle(
                   fontSize: 11.sp,
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: mutedColor,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
