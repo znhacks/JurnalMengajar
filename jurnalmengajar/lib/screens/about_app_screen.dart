@@ -204,9 +204,9 @@ class AboutAppScreen extends StatelessWidget {
                           SizedBox(height: 8.h),
                           _buildInfoRow(
                             context,
-                            Icons.phone_android_outlined,
+                            Icons.devices_rounded,
                             'Platform',
-                            'Mobile',
+                            'Mobile & Website',
                           ),
                         ],
                       ),
