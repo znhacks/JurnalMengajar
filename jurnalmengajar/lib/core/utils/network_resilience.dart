@@ -5,11 +5,11 @@ import 'package:flutter/foundation.dart';
 /// Helper utilitas untuk memastikan request jaringan tidak menggantung tanpa batas
 /// saat sinyal internet lemah atau terputus-putus.
 class NetworkResilience {
-  /// Default timeout untuk request query Supabase agar tidak membuat UI loading selamanya
-  static const Duration defaultQueryTimeout = Duration(seconds: 8);
+  /// Default timeout untuk request query Supabase agar tidak membuat UI loading selamanya (5 detik untuk responsivitas tinggi pada sinyal lemah)
+  static const Duration defaultQueryTimeout = Duration(seconds: 5);
 
   /// Default timeout untuk request write/mutasi (insert, update, delete)
-  static const Duration defaultMutationTimeout = Duration(seconds: 12);
+  static const Duration defaultMutationTimeout = Duration(seconds: 10);
 
   /// Eksekusi [networkTask] dengan batasan [timeout].
   /// Jika terjadi Timeout atau SocketException (sinyal sangat lemah/hilang),
@@ -29,13 +29,21 @@ class NetworkResilience {
         },
       );
     } catch (e) {
+      final errStr = e.toString().toLowerCase();
       final isNetworkIssue = e is TimeoutException ||
           e is SocketException ||
-          e.toString().toLowerCase().contains('socketexception') ||
-          e.toString().toLowerCase().contains('failed to connect') ||
-          e.toString().toLowerCase().contains('connection refused') ||
-          e.toString().toLowerCase().contains('network is unreachable') ||
-          e.toString().toLowerCase().contains('clientexception');
+          errStr.contains('socketexception') ||
+          errStr.contains('failed to connect') ||
+          errStr.contains('connection refused') ||
+          errStr.contains('network is unreachable') ||
+          errStr.contains('clientexception') ||
+          errStr.contains('failed host lookup') ||
+          errStr.contains('handshake') ||
+          errStr.contains('connection reset') ||
+          errStr.contains('connection closed') ||
+          errStr.contains('timeoutexception') ||
+          errStr.contains('timed out') ||
+          errStr.contains('koneksi internet sangat lambat');
 
       if (isNetworkIssue) {
         debugPrint('[NetworkResilience] Weak internet / offline detected in $operationName: $e');

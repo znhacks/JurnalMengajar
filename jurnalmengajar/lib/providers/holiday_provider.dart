@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/holiday_model.dart';
 import '../core/utils/helper.dart';
 import '../core/services/cache_service.dart';
+import '../core/utils/network_resilience.dart';
 
 class HolidayProvider with ChangeNotifier {
   List<HolidayModel> _holidays = [];
@@ -70,41 +71,53 @@ class HolidayProvider with ChangeNotifier {
     }
 
     try {
-      final supabase = Supabase.instance.client;
-      String? resolvedSchoolId = _currentSchoolId;
-
-      if (resolvedSchoolId == null || resolvedSchoolId.isEmpty || resolvedSchoolId == 'a1111111-1111-1111-1111-111111111111') {
-        final schoolRes = await supabase.from('schools').select('id').limit(1).maybeSingle();
-        if (schoolRes != null) {
-          resolvedSchoolId = schoolRes['id'] as String?;
-        }
-      }
-
-      if (resolvedSchoolId != null && resolvedSchoolId.isNotEmpty) {
-        final res = await supabase
-            .from('school_holidays')
-            .select()
-            .eq('school_id', resolvedSchoolId)
-            .order('start_date', ascending: true);
-
-        if (sequence != _loadSequence || _currentSchoolId != targetSchoolId) {
-          return;
-        }
-
-        final List<HolidayModel> fresh = (res as List)
-            .map((json) => HolidayModel.fromJson(json))
-            .toList();
-
-        _holidays = fresh;
-
-        // Persist to local cache for instant SWR on next open
-        final cacheable = (res as List)
-            .map((e) => e is Map<String, dynamic> ? e : Map<String, dynamic>.from(e as Map))
-            .toList();
-        CacheService().save('holidays_$resolvedSchoolId', cacheable);
-      } else {
+      final resolvedSchoolId = _currentSchoolId;
+      if (resolvedSchoolId == null ||
+          resolvedSchoolId.isEmpty ||
+          resolvedSchoolId == 'a1111111-1111-1111-1111-111111111111') {
         _holidays = [];
+        return;
       }
+
+      final cacheKey = 'holidays_$resolvedSchoolId';
+      Future<List<HolidayModel>> loadFromCache() async {
+        try {
+          final cached = await CacheService().loadList(cacheKey);
+          if (cached != null && cached.isNotEmpty) {
+            return cached.map((json) => HolidayModel.fromJson(json)).toList();
+          }
+        } catch (_) {}
+        return <HolidayModel>[];
+      }
+
+      final fresh = await NetworkResilience.execute<List<HolidayModel>>(
+        operationName: 'HolidayProvider.loadHolidays',
+        fallback: loadFromCache,
+        networkTask: () async {
+          final supabase = Supabase.instance.client;
+          final res = await supabase
+              .from('school_holidays')
+              .select()
+              .eq('school_id', resolvedSchoolId)
+              .order('start_date', ascending: true);
+
+          final List<HolidayModel> items = (res as List)
+              .map((json) => HolidayModel.fromJson(json))
+              .toList();
+
+          final cacheable = (res as List)
+              .map((e) => e is Map<String, dynamic> ? e : Map<String, dynamic>.from(e as Map))
+              .toList();
+          CacheService().save(cacheKey, cacheable);
+          return items;
+        },
+      );
+
+      if (sequence != _loadSequence || _currentSchoolId != targetSchoolId) {
+        return;
+      }
+
+      _holidays = fresh;
     } catch (e) {
       if (sequence == _loadSequence) {
         _errorMessage = e.toString().replaceAll('Exception: ', '');
@@ -133,21 +146,14 @@ class HolidayProvider with ChangeNotifier {
     try {
       final supabase = Supabase.instance.client;
       final cleanId = AppHelper.parseSingleCleanSchoolId(schoolId);
-      String? targetSchoolId = (cleanId != null && cleanId.isNotEmpty)
+      final targetSchoolId = (cleanId != null && cleanId.isNotEmpty)
           ? cleanId
           : schoolId?.trim();
 
-      // Dynamically fetch actual valid school_id from DB if passed dummy UUID
-      final schoolRes = await supabase.from('schools').select('id').limit(1).maybeSingle();
-      if (schoolRes != null) {
-        final dbSchoolId = schoolRes['id'] as String?;
-        if (targetSchoolId == null || targetSchoolId.isEmpty || targetSchoolId == 'a1111111-1111-1111-1111-111111111111') {
-          targetSchoolId = dbSchoolId;
-        }
-      }
-
-      if (targetSchoolId == null || targetSchoolId.isEmpty) {
-        throw Exception('Tidak ada data sekolah terdaftar di database. Silakan buat/pilih sekolah terlebih dahulu.');
+      if (targetSchoolId == null ||
+          targetSchoolId.isEmpty ||
+          targetSchoolId == 'a1111111-1111-1111-1111-111111111111') {
+        throw Exception('Tidak ada data sekolah terdaftar. Silakan pilih sekolah terlebih dahulu.');
       }
 
       final resolvedCat = (category != null && category.trim().isNotEmpty)
@@ -226,20 +232,14 @@ class HolidayProvider with ChangeNotifier {
     try {
       final supabase = Supabase.instance.client;
       final cleanId = AppHelper.parseSingleCleanSchoolId(schoolId);
-      String? targetSchoolId = (cleanId != null && cleanId.isNotEmpty)
+      final targetSchoolId = (cleanId != null && cleanId.isNotEmpty)
           ? cleanId
           : schoolId?.trim();
 
-      final schoolRes = await supabase.from('schools').select('id').limit(1).maybeSingle();
-      if (schoolRes != null) {
-        final dbSchoolId = schoolRes['id'] as String?;
-        if (targetSchoolId == null || targetSchoolId.isEmpty || targetSchoolId == 'a1111111-1111-1111-1111-111111111111') {
-          targetSchoolId = dbSchoolId;
-        }
-      }
-
-      if (targetSchoolId == null || targetSchoolId.isEmpty) {
-        throw Exception('Tidak ada data sekolah terdaftar di database.');
+      if (targetSchoolId == null ||
+          targetSchoolId.isEmpty ||
+          targetSchoolId == 'a1111111-1111-1111-1111-111111111111') {
+        throw Exception('Tidak ada data sekolah terdaftar.');
       }
 
       // 1. If date changed, restore journals from old range first

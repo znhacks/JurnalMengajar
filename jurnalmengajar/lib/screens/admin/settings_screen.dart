@@ -885,10 +885,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     SchoolModel? school = authProvider.activeSchool;
     if (school == null && authProvider.activeSchoolId != null) {
       try {
-        school = masterProvider.schools.firstWhere((s) => s.id == authProvider.activeSchoolId);
+        final m = authProvider.userMemberships.firstWhere((m) => m.schoolId == authProvider.activeSchoolId);
+        school = SchoolModel(id: m.schoolId, name: m.schoolName, logoUrl: m.logoUrl);
       } catch (_) {}
     }
-    school ??= masterProvider.schools.isNotEmpty ? masterProvider.schools.first : null;
 
     final isEnterprise = school?.isEnterprise ?? false;
     final isUltra = school?.isUltra ?? false;

@@ -106,7 +106,7 @@ class JournalProvider with ChangeNotifier {
       if (_currentSchoolId != null && _currentSchoolId!.isNotEmpty) {
         scoped = scoped.where((j) {
           final sSchoolId = AppHelper.parseSingleCleanSchoolId(j.schoolId);
-          return sSchoolId == null || sSchoolId.isEmpty || sSchoolId == _currentSchoolId;
+          return sSchoolId == _currentSchoolId;
         }).toList();
       }
 
@@ -178,7 +178,7 @@ class JournalProvider with ChangeNotifier {
           final filtered = (cleanSchoolId != null && cleanSchoolId.isNotEmpty)
               ? mapped.where((j) {
                   final jSchoolId = AppHelper.parseSingleCleanSchoolId(j.schoolId) ?? j.schoolId?.trim();
-                  return jSchoolId == null || jSchoolId.isEmpty || jSchoolId == cleanSchoolId;
+                  return jSchoolId == cleanSchoolId;
                 }).toList()
               : mapped;
           _teacherJournals = filtered;
@@ -199,7 +199,7 @@ class JournalProvider with ChangeNotifier {
       final filteredFresh = (cleanSchoolId != null && cleanSchoolId.isNotEmpty)
           ? fresh.where((j) {
               final jSchoolId = AppHelper.parseSingleCleanSchoolId(j.schoolId) ?? j.schoolId?.trim();
-              return jSchoolId == null || jSchoolId.isEmpty || jSchoolId == cleanSchoolId;
+              return jSchoolId == cleanSchoolId;
             }).toList()
           : fresh;
 

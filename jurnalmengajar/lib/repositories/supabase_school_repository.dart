@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/school_model.dart';
+import '../core/services/cache_service.dart';
+import '../core/utils/network_resilience.dart';
 import 'school_repository.dart';
 
 class SupabaseSchoolRepository implements SchoolRepository {
@@ -10,17 +12,80 @@ class SupabaseSchoolRepository implements SchoolRepository {
 
   @override
   Future<List<SchoolModel>> getAll() async {
-    try {
-      final response = await _supabase
-          .from('schools')
-          .select()
-          .order('name', ascending: true);
+    const cacheKey = 'all_schools';
+    Future<List<SchoolModel>> loadFromCache() async {
+      try {
+        final cached = await CacheService().loadList(cacheKey);
+        if (cached != null && cached.isNotEmpty) {
+          return cached.map((json) => SchoolModel.fromJson(json)).toList();
+        }
+      } catch (_) {}
+      return <SchoolModel>[];
+    }
 
-      return (response as List)
-          .map((json) => SchoolModel.fromJson(json))
-          .toList();
+    try {
+      return await NetworkResilience.execute<List<SchoolModel>>(
+        operationName: 'SchoolRepository.getAll',
+        fallback: loadFromCache,
+        networkTask: () async {
+          final response = await _supabase
+              .from('schools')
+              .select()
+              .order('name', ascending: true);
+
+          final list = (response as List)
+              .map((json) => SchoolModel.fromJson(json))
+              .toList();
+
+          final cacheable = (response as List)
+              .map((e) => e is Map<String, dynamic> ? e : Map<String, dynamic>.from(e as Map))
+              .toList();
+          CacheService().save(cacheKey, cacheable);
+          return list;
+        },
+      );
     } catch (e) {
-      throw Exception('Gagal memuat daftar sekolah: $e');
+      return await loadFromCache();
+    }
+  }
+
+  @override
+  Future<SchoolModel?> getById(String id) async {
+    final cleanId = id.trim();
+    if (cleanId.isEmpty) return null;
+    final cacheKey = 'active_school_$cleanId';
+
+    Future<SchoolModel?> loadFromCache() async {
+      try {
+        final cached = await CacheService().loadMap(cacheKey);
+        if (cached != null) {
+          return SchoolModel.fromJson(cached);
+        }
+      } catch (_) {}
+      return null;
+    }
+
+    try {
+      return await NetworkResilience.execute<SchoolModel?>(
+        operationName: 'SchoolRepository.getById',
+        fallback: loadFromCache,
+        networkTask: () async {
+          final response = await _supabase
+              .from('schools')
+              .select()
+              .eq('id', cleanId)
+              .maybeSingle();
+
+          if (response != null) {
+            final model = SchoolModel.fromJson(response);
+            CacheService().save(cacheKey, response);
+            return model;
+          }
+          return null;
+        },
+      );
+    } catch (_) {
+      return await loadFromCache();
     }
   }
 

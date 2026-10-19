@@ -34,6 +34,10 @@ class FakeSchoolRepo implements SchoolRepository {
   Future<List<SchoolModel>> getAll() async => mockSchools;
 
   @override
+  Future<SchoolModel?> getById(String id) async =>
+      mockSchools.where((s) => s.id == id).firstOrNull;
+
+  @override
   Future<SchoolModel?> validateActivationCode(String code) async {
     final clean = code.trim().toUpperCase();
     if (clean == 'SMKN1MALANG') {

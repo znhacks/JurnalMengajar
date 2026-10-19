@@ -841,6 +841,7 @@ class AuthProvider with ChangeNotifier {
         if (cached != null && cached.isNotEmpty) {
           _userMemberships = cached.map((m) => UserSchoolModel.fromJson(m)).toList();
           await _applyActiveMembershipFromPreferences();
+          _isLoading = false;
           notifyListeners();
         }
       } catch (_) {}
@@ -899,7 +900,7 @@ class AuthProvider with ChangeNotifier {
                   .not('photo_url', 'is', null)
                   .limit(1)
                   .maybeSingle()
-                  .timeout(NetworkResilience.defaultQueryTimeout);
+                  .timeout(const Duration(seconds: 2));
               if (adminRes != null && adminRes['photo_url'] != null && adminRes['photo_url'].toString().trim().isNotEmpty) {
                 final adminPhoto = adminRes['photo_url'].toString().trim();
                 if (m['schools'] != null && m['schools'] is Map) {
@@ -993,7 +994,7 @@ class AuthProvider with ChangeNotifier {
                         .not('photo_url', 'is', null)
                         .limit(1)
                         .maybeSingle()
-                        .timeout(NetworkResilience.defaultQueryTimeout);
+                        .timeout(const Duration(seconds: 2));
                     if (adminRes != null && adminRes['photo_url'] != null && adminRes['photo_url'].toString().trim().isNotEmpty) {
                       schoolLogo = adminRes['photo_url'].toString().trim();
                     }
@@ -1148,6 +1149,17 @@ class AuthProvider with ChangeNotifier {
             // Non-Admin Asli: Allow 'admin' if explicitly saved by this user, then loadUserMemberships() will strictly sanitize
             final canRestoreAdmin = savedUserRole?.toLowerCase() == 'admin';
             _activeRole = canRestoreAdmin ? 'admin' : 'guru';
+          }
+          if (_userMemberships.isEmpty) {
+            try {
+              final cached = await CacheService().loadList('user_memberships_$uid');
+              if (cached != null && cached.isNotEmpty) {
+                _userMemberships = cached.map((m) => UserSchoolModel.fromJson(m)).toList();
+                await _applyActiveMembershipFromPreferences();
+                _isLoading = false;
+                notifyListeners();
+              }
+            } catch (_) {}
           }
           FcmService().syncToken(this);
           await loadUserMemberships();

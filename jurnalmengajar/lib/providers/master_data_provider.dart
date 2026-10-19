@@ -115,7 +115,8 @@ class MasterDataProvider with ChangeNotifier {
 
     // SWR Instant Cache Population: If lists are empty, render from disk cache immediately (0ms)
     final sKey = _currentSchoolId ?? 'default';
-    if (_classes.isEmpty || _subjects.isEmpty || _teachers.isEmpty || _periods.isEmpty || _hours.isEmpty) {
+    final bool hasInMemoryData = _classes.isNotEmpty && _subjects.isNotEmpty && _teachers.isNotEmpty;
+    if (!hasInMemoryData) {
       try {
         final cachedPeriods = await CacheService().loadList('periods_$sKey');
         final cachedSubjects = await CacheService().loadList('subjects_$sKey');
@@ -156,9 +157,6 @@ class MasterDataProvider with ChangeNotifier {
         _isLoading = true;
         notifyListeners();
       }
-    } else {
-      _isLoading = true;
-      notifyListeners();
     }
 
     try {
@@ -185,13 +183,12 @@ class MasterDataProvider with ChangeNotifier {
                 return <TeacherModel>[];
               })
             : Future.value(<TeacherModel>[]),
-        if (schoolRepository != null && _schools.isEmpty)
-          schoolRepository!.getAll().catchError((err) {
-            debugPrint('[RUNTIME_DEBUG:MASTER_DATA] schools error: $err');
-            return <SchoolModel>[];
-          })
-        else
-          Future.value(_schools),
+        (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && schoolRepository != null)
+            ? Future.sync(() => schoolRepository!.getById(_currentSchoolId!)).then((s) => s != null ? [s] : <SchoolModel>[]).catchError((err) {
+                debugPrint('[RUNTIME_DEBUG:MASTER_DATA] school error: $err');
+                return <SchoolModel>[];
+              })
+            : Future.value(_schools),
       ]);
 
       if (sequence != _loadSequence || _currentSchoolId != cleanSchoolId) {
@@ -210,19 +207,19 @@ class MasterDataProvider with ChangeNotifier {
       if (_currentSchoolId != null && _currentSchoolId!.isNotEmpty) {
         _periods = newPeriods.where((p) {
           final sId = AppHelper.parseSingleCleanSchoolId(p.schoolId);
-          return sId == null || sId.isEmpty || sId == _currentSchoolId;
+          return sId == _currentSchoolId;
         }).toList();
         _subjects = newSubjects.where((s) {
           final sId = AppHelper.parseSingleCleanSchoolId(s.schoolId);
-          return sId == null || sId.isEmpty || sId == _currentSchoolId;
+          return sId == _currentSchoolId;
         }).toList();
         _hours = newHours.where((h) {
           final sId = AppHelper.parseSingleCleanSchoolId(h.schoolId);
-          return sId == null || sId.isEmpty || sId == _currentSchoolId;
+          return sId == _currentSchoolId;
         }).toList();
         _classes = newClasses.where((c) {
           final sId = AppHelper.parseSingleCleanSchoolId(c.schoolId);
-          return sId == null || sId.isEmpty || sId == _currentSchoolId;
+          return sId == _currentSchoolId;
         }).toList();
         _teachers = newTeachers;
       } else {
@@ -232,7 +229,7 @@ class MasterDataProvider with ChangeNotifier {
         _classes = newClasses;
         _teachers = newTeachers;
       }
-      if (newSchools.isNotEmpty || _schools.isEmpty) _schools = newSchools;
+      if (newSchools.isNotEmpty) _schools = newSchools;
 
       debugPrint('[RUNTIME_DEBUG:MASTER_DATA] Loaded isolated data for $_currentSchoolId -> Periods: ${_periods.length}, Subjects: ${_subjects.length}, Hours: ${_hours.length}, Classes: ${_classes.length}, Teachers: ${_teachers.length}');
     } catch (e) {

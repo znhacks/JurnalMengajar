@@ -10,7 +10,6 @@ import '../../providers/schedule_provider.dart';
 import '../../models/journal_model.dart';
 import '../../models/class_model.dart';
 import '../../models/subject_model.dart';
-import '../../models/teacher_model.dart';
 import '../../core/utils/helper.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/state_widgets.dart';
@@ -83,28 +82,15 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
     final schoolId = authProvider.activeSchoolId;
     if (currentUser == null || schoolId == null || schoolId.isEmpty) return;
 
-    if (masterProvider.teachers.isEmpty || masterProvider.classes.isEmpty || masterProvider.subjects.isEmpty) {
-      await masterProvider.loadAllData(schoolId);
-    } else {
-      masterProvider.loadAllData(schoolId);
-    }
+    journalProvider.setSchoolId(schoolId);
+    scheduleProvider.setSchoolId(schoolId);
 
-    final teacher = masterProvider.teachers.firstWhere(
-      (t) => t.id == currentUser.id || t.email.toLowerCase() == currentUser.email.toLowerCase(),
-      orElse: () => TeacherModel(
-          id: currentUser.id, name: '', position: '', address: '', phoneNumber: '', email: ''),
-    );
-    if (teacher.id.isNotEmpty) {
-      journalProvider.setSchoolId(schoolId);
-      scheduleProvider.setSchoolId(schoolId);
-      await Future.wait([
-        journalProvider.loadTeacherJournals(teacher.id),
-        scheduleProvider.loadTeacherSchedules(teacher.id, DateTime.now()),
-      ]);
-    } else {
-      scheduleProvider.clearTeacherSchedulesCache();
-      journalProvider.clearTeacherJournalsCache();
-    }
+    final teacherId = currentUser.id;
+    await Future.wait([
+      masterProvider.loadAllData(schoolId),
+      journalProvider.loadTeacherJournals(teacherId),
+      scheduleProvider.loadTeacherSchedules(teacherId, DateTime.now()),
+    ]);
   }
 
   @override

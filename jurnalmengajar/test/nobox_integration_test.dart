@@ -218,6 +218,9 @@ class FakeSchoolRepo implements SchoolRepository {
         SchoolModel(id: '00000000-0000-0000-0000-000000000001', name: 'SMKN 11 Malang', plan: 'pro'),
       ];
   @override
+  Future<SchoolModel?> getById(String id) async =>
+      SchoolModel(id: id, name: 'SMKN 11 Malang', plan: 'pro');
+  @override
   Future<SchoolModel?> validateActivationCode(String code) async => null;
   @override
   Future<SchoolModel?> validateTeacherJoinCode(String code) async => null;

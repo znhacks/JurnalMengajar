@@ -2,6 +2,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/student_model.dart';
 import '../models/student_academic_history_model.dart';
+import '../core/services/cache_service.dart';
+import '../core/utils/network_resilience.dart';
 import 'student_repository.dart';
 
 const _uuid = Uuid();
@@ -13,85 +15,106 @@ class SupabaseStudentRepository implements StudentRepository {
 
   @override
   Future<List<StudentModel>> getAllByClass(String classId) async {
-    try {
-      // 1. Ambil data siswa yang saat ini class_id = classId
-      final primaryResponse = await _supabase
-          .from('students')
-          .select()
-          .eq('class_id', classId)
-          .order('name', ascending: true);
-
-      final Map<String, StudentModel> studentMap = {};
-
-      for (final item in (primaryResponse as List)) {
-        try {
-          final map = item is Map<String, dynamic>
-              ? item
-              : Map<String, dynamic>.from(item as Map);
-          final student = StudentModel.fromJson(map);
-          studentMap[student.id] = student;
-        } catch (_) {}
-      }
-
-      // 2. Ambil data histori akademik pada kelas ini agar siswa pada tahun ajaran lama tetap terbaca
+    final cacheKey = 'students_$classId';
+    Future<List<StudentModel>> loadFromCache() async {
       try {
-        final historyResponse = await _supabase
-            .from('student_academic_histories')
-            .select()
-            .eq('class_id', classId)
-            .order('created_at', ascending: false);
-
-        final List<String> missingStudentIds = [];
-        final Map<String, String> historyStatusMap = {};
-
-        for (final item in (historyResponse as List)) {
-          final sId = item['student_id']?.toString();
-          final status = item['status']?.toString() ?? 'aktif';
-          if (sId != null && sId.isNotEmpty) {
-            historyStatusMap[sId] = status;
-            if (!studentMap.containsKey(sId)) {
-              missingStudentIds.add(sId);
-            }
-          }
+        final cached = await CacheService().loadList(cacheKey);
+        if (cached != null && cached.isNotEmpty) {
+          return cached.map((e) => StudentModel.fromJson(e)).toList();
         }
+      } catch (_) {}
+      return <StudentModel>[];
+    }
 
-        // Ambil data profil siswa yang belum ada di map (karena sudah pindah/naik ke kelas lain)
-        if (missingStudentIds.isNotEmpty) {
-          final additionalResponse = await _supabase
+    try {
+      return await NetworkResilience.execute<List<StudentModel>>(
+        operationName: 'StudentRepository.getAllByClass',
+        fallback: loadFromCache,
+        networkTask: () async {
+          // 1. Ambil data siswa yang saat ini class_id = classId
+          final primaryResponse = await _supabase
               .from('students')
               .select()
-              .inFilter('id', missingStudentIds);
+              .eq('class_id', classId)
+              .order('name', ascending: true);
 
-          for (final item in (additionalResponse as List)) {
+          final Map<String, StudentModel> studentMap = {};
+
+          for (final item in (primaryResponse as List)) {
             try {
               final map = item is Map<String, dynamic>
                   ? item
                   : Map<String, dynamic>.from(item as Map);
               final student = StudentModel.fromJson(map);
-              final enrollmentStatus = historyStatusMap[student.id] ?? 'aktif';
-              studentMap[student.id] = student.copyWith(
-                enrollmentStatus: enrollmentStatus,
-              );
+              studentMap[student.id] = student;
             } catch (_) {}
           }
-        }
 
-        // Sematkan status enrollment untuk siswa yang sudah ada di studentMap
-        for (final entry in historyStatusMap.entries) {
-          if (studentMap.containsKey(entry.key)) {
-            final s = studentMap[entry.key]!;
-            studentMap[entry.key] = s.copyWith(enrollmentStatus: entry.value);
+          // 2. Ambil data histori akademik pada kelas ini agar siswa pada tahun ajaran lama tetap terbaca
+          try {
+            final historyResponse = await _supabase
+                .from('student_academic_histories')
+                .select()
+                .eq('class_id', classId)
+                .order('created_at', ascending: false);
+
+            final List<String> missingStudentIds = [];
+            final Map<String, String> historyStatusMap = {};
+
+            for (final item in (historyResponse as List)) {
+              final sId = item['student_id']?.toString();
+              final status = item['status']?.toString() ?? 'aktif';
+              if (sId != null && sId.isNotEmpty) {
+                historyStatusMap[sId] = status;
+                if (!studentMap.containsKey(sId)) {
+                  missingStudentIds.add(sId);
+                }
+              }
+            }
+
+            // Ambil data profil siswa yang belum ada di map (karena sudah pindah/naik ke kelas lain)
+            if (missingStudentIds.isNotEmpty) {
+              final additionalResponse = await _supabase
+                  .from('students')
+                  .select()
+                  .inFilter('id', missingStudentIds);
+
+              for (final item in (additionalResponse as List)) {
+                try {
+                  final map = item is Map<String, dynamic>
+                      ? item
+                      : Map<String, dynamic>.from(item as Map);
+                  final student = StudentModel.fromJson(map);
+                  final enrollmentStatus = historyStatusMap[student.id] ?? 'aktif';
+                  studentMap[student.id] = student.copyWith(
+                    enrollmentStatus: enrollmentStatus,
+                  );
+                } catch (_) {}
+              }
+            }
+
+            // Sematkan status enrollment untuk siswa yang sudah ada di studentMap
+            for (final entry in historyStatusMap.entries) {
+              if (studentMap.containsKey(entry.key)) {
+                final s = studentMap[entry.key]!;
+                studentMap[entry.key] = s.copyWith(enrollmentStatus: entry.value);
+              }
+            }
+          } catch (err) {
+            // Fallback jika tabel history belum terjangkau
           }
-        }
-      } catch (err) {
-        // Fallback jika tabel history belum terjangkau
-      }
 
-      final List<StudentModel> list = studentMap.values.toList();
-      list.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-      return list;
+          final List<StudentModel> list = studentMap.values.toList();
+          list.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+          if (list.isNotEmpty) {
+            CacheService().save(cacheKey, list.map((e) => e.toJson()).toList());
+          }
+          return list;
+        },
+      );
     } catch (e) {
-      throw Exception('Gagal memuat siswa: $e');
+      return await loadFromCache();
     }
   }
 

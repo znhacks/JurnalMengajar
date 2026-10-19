@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/teacher_leave_model.dart';
 import '../core/utils/helper.dart';
 import '../core/services/cache_service.dart';
+import '../core/utils/network_resilience.dart';
 
 class TeacherLeaveProvider with ChangeNotifier {
   List<TeacherLeaveModel> _leaves = [];
@@ -72,43 +73,53 @@ class TeacherLeaveProvider with ChangeNotifier {
     }
 
     try {
-      final supabase = Supabase.instance.client;
-      String? resolvedSchoolId = _currentSchoolId;
-
+      final resolvedSchoolId = _currentSchoolId;
       if (resolvedSchoolId == null ||
           resolvedSchoolId.isEmpty ||
           resolvedSchoolId == 'a1111111-1111-1111-1111-111111111111') {
-        final schoolRes = await supabase.from('schools').select('id').limit(1).maybeSingle();
-        if (schoolRes != null) {
-          resolvedSchoolId = schoolRes['id'] as String?;
-        }
-      }
-
-      if (resolvedSchoolId != null && resolvedSchoolId.isNotEmpty) {
-        final res = await supabase
-            .from('teacher_leaves')
-            .select()
-            .eq('school_id', resolvedSchoolId)
-            .order('start_date', ascending: false);
-
-        if (sequence != _loadSequence || _currentSchoolId != targetSchoolId) {
-          return;
-        }
-
-        final List<TeacherLeaveModel> fresh = (res as List)
-            .map((json) => TeacherLeaveModel.fromJson(Map<String, dynamic>.from(json)))
-            .toList();
-
-        _leaves = fresh;
-
-        // Persist to local cache for instant SWR
-        final cacheable = (res as List)
-            .map((e) => e is Map<String, dynamic> ? e : Map<String, dynamic>.from(e as Map))
-            .toList();
-        CacheService().save('teacher_leaves_$resolvedSchoolId', cacheable);
-      } else {
         _leaves = [];
+        return;
       }
+
+      final cacheKey = 'teacher_leaves_$resolvedSchoolId';
+      Future<List<TeacherLeaveModel>> loadFromCache() async {
+        try {
+          final cached = await CacheService().loadList(cacheKey);
+          if (cached != null && cached.isNotEmpty) {
+            return cached.map((e) => TeacherLeaveModel.fromJson(e)).toList();
+          }
+        } catch (_) {}
+        return <TeacherLeaveModel>[];
+      }
+
+      final fresh = await NetworkResilience.execute<List<TeacherLeaveModel>>(
+        operationName: 'TeacherLeaveProvider.loadLeaves',
+        fallback: loadFromCache,
+        networkTask: () async {
+          final supabase = Supabase.instance.client;
+          final res = await supabase
+              .from('teacher_leaves')
+              .select()
+              .eq('school_id', resolvedSchoolId)
+              .order('start_date', ascending: false);
+
+          final List<TeacherLeaveModel> items = (res as List)
+              .map((json) => TeacherLeaveModel.fromJson(Map<String, dynamic>.from(json)))
+              .toList();
+
+          final cacheable = (res as List)
+              .map((e) => e is Map<String, dynamic> ? e : Map<String, dynamic>.from(e as Map))
+              .toList();
+          CacheService().save(cacheKey, cacheable);
+          return items;
+        },
+      );
+
+      if (sequence != _loadSequence || _currentSchoolId != targetSchoolId) {
+        return;
+      }
+
+      _leaves = fresh;
     } catch (e) {
       if (sequence == _loadSequence) {
         _errorMessage = e.toString().replaceAll('Exception: ', '');
@@ -137,21 +148,13 @@ class TeacherLeaveProvider with ChangeNotifier {
     try {
       final supabase = Supabase.instance.client;
       final cleanId = AppHelper.parseSingleCleanSchoolId(schoolId);
-      String? targetSchoolId = (cleanId != null && cleanId.isNotEmpty)
+      final targetSchoolId = (cleanId != null && cleanId.isNotEmpty)
           ? cleanId
           : schoolId?.trim();
 
-      final schoolRes = await supabase.from('schools').select('id').limit(1).maybeSingle();
-      if (schoolRes != null) {
-        final dbSchoolId = schoolRes['id'] as String?;
-        if (targetSchoolId == null ||
-            targetSchoolId.isEmpty ||
-            targetSchoolId == 'a1111111-1111-1111-1111-111111111111') {
-          targetSchoolId = dbSchoolId;
-        }
-      }
-
-      if (targetSchoolId == null || targetSchoolId.isEmpty) {
+      if (targetSchoolId == null ||
+          targetSchoolId.isEmpty ||
+          targetSchoolId == 'a1111111-1111-1111-1111-111111111111') {
         throw Exception('Sekolah belum teridentifikasi.');
       }
 
