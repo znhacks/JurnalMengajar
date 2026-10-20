@@ -733,43 +733,48 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Hamburger Menu Button
-              Builder(
-                builder: (ctx) {
-                  return InkWell(
-                    onTap: () {
-                      final rootScaffold = ctx
-                          .findRootAncestorStateOfType<ScaffoldState>();
-                      if (rootScaffold != null && rootScaffold.hasDrawer) {
-                        rootScaffold.openDrawer();
-                      } else {
-                        final scaffoldState = Scaffold.maybeOf(ctx);
-                        if (scaffoldState != null && scaffoldState.hasDrawer) {
-                          scaffoldState.openDrawer();
+              // Di web desktop menu sudah tampil permanen di sidebar, jadi
+              // tombol ini tidak perlu ditampilkan.
+              AppMenuButton(
+                child: Builder(
+                  builder: (ctx) {
+                    return InkWell(
+                      onTap: () {
+                        final rootScaffold = ctx
+                            .findRootAncestorStateOfType<ScaffoldState>();
+                        if (rootScaffold != null && rootScaffold.hasDrawer) {
+                          rootScaffold.openDrawer();
+                        } else {
+                          final scaffoldState = Scaffold.maybeOf(ctx);
+                          if (scaffoldState != null &&
+                              scaffoldState.hasDrawer) {
+                            scaffoldState.openDrawer();
+                          }
                         }
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(50.r),
-                    child: Container(
-                      width: 44.w,
-                      height: 44.w,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.outlineVariant,
-                          width: 1,
+                      },
+                      borderRadius: BorderRadius.circular(50.r),
+                      child: Container(
+                        width: 44.w,
+                        height: 44.w,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                            width: 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.menu_rounded,
+                            color: Theme.of(context).colorScheme.onSurface,
+                            size: 22,
+                          ),
                         ),
                       ),
-                      child: Center(
-                        child: Icon(
-                          Icons.menu_rounded,
-                          color: Theme.of(context).colorScheme.onSurface,
-                          size: 22,
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
 
               // Branding App Logo

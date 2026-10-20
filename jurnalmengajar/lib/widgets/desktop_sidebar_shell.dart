@@ -26,7 +26,16 @@ class AppShell {
   static bool isDesktopWeb(BuildContext context) {
     if (forceDesktopWeb != null) return forceDesktopWeb!;
     if (!kIsWeb) return false;
-    return MediaQuery.sizeOf(context).width >= kDesktopSidebarBreakpoint;
+    // Baca MediaQuery agar widget ikut dibangun ulang saat viewport berubah,
+    // tetapi pakai lebar viewport asli, bukan MediaQuery yang sudah
+    // dipersempit oleh DesktopSidebarShell untuk area konten. Tanpa ini, pada
+    // lebar 1024-1311 px area konten terbaca < 1024 sehingga menu drawer ikut
+    // muncul padahal sidebar permanen sedang tampil.
+    final mediaWidth = MediaQuery.sizeOf(context).width;
+    final view = View.of(context);
+    final viewportWidth = view.physicalSize.width / view.devicePixelRatio;
+    final effectiveWidth = viewportWidth > 0 ? viewportWidth : mediaWidth;
+    return effectiveWidth >= kDesktopSidebarBreakpoint;
   }
 }
 
