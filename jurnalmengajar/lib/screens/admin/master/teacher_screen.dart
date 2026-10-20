@@ -91,47 +91,81 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
     });
   }
 
-  Future<void> _handleBatchDelete() async {
+  Future<void> _handleBatchDeactivate() async {
     if (_selectedIds.isEmpty) return;
     final count = _selectedIds.length;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Hapus $count Data Guru', style: const TextStyle(color: Colors.red)),
-        content: Text('Apakah Anda yakin ingin menghapus $count data guru yang dipilih? Akun login guru yang bersangkutan juga akan dihapus.'),
+        title: Text(
+          'Nonaktifkan $count Guru',
+          style: TextStyle(color: Colors.orange.shade800),
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin menonaktifkan $count guru yang dipilih '
+          'dari sekolah ini? Guru tidak akan bisa mengisi atau mengubah jurnal '
+          'di sekolah ini, tetapi akun, akses baca, dan seluruh riwayat datanya '
+          'tetap tersimpan.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hapus Massal', style: TextStyle(color: Colors.red)),
+            child: Text(
+              'Nonaktifkan',
+              style: TextStyle(color: Colors.orange.shade800),
+            ),
           ),
         ],
       ),
     );
 
     if (confirmed == true && mounted) {
-      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-      final idsToDelete = _selectedIds.toList();
-      final success = await masterProvider.deleteMultipleTeachers(idsToDelete);
+      final masterProvider = Provider.of<MasterDataProvider>(
+        context,
+        listen: false,
+      );
+      final idsToDeactivate = _selectedIds.toList();
+      final success = await masterProvider.deleteMultipleTeachers(
+        idsToDeactivate,
+      );
       if (!mounted) return;
       if (success) {
-        AppHelper.showSnackBar(context, '$count data guru berhasil dihapus.');
+        AppHelper.showSnackBar(
+          context,
+          '$count guru berhasil dinonaktifkan dari sekolah ini. '
+          'Riwayat data tetap tersimpan.',
+        );
         setState(() {
           _selectedIds.clear();
           _isSelectionMode = false;
         });
       } else {
-        AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menghapus data guru.', isError: true);
+        AppHelper.showSnackBar(
+          context,
+          masterProvider.errorMessage ?? 'Gagal menonaktifkan data guru.',
+          isError: true,
+        );
       }
     }
   }
 
   bool _isExporting = false;
 
-  Future<void> _handleExportExcel(List<TeacherModel> teachers, AuthProvider auth) async {
+  Future<void> _handleExportExcel(
+    List<TeacherModel> teachers,
+    AuthProvider auth,
+  ) async {
     if (_isExporting) return;
     if (teachers.isEmpty) {
-      AppHelper.showSnackBar(context, 'Tidak ada data guru untuk diekspor.', isError: true);
+      AppHelper.showSnackBar(
+        context,
+        'Tidak ada data guru untuk diekspor.',
+        isError: true,
+      );
       return;
     }
 
@@ -139,9 +173,17 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
     AppHelper.showSnackBar(context, 'Mempersiapkan file Excel...');
 
     try {
-      final schoolName = auth.activeSchoolName.isNotEmpty ? auth.activeSchoolName : 'Sekolah';
-      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-      final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+      final schoolName = auth.activeSchoolName.isNotEmpty
+          ? auth.activeSchoolName
+          : 'Sekolah';
+      final masterProvider = Provider.of<MasterDataProvider>(
+        context,
+        listen: false,
+      );
+      final scheduleProvider = Provider.of<ScheduleProvider>(
+        context,
+        listen: false,
+      );
 
       // Ensure schedules for active school are loaded
       if (scheduleProvider.schedules.isEmpty && auth.activeSchoolId != null) {
@@ -155,11 +197,18 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
         masterProvider: masterProvider,
       );
       if (mounted) {
-        AppHelper.showSnackBar(context, 'Data guru berhasil diekspor ke Excel.');
+        AppHelper.showSnackBar(
+          context,
+          'Data guru berhasil diekspor ke Excel.',
+        );
       }
     } catch (e) {
       if (mounted) {
-        AppHelper.showSnackBar(context, 'Ekspor gagal. Silakan coba lagi.', isError: true);
+        AppHelper.showSnackBar(
+          context,
+          'Ekspor gagal. Silakan coba lagi.',
+          isError: true,
+        );
       }
     } finally {
       if (mounted) {
@@ -170,19 +219,31 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
 
   Future<void> _refreshData() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await Provider.of<MasterDataProvider>(context, listen: false).loadAllData(authProvider.activeSchoolId);
+    await Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    ).loadAllData(authProvider.activeSchoolId);
   }
 
   void _showFormDialog({TeacherModel? teacher}) {
     if (teacher == null) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-      
+      final masterProvider = Provider.of<MasterDataProvider>(
+        context,
+        listen: false,
+      );
+
       SchoolModel? school = authProvider.activeSchool;
       if (school == null && authProvider.activeSchoolId != null) {
         try {
-          final m = authProvider.userMemberships.firstWhere((m) => m.schoolId == authProvider.activeSchoolId);
-          school = SchoolModel(id: m.schoolId, name: m.schoolName, logoUrl: m.logoUrl);
+          final m = authProvider.userMemberships.firstWhere(
+            (m) => m.schoolId == authProvider.activeSchoolId,
+          );
+          school = SchoolModel(
+            id: m.schoolId,
+            name: m.schoolName,
+            logoUrl: m.logoUrl,
+          );
         } catch (_) {}
       }
 
@@ -191,9 +252,10 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
         final maxLimit = school.maxTeachers > 0
             ? school.maxTeachers
             : (school.isEnterprise
-                ? 999
-                : (school.isUltra ? 150 : (school.isPro ? 50 : 30)));
-        if (masterProvider.teachers.length >= maxLimit) {
+                  ? 999
+                  : (school.isUltra ? 150 : (school.isPro ? 50 : 30)));
+        if (masterProvider.teachers.where((t) => !t.isDeleted).length >=
+            maxLimit) {
           AppHelper.showSnackBar(
             context,
             'Batas kuota $maxLimit guru untuk paket $plan telah tercapai. Tingkatkan paket di Pengaturan untuk menambah lebih banyak guru.',
@@ -203,12 +265,16 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
         }
       }
     }
-    
+
     final nameController = TextEditingController(text: teacher?.name ?? '');
     final posController = TextEditingController(text: teacher?.position ?? '');
-    final phoneController = TextEditingController(text: teacher?.phoneNumber ?? '');
+    final phoneController = TextEditingController(
+      text: teacher?.phoneNumber ?? '',
+    );
     final emailController = TextEditingController(text: teacher?.email ?? '');
-    final addressController = TextEditingController(text: teacher?.address ?? '');
+    final addressController = TextEditingController(
+      text: teacher?.address ?? '',
+    );
     Uint8List? tempImageBytes;
     String? tempImageName;
     bool isSaving = false;
@@ -221,7 +287,9 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
       ),
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          Future<void> pickDialogImage({ImageSource source = ImageSource.gallery}) async {
+          Future<void> pickDialogImage({
+            ImageSource source = ImageSource.gallery,
+          }) async {
             final result = await pickAndCropImage(
               context: context,
               source: source,
@@ -289,7 +357,10 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                 children: [
                   Text(
                     teacher == null ? 'Tambah Guru Baru' : 'Edit Data Guru',
-                    style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 16.h),
@@ -303,14 +374,27 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                           backgroundColor: Colors.grey[200],
                           backgroundImage: tempImageBytes != null
                               ? MemoryImage(tempImageBytes!)
-                              : ((teacher?.photoUrl?.startsWith('http') ?? false)
-                                  ? CachedNetworkImageProvider(teacher!.photoUrl!)
-                                  : null) as ImageProvider?,
+                              : ((teacher?.photoUrl?.startsWith('http') ??
+                                            false)
+                                        ? CachedNetworkImageProvider(
+                                            teacher!.photoUrl!,
+                                          )
+                                        : null)
+                                    as ImageProvider?,
                           onBackgroundImageError: (exception, stackTrace) {
-                            debugPrint('Error loading dialog teacher avatar: $exception');
+                            debugPrint(
+                              'Error loading dialog teacher avatar: $exception',
+                            );
                           },
-                          child: tempImageBytes == null && !(teacher?.photoUrl?.startsWith('http') ?? false)
-                              ? Icon(Icons.person, size: 44.r, color: Colors.grey[400])
+                          child:
+                              tempImageBytes == null &&
+                                  !(teacher?.photoUrl?.startsWith('http') ??
+                                      false)
+                              ? Icon(
+                                  Icons.person,
+                                  size: 44.r,
+                                  color: Colors.grey[400],
+                                )
                               : null,
                         ),
                         Positioned(
@@ -322,8 +406,15 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                               onTap: showImageSourceSheet,
                               child: Container(
                                 padding: EdgeInsets.all(6.w),
-                                decoration: const BoxDecoration(color: Color(0xFF2563EB), shape: BoxShape.circle),
-                                child: Icon(Icons.camera_alt, size: 14.r, color: Colors.white),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF2563EB),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.camera_alt,
+                                  size: 14.r,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -335,15 +426,23 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
 
                   TextField(
                     controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Nama Lengkap', hintText: 'Nama lengkap beserta gelar'),
+                    decoration: const InputDecoration(
+                      labelText: 'Nama Lengkap',
+                      hintText: 'Nama lengkap beserta gelar',
+                    ),
                   ),
                   SizedBox(height: 12.h),
                   MouseRegion(
                     cursor: SystemMouseCursors.click,
                     child: GestureDetector(
                       onTap: () {
-                        final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-                        final subjectNames = masterProvider.subjects.map((s) => s.name).toList();
+                        final masterProvider = Provider.of<MasterDataProvider>(
+                          context,
+                          listen: false,
+                        );
+                        final subjectNames = masterProvider.subjects
+                            .map((s) => s.name)
+                            .toList();
                         _showPositionSelector(
                           context,
                           subjectNames,
@@ -360,7 +459,8 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                           controller: posController,
                           decoration: const InputDecoration(
                             labelText: 'Jabatan',
-                            hintText: 'Ketuk untuk memilih jabatan / guru mapel...',
+                            hintText:
+                                'Ketuk untuk memilih jabatan / guru mapel...',
                             suffixIcon: Icon(Icons.arrow_drop_down),
                           ),
                         ),
@@ -371,7 +471,10 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                   TextField(
                     controller: phoneController,
                     keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(labelText: 'Nomor Telepon', hintText: 'Contoh: 08123456789'),
+                    decoration: const InputDecoration(
+                      labelText: 'Nomor Telepon',
+                      hintText: 'Contoh: 08123456789',
+                    ),
                   ),
                   SizedBox(height: 12.h),
                   TextField(
@@ -381,13 +484,17 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Email',
                       hintText: 'Contoh: guru@jurnal.com',
-                      helperText: 'Email digunakan guru untuk login (default pass: password123)',
+                      helperText:
+                          'Email digunakan guru untuk login (default pass: password123)',
                     ),
                   ),
                   SizedBox(height: 12.h),
                   TextField(
                     controller: addressController,
-                    decoration: const InputDecoration(labelText: 'Alamat', hintText: 'Alamat lengkap rumah'),
+                    decoration: const InputDecoration(
+                      labelText: 'Alamat',
+                      hintText: 'Alamat lengkap rumah',
+                    ),
                   ),
                   SizedBox(height: 24.h),
 
@@ -396,15 +503,27 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                         ? null
                         : () async {
                             if (nameController.text.trim().isEmpty) {
-                              AppHelper.showSnackBar(context, 'Nama guru tidak boleh kosong', isError: true);
+                              AppHelper.showSnackBar(
+                                context,
+                                'Nama guru tidak boleh kosong',
+                                isError: true,
+                              );
                               return;
                             }
                             if (posController.text.trim().isEmpty) {
-                              AppHelper.showSnackBar(context, 'Jabatan/guru mapel tidak boleh kosong', isError: true);
+                              AppHelper.showSnackBar(
+                                context,
+                                'Jabatan/guru mapel tidak boleh kosong',
+                                isError: true,
+                              );
                               return;
                             }
                             if (emailController.text.trim().isEmpty) {
-                              AppHelper.showSnackBar(context, 'Email tidak boleh kosong', isError: true);
+                              AppHelper.showSnackBar(
+                                context,
+                                'Email tidak boleh kosong',
+                                isError: true,
+                              );
                               return;
                             }
 
@@ -412,24 +531,40 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                               isSaving = true;
                             });
 
-                            final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                            final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+                            final authProvider = Provider.of<AuthProvider>(
+                              context,
+                              listen: false,
+                            );
+                            final masterProvider =
+                                Provider.of<MasterDataProvider>(
+                                  context,
+                                  listen: false,
+                                );
 
                             String? uploadedPhotoUrl = teacher?.photoUrl;
                             if (tempImageBytes != null &&
                                 tempImageName != null &&
-                                authProvider.authRepository is SupabaseAuthRepository) {
+                                authProvider.authRepository
+                                    is SupabaseAuthRepository) {
                               try {
-                                final supabaseRepo = authProvider.authRepository as SupabaseAuthRepository;
-                                final targetId = teacher?.id ?? const Uuid().v4();
-                                uploadedPhotoUrl = await supabaseRepo.uploadProfilePhoto(
-                                  tempImageBytes!,
-                                  tempImageName!,
-                                  targetId,
-                                );
+                                final supabaseRepo =
+                                    authProvider.authRepository
+                                        as SupabaseAuthRepository;
+                                final targetId =
+                                    teacher?.id ?? const Uuid().v4();
+                                uploadedPhotoUrl = await supabaseRepo
+                                    .uploadProfilePhoto(
+                                      tempImageBytes!,
+                                      tempImageName!,
+                                      targetId,
+                                    );
                               } catch (e) {
                                 if (context.mounted) {
-                                  AppHelper.showSnackBar(context, 'Gagal upload foto: $e', isError: true);
+                                  AppHelper.showSnackBar(
+                                    context,
+                                    'Gagal upload foto: $e',
+                                    isError: true,
+                                  );
                                 }
                                 setDialogState(() {
                                   isSaving = false;
@@ -440,30 +575,42 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
 
                             bool success;
                             if (teacher == null) {
-                              success = await masterProvider.createTeacher(TeacherModel(
-                                id: '',
-                                name: nameController.text.trim(),
-                                position: posController.text.trim(),
-                                phoneNumber: phoneController.text.trim(),
-                                email: emailController.text.trim(),
-                                address: addressController.text.trim(),
-                                photoUrl: uploadedPhotoUrl,
-                              ));
+                              success = await masterProvider.createTeacher(
+                                TeacherModel(
+                                  id: '',
+                                  name: nameController.text.trim(),
+                                  position: posController.text.trim(),
+                                  phoneNumber: phoneController.text.trim(),
+                                  email: emailController.text.trim(),
+                                  address: addressController.text.trim(),
+                                  photoUrl: uploadedPhotoUrl,
+                                ),
+                              );
                             } else {
-                              success = await masterProvider.updateTeacher(teacher.copyWith(
-                                name: nameController.text.trim(),
-                                position: posController.text.trim(),
-                                phoneNumber: phoneController.text.trim(),
-                                address: addressController.text.trim(),
-                                photoUrl: uploadedPhotoUrl,
-                              ));
+                              success = await masterProvider.updateTeacher(
+                                teacher.copyWith(
+                                  name: nameController.text.trim(),
+                                  position: posController.text.trim(),
+                                  phoneNumber: phoneController.text.trim(),
+                                  address: addressController.text.trim(),
+                                  photoUrl: uploadedPhotoUrl,
+                                ),
+                              );
                             }
 
                             if (success && context.mounted) {
-                              AppHelper.showSnackBar(context, 'Data guru berhasil disimpan!');
+                              AppHelper.showSnackBar(
+                                context,
+                                'Data guru berhasil disimpan!',
+                              );
                               Navigator.pop(context);
                             } else if (context.mounted) {
-                              AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menyimpan data guru.', isError: true);
+                              AppHelper.showSnackBar(
+                                context,
+                                masterProvider.errorMessage ??
+                                    'Gagal menyimpan data guru.',
+                                isError: true,
+                              );
                             }
 
                             setDialogState(() {
@@ -474,7 +621,10 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                         ? SizedBox(
                             width: 20.w,
                             height: 20.h,
-                            child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: const CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
                           )
                         : const Text('Simpan'),
                   ),
@@ -488,19 +638,34 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
     );
   }
 
-  Future<void> _handleDelete(String id) async {
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+  Future<void> _handleDeactivate(String id) async {
+    final masterProvider = Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    );
     final success = await masterProvider.deleteTeacher(id);
     if (success && mounted) {
-      AppHelper.showSnackBar(context, 'Data guru berhasil dihapus');
+      AppHelper.showSnackBar(
+        context,
+        'Guru berhasil dinonaktifkan dari sekolah ini. '
+        'Riwayat data tetap tersimpan.',
+      );
     } else if (mounted) {
-      AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menghapus data guru.', isError: true);
+      AppHelper.showSnackBar(
+        context,
+        masterProvider.errorMessage ?? 'Gagal menonaktifkan data guru.',
+        isError: true,
+      );
     }
   }
 
   Future<void> _launchWhatsApp(String phone) async {
     if (phone.trim().isEmpty) {
-      AppHelper.showSnackBar(context, 'Nomor WhatsApp belum terdaftar', isError: true);
+      AppHelper.showSnackBar(
+        context,
+        'Nomor WhatsApp belum terdaftar',
+        isError: true,
+      );
       return;
     }
 
@@ -511,13 +676,24 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
 
     final url = Uri.parse('https://wa.me/$cleanPhone');
     try {
-      final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
       if (!launched && mounted) {
-        AppHelper.showSnackBar(context, 'Tidak dapat membuka WhatsApp', isError: true);
+        AppHelper.showSnackBar(
+          context,
+          'Tidak dapat membuka WhatsApp',
+          isError: true,
+        );
       }
     } catch (e) {
       if (mounted) {
-        AppHelper.showSnackBar(context, 'Gagal membuka link WhatsApp', isError: true);
+        AppHelper.showSnackBar(
+          context,
+          'Gagal membuka link WhatsApp',
+          isError: true,
+        );
       }
     }
   }
@@ -526,7 +702,8 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
   Map<String, List<TeacherModel>> _buildGroups(List<TeacherModel> teachers) {
     final filtered = teachers.where((t) {
       final pos = t.position.trim().isEmpty ? 'Lainnya' : t.position.trim();
-      final matchesPosition = _selectedPosition == 'all' || pos == _selectedPosition;
+      final matchesPosition =
+          _selectedPosition == 'all' || pos == _selectedPosition;
       if (!matchesPosition) return false;
 
       if (_searchQuery.isEmpty) return true;
@@ -560,155 +737,200 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
         alignment: Alignment.centerRight,
         padding: EdgeInsets.only(right: 20.w),
         decoration: BoxDecoration(
-          color: Colors.red[600],
+          color: Colors.orange.shade700,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: const Icon(Icons.person_off_rounded, color: Colors.white),
       ),
-      onDismissed: (_) => _handleDelete(t.id),
       confirmDismiss: (_) async {
-        return await showDialog<bool>(
+        final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Hapus Guru'),
+            title: const Text('Nonaktifkan Guru'),
             content: const Text(
-                'Apakah Anda yakin ingin menghapus data guru ini? Akun login guru tersebut juga akan dihapus.'),
+              'Nonaktifkan guru ini dari sekolah ini? '
+              'Guru tidak akan bisa mengisi atau mengubah jurnal di sekolah '
+              'ini, tetapi akun, akses baca, dan seluruh riwayat datanya tetap '
+              'tersimpan.',
+            ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Batal'),
+              ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                child: Text(
+                  'Nonaktifkan',
+                  style: TextStyle(color: Colors.orange.shade800),
+                ),
               ),
             ],
           ),
         );
+        if (confirmed == true) {
+          // The provider reloads the roster after deactivation, so let the
+          // card snap back instead of leaving a dismissed widget in the tree.
+          _handleDeactivate(t.id);
+        }
+        return false;
       },
       child: FadeSlideIn(
         delay: const Duration(milliseconds: 60),
-        child: Builder(builder: (context) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          return InkWell(
-            onTap: _isSelectionMode
-                ? () => _toggleSelectItem(t.id)
-                : () => context.push('/admin/master-data/teachers/${t.id}'),
-            onLongPress: () {
-              if (!_isSelectionMode) {
-                _toggleSelectionMode(initialId: t.id);
-              } else {
-                _toggleSelectItem(t.id);
-              }
-            },
-            child: Card(
-              margin: EdgeInsets.zero,
-              elevation: 0,
-              color: _selectedIds.contains(t.id)
-                  ? (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEFF6FF))
-                  : (isDark ? Theme.of(context).colorScheme.surface : Colors.white),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: _selectedIds.contains(t.id)
-                      ? const Color(0xFF2563EB)
-                      : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                  width: _selectedIds.contains(t.id) ? 1.5 : 1.0,
+        child: Builder(
+          builder: (context) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            return InkWell(
+              onTap: _isSelectionMode
+                  ? () => _toggleSelectItem(t.id)
+                  : () => context.push('/admin/master-data/teachers/${t.id}'),
+              onLongPress: () {
+                if (!_isSelectionMode) {
+                  _toggleSelectionMode(initialId: t.id);
+                } else {
+                  _toggleSelectItem(t.id);
+                }
+              },
+              child: Card(
+                margin: EdgeInsets.zero,
+                elevation: 0,
+                color: _selectedIds.contains(t.id)
+                    ? (isDark
+                          ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
+                          : const Color(0xFFEFF6FF))
+                    : (isDark
+                          ? Theme.of(context).colorScheme.surface
+                          : Colors.white),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: _selectedIds.contains(t.id)
+                        ? const Color(0xFF2563EB)
+                        : (isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFE2E8F0)),
+                    width: _selectedIds.contains(t.id) ? 1.5 : 1.0,
+                  ),
                 ),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                child: Row(
-                  children: [
-                    if (_isSelectionMode) ...[
-                      Checkbox(
-                        value: _selectedIds.contains(t.id),
-                        activeColor: const Color(0xFF2563EB),
-                        onChanged: (_) => _toggleSelectItem(t.id),
+                clipBehavior: Clip.antiAlias,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 8.h,
+                  ),
+                  child: Row(
+                    children: [
+                      if (_isSelectionMode) ...[
+                        Checkbox(
+                          value: _selectedIds.contains(t.id),
+                          activeColor: const Color(0xFF2563EB),
+                          onChanged: (_) => _toggleSelectItem(t.id),
+                        ),
+                        SizedBox(width: 4.w),
+                      ],
+                      CircleAvatar(
+                        key: ValueKey('teacher_avatar_${t.id}_${t.photoUrl}'),
+                        radius: 20.r,
+                        backgroundColor: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFF1F5F9),
+                        backgroundImage:
+                            t.photoUrl != null && t.photoUrl!.startsWith('http')
+                            ? CachedNetworkImageProvider(t.photoUrl!)
+                            : null,
+                        onBackgroundImageError: (exception, stackTrace) {
+                          debugPrint(
+                            'Error loading teacher avatar for ${t.id}: $exception',
+                          );
+                        },
+                        child:
+                            t.photoUrl == null ||
+                                !t.photoUrl!.startsWith('http')
+                            ? Icon(
+                                Icons.person,
+                                size: 20.r,
+                                color: Colors.grey[400],
+                              )
+                            : null,
                       ),
-                      SizedBox(width: 4.w),
-                    ],
-                    CircleAvatar(
-                      key: ValueKey('teacher_avatar_${t.id}_${t.photoUrl}'),
-                      radius: 20.r,
-                      backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
-                      backgroundImage: t.photoUrl != null && t.photoUrl!.startsWith('http')
-                          ? CachedNetworkImageProvider(t.photoUrl!)
-                          : null,
-                      onBackgroundImageError: (exception, stackTrace) {
-                        debugPrint('Error loading teacher avatar for ${t.id}: $exception');
-                      },
-                      child: t.photoUrl == null || !t.photoUrl!.startsWith('http')
-                          ? Icon(Icons.person, size: 20.r, color: Colors.grey[400])
-                          : null,
-                    ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            t.name,
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              t.name,
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 2.h),
-                          Text(
-                            t.position,
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          if (t.phoneNumber.isNotEmpty) ...[
                             SizedBox(height: 2.h),
                             Text(
-                              'Telp: ${t.phoneNumber}',
+                              t.position,
                               style: TextStyle(
-                                fontSize: 11.sp,
-                                color: Theme.of(context).colorScheme.outline,
+                                fontSize: 12.sp,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
+                            if (t.phoneNumber.isNotEmpty) ...[
+                              SizedBox(height: 2.h),
+                              Text(
+                                'Telp: ${t.phoneNumber}',
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  color: Theme.of(context).colorScheme.outline,
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 8.w),
-                    if (!_isSelectionMode)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              Icons.chat,
-                              color: t.phoneNumber.trim().isEmpty ? Colors.grey[400] : const Color(0xFF25D366),
-                              size: 20.sp,
+                      SizedBox(width: 8.w),
+                      if (!_isSelectionMode)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                Icons.chat,
+                                color: t.phoneNumber.trim().isEmpty
+                                    ? Colors.grey[400]
+                                    : const Color(0xFF25D366),
+                                size: 20.sp,
+                              ),
+                              tooltip: 'WhatsApp',
+                              constraints: const BoxConstraints(),
+                              padding: EdgeInsets.all(2.w),
+                              onPressed: () => _launchWhatsApp(t.phoneNumber),
                             ),
-                            tooltip: 'WhatsApp',
-                            constraints: const BoxConstraints(),
-                            padding: EdgeInsets.all(2.w),
-                            onPressed: () => _launchWhatsApp(t.phoneNumber),
-                          ),
-                          SizedBox(width: 2.w),
-                          IconButton(
-                            icon: Icon(Icons.edit_outlined, color: Colors.indigo, size: 20.sp),
-                            tooltip: 'Edit Guru',
-                            constraints: const BoxConstraints(),
-                            padding: EdgeInsets.all(2.w),
-                            onPressed: () => _showFormDialog(teacher: t),
-                          ),
-                        ],
-                      ),
-                  ],
+                            SizedBox(width: 2.w),
+                            IconButton(
+                              icon: Icon(
+                                Icons.edit_outlined,
+                                color: Colors.indigo,
+                                size: 20.sp,
+                              ),
+                              tooltip: 'Edit Guru',
+                              constraints: const BoxConstraints(),
+                              padding: EdgeInsets.all(2.w),
+                              onPressed: () => _showFormDialog(teacher: t),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
-        }),
+            );
+          },
+        ),
       ),
     );
   }
@@ -761,12 +983,27 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
   @override
   Widget build(BuildContext context) {
     final masterProvider = context.watch<MasterDataProvider>();
-    final teachers = masterProvider.teachers;
-    final positions = teachers.map((t) => t.position.trim().isEmpty ? 'Lainnya' : t.position.trim()).toSet().toList()..sort();
+    final teachers = masterProvider.teachers
+        .where((t) => !t.isDeleted)
+        .toList();
+    final positions =
+        teachers
+            .map(
+              (t) => t.position.trim().isEmpty ? 'Lainnya' : t.position.trim(),
+            )
+            .toSet()
+            .toList()
+          ..sort();
     final filterItems = [
       AdminFilterItem(id: 'all', label: 'Semua', count: teachers.length),
       ...positions.map((pos) {
-        final cnt = teachers.where((t) => (t.position.trim().isEmpty ? 'Lainnya' : t.position.trim()) == pos).length;
+        final cnt = teachers
+            .where(
+              (t) =>
+                  (t.position.trim().isEmpty ? 'Lainnya' : t.position.trim()) ==
+                  pos,
+            )
+            .length;
         return AdminFilterItem(id: pos, label: pos, count: cnt);
       }),
     ];
@@ -780,10 +1017,12 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
     groups.forEach((category, categoryTeachers) {
       listItems.add(_buildGroupHeader(category, categoryTeachers.length));
       for (final t in categoryTeachers) {
-        listItems.add(Padding(
-          padding: EdgeInsets.only(bottom: 10.h),
-          child: _buildTeacherCard(t),
-        ));
+        listItems.add(
+          Padding(
+            padding: EdgeInsets.only(bottom: 10.h),
+            child: _buildTeacherCard(t),
+          ),
+        );
       }
       listItems.add(SizedBox(height: 4.h));
     });
@@ -806,20 +1045,30 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                     _selectedIds.clear();
                   }),
                 ),
-                title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
+                title: Text(
+                  '${_selectedIds.length} Terpilih',
+                  style: const TextStyle(color: Colors.white),
+                ),
                 actions: [
                   IconButton(
                     icon: const Icon(
                       Icons.checklist_rounded,
                       color: Colors.white,
                     ),
-                    tooltip: _selectedIds.length == visibleTeachers.length ? 'Batal Pilih Semua' : 'Pilih Semua',
+                    tooltip: _selectedIds.length == visibleTeachers.length
+                        ? 'Batal Pilih Semua'
+                        : 'Pilih Semua',
                     onPressed: () => _selectAll(visibleTeachers),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.redAccent),
-                    tooltip: 'Hapus Massal',
-                    onPressed: _selectedIds.isEmpty ? null : _handleBatchDelete,
+                    icon: const Icon(
+                      Icons.person_off_rounded,
+                      color: Colors.orangeAccent,
+                    ),
+                    tooltip: 'Nonaktifkan Massal',
+                    onPressed: _selectedIds.isEmpty
+                        ? null
+                        : _handleBatchDeactivate,
                   ),
                 ],
               )
@@ -840,103 +1089,125 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                         ? SizedBox(
                             width: 18.w,
                             height: 18.w,
-                            child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2563EB)),
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFF2563EB),
+                            ),
                           )
-                        : const Icon(Icons.table_view_rounded, color: Color(0xFF10B981)),
+                        : const Icon(
+                            Icons.table_view_rounded,
+                            color: Color(0xFF10B981),
+                          ),
                     tooltip: 'Ekspor Excel',
                     onPressed: (_isExporting || visibleTeachers.isEmpty)
                         ? null
                         : () {
-                            final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                            final authProvider = Provider.of<AuthProvider>(
+                              context,
+                              listen: false,
+                            );
                             _handleExportExcel(visibleTeachers, authProvider);
                           },
                   ),
                   AdminSelectionActionButton(
-                    onPressed: visibleTeachers.isEmpty ? null : () => _toggleSelectionMode(),
+                    onPressed: visibleTeachers.isEmpty
+                        ? null
+                        : () => _toggleSelectionMode(),
                   ),
                 ],
               ),
-      drawer: const AdminDrawer(currentRoute: '/admin/master-data/teachers'),
-      body: Column(
-        children: [
-          AdminSearchFilterBar(
-            searchController: _searchController,
-            searchHint: 'Cari nama guru, jabatan, atau email...',
-            searchQuery: _searchQuery,
-            onSearchChanged: (val) {
-              setState(() {
-                _searchQuery = val.toLowerCase();
-              });
-            },
-            onSearchCleared: () {
-              setState(() {
-                _searchController.clear();
-                _searchQuery = '';
-              });
-            },
-            filterItems: filterItems,
-            selectedFilterId: _selectedPosition,
-            onFilterSelected: (id) {
-              setState(() {
-                _selectedPosition = id;
-              });
-            },
-          ),
-          SizedBox(height: 12.h),
+        drawer: const AdminDrawer(currentRoute: '/admin/master-data/teachers'),
+        body: Column(
+          children: [
+            AdminSearchFilterBar(
+              searchController: _searchController,
+              searchHint: 'Cari nama guru, jabatan, atau email...',
+              searchQuery: _searchQuery,
+              onSearchChanged: (val) {
+                setState(() {
+                  _searchQuery = val.toLowerCase();
+                });
+              },
+              onSearchCleared: () {
+                setState(() {
+                  _searchController.clear();
+                  _searchQuery = '';
+                });
+              },
+              filterItems: filterItems,
+              selectedFilterId: _selectedPosition,
+              onFilterSelected: (id) {
+                setState(() {
+                  _selectedPosition = id;
+                });
+              },
+            ),
+            SizedBox(height: 12.h),
 
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _refreshData,
-              color: const Color(0xFF2563EB),
-              child: masterProvider.isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : teachers.isEmpty
-                      ? const AppEmptyWidget(
-                          title: 'Guru Kosong',
-                          subtitle: 'Tekan tombol + di bawah untuk menambah data guru.',
-                        )
-                      : !hasResults
-                          ? Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(32.w),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.search_off, size: 48.r, color: Colors.grey[300]),
-                                    SizedBox(height: 12.h),
-                                    Text(
-                                      'Tidak ada guru yang cocok',
-                                      style: TextStyle(
-                                          fontSize: 14.sp, color: Colors.grey[500], fontWeight: FontWeight.w500),
-                                    ),
-                                    SizedBox(height: 4.h),
-                                    Text(
-                                      _searchQuery.isNotEmpty
-                                          ? '"$_searchQuery"'
-                                          : 'Dengan filter jabatan: $_selectedPosition',
-                                      style: TextStyle(fontSize: 13.sp, color: Colors.grey[400]),
-                                    ),
-                                  ],
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _refreshData,
+                color: const Color(0xFF2563EB),
+                child: masterProvider.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : teachers.isEmpty
+                    ? const AppEmptyWidget(
+                        title: 'Guru Kosong',
+                        subtitle:
+                            'Tekan tombol + di bawah untuk menambah data guru.',
+                      )
+                    : !hasResults
+                    ? Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(32.w),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.search_off,
+                                size: 48.r,
+                                color: Colors.grey[300],
+                              ),
+                              SizedBox(height: 12.h),
+                              Text(
+                                'Tidak ada guru yang cocok',
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: Colors.grey[500],
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                            )
-                          : ListView(
-                              padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 100.h),
-                              children: listItems,
-                            ),
+                              SizedBox(height: 4.h),
+                              Text(
+                                _searchQuery.isNotEmpty
+                                    ? '"$_searchQuery"'
+                                    : 'Dengan filter jabatan: $_selectedPosition',
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : ListView(
+                        padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 100.h),
+                        children: listItems,
+                      ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _showFormDialog(),
+          backgroundColor: const Color(0xFF2563EB),
+          foregroundColor: Colors.white,
+          child: const Icon(Icons.add),
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showFormDialog(),
-        backgroundColor: const Color(0xFF2563EB),
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
-      ),
-    ),
-  );
-}
+    );
+  }
 
   void _showPositionSelector(
     BuildContext context,
@@ -974,7 +1245,10 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                 children: [
                   Text(
                     'Pilih Jabatan / Guru Mapel',
-                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 12.h),
@@ -989,22 +1263,33 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                   SizedBox(height: 12.h),
                   Expanded(
                     child: filteredOptions.isEmpty
-                        ? const Center(child: Text('Tidak ada pilihan ditemukan'))
+                        ? const Center(
+                            child: Text('Tidak ada pilihan ditemukan'),
+                          )
                         : ListView.builder(
                             itemCount: filteredOptions.length,
                             itemBuilder: (context, index) {
                               final opt = filteredOptions[index];
-                              final isSelected = opt.toLowerCase() == currentPosition.toLowerCase();
+                              final isSelected =
+                                  opt.toLowerCase() ==
+                                  currentPosition.toLowerCase();
                               return ListTile(
                                 title: Text(
                                   opt,
                                   style: TextStyle(
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    color: isSelected ? const Color(0xFF2563EB) : null,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: isSelected
+                                        ? const Color(0xFF2563EB)
+                                        : null,
                                   ),
                                 ),
                                 trailing: isSelected
-                                    ? const Icon(Icons.check, color: Color(0xFF2563EB))
+                                    ? const Icon(
+                                        Icons.check,
+                                        color: Color(0xFF2563EB),
+                                      )
                                     : null,
                                 onTap: () {
                                   onSelect(opt);

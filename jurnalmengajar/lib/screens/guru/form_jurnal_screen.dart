@@ -68,7 +68,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedScheduleId = widget.scheduleId.isNotEmpty ? widget.scheduleId : null;
+    _selectedScheduleId = widget.scheduleId.isNotEmpty
+        ? widget.scheduleId
+        : null;
 
     _materialController.addListener(_autoSaveDraft);
     _noteController.addListener(_autoSaveDraft);
@@ -106,7 +108,14 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         if (currentUser != null) {
           final teacher = masterProvider.teachers.firstWhere(
             (t) => t.email.toLowerCase() == currentUser.email.toLowerCase(),
-            orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
+            orElse: () => TeacherModel(
+              id: '',
+              name: '',
+              position: '',
+              address: '',
+              phoneNumber: '',
+              email: '',
+            ),
           );
           if (teacher.id.isNotEmpty && targetDate != null) {
             scheduleProvider.setSchoolId(authProvider.activeSchoolId);
@@ -114,15 +123,17 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           }
         }
 
-        final availableSchedules = scheduleProvider.cachedTeacherSchedules.where((s) {
-          if (!s.isActive) return false;
-          if (targetDate != null) {
-            return s.date.year == targetDate.year &&
-                s.date.month == targetDate.month &&
-                s.date.day == targetDate.day;
-          }
-          return true;
-        }).toList();
+        final availableSchedules = scheduleProvider.cachedTeacherSchedules
+            .where((s) {
+              if (!s.isActive) return false;
+              if (targetDate != null) {
+                return s.date.year == targetDate.year &&
+                    s.date.month == targetDate.month &&
+                    s.date.day == targetDate.day;
+              }
+              return true;
+            })
+            .toList();
 
         if (availableSchedules.isNotEmpty) {
           setState(() {
@@ -160,18 +171,16 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
               }
               return sameSchedule;
             },
-            orElse: () => journalProvider.journals.firstWhere(
-              (j) {
-                final sameSchedule = j.scheduleId == activeId;
-                if (targetDate != null) {
-                  return sameSchedule &&
-                      j.date.year == targetDate.year &&
-                      j.date.month == targetDate.month &&
-                      j.date.day == targetDate.day;
-                }
-                return sameSchedule;
-              },
-            ),
+            orElse: () => journalProvider.journals.firstWhere((j) {
+              final sameSchedule = j.scheduleId == activeId;
+              if (targetDate != null) {
+                return sameSchedule &&
+                    j.date.year == targetDate.year &&
+                    j.date.month == targetDate.month &&
+                    j.date.day == targetDate.day;
+              }
+              return sameSchedule;
+            }),
           );
         } catch (_) {}
 
@@ -189,9 +198,8 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             (s) => s.id == activeId,
             orElse: () => scheduleProvider.schedules.firstWhere(
               (s) => s.id == activeId,
-              orElse: () => scheduleProvider.teacherSchedulesForSelectedDate.firstWhere(
-                (s) => s.id == activeId,
-              ),
+              orElse: () => scheduleProvider.teacherSchedulesForSelectedDate
+                  .firstWhere((s) => s.id == activeId),
             ),
           );
         } catch (_) {}
@@ -232,7 +240,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                   parsedGeneralNote = parts[1];
                 } else {
                   if (fullNote.contains('Catatan Pembelajaran:')) {
-                    final notesParts = fullNote.split('Catatan Pembelajaran:\n');
+                    final notesParts = fullNote.split(
+                      'Catatan Pembelajaran:\n',
+                    );
                     if (notesParts.length > 1) {
                       parsedGeneralNote = notesParts[1];
                     }
@@ -272,9 +282,18 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             _permissionCount = journalData.permissionCount;
             _alphaCount = journalData.alphaCount;
 
-            final sickNames = parsedSickNames.split(',').map((e) => e.trim().toLowerCase()).toList();
-            final permNames = parsedPermissionNames.split(',').map((e) => e.trim().toLowerCase()).toList();
-            final alphaNames = parsedAlphaNames.split(',').map((e) => e.trim().toLowerCase()).toList();
+            final sickNames = parsedSickNames
+                .split(',')
+                .map((e) => e.trim().toLowerCase())
+                .toList();
+            final permNames = parsedPermissionNames
+                .split(',')
+                .map((e) => e.trim().toLowerCase())
+                .toList();
+            final alphaNames = parsedAlphaNames
+                .split(',')
+                .map((e) => e.trim().toLowerCase())
+                .toList();
 
             for (final s in masterProvider.students) {
               final sName = s.name.trim().toLowerCase();
@@ -290,9 +309,13 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             }
 
             // Restore existing attachment URLs into list
-            if (journalData.attachmentUrl != null && journalData.attachmentUrl!.isNotEmpty) {
+            if (journalData.attachmentUrl != null &&
+                journalData.attachmentUrl!.isNotEmpty) {
               _existingImageUrls.addAll(
-                journalData.attachmentUrl!.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty),
+                journalData.attachmentUrl!
+                    .split(',')
+                    .map((e) => e.trim())
+                    .where((e) => e.isNotEmpty),
               );
             } else if (journalData.attachment?.filePath != null) {
               _existingImageUrls.add(journalData.attachment!.filePath);
@@ -303,16 +326,20 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           final draft = await CacheService().loadMap('draft_journal_$activeId');
           if (draft != null && mounted) {
             setState(() {
-              _teacherAttendanceStatus = draft['teacherAttendanceStatus']?.toString() ?? 'hadir';
+              _teacherAttendanceStatus =
+                  draft['teacherAttendanceStatus']?.toString() ?? 'hadir';
               _materialController.text = draft['material']?.toString() ?? '';
               _noteController.text = draft['note']?.toString() ?? '';
               _sickNamesController.text = draft['sickNames']?.toString() ?? '';
-              _permissionNamesController.text = draft['permissionNames']?.toString() ?? '';
-              _alphaNamesController.text = draft['alphaNames']?.toString() ?? '';
+              _permissionNamesController.text =
+                  draft['permissionNames']?.toString() ?? '';
+              _alphaNamesController.text =
+                  draft['alphaNames']?.toString() ?? '';
               _sickCount = draft['sickCount'] as int? ?? 0;
               _permissionCount = draft['permissionCount'] as int? ?? 0;
               _alphaCount = draft['alphaCount'] as int? ?? 0;
-              if (draft['studentAttendance'] != null && draft['studentAttendance'] is Map) {
+              if (draft['studentAttendance'] != null &&
+                  draft['studentAttendance'] is Map) {
                 final rawAtt = draft['studentAttendance'] as Map;
                 rawAtt.forEach((k, v) {
                   _studentAttendance[k.toString()] = v.toString();
@@ -370,7 +397,11 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
   Future<void> _pickImage(ImageSource source) async {
     final totalSlots = _existingImageUrls.length + _imageBytesList.length;
     if (totalSlots >= _maxImages) {
-      AppHelper.showSnackBar(context, 'Maksimal $_maxImages foto lampiran.', isError: true);
+      AppHelper.showSnackBar(
+        context,
+        'Maksimal $_maxImages foto lampiran.',
+        isError: true,
+      );
       return;
     }
     try {
@@ -396,7 +427,6 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     }
   }
 
-
   /// Helper widget untuk satu tile foto dengan tombol hapus
   Widget _buildPhotoTile({
     required Widget child,
@@ -406,11 +436,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: SizedBox(
-            width: 80.w,
-            height: 80.w,
-            child: child,
-          ),
+          child: SizedBox(width: 80.w, height: 80.w, child: child),
         ),
         Positioned(
           top: 2,
@@ -462,7 +488,10 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                     color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.camera_alt_rounded, color: Color(0xFF2563EB)),
+                  child: const Icon(
+                    Icons.camera_alt_rounded,
+                    color: Color(0xFF2563EB),
+                  ),
                 ),
                 title: Text(
                   'Ambil Foto dari Kamera',
@@ -480,7 +509,10 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                     color: const Color(0xFF10B981).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.photo_library_rounded, color: Color(0xFF10B981)),
+                  child: const Icon(
+                    Icons.photo_library_rounded,
+                    color: Color(0xFF10B981),
+                  ),
                 ),
                 title: Text(
                   'Pilih dari Galeri Foto / Dokumen',
@@ -501,11 +533,18 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
   Future<void> _submitForm(ScheduleModel schedule) async {
     if (_isSaving) return;
 
-    final targetDate = _existingJournal?.date ??
-        (widget.dateStr != null ? (DateTime.tryParse(widget.dateStr!) ?? schedule.date) : schedule.date);
+    final targetDate =
+        _existingJournal?.date ??
+        (widget.dateStr != null
+            ? (DateTime.tryParse(widget.dateStr!) ?? schedule.date)
+            : schedule.date);
     final today = DateTime.now();
     final todayOnly = DateTime(today.year, today.month, today.day);
-    final targetDateOnly = DateTime(targetDate.year, targetDate.month, targetDate.day);
+    final targetDateOnly = DateTime(
+      targetDate.year,
+      targetDate.month,
+      targetDate.day,
+    );
     if (!_isEditing && targetDateOnly.isAfter(todayOnly)) {
       AppHelper.showSnackBar(
         context,
@@ -518,7 +557,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final isAbsence = _teacherAttendanceStatus == 'sakit' || _teacherAttendanceStatus == 'izin';
+      final isAbsence =
+          _teacherAttendanceStatus == 'sakit' ||
+          _teacherAttendanceStatus == 'izin';
 
       if (isAbsence) {
         final totalPhotos = _imageBytesList.length + _existingImageUrls.length;
@@ -531,22 +572,33 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           return;
         }
 
-        final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+        final journalProvider = Provider.of<JournalProvider>(
+          context,
+          listen: false,
+        );
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        final effectiveSchoolId = authProvider.activeSchoolId ?? schedule.schoolId ?? _existingJournal?.schoolId;
+        final effectiveSchoolId =
+            authProvider.activeSchoolId ??
+            schedule.schoolId ??
+            _existingJournal?.schoolId;
 
         final absenceLabel = _teacherAttendanceStatus == 'sakit'
             ? '[GURU SAKIT] Surat Keterangan Dokter'
             : '[GURU IZIN] Surat Izin / Dispensasi';
 
         final customNote = _noteController.text.trim();
-        final finalNote = customNote.isNotEmpty ? 'Keterangan: $customNote' : null;
+        final finalNote = customNote.isNotEmpty
+            ? 'Keterangan: $customNote'
+            : null;
 
         JournalAttachmentModel? attachment;
         if (_imageBytesList.isNotEmpty) {
           attachment = JournalAttachmentModel(
-            id: _existingJournal?.attachment?.id ?? 'ja_${DateTime.now().millisecondsSinceEpoch}',
-            filePath: _existingJournal?.attachment?.filePath ?? 'pending_upload',
+            id:
+                _existingJournal?.attachment?.id ??
+                'ja_${DateTime.now().millisecondsSinceEpoch}',
+            filePath:
+                _existingJournal?.attachment?.filePath ?? 'pending_upload',
             fileType: 'image',
             fileName: _imageNamesList.first,
           );
@@ -554,8 +606,11 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           attachment = _existingJournal?.attachment;
         }
 
-        final targetDate = _existingJournal?.date ??
-            (widget.dateStr != null ? (DateTime.tryParse(widget.dateStr!) ?? schedule.date) : schedule.date);
+        final targetDate =
+            _existingJournal?.date ??
+            (widget.dateStr != null
+                ? (DateTime.tryParse(widget.dateStr!) ?? schedule.date)
+                : schedule.date);
 
         bool success = false;
         String? primaryJournalId;
@@ -576,7 +631,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             note: finalNote,
             attachment: attachment,
             status: 'pending',
-            attachmentUrl: _existingImageUrls.isNotEmpty ? _existingImageUrls.join(',') : null,
+            attachmentUrl: _existingImageUrls.isNotEmpty
+                ? _existingImageUrls.join(',')
+                : null,
             rejectionNote: null,
             schoolId: effectiveSchoolId,
             teacherAttendanceStatus: _teacherAttendanceStatus,
@@ -625,12 +682,16 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           int batchFailCount = 0;
           int batchTotal = 0;
           if (_applyToAllSchedulesToday) {
-            final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-            final sourceSchedules = scheduleProvider.cachedTeacherSchedules.isNotEmpty
+            final scheduleProvider = Provider.of<ScheduleProvider>(
+              context,
+              listen: false,
+            );
+            final sourceSchedules =
+                scheduleProvider.cachedTeacherSchedules.isNotEmpty
                 ? scheduleProvider.cachedTeacherSchedules
                 : (scheduleProvider.teacherSchedulesForSelectedDate.isNotEmpty
-                    ? scheduleProvider.teacherSchedulesForSelectedDate
-                    : scheduleProvider.schedules);
+                      ? scheduleProvider.teacherSchedulesForSelectedDate
+                      : scheduleProvider.schedules);
             final availableSchedules = sourceSchedules.where((s) {
               if (!s.isActive) return false;
               return s.date.year == targetDate.year &&
@@ -644,17 +705,26 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             JournalModel? primaryJournal;
             try {
               if (primaryJournalId != null && primaryJournalId.isNotEmpty) {
-                primaryJournal = journalProvider.teacherJournals.firstWhere((j) => j.id == primaryJournalId);
+                primaryJournal = journalProvider.teacherJournals.firstWhere(
+                  (j) => j.id == primaryJournalId,
+                );
               }
             } catch (_) {}
-            primaryJournal ??= await journalProvider.getJournalForSchedule(schedule.id, date: targetDate);
+            primaryJournal ??= await journalProvider.getJournalForSchedule(
+              schedule.id,
+              date: targetDate,
+            );
 
-            final uploadedUrl = primaryJournal?.attachmentUrl ??
-                (_existingImageUrls.isNotEmpty ? _existingImageUrls.join(',') : null);
+            final uploadedUrl =
+                primaryJournal?.attachmentUrl ??
+                (_existingImageUrls.isNotEmpty
+                    ? _existingImageUrls.join(',')
+                    : null);
             final sharedAttachment = primaryJournal?.attachment ?? attachment;
 
             for (final otherGroup in availableGroups) {
-              if (otherGroup.scheduleIds.contains(schedule.id) || otherGroup.primarySchedule.id == schedule.id) {
+              if (otherGroup.scheduleIds.contains(schedule.id) ||
+                  otherGroup.primarySchedule.id == schedule.id) {
                 continue; // Skip the schedule session we just saved
               }
 
@@ -663,19 +733,25 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
               // Check if journal already exists for this other schedule group on targetDate
               JournalModel? existingOther;
               for (final j in journalProvider.teacherJournals) {
-                final sameDate = j.date.year == targetDate.year &&
+                final sameDate =
+                    j.date.year == targetDate.year &&
                     j.date.month == targetDate.month &&
                     j.date.day == targetDate.day;
-                final sameSchedule = j.scheduleId == otherSched.id ||
+                final sameSchedule =
+                    j.scheduleId == otherSched.id ||
                     otherGroup.scheduleIds.contains(j.scheduleId) ||
-                    (j.classId == otherSched.classId && j.subjectId == otherSched.subjectId);
+                    (j.classId == otherSched.classId &&
+                        j.subjectId == otherSched.subjectId);
                 if (sameDate && sameSchedule) {
                   existingOther = j;
                   break;
                 }
               }
 
-              existingOther ??= await journalProvider.getJournalForSchedule(otherSched.id, date: targetDate);
+              existingOther ??= await journalProvider.getJournalForSchedule(
+                otherSched.id,
+                date: targetDate,
+              );
 
               batchTotal++;
               bool otherOk = false;
@@ -739,7 +815,11 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
           if (mounted) {
             if (primaryPartialError != null && primaryPartialError.isNotEmpty) {
-              AppHelper.showSnackBar(context, primaryPartialError, isError: true);
+              AppHelper.showSnackBar(
+                context,
+                primaryPartialError,
+                isError: true,
+              );
             } else if (batchFailCount > 0) {
               AppHelper.showSnackBar(
                 context,
@@ -752,8 +832,8 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 _applyToAllSchedulesToday
                     ? 'Surat ${_teacherAttendanceStatus == "sakit" ? "sakit" : "izin"} berhasil diterapkan untuk seluruh jadwal hari ini!'
                     : (_isEditing
-                        ? 'Surat keterangan berhasil diperbarui & dikirim!'
-                        : 'Surat ${_teacherAttendanceStatus == "sakit" ? "sakit" : "izin"} berhasil dikirim untuk verifikasi!'),
+                          ? 'Surat keterangan berhasil diperbarui & dikirim!'
+                          : 'Surat ${_teacherAttendanceStatus == "sakit" ? "sakit" : "izin"} berhasil dikirim untuk verifikasi!'),
               );
             }
             if (context.canPop()) {
@@ -764,7 +844,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           AppHelper.showSnackBar(
             context,
             journalProvider.errorMessage ??
-                (_isEditing ? 'Gagal memperbarui surat keterangan.' : 'Gagal menyimpan surat keterangan.'),
+                (_isEditing
+                    ? 'Gagal memperbarui surat keterangan.'
+                    : 'Gagal menyimpan surat keterangan.'),
             isError: true,
           );
         }
@@ -772,7 +854,10 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
       }
 
       // Normal teaching journal flow (hadir)
-      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+      final masterProvider = Provider.of<MasterDataProvider>(
+        context,
+        listen: false,
+      );
       final sickNamesList = masterProvider.students
           .where((s) => _studentAttendance[s.id] == 'S')
           .map((s) => s.name)
@@ -809,10 +894,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           context,
           listen: false,
         );
-        final authProvider = Provider.of<AuthProvider>(
-          context,
-          listen: false,
-        );
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
         _formKey.currentState!.save();
 
         // Build first attachment model (for legacy compat)
@@ -821,8 +903,11 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         final hasExisting = _existingImageUrls.isNotEmpty;
         if (hasNewImages) {
           attachment = JournalAttachmentModel(
-            id: _existingJournal?.attachment?.id ?? 'ja_${DateTime.now().millisecondsSinceEpoch}',
-            filePath: _existingJournal?.attachment?.filePath ?? 'pending_upload',
+            id:
+                _existingJournal?.attachment?.id ??
+                'ja_${DateTime.now().millisecondsSinceEpoch}',
+            filePath:
+                _existingJournal?.attachment?.filePath ?? 'pending_upload',
             fileType: 'image',
             fileName: _imageNamesList.first,
           );
@@ -834,26 +919,37 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         String? combinedNote;
         final absenceDetails = <String>[];
         if (_sickCount > 0 && _sickNamesController.text.trim().isNotEmpty) {
-          absenceDetails.add('Sakit ($_sickCount siswa): ${_sickNamesController.text.trim()}');
+          absenceDetails.add(
+            'Sakit ($_sickCount siswa): ${_sickNamesController.text.trim()}',
+          );
         }
-        if (_permissionCount > 0 && _permissionNamesController.text.trim().isNotEmpty) {
-          absenceDetails.add('Izin ($_permissionCount siswa): ${_permissionNamesController.text.trim()}');
+        if (_permissionCount > 0 &&
+            _permissionNamesController.text.trim().isNotEmpty) {
+          absenceDetails.add(
+            'Izin ($_permissionCount siswa): ${_permissionNamesController.text.trim()}',
+          );
         }
         if (_alphaCount > 0 && _alphaNamesController.text.trim().isNotEmpty) {
-          absenceDetails.add('Alfa ($_alphaCount siswa): ${_alphaNamesController.text.trim()}');
+          absenceDetails.add(
+            'Alfa ($_alphaCount siswa): ${_alphaNamesController.text.trim()}',
+          );
         }
 
         final generalNote = _noteController.text.trim();
         if (absenceDetails.isNotEmpty) {
           combinedNote = 'Keterangan Absensi:\n${absenceDetails.join('\n')}';
           if (generalNote.isNotEmpty) {
-            combinedNote = '$combinedNote\n\nCatatan Pembelajaran:\n$generalNote';
+            combinedNote =
+                '$combinedNote\n\nCatatan Pembelajaran:\n$generalNote';
           }
         } else {
           combinedNote = generalNote.isEmpty ? null : generalNote;
         }
 
-        final effectiveSchoolId = authProvider.activeSchoolId ?? schedule.schoolId ?? _existingJournal?.schoolId;
+        final effectiveSchoolId =
+            authProvider.activeSchoolId ??
+            schedule.schoolId ??
+            _existingJournal?.schoolId;
 
         if (_isEditing) {
           final updatedJournal = JournalModel(
@@ -888,14 +984,21 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           if (success && mounted) {
             final cls = masterProvider.classes.firstWhere(
               (c) => c.id == schedule.classId,
-              orElse: () => ClassModel(id: '', name: 'Kelas', periodId: '', studentCount: 0),
+              orElse: () => ClassModel(
+                id: '',
+                name: 'Kelas',
+                periodId: '',
+                studentCount: 0,
+              ),
             );
             final subject = masterProvider.subjects.firstWhere(
               (s) => s.id == schedule.subjectId,
-              orElse: () => SubjectModel(id: '', name: 'Mata Pelajaran', isActive: true),
+              orElse: () =>
+                  SubjectModel(id: '', name: 'Mata Pelajaran', isActive: true),
             );
 
-            final targetSchoolId = effectiveSchoolId ??
+            final targetSchoolId =
+                effectiveSchoolId ??
                 context.read<AuthProvider>().activeSchoolId ??
                 schedule.schoolId ??
                 _existingJournal?.schoolId;
@@ -938,7 +1041,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 // Simpan hasil untuk pesan jujur di bawah (tidak klaim terkirim jika gagal).
                 absentCount = waOk;
                 if (waOk < waResults.length) {
-                  debugPrint('Sebagian notifikasi WA gagal: $waOk/${waResults.length} berhasil');
+                  debugPrint(
+                    'Sebagian notifikasi WA gagal: $waOk/${waResults.length} berhasil',
+                  );
                 }
               } catch (_) {
                 // Jika WA gagal total, jurnal tetap sukses — jangan klaim WA terkirim.
@@ -957,9 +1062,11 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             } else {
               final msg = absentCount > 0
                   ? 'Revisi jurnal berhasil dikirim & notifikasi WA otomatis dikirim ke orang tua ($absentCount siswa)!'
-                  : (_studentAttendance.values.any((v) => v == 'S' || v == 'I' || v == 'A')
-                      ? 'Revisi jurnal berhasil dikirim! (Notifikasi WA gagal dikirim, jurnal tetap tersimpan)'
-                      : 'Revisi jurnal berhasil dikirim!');
+                  : (_studentAttendance.values.any(
+                          (v) => v == 'S' || v == 'I' || v == 'A',
+                        )
+                        ? 'Revisi jurnal berhasil dikirim! (Notifikasi WA gagal dikirim, jurnal tetap tersimpan)'
+                        : 'Revisi jurnal berhasil dikirim!');
               AppHelper.showSnackBar(context, msg);
             }
             if (context.canPop()) {
@@ -976,7 +1083,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           final newJournal = JournalModel(
             id: '', // Will be generated in repository
             scheduleId: schedule.id,
-            date: widget.dateStr != null ? DateTime.parse(widget.dateStr!) : schedule.date,
+            date: widget.dateStr != null
+                ? DateTime.parse(widget.dateStr!)
+                : schedule.date,
             teachingHour: schedule.teachingHour,
             classId: schedule.classId,
             subjectId: schedule.subjectId,
@@ -1001,14 +1110,21 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           if (success && mounted) {
             final cls = masterProvider.classes.firstWhere(
               (c) => c.id == schedule.classId,
-              orElse: () => ClassModel(id: '', name: 'Kelas', periodId: '', studentCount: 0),
+              orElse: () => ClassModel(
+                id: '',
+                name: 'Kelas',
+                periodId: '',
+                studentCount: 0,
+              ),
             );
             final subject = masterProvider.subjects.firstWhere(
               (s) => s.id == schedule.subjectId,
-              orElse: () => SubjectModel(id: '', name: 'Mata Pelajaran', isActive: true),
+              orElse: () =>
+                  SubjectModel(id: '', name: 'Mata Pelajaran', isActive: true),
             );
 
-            final targetSchoolId = effectiveSchoolId ??
+            final targetSchoolId =
+                effectiveSchoolId ??
                 context.read<AuthProvider>().activeSchoolId ??
                 schedule.schoolId ??
                 newJournal.schoolId;
@@ -1050,7 +1166,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 final waOk = waResults.where((e) => e == true).length;
                 absentCount = waOk;
                 if (waOk < waResults.length) {
-                  debugPrint('Sebagian notifikasi WA gagal: $waOk/${waResults.length} berhasil');
+                  debugPrint(
+                    'Sebagian notifikasi WA gagal: $waOk/${waResults.length} berhasil',
+                  );
                 }
               } catch (_) {
                 absentCount = 0;
@@ -1066,16 +1184,15 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 isError: true,
               );
             } else {
-              final hasAbsent = _studentAttendance.values.any((v) => v == 'S' || v == 'I' || v == 'A');
+              final hasAbsent = _studentAttendance.values.any(
+                (v) => v == 'S' || v == 'I' || v == 'A',
+              );
               final msg = absentCount > 0
                   ? 'Jurnal berhasil dikirim & notifikasi WA otomatis dikirim ke orang tua ($absentCount siswa)!'
                   : (hasAbsent
-                      ? 'Jurnal berhasil dikirim untuk verifikasi! (Notifikasi WA gagal dikirim, jurnal tetap tersimpan)'
-                      : 'Jurnal berhasil dikirim untuk verifikasi!');
-              AppHelper.showSnackBar(
-                context,
-                msg,
-              );
+                        ? 'Jurnal berhasil dikirim untuk verifikasi! (Notifikasi WA gagal dikirim, jurnal tetap tersimpan)'
+                        : 'Jurnal berhasil dikirim untuk verifikasi!');
+              AppHelper.showSnackBar(context, msg);
             }
             CacheService().remove('draft_journal_${schedule.id}');
             if (context.canPop()) {
@@ -1099,9 +1216,71 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
     final journalProvider = context.watch<JournalProvider>();
+
+    if (authProvider.currentUser?.isSoftDeleted == true ||
+        authProvider.isActiveSchoolDeactivated) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(_isEditing ? 'Revisi Jurnal' : 'Isi Jurnal'),
+        ),
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.all(24.w),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(18.r),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.lock_outline_rounded,
+                      size: 44.r,
+                      color: Colors.orange.shade700,
+                    ),
+                  ),
+                  SizedBox(height: 20.h),
+                  Text(
+                    'Guru Dinonaktifkan di Sekolah Ini',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 17.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Text(
+                    'Anda dinonaktifkan sebagai guru pada sekolah ini oleh admin '
+                    'sekolah. Anda masih dapat melihat jadwal dan riwayat jurnal, '
+                    'tetapi tidak dapat mengisi, mengubah, atau menghapus jurnal '
+                    'di sekolah ini. Akun dan seluruh data Anda tetap tersimpan.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 13.sp,
+                      height: 1.5,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  SizedBox(height: 24.h),
+                  ElevatedButton.icon(
+                    onPressed: () => context.go('/guru/dashboard'),
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    label: const Text('Kembali ke Dashboard'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     final activeId = _selectedScheduleId ?? widget.scheduleId;
     ScheduleModel? schedule;
@@ -1111,9 +1290,8 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           (s) => s.id == activeId,
           orElse: () => scheduleProvider.schedules.firstWhere(
             (s) => s.id == activeId,
-            orElse: () => scheduleProvider.teacherSchedulesForSelectedDate.firstWhere(
-              (s) => s.id == activeId,
-            ),
+            orElse: () => scheduleProvider.teacherSchedulesForSelectedDate
+                .firstWhere((s) => s.id == activeId),
           ),
         );
       } catch (_) {}
@@ -1130,8 +1308,8 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     final sourceSchedules = scheduleProvider.cachedTeacherSchedules.isNotEmpty
         ? scheduleProvider.cachedTeacherSchedules
         : (scheduleProvider.teacherSchedulesForSelectedDate.isNotEmpty
-            ? scheduleProvider.teacherSchedulesForSelectedDate
-            : scheduleProvider.schedules);
+              ? scheduleProvider.teacherSchedulesForSelectedDate
+              : scheduleProvider.schedules);
 
     final availableSchedules = sourceSchedules.where((s) {
       if (!s.isActive) return false;
@@ -1160,7 +1338,11 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.event_busy_rounded, size: 64.r, color: Colors.grey[400]),
+                Icon(
+                  Icons.event_busy_rounded,
+                  size: 64.r,
+                  color: Colors.grey[400],
+                ),
                 SizedBox(height: 16.h),
                 Text(
                   'Tidak Ada Jadwal',
@@ -1224,10 +1406,11 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     final groupTeachingHours =
         currentGroup?.teachingHours ?? [nonNullSchedule.teachingHour];
     final jamLabel = AppHelper.formatTeachingHours(groupTeachingHours);
-    final matchedJamHours = masterProvider.hours
-        .where((h) => groupTeachingHours.contains(h.teachingHour))
-        .toList()
-      ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
+    final matchedJamHours =
+        masterProvider.hours
+            .where((h) => groupTeachingHours.contains(h.teachingHour))
+            .toList()
+          ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
     final jamTimeRange = matchedJamHours.isNotEmpty
         ? '${matchedJamHours.first.startTime} - ${matchedJamHours.last.endTime}'
         : '${hr.startTime} - ${hr.endTime}';
@@ -1252,14 +1435,19 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 if (_existingJournal?.status == 'rejected') ...[
                   Builder(
                     builder: (context) {
-                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      final isDark =
+                          Theme.of(context).brightness == Brightness.dark;
                       return Container(
                         padding: EdgeInsets.all(14.w),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.red.shade900.withValues(alpha: 0.25) : Colors.red.shade50,
+                          color: isDark
+                              ? Colors.red.shade900.withValues(alpha: 0.25)
+                              : Colors.red.shade50,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isDark ? Colors.red.shade800.withValues(alpha: 0.6) : Colors.red.shade200,
+                            color: isDark
+                                ? Colors.red.shade800.withValues(alpha: 0.6)
+                                : Colors.red.shade200,
                           ),
                         ),
                         child: Row(
@@ -1267,7 +1455,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                           children: [
                             Icon(
                               Icons.warning_amber_rounded,
-                              color: isDark ? Colors.red.shade300 : Colors.red.shade700,
+                              color: isDark
+                                  ? Colors.red.shade300
+                                  : Colors.red.shade700,
                               size: 22.sp,
                             ),
                             SizedBox(width: 10.w),
@@ -1279,37 +1469,47 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                                     'Jurnal Ditolak (Perlu Revisi)',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: isDark ? Colors.red.shade200 : Colors.red.shade900,
+                                      color: isDark
+                                          ? Colors.red.shade200
+                                          : Colors.red.shade900,
                                       fontSize: 13.sp,
                                     ),
                                   ),
-                              if (_existingJournal?.rejectionNote != null && _existingJournal!.rejectionNote!.isNotEmpty) ...[
-                                SizedBox(height: 4.h),
-                                Text(
-                                  'Catatan Penolakan: ${_existingJournal!.rejectionNote}',
-                                  style: TextStyle(
-                                    color: isDark ? Colors.red.shade300 : Colors.red.shade800,
-                                    fontSize: 12.sp,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
+                                  if (_existingJournal?.rejectionNote != null &&
+                                      _existingJournal!
+                                          .rejectionNote!
+                                          .isNotEmpty) ...[
+                                    SizedBox(height: 4.h),
+                                    Text(
+                                      'Catatan Penolakan: ${_existingJournal!.rejectionNote}',
+                                      style: TextStyle(
+                                        color: isDark
+                                            ? Colors.red.shade300
+                                            : Colors.red.shade800,
+                                        fontSize: 12.sp,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-              SizedBox(height: 16.h),
-            ],
+                      );
+                    },
+                  ),
+                  SizedBox(height: 16.h),
+                ],
                 // Info Summary Card (Read-only)
                 Builder(
                   builder: (context) {
-                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    final isDark =
+                        Theme.of(context).brightness == Brightness.dark;
                     return Card(
                       color: isDark
-                          ? Theme.of(context).colorScheme.surfaceContainerHighest
+                          ? Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest
                           : const Color(0xFFF1F5F9),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -1321,12 +1521,21 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                           children: [
                             _buildSummaryRow(context, 'Kelas', cls.name),
                             const Divider(height: 16),
-                            _buildSummaryRow(context, 'Mata Pelajaran', subject.name),
+                            _buildSummaryRow(
+                              context,
+                              'Mata Pelajaran',
+                              subject.name,
+                            ),
                             const Divider(height: 16),
                             _buildSummaryRow(
                               context,
                               'Tanggal',
-                              AppHelper.formatDate(_existingJournal?.date ?? (widget.dateStr != null ? DateTime.parse(widget.dateStr!) : (schedule?.date ?? DateTime.now()))),
+                              AppHelper.formatDate(
+                                _existingJournal?.date ??
+                                    (widget.dateStr != null
+                                        ? DateTime.parse(widget.dateStr!)
+                                        : (schedule?.date ?? DateTime.now())),
+                              ),
                             ),
                             const Divider(height: 16),
                             _buildSummaryRow(
@@ -1338,7 +1547,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                         ),
                       ),
                     );
-                  }
+                  },
                 ),
                 SizedBox(height: 20.h),
 
@@ -1397,23 +1606,38 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 if (_teacherAttendanceStatus != 'hadir') ...[
                   Builder(
                     builder: (context) {
-                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      final isDark =
+                          Theme.of(context).brightness == Brightness.dark;
                       final isSakit = _teacherAttendanceStatus == 'sakit';
                       final bgColor = isSakit
-                          ? (isDark ? Colors.red.shade900.withValues(alpha: 0.25) : Colors.red.shade50)
-                          : (isDark ? Colors.amber.shade900.withValues(alpha: 0.25) : Colors.amber.shade50);
+                          ? (isDark
+                                ? Colors.red.shade900.withValues(alpha: 0.25)
+                                : Colors.red.shade50)
+                          : (isDark
+                                ? Colors.amber.shade900.withValues(alpha: 0.25)
+                                : Colors.amber.shade50);
                       final borderColor = isSakit
-                          ? (isDark ? Colors.red.shade800.withValues(alpha: 0.6) : Colors.red.shade200)
-                          : (isDark ? Colors.amber.shade800.withValues(alpha: 0.6) : Colors.amber.shade200);
+                          ? (isDark
+                                ? Colors.red.shade800.withValues(alpha: 0.6)
+                                : Colors.red.shade200)
+                          : (isDark
+                                ? Colors.amber.shade800.withValues(alpha: 0.6)
+                                : Colors.amber.shade200);
                       final iconColor = isSakit
                           ? (isDark ? Colors.red.shade300 : Colors.red.shade700)
-                          : (isDark ? Colors.amber.shade300 : Colors.amber.shade800);
+                          : (isDark
+                                ? Colors.amber.shade300
+                                : Colors.amber.shade800);
                       final titleColor = isSakit
                           ? (isDark ? Colors.red.shade200 : Colors.red.shade900)
-                          : (isDark ? Colors.amber.shade200 : Colors.amber.shade900);
+                          : (isDark
+                                ? Colors.amber.shade200
+                                : Colors.amber.shade900);
                       final descColor = isSakit
                           ? (isDark ? Colors.red.shade300 : Colors.red.shade800)
-                          : (isDark ? Colors.amber.shade300 : Colors.amber.shade900);
+                          : (isDark
+                                ? Colors.amber.shade300
+                                : Colors.amber.shade900);
 
                       return Container(
                         padding: EdgeInsets.all(14.w),
@@ -1426,7 +1650,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Icon(
-                              isSakit ? Icons.info_outline_rounded : Icons.mark_email_read_outlined,
+                              isSakit
+                                  ? Icons.info_outline_rounded
+                                  : Icons.mark_email_read_outlined,
                               color: iconColor,
                               size: 22.sp,
                             ),
@@ -1436,7 +1662,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    isSakit ? 'Keterangan Sakit Guru' : 'Keterangan Izin Guru',
+                                    isSakit
+                                        ? 'Keterangan Sakit Guru'
+                                        : 'Keterangan Izin Guru',
                                     style: GoogleFonts.hankenGrotesk(
                                       fontWeight: FontWeight.bold,
                                       color: titleColor,
@@ -1465,15 +1693,20 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                     SizedBox(height: 10.h),
                     Builder(
                       builder: (context) {
-                        final isDark = Theme.of(context).brightness == Brightness.dark;
+                        final isDark =
+                            Theme.of(context).brightness == Brightness.dark;
                         return Container(
                           decoration: BoxDecoration(
                             color: isDark
-                                ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                ? Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest
                                 : const Color(0xFFEFF6FF),
                             borderRadius: BorderRadius.circular(10.r),
                             border: Border.all(
-                              color: isDark ? const Color(0xFF3B82F6) : const Color(0xFF93C5FD),
+                              color: isDark
+                                  ? const Color(0xFF3B82F6)
+                                  : const Color(0xFF93C5FD),
                             ),
                           ),
                           child: CheckboxListTile(
@@ -1489,22 +1722,29 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 12.5.sp,
                                 fontWeight: FontWeight.w700,
-                                color: isDark ? Colors.white : const Color(0xFF1E40AF),
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF1E40AF),
                               ),
                             ),
                             subtitle: Text(
                               'Foto surat yang sama akan otomatis diterapkan ke semua jam mengajar Anda hari ini.',
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 11.sp,
-                                color: isDark ? Colors.grey[300] : const Color(0xFF3B82F6),
+                                color: isDark
+                                    ? Colors.grey[300]
+                                    : const Color(0xFF3B82F6),
                               ),
                             ),
                             controlAffinity: ListTileControlAffinity.leading,
                             dense: true,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 2.h,
+                            ),
                           ),
                         );
-                      }
+                      },
                     ),
                   ],
                   SizedBox(height: 16.h),
@@ -1526,7 +1766,8 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                     controller: _materialController,
                     maxLines: 4,
                     validator: (value) {
-                      if (_teacherAttendanceStatus == 'hadir' && (value == null || value.trim().isEmpty)) {
+                      if (_teacherAttendanceStatus == 'hadir' &&
+                          (value == null || value.trim().isEmpty)) {
                         return 'Materi pembelajaran tidak boleh kosong';
                       }
                       return null;
@@ -1552,141 +1793,233 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                   Builder(
                     builder: (context) {
                       final totalStudents = masterProvider.students.length;
-                      final totalHadir = masterProvider.students.where((s) => _studentAttendance[s.id] == 'H' || _studentAttendance[s.id] == null).length;
-                      final totalSakit = masterProvider.students.where((s) => _studentAttendance[s.id] == 'S').length;
-                      final totalIzin = masterProvider.students.where((s) => _studentAttendance[s.id] == 'I').length;
-                      final totalAlfa = masterProvider.students.where((s) => _studentAttendance[s.id] == 'A').length;
+                      final totalHadir = masterProvider.students
+                          .where(
+                            (s) =>
+                                _studentAttendance[s.id] == 'H' ||
+                                _studentAttendance[s.id] == null,
+                          )
+                          .length;
+                      final totalSakit = masterProvider.students
+                          .where((s) => _studentAttendance[s.id] == 'S')
+                          .length;
+                      final totalIzin = masterProvider.students
+                          .where((s) => _studentAttendance[s.id] == 'I')
+                          .length;
+                      final totalAlfa = masterProvider.students
+                          .where((s) => _studentAttendance[s.id] == 'A')
+                          .length;
 
-                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      final isDark =
+                          Theme.of(context).brightness == Brightness.dark;
 
                       return Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 8.h,
+                        ),
                         decoration: BoxDecoration(
                           color: isDark
-                              ? Theme.of(context).colorScheme.surfaceContainerHighest
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest
                               : const Color(0xFFF8FAFC),
                           borderRadius: BorderRadius.circular(8.r),
                           border: Border.all(
-                            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                            color: isDark
+                                ? const Color(0xFF334155)
+                                : const Color(0xFFE2E8F0),
                           ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _buildSummaryItem('Total', '$totalStudents', Theme.of(context).colorScheme.onSurface),
-                            _buildSummaryItem('Hadir', '$totalHadir', const Color(0xFF10B981)),
-                            _buildSummaryItem('Sakit', '$totalSakit', const Color(0xFF2563EB)),
-                            _buildSummaryItem('Izin', '$totalIzin', const Color(0xFFF59E0B)),
+                            _buildSummaryItem(
+                              'Total',
+                              '$totalStudents',
+                              Theme.of(context).colorScheme.onSurface,
+                            ),
+                            _buildSummaryItem(
+                              'Hadir',
+                              '$totalHadir',
+                              const Color(0xFF10B981),
+                            ),
+                            _buildSummaryItem(
+                              'Sakit',
+                              '$totalSakit',
+                              const Color(0xFF2563EB),
+                            ),
+                            _buildSummaryItem(
+                              'Izin',
+                              '$totalIzin',
+                              const Color(0xFFF59E0B),
+                            ),
                             _buildSummaryItem('Alfa', '$totalAlfa', Colors.red),
                           ],
                         ),
                       );
-                    }
+                    },
                   ),
                   SizedBox(height: 12.h),
                   // Students List
-                  Builder(builder: (context) {
-                    final isDark = Theme.of(context).brightness == Brightness.dark;
-                    return Container(
-                      constraints: BoxConstraints(maxHeight: 280.h),
-                      decoration: BoxDecoration(
-                        color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  Builder(
+                    builder: (context) {
+                      final isDark =
+                          Theme.of(context).brightness == Brightness.dark;
+                      return Container(
+                        constraints: BoxConstraints(maxHeight: 280.h),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Theme.of(context).colorScheme.surface
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDark
+                                ? const Color(0xFF334155)
+                                : const Color(0xFFE2E8F0),
+                          ),
                         ),
-                      ),
-                      child: masterProvider.students.isEmpty
-                          ? Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(16.w),
-                                child: Text(
-                                  'Tidak ada siswa terdaftar di kelas ini',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                    fontSize: 13.sp,
+                        child: masterProvider.students.isEmpty
+                            ? Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.w),
+                                  child: Text(
+                                    'Tidak ada siswa terdaftar di kelas ini',
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                      fontSize: 13.sp,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            )
-                          : ListView.separated(
-                              shrinkWrap: true,
-                              padding: EdgeInsets.all(10.w),
-                              itemCount: masterProvider.students.length,
-                              separatorBuilder: (context, _) => Divider(
-                                height: 8,
-                                color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
-                              ),
-                              itemBuilder: (context, index) {
-                                final student = masterProvider.students[index];
-                                final status = _studentAttendance[student.id] ?? 'H';
+                              )
+                            : ListView.separated(
+                                shrinkWrap: true,
+                                padding: EdgeInsets.all(10.w),
+                                itemCount: masterProvider.students.length,
+                                separatorBuilder: (context, _) => Divider(
+                                  height: 8,
+                                  color: isDark
+                                      ? const Color(0xFF334155)
+                                      : const Color(0xFFF1F5F9),
+                                ),
+                                itemBuilder: (context, index) {
+                                  final student =
+                                      masterProvider.students[index];
+                                  final status =
+                                      _studentAttendance[student.id] ?? 'H';
 
-                                return Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 4.h),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              student.name,
-                                              style: GoogleFonts.hankenGrotesk(
-                                                fontSize: 12.5.sp,
-                                                fontWeight: FontWeight.w700,
-                                                color: Theme.of(context).colorScheme.onSurface,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            if (student.nis != null && student.nis!.isNotEmpty)
+                                  return Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 4.h,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
                                               Text(
-                                                'NIS: ${student.nis}',
-                                                style: GoogleFonts.hankenGrotesk(
-                                                  fontSize: 10.sp,
-                                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                                ),
+                                                student.name,
+                                                style:
+                                                    GoogleFonts.hankenGrotesk(
+                                                      fontSize: 12.5.sp,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: Theme.of(
+                                                        context,
+                                                      ).colorScheme.onSurface,
+                                                    ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
+                                              if (student.nis != null &&
+                                                  student.nis!.isNotEmpty)
+                                                Text(
+                                                  'NIS: ${student.nis}',
+                                                  style:
+                                                      GoogleFonts.hankenGrotesk(
+                                                        fontSize: 10.sp,
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurfaceVariant,
+                                                      ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                        SizedBox(width: 8.w),
+                                        // H, S, I, A Status Toggle Buttons
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            _buildStatusToggle(
+                                              context,
+                                              'H',
+                                              status == 'H',
+                                              const Color(0xFF10B981),
+                                              () {
+                                                setState(() {
+                                                  _studentAttendance[student
+                                                          .id] =
+                                                      'H';
+                                                });
+                                              },
+                                            ),
+                                            SizedBox(width: 4.w),
+                                            _buildStatusToggle(
+                                              context,
+                                              'S',
+                                              status == 'S',
+                                              const Color(0xFF2563EB),
+                                              () {
+                                                setState(() {
+                                                  _studentAttendance[student
+                                                          .id] =
+                                                      'S';
+                                                });
+                                              },
+                                            ),
+                                            SizedBox(width: 4.w),
+                                            _buildStatusToggle(
+                                              context,
+                                              'I',
+                                              status == 'I',
+                                              const Color(0xFFF59E0B),
+                                              () {
+                                                setState(() {
+                                                  _studentAttendance[student
+                                                          .id] =
+                                                      'I';
+                                                });
+                                              },
+                                            ),
+                                            SizedBox(width: 4.w),
+                                            _buildStatusToggle(
+                                              context,
+                                              'A',
+                                              status == 'A',
+                                              Colors.red,
+                                              () {
+                                                setState(() {
+                                                  _studentAttendance[student
+                                                          .id] =
+                                                      'A';
+                                                });
+                                              },
+                                            ),
                                           ],
                                         ),
-                                      ),
-                                      SizedBox(width: 8.w),
-                                      // H, S, I, A Status Toggle Buttons
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          _buildStatusToggle(context, 'H', status == 'H', const Color(0xFF10B981), () {
-                                            setState(() {
-                                              _studentAttendance[student.id] = 'H';
-                                            });
-                                          }),
-                                          SizedBox(width: 4.w),
-                                          _buildStatusToggle(context, 'S', status == 'S', const Color(0xFF2563EB), () {
-                                            setState(() {
-                                              _studentAttendance[student.id] = 'S';
-                                            });
-                                          }),
-                                          SizedBox(width: 4.w),
-                                          _buildStatusToggle(context, 'I', status == 'I', const Color(0xFFF59E0B), () {
-                                            setState(() {
-                                              _studentAttendance[student.id] = 'I';
-                                            });
-                                          }),
-                                          SizedBox(width: 4.w),
-                                          _buildStatusToggle(context, 'A', status == 'A', Colors.red, () {
-                                            setState(() {
-                                              _studentAttendance[student.id] = 'A';
-                                            });
-                                          }),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                    );
-                  }),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                      );
+                    },
+                  ),
                   SizedBox(height: 24.h),
                 ],
 
@@ -1747,86 +2080,98 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                   ),
                 ),
                 SizedBox(height: 10.h),
-                Builder(builder: (context) {
-                  final totalSlots = _existingImageUrls.length + _imageBytesList.length;
-                  final canAdd = totalSlots < _maxImages;
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                Builder(
+                  builder: (context) {
+                    final totalSlots =
+                        _existingImageUrls.length + _imageBytesList.length;
+                    final canAdd = totalSlots < _maxImages;
+                    final isDark =
+                        Theme.of(context).brightness == Brightness.dark;
 
-                  return Wrap(
-                    spacing: 10.w,
-                    runSpacing: 10.h,
-                    children: [
-                      // Existing photos (from edit mode)
-                      for (int i = 0; i < _existingImageUrls.length; i++)
-                        _buildPhotoTile(
-                          child: _existingImageUrls[i].startsWith('http')
-                              ? Image.network(
-                                  _existingImageUrls[i],
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (ctx, err, st) =>
-                                      const Icon(Icons.broken_image, color: Colors.grey),
-                                )
-                              : const Icon(Icons.image, color: Colors.grey),
-                          onDelete: () => setState(() => _existingImageUrls.removeAt(i)),
-                        ),
-                      // New photos
-                      for (int i = 0; i < _imageBytesList.length; i++)
-                        _buildPhotoTile(
-                          child: Image.memory(_imageBytesList[i], fit: BoxFit.cover),
-                          onDelete: () => setState(() {
-                            _imageBytesList.removeAt(i);
-                            _imageNamesList.removeAt(i);
-                          }),
-                        ),
-                      // Add button slot
-                      if (canAdd)
-                        InkWell(
-                          onTap: _showImageSourceDialog,
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            width: 80.w,
-                            height: 80.w,
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                  : const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
+                    return Wrap(
+                      spacing: 10.w,
+                      runSpacing: 10.h,
+                      children: [
+                        // Existing photos (from edit mode)
+                        for (int i = 0; i < _existingImageUrls.length; i++)
+                          _buildPhotoTile(
+                            child: _existingImageUrls[i].startsWith('http')
+                                ? Image.network(
+                                    _existingImageUrls[i],
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (ctx, err, st) => const Icon(
+                                      Icons.broken_image,
+                                      color: Colors.grey,
+                                    ),
+                                  )
+                                : const Icon(Icons.image, color: Colors.grey),
+                            onDelete: () =>
+                                setState(() => _existingImageUrls.removeAt(i)),
+                          ),
+                        // New photos
+                        for (int i = 0; i < _imageBytesList.length; i++)
+                          _buildPhotoTile(
+                            child: Image.memory(
+                              _imageBytesList[i],
+                              fit: BoxFit.cover,
+                            ),
+                            onDelete: () => setState(() {
+                              _imageBytesList.removeAt(i);
+                              _imageNamesList.removeAt(i);
+                            }),
+                          ),
+                        // Add button slot
+                        if (canAdd)
+                          InkWell(
+                            onTap: _showImageSourceDialog,
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              width: 80.w,
+                              height: 80.w,
+                              decoration: BoxDecoration(
                                 color: isDark
-                                    ? const Color(0xFF334155)
-                                    : const Color(0xFFCBD5E1),
-                                style: BorderStyle.solid,
+                                    ? Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest
+                                    : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: isDark
+                                      ? const Color(0xFF334155)
+                                      : const Color(0xFFCBD5E1),
+                                  style: BorderStyle.solid,
+                                ),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    _teacherAttendanceStatus == 'hadir'
+                                        ? Icons.add_a_photo_outlined
+                                        : Icons.upload_file_outlined,
+                                    size: 22.r,
+                                    color: const Color(0xFF2563EB),
+                                  ),
+                                  SizedBox(height: 4.h),
+                                  Text(
+                                    _teacherAttendanceStatus == 'hadir'
+                                        ? 'Tambah\nFoto'
+                                        : 'Unggah\nSurat',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 9.sp,
+                                      color: const Color(0xFF2563EB),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  _teacherAttendanceStatus == 'hadir'
-                                      ? Icons.add_a_photo_outlined
-                                      : Icons.upload_file_outlined,
-                                  size: 22.r,
-                                  color: const Color(0xFF2563EB),
-                                ),
-                                SizedBox(height: 4.h),
-                                Text(
-                                  _teacherAttendanceStatus == 'hadir'
-                                      ? 'Tambah\nFoto'
-                                      : 'Unggah\nSurat',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 9.sp,
-                                    color: const Color(0xFF2563EB),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
                           ),
-                        ),
-                    ],
-                  );
-                }),
+                      ],
+                    );
+                  },
+                ),
                 SizedBox(height: 40.h),
 
                 // Submit Button
@@ -1855,10 +2200,10 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                           _isEditing
                               ? 'Kirim Revisi Jurnal'
                               : (_teacherAttendanceStatus == 'sakit'
-                                  ? 'Kirim Surat Keterangan Sakit'
-                                  : (_teacherAttendanceStatus == 'izin'
-                                      ? 'Kirim Surat Izin'
-                                      : 'Simpan Jurnal')),
+                                    ? 'Kirim Surat Keterangan Sakit'
+                                    : (_teacherAttendanceStatus == 'izin'
+                                          ? 'Kirim Surat Izin'
+                                          : 'Simpan Jurnal')),
                         ),
                 ),
               ],
@@ -1896,7 +2241,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
               : (isDark ? Theme.of(context).colorScheme.surface : Colors.white),
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
-            color: isSelected ? color : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+            color: isSelected
+                ? color
+                : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
@@ -1905,7 +2252,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                     color: color.withValues(alpha: 0.15),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
-                  )
+                  ),
                 ]
               : null,
         ),
@@ -1913,7 +2260,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
           children: [
             Icon(
               icon,
-              color: isSelected ? color : Theme.of(context).colorScheme.onSurfaceVariant,
+              color: isSelected
+                  ? color
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
               size: 22.sp,
             ),
             SizedBox(height: 6.h),
@@ -1922,7 +2271,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
               style: GoogleFonts.hankenGrotesk(
                 fontSize: 13.sp,
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                color: isSelected ? color : Theme.of(context).colorScheme.onSurface,
+                color: isSelected
+                    ? color
+                    : Theme.of(context).colorScheme.onSurface,
               ),
             ),
             SizedBox(height: 2.h),
@@ -1931,7 +2282,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
               textAlign: TextAlign.center,
               style: GoogleFonts.hankenGrotesk(
                 fontSize: 10.sp,
-                color: isSelected ? color.withValues(alpha: 0.9) : Theme.of(context).colorScheme.onSurfaceVariant,
+                color: isSelected
+                    ? color.withValues(alpha: 0.9)
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),

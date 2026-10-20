@@ -59,27 +59,30 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       context,
       listen: false,
     );
-    final authProvider = Provider.of<AuthProvider>(
-      context,
-      listen: false,
-    );
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await settingsProvider.loadSettings();
     if (settingsProvider.settings != null) {
       _daysController.text =
           '${settingsProvider.settings!.maxJournalInputDays}';
-      if (_supervisorNameController.text.isEmpty && settingsProvider.settings!.supervisorName != null) {
-        _supervisorNameController.text = settingsProvider.settings!.supervisorName!;
+      if (_supervisorNameController.text.isEmpty &&
+          settingsProvider.settings!.supervisorName != null) {
+        _supervisorNameController.text =
+            settingsProvider.settings!.supervisorName!;
       }
-      if (_supervisorNipController.text.isEmpty && settingsProvider.settings!.supervisorNip != null) {
-        _supervisorNipController.text = settingsProvider.settings!.supervisorNip!;
+      if (_supervisorNipController.text.isEmpty &&
+          settingsProvider.settings!.supervisorNip != null) {
+        _supervisorNipController.text =
+            settingsProvider.settings!.supervisorNip!;
       }
     }
     final activeSchool = authProvider.activeSchool;
     if (activeSchool != null) {
-      if (activeSchool.supervisorName != null && activeSchool.supervisorName!.isNotEmpty) {
+      if (activeSchool.supervisorName != null &&
+          activeSchool.supervisorName!.isNotEmpty) {
         _supervisorNameController.text = activeSchool.supervisorName!;
       }
-      if (activeSchool.supervisorNip != null && activeSchool.supervisorNip!.isNotEmpty) {
+      if (activeSchool.supervisorNip != null &&
+          activeSchool.supervisorNip!.isNotEmpty) {
         _supervisorNipController.text = activeSchool.supervisorNip!;
       }
     }
@@ -87,7 +90,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
   Future<void> _loadNoboxForSchool(String schoolId) async {
     _lastSchoolId = schoolId;
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    final settingsProvider = Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    );
     await settingsProvider.loadNoboxConfig(schoolId);
     if (mounted) {
       final config = settingsProvider.noboxConfig;
@@ -128,7 +134,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       return;
     }
 
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    final settingsProvider = Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    );
     final success = await settingsProvider.saveNoboxApiKey(
       schoolId: schoolId,
       apiKey: rawKey,
@@ -159,17 +168,17 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   }
 
   Future<void> _handleTestNoboxConnection(String schoolId) async {
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    final settingsProvider = Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    );
     final res = await settingsProvider.testNoboxConnection(schoolId);
     if (mounted) {
       final isSuccess = res['success'] == true;
-      final msg = res['message']?.toString() ??
+      final msg =
+          res['message']?.toString() ??
           (isSuccess ? 'Koneksi NoBox.ai berhasil!' : 'Koneksi gagal.');
-      AppHelper.showSnackBar(
-        context,
-        msg,
-        isError: !isSuccess,
-      );
+      AppHelper.showSnackBar(context, msg, isError: !isSuccess);
     }
   }
 
@@ -232,13 +241,22 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+      final settingsProvider = Provider.of<SettingsProvider>(
+        context,
+        listen: false,
+      );
+      final masterProvider = Provider.of<MasterDataProvider>(
+        context,
+        listen: false,
+      );
 
-      final activeSchoolId = authProvider.activeSchoolId ?? authProvider.activeSchool?.id;
+      final activeSchoolId =
+          authProvider.activeSchoolId ?? authProvider.activeSchool?.id;
 
       // 1. Save to settings table
-      final currentSettings = settingsProvider.settings ?? SettingsModel(id: 'default', maxJournalInputDays: 3);
+      final currentSettings =
+          settingsProvider.settings ??
+          SettingsModel(id: 'default', maxJournalInputDays: 3);
       final updatedSettings = currentSettings.copyWith(
         supervisorName: name.isNotEmpty ? name : null,
         supervisorNip: nip.isNotEmpty ? nip : null,
@@ -258,12 +276,15 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
       // 2. Update schools table if activeSchoolId exists
       if (activeSchoolId != null && activeSchoolId.isNotEmpty) {
-        await Supabase.instance.client.from('schools').update({
-          'supervisor_name': name.isNotEmpty ? name : null,
-          'supervisor_nip': nip.isNotEmpty ? nip : null,
-          'headmaster_name': name.isNotEmpty ? name : null,
-          'headmaster_nip': nip.isNotEmpty ? nip : null,
-        }).eq('id', activeSchoolId);
+        await Supabase.instance.client
+            .from('schools')
+            .update({
+              'supervisor_name': name.isNotEmpty ? name : null,
+              'supervisor_nip': nip.isNotEmpty ? nip : null,
+              'headmaster_name': name.isNotEmpty ? name : null,
+              'headmaster_nip': nip.isNotEmpty ? nip : null,
+            })
+            .eq('id', activeSchoolId);
 
         // Invalidate cache and reload school details
         await CacheService().remove('active_school_$activeSchoolId');
@@ -311,15 +332,17 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       return;
     }
     final code = _joinCodeController.text.trim();
-    final norm =
-        code.toUpperCase().replaceAll(RegExp(r'\s+'), '');
+    final norm = code.toUpperCase().replaceAll(RegExp(r'\s+'), '');
 
     setState(() {
       _isSavingTeachingPlace = true;
     });
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+    final masterProvider = Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    );
 
     try {
       // Kode tidak boleh dipakai sekolah lain.
@@ -334,9 +357,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             final j = (m['join_code'] as String? ?? '')
                 .toUpperCase()
                 .replaceAll(RegExp(r'\s+'), '');
-            if (j.isNotEmpty &&
-                j == norm &&
-                (m['id'] as String?) != schoolId) {
+            if (j.isNotEmpty && j == norm && (m['id'] as String?) != schoolId) {
               if (mounted) {
                 AppHelper.showSnackBar(
                   context,
@@ -362,9 +383,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       }
 
       try {
-        await Supabase.instance.client.from('schools').update({
-          'join_code': norm.isNotEmpty ? code : null,
-        }).eq('id', schoolId);
+        await Supabase.instance.client
+            .from('schools')
+            .update({'join_code': norm.isNotEmpty ? code : null})
+            .eq('id', schoolId);
       } catch (e) {
         if (e.toString().contains('join_code')) {
           if (mounted) {
@@ -497,8 +519,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                           context,
                           listen: false,
                         );
-                        
-                        final matchedSchool = await masterProvider.validateActivationCode(code);
+
+                        final matchedSchool = await masterProvider
+                            .validateActivationCode(code);
                         if (!dialogContext.mounted || !mounted) return;
                         setModalState(() => isChecking = false);
 
@@ -548,8 +571,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     final themeColor = isUltra
         ? const Color(0xFF7C3AED)
         : (isEnterprise
-            ? const Color(0xFF0284C7)
-            : (isPro ? const Color(0xFFD97706) : const Color(0xFF2563EB)));
+              ? const Color(0xFF0284C7)
+              : (isPro ? const Color(0xFFD97706) : const Color(0xFF2563EB)));
 
     showDialog(
       context: context,
@@ -563,8 +586,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               isUltra
                   ? Icons.auto_awesome_rounded
                   : (isEnterprise
-                      ? Icons.business_center_rounded
-                      : (isPro ? Icons.stars_rounded : Icons.verified_rounded)),
+                        ? Icons.business_center_rounded
+                        : (isPro
+                              ? Icons.stars_rounded
+                              : Icons.verified_rounded)),
               color: themeColor,
               size: 28,
             ),
@@ -597,12 +622,26 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               padding: EdgeInsets.all(14.w),
               decoration: BoxDecoration(
                 color: isUltra
-                    ? (isDark ? const Color(0xFF581C87).withValues(alpha: 0.35) : const Color(0xFFF5F3FF))
+                    ? (isDark
+                          ? const Color(0xFF581C87).withValues(alpha: 0.35)
+                          : const Color(0xFFF5F3FF))
                     : (isEnterprise
-                        ? (isDark ? const Color(0xFF0C4A6E).withValues(alpha: 0.35) : const Color(0xFFF0F9FF))
-                        : (isPro
-                            ? (isDark ? const Color(0xFF78350F).withValues(alpha: 0.35) : const Color(0xFFFFFBEB))
-                            : (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEFF6FF)))),
+                          ? (isDark
+                                ? const Color(
+                                    0xFF0C4A6E,
+                                  ).withValues(alpha: 0.35)
+                                : const Color(0xFFF0F9FF))
+                          : (isPro
+                                ? (isDark
+                                      ? const Color(
+                                          0xFF78350F,
+                                        ).withValues(alpha: 0.35)
+                                      : const Color(0xFFFFFBEB))
+                                : (isDark
+                                      ? const Color(
+                                          0xFF1E3A8A,
+                                        ).withValues(alpha: 0.35)
+                                      : const Color(0xFFEFF6FF)))),
                 borderRadius: BorderRadius.circular(14.r),
                 border: Border.all(
                   color: themeColor.withValues(alpha: 0.5),
@@ -617,7 +656,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          matchedSchool.name.isNotEmpty ? matchedSchool.name : 'Sekolah Anda',
+                          matchedSchool.name.isNotEmpty
+                              ? matchedSchool.name
+                              : 'Sekolah Anda',
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 15.sp,
                             fontWeight: FontWeight.bold,
@@ -628,7 +669,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                         ),
                       ),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 3.h,
+                        ),
                         decoration: BoxDecoration(
                           color: themeColor,
                           borderRadius: BorderRadius.circular(12.r),
@@ -650,22 +694,36 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     style: TextStyle(
                       fontSize: 12.sp,
                       color: isUltra
-                          ? (isDark ? const Color(0xFFDDD6FE) : const Color(0xFF6D28D9))
+                          ? (isDark
+                                ? const Color(0xFFDDD6FE)
+                                : const Color(0xFF6D28D9))
                           : (isEnterprise
-                              ? (isDark ? const Color(0xFFBAE6FD) : const Color(0xFF0369A1))
-                              : (isPro
-                                  ? (isDark ? const Color(0xFFFED7AA) : const Color(0xFF92400E))
-                                  : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E40AF)))),
+                                ? (isDark
+                                      ? const Color(0xFFBAE6FD)
+                                      : const Color(0xFF0369A1))
+                                : (isPro
+                                      ? (isDark
+                                            ? const Color(0xFFFED7AA)
+                                            : const Color(0xFF92400E))
+                                      : (isDark
+                                            ? const Color(0xFF93C5FD)
+                                            : const Color(0xFF1E40AF)))),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Divider(
                     height: 16,
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0),
                   ),
                   Row(
                     children: [
-                      Icon(Icons.people_outline_rounded, size: 16.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      Icon(
+                        Icons.people_outline_rounded,
+                        size: 16.sp,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       SizedBox(width: 6.w),
                       Text(
                         'Kapasitas Maksimal: ${matchedSchool.maxTeachers} Guru',
@@ -680,14 +738,20 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                   SizedBox(height: 4.h),
                   Row(
                     children: [
-                      Icon(Icons.check_circle_outline_rounded, size: 16.sp, color: Colors.green[600]),
+                      Icon(
+                        Icons.check_circle_outline_rounded,
+                        size: 16.sp,
+                        color: Colors.green[600],
+                      ),
                       SizedBox(width: 6.w),
                       Text(
                         isUltra
                             ? 'Perks: Prioritas Khusus & Kapasitas 150 Guru'
                             : (isEnterprise
-                                ? 'Perks: Akses Penuh Enterprise & Tak Terbatas'
-                                : (isPro ? 'Perks: Prioritas & Multi-Sekolah' : 'Perks: Fitur Standar Sekolah')),
+                                  ? 'Perks: Akses Penuh Enterprise & Tak Terbatas'
+                                  : (isPro
+                                        ? 'Perks: Prioritas & Multi-Sekolah'
+                                        : 'Perks: Fitur Standar Sekolah')),
                         style: TextStyle(
                           fontSize: 12.sp,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -712,18 +776,26 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(confirmCtx);
-              final authProvider = Provider.of<AuthProvider>(context, listen: false);
-              final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+              final authProvider = Provider.of<AuthProvider>(
+                context,
+                listen: false,
+              );
+              final masterProvider = Provider.of<MasterDataProvider>(
+                context,
+                listen: false,
+              );
               final userId = authProvider.currentUser?.id;
 
               try {
-                final currentSchoolId = authProvider.activeSchoolId ?? matchedSchool.id;
+                final currentSchoolId =
+                    authProvider.activeSchoolId ?? matchedSchool.id;
 
                 // 1. Update schools table according to JM Panel activation architecture
-                final updatedSchool = await masterProvider.activateSchoolWithCode(
-                  currentSchoolId: currentSchoolId,
-                  activationCode: code,
-                );
+                final updatedSchool = await masterProvider
+                    .activateSchoolWithCode(
+                      currentSchoolId: currentSchoolId,
+                      activationCode: code,
+                    );
 
                 // 2. Connect user to school with role 'admin' in user_schools if not yet connected
                 if (userId != null) {
@@ -793,12 +865,20 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         await launchUrl(url, mode: LaunchMode.externalApplication);
       } else {
         if (mounted) {
-          AppHelper.showSnackBar(context, 'Tidak dapat membuka tautan jmpanel.vercel.app', isError: true);
+          AppHelper.showSnackBar(
+            context,
+            'Tidak dapat membuka tautan jmpanel.vercel.app',
+            isError: true,
+          );
         }
       }
     } catch (e) {
       if (mounted) {
-        AppHelper.showSnackBar(context, 'Gagal membuka browser: $e', isError: true);
+        AppHelper.showSnackBar(
+          context,
+          'Gagal membuka browser: $e',
+          isError: true,
+        );
       }
     }
   }
@@ -864,8 +944,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                           return;
                         }
                         Clipboard.setData(ClipboardData(text: t));
-                        AppHelper.showSnackBar(
-                            context, 'Kode gabung disalin!');
+                        AppHelper.showSnackBar(context, 'Kode gabung disalin!');
                       },
                     )
                   : null,
@@ -886,8 +965,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     SchoolModel? school = authProvider.activeSchool;
     if (school == null && authProvider.activeSchoolId != null) {
       try {
-        final m = authProvider.userMemberships.firstWhere((m) => m.schoolId == authProvider.activeSchoolId);
-        school = SchoolModel(id: m.schoolId, name: m.schoolName, logoUrl: m.logoUrl);
+        final m = authProvider.userMemberships.firstWhere(
+          (m) => m.schoolId == authProvider.activeSchoolId,
+        );
+        school = SchoolModel(
+          id: m.schoolId,
+          name: m.schoolName,
+          logoUrl: m.logoUrl,
+        );
       } catch (_) {}
     }
 
@@ -895,9 +980,15 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     final isUltra = school?.isUltra ?? false;
     final isPro = school?.isPro ?? false;
     final isFree = school?.isFree ?? (!isEnterprise && !isUltra && !isPro);
-    final maxTeachers = school?.maxTeachers ?? (isEnterprise ? 999 : (isUltra ? 150 : (isPro ? 50 : 30)));
-    final currentTeacherCount = masterProvider.teachers.length;
-    final usagePercent = maxTeachers > 0 ? (currentTeacherCount / maxTeachers).clamp(0.0, 1.0) : 0.0;
+    final maxTeachers =
+        school?.maxTeachers ??
+        (isEnterprise ? 999 : (isUltra ? 150 : (isPro ? 50 : 30)));
+    final currentTeacherCount = masterProvider.teachers
+        .where((t) => !t.isDeleted)
+        .length;
+    final usagePercent = maxTeachers > 0
+        ? (currentTeacherCount / maxTeachers).clamp(0.0, 1.0)
+        : 0.0;
 
     final activeSchoolId = authProvider.activeSchoolId ?? school?.id;
     if (activeSchoolId != null && activeSchoolId != _lastSchoolId) {
@@ -951,10 +1042,16 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                           color: isUltra
                               ? const Color(0xFF8B5CF6).withValues(alpha: 0.6)
                               : (isEnterprise
-                                  ? const Color(0xFF0EA5E9).withValues(alpha: 0.6)
-                                  : (isPro
-                                      ? const Color(0xFFF59E0B).withValues(alpha: 0.5)
-                                      : Colors.grey.withValues(alpha: 0.25))),
+                                    ? const Color(
+                                        0xFF0EA5E9,
+                                      ).withValues(alpha: 0.6)
+                                    : (isPro
+                                          ? const Color(
+                                              0xFFF59E0B,
+                                            ).withValues(alpha: 0.5)
+                                          : Colors.grey.withValues(
+                                              alpha: 0.25,
+                                            ))),
                           width: 1.5,
                         ),
                       ),
@@ -975,18 +1072,29 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                           color: isUltra
                                               ? const Color(0xFF6D28D9)
                                               : (isEnterprise
-                                                  ? const Color(0xFF0369A1)
-                                                  : (isPro
-                                                      ? const Color(0xFFD97706)
-                                                      : const Color(0xFF64748B))),
-                                          borderRadius: BorderRadius.circular(14.r),
+                                                    ? const Color(0xFF0369A1)
+                                                    : (isPro
+                                                          ? const Color(
+                                                              0xFFD97706,
+                                                            )
+                                                          : const Color(
+                                                              0xFF64748B,
+                                                            ))),
+                                          borderRadius: BorderRadius.circular(
+                                            14.r,
+                                          ),
                                         ),
                                         child: Icon(
                                           isUltra
                                               ? Icons.auto_awesome_rounded
                                               : (isEnterprise
-                                                  ? Icons.business_center_rounded
-                                                  : (isPro ? Icons.workspace_premium_rounded : Icons.school_rounded)),
+                                                    ? Icons
+                                                          .business_center_rounded
+                                                    : (isPro
+                                                          ? Icons
+                                                                .workspace_premium_rounded
+                                                          : Icons
+                                                                .school_rounded)),
                                           color: Colors.white,
                                           size: 24,
                                         ),
@@ -994,13 +1102,16 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                       SizedBox(width: 12.w),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               'Paket Aplikasi',
                                               style: TextStyle(
                                                 fontSize: 12.sp,
-                                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant,
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
@@ -1008,18 +1119,28 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                               isUltra
                                                   ? 'ULTRA PLAN'
                                                   : (isEnterprise
-                                                      ? 'ENTERPRISE'
-                                                      : (isPro ? 'PRO PLAN' : 'FREE PLAN')),
+                                                        ? 'ENTERPRISE'
+                                                        : (isPro
+                                                              ? 'PRO PLAN'
+                                                              : 'FREE PLAN')),
                                               style: GoogleFonts.hankenGrotesk(
                                                 fontSize: 18.sp,
                                                 fontWeight: FontWeight.w900,
                                                 color: isUltra
                                                     ? const Color(0xFF7C3AED)
                                                     : (isEnterprise
-                                                        ? const Color(0xFF0284C7)
-                                                        : (isPro
-                                                            ? const Color(0xFFD97706)
-                                                            : Theme.of(context).colorScheme.onSurface)),
+                                                          ? const Color(
+                                                              0xFF0284C7,
+                                                            )
+                                                          : (isPro
+                                                                ? const Color(
+                                                                    0xFFD97706,
+                                                                  )
+                                                                : Theme.of(
+                                                                        context,
+                                                                      )
+                                                                      .colorScheme
+                                                                      .onSurface)),
                                                 letterSpacing: 0.5,
                                               ),
                                             ),
@@ -1031,15 +1152,18 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                 ),
                                 SizedBox(width: 8.w),
                                 Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 10.w,
+                                    vertical: 5.h,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: isUltra
                                         ? const Color(0xFF7C3AED)
                                         : (isEnterprise
-                                            ? const Color(0xFF0284C7)
-                                            : (isPro
-                                                ? const Color(0xFFD97706)
-                                                : const Color(0xFF64748B))),
+                                              ? const Color(0xFF0284C7)
+                                              : (isPro
+                                                    ? const Color(0xFFD97706)
+                                                    : const Color(0xFF64748B))),
                                     borderRadius: BorderRadius.circular(20.r),
                                   ),
                                   child: Row(
@@ -1049,8 +1173,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                         isUltra
                                             ? Icons.auto_awesome_rounded
                                             : (isEnterprise
-                                                ? Icons.verified_rounded
-                                                : (isPro ? Icons.star_rounded : Icons.check_rounded)),
+                                                  ? Icons.verified_rounded
+                                                  : (isPro
+                                                        ? Icons.star_rounded
+                                                        : Icons.check_rounded)),
                                         size: 14.sp,
                                         color: Colors.white,
                                       ),
@@ -1072,16 +1198,23 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
                             // School name and Code Row
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12.w,
+                                vertical: 10.h,
+                              ),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.4),
                                 borderRadius: BorderRadius.circular(12.r),
                               ),
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           school?.name ?? 'Sekolah',
@@ -1097,25 +1230,32 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                           'Kode Sekolah: ${school?.code ?? '-'}',
                                           style: TextStyle(
                                             fontSize: 12.sp,
-                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
-                                        if (school?.subscriptionUntil != null && !isFree) ...[
+                                        if (school?.subscriptionUntil != null &&
+                                            !isFree) ...[
                                           SizedBox(height: 3.h),
                                           Text(
                                             isUltra
                                                 ? 'Masa Aktif Ultra: s/d ${AppHelper.formatDate(school!.subscriptionUntil!)}'
                                                 : (isEnterprise
-                                                    ? 'Masa Aktif Enterprise: s/d ${AppHelper.formatDate(school!.subscriptionUntil!)}'
-                                                    : 'Masa Aktif Pro: s/d ${AppHelper.formatDate(school!.subscriptionUntil!)}'),
+                                                      ? 'Masa Aktif Enterprise: s/d ${AppHelper.formatDate(school!.subscriptionUntil!)}'
+                                                      : 'Masa Aktif Pro: s/d ${AppHelper.formatDate(school!.subscriptionUntil!)}'),
                                             style: TextStyle(
                                               fontSize: 11.5.sp,
                                               color: isUltra
                                                   ? const Color(0xFF7C3AED)
                                                   : (isEnterprise
-                                                      ? const Color(0xFF0284C7)
-                                                      : const Color(0xFFD97706)),
+                                                        ? const Color(
+                                                            0xFF0284C7,
+                                                          )
+                                                        : const Color(
+                                                            0xFFD97706,
+                                                          )),
                                               fontWeight: FontWeight.w600,
                                             ),
                                           ),
@@ -1125,11 +1265,19 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                   ),
                                   if (school?.code != null)
                                     IconButton(
-                                      icon: const Icon(Icons.copy_rounded, size: 18),
+                                      icon: const Icon(
+                                        Icons.copy_rounded,
+                                        size: 18,
+                                      ),
                                       tooltip: 'Salin Kode',
                                       onPressed: () {
-                                        Clipboard.setData(ClipboardData(text: school!.code!));
-                                        AppHelper.showSnackBar(context, 'Kode sekolah disalin!');
+                                        Clipboard.setData(
+                                          ClipboardData(text: school!.code!),
+                                        );
+                                        AppHelper.showSnackBar(
+                                          context,
+                                          'Kode sekolah disalin!',
+                                        );
                                       },
                                     ),
                                 ],
@@ -1146,7 +1294,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                     style: TextStyle(
                                       fontSize: 12.5.sp,
                                       fontWeight: FontWeight.w600,
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
                                     ),
                                   ),
                                 ),
@@ -1158,10 +1308,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                     color: currentTeacherCount >= maxTeachers
                                         ? Colors.red
                                         : (isUltra
-                                            ? const Color(0xFF7C3AED)
-                                            : (isEnterprise
-                                                ? const Color(0xFF0284C7)
-                                                : const Color(0xFF2563EB))),
+                                              ? const Color(0xFF7C3AED)
+                                              : (isEnterprise
+                                                    ? const Color(0xFF0284C7)
+                                                    : const Color(0xFF2563EB))),
                                   ),
                                 ),
                               ],
@@ -1172,15 +1322,23 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                               child: LinearProgressIndicator(
                                 value: usagePercent,
                                 minHeight: 8.h,
-                                backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                                backgroundColor: Colors.grey.withValues(
+                                  alpha: 0.2,
+                                ),
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   currentTeacherCount >= maxTeachers
                                       ? Colors.red
                                       : (isUltra
-                                          ? const Color(0xFF7C3AED)
-                                          : (isEnterprise
-                                              ? const Color(0xFF0284C7)
-                                              : (isPro ? const Color(0xFFD97706) : const Color(0xFF2563EB)))),
+                                            ? const Color(0xFF7C3AED)
+                                            : (isEnterprise
+                                                  ? const Color(0xFF0284C7)
+                                                  : (isPro
+                                                        ? const Color(
+                                                            0xFFD97706,
+                                                          )
+                                                        : const Color(
+                                                            0xFF2563EB,
+                                                          )))),
                                 ),
                               ),
                             ),
@@ -1201,14 +1359,19 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                               'Guru menggunakan kode ini saat mendaftar.',
                               style: TextStyle(
                                 fontSize: 12.sp,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                                 height: 1.4,
                               ),
                             ),
                             SizedBox(height: 8.h),
                             Container(
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.4),
                                 borderRadius: BorderRadius.circular(12.r),
                                 border: Border.all(
                                   color: Colors.grey.withValues(alpha: 0.3),
@@ -1238,7 +1401,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                               child: ElevatedButton.icon(
                                 onPressed: (_isSavingTeachingPlace || isLoading)
                                     ? null
-                                    : () => _handleSaveTeachingPlace(activeSchoolId),
+                                    : () => _handleSaveTeachingPlace(
+                                        activeSchoolId,
+                                      ),
                                 icon: _isSavingTeachingPlace
                                     ? SizedBox(
                                         width: 18.w,
@@ -1254,13 +1419,13 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                       ? 'Menyimpan...'
                                       : 'Simpan Kode Gabung',
                                   style: GoogleFonts.hankenGrotesk(
-                                      fontWeight: FontWeight.bold),
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF2563EB),
                                   foregroundColor: Colors.white,
-                                  padding:
-                                      EdgeInsets.symmetric(vertical: 12.h),
+                                  padding: EdgeInsets.symmetric(vertical: 12.h),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12.r),
                                   ),
@@ -1276,15 +1441,24 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                 Expanded(
                                   child: OutlinedButton.icon(
                                     onPressed: _showActivationCodeDialog,
-                                    icon: const Icon(Icons.vpn_key_rounded, size: 18),
+                                    icon: const Icon(
+                                      Icons.vpn_key_rounded,
+                                      size: 18,
+                                    ),
                                     label: Text(
                                       'Ganti Kode',
-                                      style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+                                      style: GoogleFonts.hankenGrotesk(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                     style: OutlinedButton.styleFrom(
-                                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 12.h,
+                                      ),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12.r),
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1293,18 +1467,27 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                 Expanded(
                                   child: ElevatedButton.icon(
                                     onPressed: _launchJMPanel,
-                                    icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                                    icon: const Icon(
+                                      Icons.open_in_new_rounded,
+                                      size: 18,
+                                    ),
                                     label: Text(
                                       'Kelola Langganan',
-                                      style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+                                      style: GoogleFonts.hankenGrotesk(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF2563EB),
                                       foregroundColor: Colors.white,
-                                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 12.h,
+                                      ),
                                       elevation: 0,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12.r),
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1340,7 +1523,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                   Container(
                                     padding: EdgeInsets.all(8.w),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                                      color: const Color(
+                                        0xFF2563EB,
+                                      ).withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(10.r),
                                     ),
                                     child: const Icon(
@@ -1356,7 +1541,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                       style: GoogleFonts.hankenGrotesk(
                                         fontSize: 15.5.sp,
                                         fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.onSurface,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
                                       ),
                                     ),
                                   ),
@@ -1367,7 +1554,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                 'Tentukan batas waktu (dalam hari) bagi guru untuk mengisi jurnal setelah jadwal mengajar selesai.',
                                 style: TextStyle(
                                   fontSize: 12.5.sp,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                   height: 1.4,
                                 ),
                               ),
@@ -1406,12 +1595,16 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                   icon: const Icon(Icons.save_rounded),
                                   label: Text(
                                     'Simpan Pengaturan Jurnal',
-                                    style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF2563EB),
                                     foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 12.h,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12.r),
                                     ),
@@ -1448,7 +1641,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                   Container(
                                     padding: EdgeInsets.all(8.w),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                                      color: const Color(
+                                        0xFF0D9488,
+                                      ).withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(10.r),
                                     ),
                                     child: const Icon(
@@ -1464,7 +1659,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                       style: GoogleFonts.hankenGrotesk(
                                         fontSize: 15.5.sp,
                                         fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.onSurface,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
                                       ),
                                     ),
                                   ),
@@ -1475,7 +1672,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                 'Nama dan NIP Supervisor atau Kepala Sekolah yang akan otomatis tertera pada kolom tanda tangan lembar laporan cetak (PDF) jurnal mengajar guru.',
                                 style: TextStyle(
                                   fontSize: 12.5.sp,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                   height: 1.4,
                                 ),
                               ),
@@ -1492,7 +1691,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                               TextFormField(
                                 controller: _supervisorNameController,
                                 decoration: InputDecoration(
-                                  hintText: 'Contoh: Dr. H. Ahmad Dahlan, M.Pd.',
+                                  hintText:
+                                      'Contoh: Dr. H. Ahmad Dahlan, M.Pd.',
                                   prefixIcon: const Icon(Icons.person_outline),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12.r),
@@ -1513,7 +1713,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                 controller: _supervisorNipController,
                                 keyboardType: TextInputType.number,
                                 decoration: InputDecoration(
-                                  hintText: 'Contoh: 197508151999031002 (Kosongkan jika belum ada)',
+                                  hintText:
+                                      'Contoh: 197508151999031002 (Kosongkan jika belum ada)',
                                   prefixIcon: const Icon(Icons.badge_outlined),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12.r),
@@ -1524,27 +1725,34 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton.icon(
-                                  onPressed: (_isSavingSupervisor || isLoading) ? null : _handleSaveSupervisor,
+                                  onPressed: (_isSavingSupervisor || isLoading)
+                                      ? null
+                                      : _handleSaveSupervisor,
                                   icon: _isSavingSupervisor
                                       ? SizedBox(
                                           width: 18.w,
                                           height: 18.w,
-                                          child: const CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Colors.white,
-                                          ),
+                                          child:
+                                              const CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
                                         )
                                       : const Icon(Icons.save_rounded),
                                   label: Text(
                                     _isSavingSupervisor
                                         ? 'Menyimpan...'
                                         : 'Simpan Data Supervisor',
-                                    style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF0D9488),
                                     foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 12.h,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12.r),
                                     ),
@@ -1579,7 +1787,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                 Container(
                                   padding: EdgeInsets.all(8.w),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF16A34A).withValues(alpha: 0.1),
+                                    color: const Color(
+                                      0xFF16A34A,
+                                    ).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(10.r),
                                   ),
                                   child: const Icon(
@@ -1595,7 +1805,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 15.5.sp,
                                       fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
                                     ),
                                   ),
                                 ),
@@ -1606,7 +1818,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                               'Gunakan NoBox.ai untuk mengirim notifikasi otomatis kepada orang tua/wali siswa ketika siswa tercatat tidak hadir di sekolah.',
                               style: TextStyle(
                                 fontSize: 12.5.sp,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                                 height: 1.4,
                               ),
                             ),
@@ -1624,7 +1838,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                     ),
                                   ),
                                 ),
-                                if (noboxConfig != null && noboxConfig.hasApiKey && !_isEditingApiKey)
+                                if (noboxConfig != null &&
+                                    noboxConfig.hasApiKey &&
+                                    !_isEditingApiKey)
                                   TextButton.icon(
                                     onPressed: () {
                                       setState(() {
@@ -1633,7 +1849,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                         _noboxApiKeyController.clear();
                                       });
                                     },
-                                    icon: const Icon(Icons.edit_outlined, size: 14),
+                                    icon: const Icon(
+                                      Icons.edit_outlined,
+                                      size: 14,
+                                    ),
                                     label: const Text('Ganti Key'),
                                     style: TextButton.styleFrom(
                                       visualDensity: VisualDensity.compact,
@@ -1646,12 +1865,22 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                             TextFormField(
                               controller: _noboxApiKeyController,
                               obscureText: _obscureApiKey,
-                              readOnly: (noboxConfig != null && noboxConfig.hasApiKey && !_isEditingApiKey),
+                              readOnly:
+                                  (noboxConfig != null &&
+                                  noboxConfig.hasApiKey &&
+                                  !_isEditingApiKey),
                               decoration: InputDecoration(
-                                hintText: (noboxConfig != null && noboxConfig.hasApiKey && !_isEditingApiKey)
-                                    ? (noboxConfig.maskedApiKey ?? '••••••••••••••••••••••••')
+                                hintText:
+                                    (noboxConfig != null &&
+                                        noboxConfig.hasApiKey &&
+                                        !_isEditingApiKey)
+                                    ? (noboxConfig.maskedApiKey ??
+                                          '••••••••••••••••••••••••')
                                     : 'Masukkan API Key NoBox.ai sekolah',
-                                prefixIcon: const Icon(Icons.vpn_key_rounded, size: 20),
+                                prefixIcon: const Icon(
+                                  Icons.vpn_key_rounded,
+                                  size: 20,
+                                ),
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _obscureApiKey
@@ -1659,7 +1888,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                         : Icons.visibility_rounded,
                                     size: 20,
                                   ),
-                                  tooltip: _obscureApiKey ? 'Tampilkan API Key' : 'Sembunyikan API Key',
+                                  tooltip: _obscureApiKey
+                                      ? 'Tampilkan API Key'
+                                      : 'Sembunyikan API Key',
                                   onPressed: () {
                                     setState(() {
                                       _obscureApiKey = !_obscureApiKey;
@@ -1685,14 +1916,19 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                     ),
                                   ),
                                 ),
-                                if (noboxConfig != null && noboxConfig.hasApiKey && !_isEditingAccountId)
+                                if (noboxConfig != null &&
+                                    noboxConfig.hasApiKey &&
+                                    !_isEditingAccountId)
                                   TextButton.icon(
                                     onPressed: () {
                                       setState(() {
                                         _isEditingAccountId = true;
                                       });
                                     },
-                                    icon: const Icon(Icons.edit_outlined, size: 14),
+                                    icon: const Icon(
+                                      Icons.edit_outlined,
+                                      size: 14,
+                                    ),
                                     label: const Text('Ganti ID'),
                                     style: TextButton.styleFrom(
                                       visualDensity: VisualDensity.compact,
@@ -1706,21 +1942,43 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                               'ID Akun WhatsApp di NoBox (kosongkan jika menggunakan akun default)',
                               style: TextStyle(
                                 fontSize: 11.5.sp,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
                             ),
                             SizedBox(height: 8.h),
                             TextFormField(
                               controller: _noboxAccountIdController,
-                              readOnly: (noboxConfig != null && noboxConfig.hasApiKey && !_isEditingAccountId && !_isEditingApiKey),
+                              readOnly:
+                                  (noboxConfig != null &&
+                                  noboxConfig.hasApiKey &&
+                                  !_isEditingAccountId &&
+                                  !_isEditingApiKey),
                               decoration: InputDecoration(
-                                hintText: (noboxConfig != null && noboxConfig.hasApiKey && !_isEditingAccountId && !_isEditingApiKey)
-                                    ? (noboxConfig.accountId.isNotEmpty ? noboxConfig.accountId : 'Default (829936240919301)')
+                                hintText:
+                                    (noboxConfig != null &&
+                                        noboxConfig.hasApiKey &&
+                                        !_isEditingAccountId &&
+                                        !_isEditingApiKey)
+                                    ? (noboxConfig.accountId.isNotEmpty
+                                          ? noboxConfig.accountId
+                                          : 'Default (829936240919301)')
                                     : 'Contoh: 829936240919301 (Kosongkan jika default)',
-                                prefixIcon: const Icon(Icons.badge_outlined, size: 20),
-                                suffixIcon: (noboxConfig != null && noboxConfig.hasApiKey && (_isEditingAccountId || _isEditingApiKey))
+                                prefixIcon: const Icon(
+                                  Icons.badge_outlined,
+                                  size: 20,
+                                ),
+                                suffixIcon:
+                                    (noboxConfig != null &&
+                                        noboxConfig.hasApiKey &&
+                                        (_isEditingAccountId ||
+                                            _isEditingApiKey))
                                     ? IconButton(
-                                        icon: const Icon(Icons.clear_rounded, size: 18),
+                                        icon: const Icon(
+                                          Icons.clear_rounded,
+                                          size: 18,
+                                        ),
                                         tooltip: 'Hapus ID',
                                         onPressed: () {
                                           _noboxAccountIdController.clear();
@@ -1736,9 +1994,15 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
                             // Status Koneksi / Integrasi
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12.w,
+                                vertical: 10.h,
+                              ),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.35),
                                 borderRadius: BorderRadius.circular(12.r),
                                 border: Border.all(
                                   color: Colors.grey.withValues(alpha: 0.2),
@@ -1751,41 +2015,53 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                     height: 10.w,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: (noboxConfig == null || !noboxConfig.hasApiKey)
+                                      color:
+                                          (noboxConfig == null ||
+                                              !noboxConfig.hasApiKey)
                                           ? Colors.grey
                                           : (noboxConfig.isConnected
-                                              ? const Color(0xFF16A34A)
-                                              : (noboxConfig.isFailed
-                                                  ? const Color(0xFFDC2626)
-                                                  : const Color(0xFFD97706))),
+                                                ? const Color(0xFF16A34A)
+                                                : (noboxConfig.isFailed
+                                                      ? const Color(0xFFDC2626)
+                                                      : const Color(
+                                                          0xFFD97706,
+                                                        ))),
                                     ),
                                   ),
                                   SizedBox(width: 8.w),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          (noboxConfig == null || !noboxConfig.hasApiKey)
+                                          (noboxConfig == null ||
+                                                  !noboxConfig.hasApiKey)
                                               ? 'Status: Belum Dikonfigurasi'
                                               : (noboxConfig.isConnected
-                                                  ? 'Status: Terhubung'
-                                                  : (noboxConfig.isFailed
-                                                      ? 'Status: Gagal Terhubung'
-                                                      : 'Status: Belum Diuji')),
+                                                    ? 'Status: Terhubung'
+                                                    : (noboxConfig.isFailed
+                                                          ? 'Status: Gagal Terhubung'
+                                                          : 'Status: Belum Diuji')),
                                           style: GoogleFonts.hankenGrotesk(
                                             fontSize: 13.sp,
                                             fontWeight: FontWeight.w700,
-                                            color: Theme.of(context).colorScheme.onSurface,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface,
                                           ),
                                         ),
-                                        if (noboxConfig != null && noboxConfig.lastTestedAt != null) ...[
+                                        if (noboxConfig != null &&
+                                            noboxConfig.lastTestedAt !=
+                                                null) ...[
                                           SizedBox(height: 2.h),
                                           Text(
                                             'Terakhir diuji: ${AppHelper.formatDate(noboxConfig.lastTestedAt!)}',
                                             style: TextStyle(
                                               fontSize: 11.sp,
-                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurfaceVariant,
                                             ),
                                           ),
                                         ],
@@ -1802,28 +2078,43 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                               children: [
                                 Expanded(
                                   child: OutlinedButton.icon(
-                                    onPressed: (activeSchoolId == null ||
+                                    onPressed:
+                                        (activeSchoolId == null ||
                                             noboxConfig == null ||
                                             !noboxConfig.hasApiKey ||
                                             settingsProvider.isTestingNobox ||
                                             settingsProvider.isNoboxLoading)
                                         ? null
-                                        : () => _handleTestNoboxConnection(activeSchoolId),
+                                        : () => _handleTestNoboxConnection(
+                                            activeSchoolId,
+                                          ),
                                     icon: settingsProvider.isTestingNobox
                                         ? SizedBox(
                                             width: 16.w,
                                             height: 16.w,
-                                            child: const CircularProgressIndicator(strokeWidth: 2),
+                                            child:
+                                                const CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                ),
                                           )
-                                        : const Icon(Icons.wifi_tethering_rounded, size: 18),
+                                        : const Icon(
+                                            Icons.wifi_tethering_rounded,
+                                            size: 18,
+                                          ),
                                     label: Text(
                                       'Tes Koneksi',
-                                      style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+                                      style: GoogleFonts.hankenGrotesk(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                     style: OutlinedButton.styleFrom(
-                                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 12.h,
+                                      ),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12.r),
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1831,32 +2122,45 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                 SizedBox(width: 10.w),
                                 Expanded(
                                   child: ElevatedButton.icon(
-                                    onPressed: (activeSchoolId == null ||
+                                    onPressed:
+                                        (activeSchoolId == null ||
                                             settingsProvider.isNoboxLoading ||
                                             settingsProvider.isTestingNobox)
                                         ? null
-                                        : () => _handleSaveNoboxApiKey(activeSchoolId),
+                                        : () => _handleSaveNoboxApiKey(
+                                            activeSchoolId,
+                                          ),
                                     icon: settingsProvider.isNoboxLoading
                                         ? SizedBox(
                                             width: 16.w,
                                             height: 16.w,
-                                            child: const CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: Colors.white,
-                                            ),
+                                            child:
+                                                const CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: Colors.white,
+                                                ),
                                           )
-                                        : const Icon(Icons.save_rounded, size: 18),
+                                        : const Icon(
+                                            Icons.save_rounded,
+                                            size: 18,
+                                          ),
                                     label: Text(
                                       'Simpan API Key',
-                                      style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+                                      style: GoogleFonts.hankenGrotesk(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF2563EB),
                                       foregroundColor: Colors.white,
-                                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 12.h,
+                                      ),
                                       elevation: 0,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12.r),
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
                                       ),
                                     ),
                                   ),

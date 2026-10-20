@@ -1,3 +1,5 @@
+import '../core/constants/teacher_roles.dart';
+
 class TeacherModel {
   final String id;
   final String name;
@@ -7,6 +9,7 @@ class TeacherModel {
   final String email;
   final String? photoUrl;
   final String? nip;
+  final bool isDeleted;
 
   TeacherModel({
     required this.id,
@@ -17,6 +20,7 @@ class TeacherModel {
     required this.email,
     this.photoUrl,
     this.nip,
+    this.isDeleted = false,
   });
 
   factory TeacherModel.fromJson(Map<String, dynamic> json) {
@@ -38,18 +42,26 @@ class TeacherModel {
       position = rawPos;
     }
 
+    final isDeleted =
+        json['isDeleted'] == true ||
+        json['is_deleted'] == true ||
+        json['deleted_at'] != null ||
+        TeacherRoles.isSoftDeleted(json['role']?.toString());
+
     return TeacherModel(
       id: json['id']?.toString() ?? '',
       name: name,
       position: position,
       address: json['address']?.toString() ?? '',
-      phoneNumber: json['phoneNumber']?.toString() ??
+      phoneNumber:
+          json['phoneNumber']?.toString() ??
           json['phone']?.toString() ??
           json['phone_number']?.toString() ??
           '',
       email: json['email']?.toString() ?? '',
       photoUrl: json['photoUrl']?.toString() ?? json['photo_url']?.toString(),
       nip: json['nip']?.toString(),
+      isDeleted: isDeleted,
     );
   }
 
@@ -63,6 +75,7 @@ class TeacherModel {
       'email': email,
       'photoUrl': photoUrl,
       'nip': nip,
+      'isDeleted': isDeleted,
     };
   }
 
@@ -75,6 +88,7 @@ class TeacherModel {
     String? email,
     String? photoUrl,
     String? nip,
+    bool? isDeleted,
     bool clearNip = false,
   }) {
     return TeacherModel(
@@ -86,7 +100,7 @@ class TeacherModel {
       email: email ?? this.email,
       photoUrl: photoUrl ?? this.photoUrl,
       nip: clearNip ? null : (nip ?? this.nip),
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 }
-

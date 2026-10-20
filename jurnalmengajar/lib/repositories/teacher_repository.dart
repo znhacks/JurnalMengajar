@@ -8,3 +8,10 @@ abstract class TeacherRepository {
   Future<void> delete(String id);
   Future<void> deleteMultiple(List<String> ids);
 }
+
+/// Optional capability for repositories that support deactivating a teacher
+/// only in one school while keeping the account and historical data intact.
+abstract class SchoolScopedTeacherRepository {
+  Future<void> deactivate(String id, String schoolId);
+  Future<void> deactivateMultiple(List<String> ids, String schoolId);
+}

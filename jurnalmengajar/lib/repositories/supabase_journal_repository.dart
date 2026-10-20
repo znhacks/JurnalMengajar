@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/journal_model.dart';
 import 'journal_repository.dart';
 import '../core/constants/supabase_constants.dart';
+import '../core/constants/teacher_roles.dart';
 import '../core/utils/image_compressor.dart';
 import '../core/utils/helper.dart';
 import '../core/services/cache_service.dart';
@@ -16,16 +17,78 @@ class SupabaseJournalRepository implements JournalRepository {
 
   SupabaseJournalRepository(this._supabase);
 
+  Future<void> _guardJournalWrite({String? schoolId}) async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null || userId.isEmpty) return;
+
+      // Legacy guard for accounts that were globally marked before teacher
+      // deactivation became school-scoped.
+      final userRow = await _supabase
+          .from('users')
+          .select('role')
+          .eq('id', userId)
+          .maybeSingle()
+          .timeout(NetworkResilience.defaultQueryTimeout);
+
+      if (TeacherRoles.isSoftDeleted(userRow?['role']?.toString())) {
+        throw const JournalWriteBlockedException();
+      }
+
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
+      if (cleanSchoolId == null || cleanSchoolId.isEmpty) return;
+
+      final rows = await _supabase
+          .from('user_schools')
+          .select('role, status')
+          .eq('user_id', userId)
+          .eq('school_id', cleanSchoolId)
+          .inFilter('role', ['guru', 'teacher', TeacherRoles.softDeleted])
+          .timeout(NetworkResilience.defaultQueryTimeout);
+
+      var hasActiveTeacher = false;
+      var hasDeactivatedTeacher = false;
+      for (final row in (rows as List)) {
+        final map = Map<String, dynamic>.from(row as Map);
+        final role = map['role']?.toString();
+        final status = map['status']?.toString();
+        if (TeacherRoles.isActiveDeactivation(role: role, status: status)) {
+          hasDeactivatedTeacher = true;
+        } else if (TeacherRoles.isTeacher(role)) {
+          final normalizedStatus = (status ?? 'active').toLowerCase();
+          if (normalizedStatus == 'active' ||
+              normalizedStatus == 'requested_exit') {
+            hasActiveTeacher = true;
+          }
+        }
+      }
+
+      if (hasDeactivatedTeacher && !hasActiveTeacher) {
+        throw const JournalWriteBlockedException();
+      }
+    } on JournalWriteBlockedException {
+      rethrow;
+    } catch (_) {
+      // Let the actual write surface network/permission errors.
+    }
+  }
+
   @override
-  Future<List<JournalModel>> getAll([String? schoolId, String? periodId]) async {
+  Future<List<JournalModel>> getAll([
+    String? schoolId,
+    String? periodId,
+  ]) async {
     final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId);
-    final cacheKey = 'journals_${cleanSchoolId ?? "all"}${periodId != null && periodId.isNotEmpty ? "_$periodId" : ""}';
+    final cacheKey =
+        'journals_${cleanSchoolId ?? "all"}${periodId != null && periodId.isNotEmpty ? "_$periodId" : ""}';
 
     Future<List<JournalModel>> loadFromCache() async {
       try {
         final cached = await CacheService().loadList(cacheKey);
         if (cached != null && cached.isNotEmpty) {
-          debugPrint('[RUNTIME_DEBUG:JOURNAL_REPO] Loaded ${cached.length} journals from cache.');
+          debugPrint(
+            '[RUNTIME_DEBUG:JOURNAL_REPO] Loaded ${cached.length} journals from cache.',
+          );
           return cached.map((item) => JournalModel.fromJson(item)).toList();
         }
       } catch (_) {}
@@ -47,13 +110,18 @@ class SupabaseJournalRepository implements JournalRepository {
           if (periodId != null && periodId.isNotEmpty) {
             query = query.eq('period_id', periodId);
           }
-          final response = await query.order(SupabaseConstants.fieldDate, ascending: false);
+          final response = await query.order(
+            SupabaseConstants.fieldDate,
+            ascending: false,
+          );
 
           final List<JournalModel> journals = [];
           final List<Map<String, dynamic>> cacheable = [];
           for (final item in (response as List)) {
             try {
-              final map = item is Map<String, dynamic> ? item : Map<String, dynamic>.from(item as Map);
+              final map = item is Map<String, dynamic>
+                  ? item
+                  : Map<String, dynamic>.from(item as Map);
               journals.add(JournalModel.fromJson(map));
               cacheable.add(map);
             } catch (_) {}
@@ -64,7 +132,9 @@ class SupabaseJournalRepository implements JournalRepository {
         },
       );
     } catch (e) {
-      debugPrint('[RUNTIME_DEBUG:JOURNAL_REPO] Weak signal fallback for getAll journals: $e');
+      debugPrint(
+        '[RUNTIME_DEBUG:JOURNAL_REPO] Weak signal fallback for getAll journals: $e',
+      );
       return await loadFromCache();
     }
   }
@@ -99,7 +169,9 @@ class SupabaseJournalRepository implements JournalRepository {
           final List<Map<String, dynamic>> cacheable = [];
           for (final item in (response as List)) {
             try {
-              final map = item is Map<String, dynamic> ? item : Map<String, dynamic>.from(item as Map);
+              final map = item is Map<String, dynamic>
+                  ? item
+                  : Map<String, dynamic>.from(item as Map);
               journals.add(JournalModel.fromJson(map));
               cacheable.add(map);
             } catch (_) {}
@@ -110,13 +182,18 @@ class SupabaseJournalRepository implements JournalRepository {
         },
       );
     } catch (e) {
-      debugPrint('[RUNTIME_DEBUG:JOURNAL_REPO] Weak signal fallback for teacher journals: $e');
+      debugPrint(
+        '[RUNTIME_DEBUG:JOURNAL_REPO] Weak signal fallback for teacher journals: $e',
+      );
       return await loadFromCache();
     }
   }
 
   @override
-  Future<JournalModel?> getJournalForSchedule(String scheduleId, {DateTime? date}) async {
+  Future<JournalModel?> getJournalForSchedule(
+    String scheduleId, {
+    DateTime? date,
+  }) async {
     try {
       var query = _supabase
           .from(SupabaseConstants.tableJournals)
@@ -124,8 +201,19 @@ class SupabaseJournalRepository implements JournalRepository {
           .eq(SupabaseConstants.fieldScheduleId, scheduleId);
 
       if (date != null) {
-        final startOfDay = DateTime(date.year, date.month, date.day).toIso8601String();
-        final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59).toIso8601String();
+        final startOfDay = DateTime(
+          date.year,
+          date.month,
+          date.day,
+        ).toIso8601String();
+        final endOfDay = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          23,
+          59,
+          59,
+        ).toIso8601String();
         query = query.gte('date', startOfDay).lte('date', endOfDay);
       }
 
@@ -153,7 +241,9 @@ class SupabaseJournalRepository implements JournalRepository {
       }
 
       // Auto-resolve school_id if missing
-      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(payload['school_id']);
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(
+        payload['school_id'],
+      );
       if (cleanSchoolId == null || cleanSchoolId.isEmpty) {
         if (model.scheduleId.isNotEmpty) {
           try {
@@ -163,11 +253,15 @@ class SupabaseJournalRepository implements JournalRepository {
                 .eq('id', model.scheduleId)
                 .maybeSingle();
             if (sched != null && sched['school_id'] != null) {
-              payload['school_id'] = AppHelper.parseSingleCleanSchoolId(sched['school_id']);
+              payload['school_id'] = AppHelper.parseSingleCleanSchoolId(
+                sched['school_id'],
+              );
             }
           } catch (_) {}
         }
-        final cleanAfterSched = AppHelper.parseSingleCleanSchoolId(payload['school_id']);
+        final cleanAfterSched = AppHelper.parseSingleCleanSchoolId(
+          payload['school_id'],
+        );
         if (cleanAfterSched == null || cleanAfterSched.isEmpty) {
           final currentUid = _supabase.auth.currentUser?.id ?? model.teacherId;
           if (currentUid.isNotEmpty) {
@@ -178,7 +272,9 @@ class SupabaseJournalRepository implements JournalRepository {
                   .eq('id', currentUid)
                   .maybeSingle();
               if (userRes != null && userRes['school_id'] != null) {
-                payload['school_id'] = AppHelper.parseSingleCleanSchoolId(userRes['school_id']);
+                payload['school_id'] = AppHelper.parseSingleCleanSchoolId(
+                  userRes['school_id'],
+                );
               }
             } catch (_) {}
           }
@@ -188,22 +284,22 @@ class SupabaseJournalRepository implements JournalRepository {
       } else {
         payload['school_id'] = cleanSchoolId;
       }
-      
-      await _supabase
-          .from(SupabaseConstants.tableJournals)
-          .insert(payload);
+
+      await _guardJournalWrite(schoolId: payload['school_id']?.toString());
+
+      await _supabase.from(SupabaseConstants.tableJournals).insert(payload);
 
       // Trigger push notification to admin users via Edge Function
       try {
-        await _supabase.functions.invoke('send-fcm-notification', body: {
-          'table': 'journals',
-          'type': 'INSERT',
-          'record': payload,
-        });
+        await _supabase.functions.invoke(
+          'send-fcm-notification',
+          body: {'table': 'journals', 'type': 'INSERT', 'record': payload},
+        );
       } catch (fcmErr) {
         debugPrint('FCM Notification to admin log: $fcmErr');
       }
     } catch (e) {
+      if (e is JournalWriteBlockedException) rethrow;
       throw Exception('Gagal membuat jurnal: $e');
     }
   }
@@ -216,7 +312,9 @@ class SupabaseJournalRepository implements JournalRepository {
       payload.remove('attachment');
 
       // Preserve or resolve school_id if missing
-      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(payload['school_id']);
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(
+        payload['school_id'],
+      );
       if (cleanSchoolId == null || cleanSchoolId.isEmpty) {
         if (model.scheduleId.isNotEmpty) {
           try {
@@ -226,19 +324,24 @@ class SupabaseJournalRepository implements JournalRepository {
                 .eq('id', model.scheduleId)
                 .maybeSingle();
             if (sched != null && sched['school_id'] != null) {
-              payload['school_id'] = AppHelper.parseSingleCleanSchoolId(sched['school_id']);
+              payload['school_id'] = AppHelper.parseSingleCleanSchoolId(
+                sched['school_id'],
+              );
             }
           } catch (_) {}
         }
       } else {
         payload['school_id'] = cleanSchoolId;
       }
-      
+
+      await _guardJournalWrite(schoolId: payload['school_id']?.toString());
+
       await _supabase
           .from(SupabaseConstants.tableJournals)
           .update(payload)
           .eq(SupabaseConstants.fieldId, model.id);
     } catch (e) {
+      if (e is JournalWriteBlockedException) rethrow;
       throw Exception('Gagal memperbarui jurnal: $e');
     }
   }
@@ -246,6 +349,7 @@ class SupabaseJournalRepository implements JournalRepository {
   @override
   Future<void> delete(String id) async {
     try {
+      await _guardJournalWrite();
       // Get journal first to check if it has attachment
       final journal = await _supabase
           .from(SupabaseConstants.tableJournals)
@@ -254,7 +358,7 @@ class SupabaseJournalRepository implements JournalRepository {
           .single();
 
       final attachmentUrl = journal[SupabaseConstants.fieldAttachmentUrl];
-      
+
       // Delete file from storage if exists
       if (attachmentUrl != null && attachmentUrl.isNotEmpty) {
         try {
@@ -276,6 +380,7 @@ class SupabaseJournalRepository implements JournalRepository {
           .delete()
           .eq(SupabaseConstants.fieldId, id);
     } catch (e) {
+      if (e is JournalWriteBlockedException) rethrow;
       throw Exception('Gagal menghapus jurnal: $e');
     }
   }
@@ -284,6 +389,7 @@ class SupabaseJournalRepository implements JournalRepository {
   Future<void> deleteMultiple(List<String> ids) async {
     if (ids.isEmpty) return;
     try {
+      await _guardJournalWrite();
       // 1. Get attachments to delete if any (batch query)
       try {
         final List<dynamic> journals = await _supabase
@@ -316,13 +422,19 @@ class SupabaseJournalRepository implements JournalRepository {
           .delete()
           .inFilter(SupabaseConstants.fieldId, ids);
     } catch (e) {
+      if (e is JournalWriteBlockedException) rethrow;
       throw Exception('Gagal menghapus beberapa jurnal: $e');
     }
   }
 
   @override
-  Future<void> verifyJournal(String journalId, String status, {String? rejectionNote}) async {
+  Future<void> verifyJournal(
+    String journalId,
+    String status, {
+    String? rejectionNote,
+  }) async {
     try {
+      await _guardJournalWrite();
       final Map<String, dynamic> payload = {
         SupabaseConstants.fieldStatus: status,
       };
@@ -350,7 +462,9 @@ class SupabaseJournalRepository implements JournalRepository {
           final isApproved = status == 'approved' || status == 'verified';
 
           if (teacherId != null && teacherId.isNotEmpty) {
-            final title = isApproved ? 'Jurnal Disetujui ✅' : 'Jurnal Ditolak ❌';
+            final title = isApproved
+                ? 'Jurnal Disetujui ✅'
+                : 'Jurnal Ditolak ❌';
             final body = isApproved
                 ? 'Jurnal Anda tanggal $journalDate telah diverifikasi dan disetujui.'
                 : 'Jurnal Anda tanggal $journalDate ditolak.${rejectionNote != null && rejectionNote.isNotEmpty ? " Catatan: $rejectionNote" : ""}';
@@ -373,6 +487,7 @@ class SupabaseJournalRepository implements JournalRepository {
         debugPrint('FCM status update notification log: $fcmErr');
       }
     } catch (e) {
+      if (e is JournalWriteBlockedException) rethrow;
       throw Exception('Gagal memperbarui status jurnal: $e');
     }
   }
@@ -398,13 +513,10 @@ class SupabaseJournalRepository implements JournalRepository {
       await _supabase.storage
           .from(SupabaseConstants.bucketJournalAttachments)
           .uploadBinary(
-        filePath,
-        compressed.bytes,
-        fileOptions: const FileOptions(
-          cacheControl: '3600',
-          upsert: true,
-        ),
-      );
+            filePath,
+            compressed.bytes,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+          );
 
       // Get public URL
       final publicUrl = _supabase.storage
@@ -418,7 +530,10 @@ class SupabaseJournalRepository implements JournalRepository {
   }
 
   /// Update journal attachment URL
-  Future<void> updateAttachmentUrl(String journalId, String attachmentUrl) async {
+  Future<void> updateAttachmentUrl(
+    String journalId,
+    String attachmentUrl,
+  ) async {
     try {
       await _supabase
           .from(SupabaseConstants.tableJournals)
@@ -448,10 +563,13 @@ class SupabaseJournalRepository implements JournalRepository {
     try {
       final uri = Uri.parse(url);
       final segments = uri.pathSegments;
-      
+
       // URL format: .../storage/v1/object/public/journal-attachments/path/to/file
-      if (segments.contains('public') && segments.contains(SupabaseConstants.bucketJournalAttachments)) {
-        final bucketIndex = segments.indexOf(SupabaseConstants.bucketJournalAttachments);
+      if (segments.contains('public') &&
+          segments.contains(SupabaseConstants.bucketJournalAttachments)) {
+        final bucketIndex = segments.indexOf(
+          SupabaseConstants.bucketJournalAttachments,
+        );
         if (bucketIndex < segments.length - 1) {
           return segments.sublist(bucketIndex + 1).join('/');
         }
@@ -462,4 +580,13 @@ class SupabaseJournalRepository implements JournalRepository {
       return '';
     }
   }
+}
+
+class JournalWriteBlockedException implements Exception {
+  const JournalWriteBlockedException();
+
+  @override
+  String toString() =>
+      'Guru ini dinonaktifkan pada sekolah ini. Data tetap dapat dilihat, '
+      'tetapi jurnal tidak dapat diisi, diubah, atau dihapus di sekolah ini.';
 }

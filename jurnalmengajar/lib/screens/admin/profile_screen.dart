@@ -615,7 +615,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                       alignment: Alignment.center,
                       children: [
                         MouseRegion(
-                          cursor: currentUser.photoUrl != null &&
+                          cursor:
+                              currentUser.photoUrl != null &&
                                   currentUser.photoUrl!.startsWith('http')
                               ? SystemMouseCursors.click
                               : MouseCursor.defer,
@@ -648,7 +649,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                   ),
                                   backgroundImage:
                                       currentUser.photoUrl != null &&
-                                          currentUser.photoUrl!.startsWith('http')
+                                          currentUser.photoUrl!.startsWith(
+                                            'http',
+                                          )
                                       ? CachedNetworkImageProvider(
                                           currentUser.photoUrl!,
                                         )
@@ -779,7 +782,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         child: _buildStatCard(
                           context,
                           title: 'Guru',
-                          value: '${masterProvider.teachers.length}',
+                          value:
+                              '${masterProvider.teachers.where((t) => !t.isDeleted).length}',
                           icon: Icons.people_alt_outlined,
                           color: const Color(0xFF0F172A),
                           onTap: () =>
@@ -865,7 +869,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                           'Jabatan / Posisi',
                           currentUser.position ?? 'Administrator',
                         ),
-                        if (currentUser.nip != null && currentUser.nip!.isNotEmpty) ...[
+                        if (currentUser.nip != null &&
+                            currentUser.nip!.isNotEmpty) ...[
                           Divider(height: 1, color: dividerColor),
                           _buildProfileDetailItem(
                             context,

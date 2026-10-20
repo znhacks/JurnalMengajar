@@ -3,11 +3,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/user_model.dart';
 import 'auth_repository.dart';
+import '../core/constants/teacher_roles.dart';
 import '../core/utils/image_compressor.dart';
 import '../core/utils/helper.dart';
 import '../core/services/cache_service.dart';
 import '../core/utils/network_resilience.dart';
-
 
 class SupabaseAuthRepository implements AuthRepository {
   final SupabaseClient _supabase;
@@ -37,7 +37,8 @@ class SupabaseAuthRepository implements AuthRepository {
                 session.user.userMetadata?['full_name'] as String? ??
                 session.user.userMetadata?['name'] as String? ??
                 email.split('@')[0];
-            final photoUrl = session.user.userMetadata?['avatar_url'] as String?;
+            final photoUrl =
+                session.user.userMetadata?['avatar_url'] as String?;
             final phone =
                 session.user.phone ??
                 session.user.userMetadata?['phone'] as String?;
@@ -53,7 +54,11 @@ class SupabaseAuthRepository implements AuthRepository {
 
             await _supabase
                 .from('users')
-                .upsert(newUser.toJson(), onConflict: 'id', ignoreDuplicates: true);
+                .upsert(
+                  newUser.toJson(),
+                  onConflict: 'id',
+                  ignoreDuplicates: true,
+                );
 
             response = await _supabase
                 .from('users')
@@ -62,13 +67,18 @@ class SupabaseAuthRepository implements AuthRepository {
                 .maybeSingle();
 
             if (response == null) {
-              await CacheService().save('user_profile_$userId', newUser.toJson());
+              await CacheService().save(
+                'user_profile_$userId',
+                newUser.toJson(),
+              );
               return newUser;
             }
           }
 
           final userJson = Map<String, dynamic>.from(response);
-          final rawMetaRole = session.user.userMetadata?['role']?.toString().toLowerCase();
+          final rawMetaRole = session.user.userMetadata?['role']
+              ?.toString()
+              .toLowerCase();
           if (rawMetaRole != null && rawMetaRole.isNotEmpty) {
             userJson['registered_role'] = rawMetaRole;
           }
@@ -79,14 +89,19 @@ class SupabaseAuthRepository implements AuthRepository {
         fallback: () async {
           final cached = await CacheService().loadMap('user_profile_$userId');
           if (cached != null) {
-            debugPrint('[SupabaseAuthRepository] Loaded currentUser from cache for user: $userId');
+            debugPrint(
+              '[SupabaseAuthRepository] Loaded currentUser from cache for user: $userId',
+            );
             return UserModel.fromJson(cached);
           }
           final email = session.user.email ?? '';
-          final fullName = session.user.userMetadata?['full_name'] as String? ??
+          final fullName =
+              session.user.userMetadata?['full_name'] as String? ??
               session.user.userMetadata?['name'] as String? ??
               email.split('@')[0];
-          final rawMetaRole = session.user.userMetadata?['role']?.toString().toLowerCase();
+          final rawMetaRole = session.user.userMetadata?['role']
+              ?.toString()
+              .toLowerCase();
           return UserModel(
             id: userId,
             email: email,
@@ -101,7 +116,9 @@ class SupabaseAuthRepository implements AuthRepository {
       debugPrint('Error getting current user: $e');
       final session = _supabase.auth.currentSession;
       if (session != null) {
-        final cached = await CacheService().loadMap('user_profile_${session.user.id}');
+        final cached = await CacheService().loadMap(
+          'user_profile_${session.user.id}',
+        );
         if (cached != null) {
           return UserModel.fromJson(cached);
         }
@@ -128,7 +145,9 @@ class SupabaseAuthRepository implements AuthRepository {
           .single();
 
       final userJson = Map<String, dynamic>.from(userResponse);
-      final rawMetaRole = response.user?.userMetadata?['role']?.toString().toLowerCase();
+      final rawMetaRole = response.user?.userMetadata?['role']
+          ?.toString()
+          .toLowerCase();
       if (rawMetaRole != null && rawMetaRole.isNotEmpty) {
         userJson['registered_role'] = rawMetaRole;
       }
@@ -191,9 +210,13 @@ class SupabaseAuthRepository implements AuthRepository {
       if (checkUser != null) {
         final role = checkUser['role'] as String;
         if (role == 'pending_guru') {
-          throw Exception('Pendaftaran Guru Anda sedang menunggu persetujuan Admin Sekolah. Silakan hubungi Admin Sekolah Anda untuk konfirmasi.');
+          throw Exception(
+            'Pendaftaran Guru Anda sedang menunggu persetujuan Admin Sekolah. Silakan hubungi Admin Sekolah Anda untuk konfirmasi.',
+          );
         } else if (role == 'pending_admin') {
-          throw Exception('Pendaftaran Admin Sekolah Anda sedang menunggu pengaktifan Kode Sekolah dari Superadmin. Silakan hubungi Superadmin.');
+          throw Exception(
+            'Pendaftaran Admin Sekolah Anda sedang menunggu pengaktifan Kode Sekolah dari Superadmin. Silakan hubungi Superadmin.',
+          );
         } else {
           throw Exception('Email ini sudah terdaftar.');
         }
@@ -212,12 +235,18 @@ class SupabaseAuthRepository implements AuthRepository {
 
         // 1. Check schools table with comprehensive matching
         try {
-          final schoolsRes = await _supabase.from('schools').select('id, name, code, join_code, npsn, status, subscription_plan, max_teachers');
+          final schoolsRes = await _supabase
+              .from('schools')
+              .select(
+                'id, name, code, join_code, npsn, status, subscription_plan, max_teachers',
+              );
           for (final s in (schoolsRes as List)) {
             final sId = ((s['id'] as String?) ?? '').trim();
             final sName = ((s['name'] as String?) ?? '').toUpperCase().trim();
             final sCode = ((s['code'] as String?) ?? '').toUpperCase().trim();
-            final sJoin = ((s['join_code'] as String?) ?? '').toUpperCase().trim();
+            final sJoin = ((s['join_code'] as String?) ?? '')
+                .toUpperCase()
+                .trim();
             final sNpsn = ((s['npsn'] as String?) ?? '').toUpperCase().trim();
             final cleanSName = sName.replaceAll(RegExp(r'[^A-Z0-9]'), '');
 
@@ -226,12 +255,21 @@ class SupabaseAuthRepository implements AuthRepository {
               continue;
             }
 
-            if ((targetId.isNotEmpty && sId.toLowerCase() == targetId.toLowerCase()) ||
-                (sCode.isNotEmpty && (targetName == sCode || targetId.toUpperCase() == sCode)) ||
-                (sJoin.isNotEmpty && (targetName == sJoin || targetId.toUpperCase() == sJoin)) ||
-                (sNpsn.isNotEmpty && (targetName == sNpsn || targetId.toUpperCase() == sNpsn)) ||
-                (sName.isNotEmpty && (targetName == sName || (cleanTargetName.isNotEmpty && cleanSName == cleanTargetName))) ||
-                (targetName.length >= 5 && (sName.contains(targetName) || targetName.contains(sName)))) {
+            if ((targetId.isNotEmpty &&
+                    sId.toLowerCase() == targetId.toLowerCase()) ||
+                (sCode.isNotEmpty &&
+                    (targetName == sCode || targetId.toUpperCase() == sCode)) ||
+                (sJoin.isNotEmpty &&
+                    (targetName == sJoin || targetId.toUpperCase() == sJoin)) ||
+                (sNpsn.isNotEmpty &&
+                    (targetName == sNpsn || targetId.toUpperCase() == sNpsn)) ||
+                (sName.isNotEmpty &&
+                    (targetName == sName ||
+                        (cleanTargetName.isNotEmpty &&
+                            cleanSName == cleanTargetName))) ||
+                (targetName.length >= 5 &&
+                    (sName.contains(targetName) ||
+                        targetName.contains(sName)))) {
               matchedSchool = Map<String, dynamic>.from(s);
               break;
             }
@@ -255,18 +293,25 @@ class SupabaseAuthRepository implements AuthRepository {
               tenantRes = await _supabase
                   .from('tenants')
                   .select('id, name, school_code, status')
-                  .or('school_code.ilike.%$targetName%,name.ilike.%$targetName%')
+                  .or(
+                    'school_code.ilike.%$targetName%,name.ilike.%$targetName%',
+                  )
                   .maybeSingle();
             }
 
             if (tenantRes != null) {
               final tenantId = tenantRes['id'] as String;
-              final tenantName = tenantRes['name'] as String? ?? user.schoolName ?? 'Sekolah';
-              final tenantStatus = (tenantRes['status'] as String? ?? 'active').toLowerCase();
-              final tenantCode = tenantRes['school_code'] as String? ?? tenantId;
+              final tenantName =
+                  tenantRes['name'] as String? ?? user.schoolName ?? 'Sekolah';
+              final tenantStatus = (tenantRes['status'] as String? ?? 'active')
+                  .toLowerCase();
+              final tenantCode =
+                  tenantRes['school_code'] as String? ?? tenantId;
 
               if (tenantStatus == 'inactive') {
-                throw Exception('Aktivasi sekolah sedang dinonaktifkan oleh administrator.');
+                throw Exception(
+                  'Aktivasi sekolah sedang dinonaktifkan oleh administrator.',
+                );
               }
 
               // Auto-sync into schools table
@@ -301,36 +346,48 @@ class SupabaseAuthRepository implements AuthRepository {
                 .ilike('code', targetId)
                 .maybeSingle();
             if (inviteRes != null && inviteRes['schools'] != null) {
-              matchedSchool = Map<String, dynamic>.from(inviteRes['schools'] as Map);
+              matchedSchool = Map<String, dynamic>.from(
+                inviteRes['schools'] as Map,
+              );
             }
           } catch (_) {}
         }
 
         if (matchedSchool != null) {
           schoolId = matchedSchool['id'] as String;
-          canonicalSchoolName = (matchedSchool['name'] as String?) ?? (user.schoolName ?? '');
+          canonicalSchoolName =
+              (matchedSchool['name'] as String?) ?? (user.schoolName ?? '');
 
           // If Admin is registering with a new JM-Panel plan code for an existing school, upgrade the plan
           if (user.role == 'admin' && targetId.isNotEmpty) {
             final upperCode = targetId.toUpperCase();
-            if (upperCode.contains('ENTERPRISE') || upperCode.contains('ULTRA') || upperCode.contains('PRO')) {
+            if (upperCode.contains('ENTERPRISE') ||
+                upperCode.contains('ULTRA') ||
+                upperCode.contains('PRO')) {
               final isEnt = upperCode.contains('ENTERPRISE');
               final isUltra = upperCode.contains('ULTRA');
-              final detectedPlan = isEnt ? 'enterprise' : (isUltra ? 'ultra' : 'pro');
+              final detectedPlan = isEnt
+                  ? 'enterprise'
+                  : (isUltra ? 'ultra' : 'pro');
               final maxTeachers = isEnt ? 999 : (isUltra ? 150 : 50);
               try {
-                await _supabase.from('schools').update({
-                  'subscription_plan': detectedPlan,
-                  'max_teachers': maxTeachers,
-                  'status': 'active',
-                }).eq('id', schoolId);
+                await _supabase
+                    .from('schools')
+                    .update({
+                      'subscription_plan': detectedPlan,
+                      'max_teachers': maxTeachers,
+                      'status': 'active',
+                    })
+                    .eq('id', schoolId);
               } catch (_) {}
             }
           }
         } else {
           // Scenario 2: Guru must join an existing school
           if (user.role == 'pending_guru') {
-            throw Exception('Kode sekolah tidak ditemukan di sistem. Pastikan Anda memasukkan kode sekolah yang valid dari Admin Sekolah Anda.');
+            throw Exception(
+              'Kode sekolah tidak ditemukan di sistem. Pastikan Anda memasukkan kode sekolah yang valid dari Admin Sekolah Anda.',
+            );
           }
 
           // Scenario 1: Admin creates (INSERT) a new school with the JM-Panel license code
@@ -338,18 +395,25 @@ class SupabaseAuthRepository implements AuthRepository {
           final isEntPlan = upperCode.contains('ENTERPRISE');
           final isUltraPlan = upperCode.contains('ULTRA');
           final isProPlan = upperCode.contains('PRO');
-          final detectedPlan = isEntPlan ? 'enterprise' : (isUltraPlan ? 'ultra' : (isProPlan ? 'pro' : 'free'));
-          final maxTeachers = isEntPlan ? 999 : (isUltraPlan ? 150 : (isProPlan ? 50 : 30));
+          final detectedPlan = isEntPlan
+              ? 'enterprise'
+              : (isUltraPlan ? 'ultra' : (isProPlan ? 'pro' : 'free'));
+          final maxTeachers = isEntPlan
+              ? 999
+              : (isUltraPlan ? 150 : (isProPlan ? 50 : 30));
 
           // Check if targetId is already a valid UUID, otherwise generate one
-          final uuidPattern = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+          final uuidPattern = RegExp(
+            r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+          );
           if (targetId.isNotEmpty && uuidPattern.hasMatch(targetId)) {
             schoolId = targetId;
           } else {
             schoolId = const Uuid().v4();
           }
 
-          canonicalSchoolName = (user.schoolName != null && user.schoolName!.trim().isNotEmpty)
+          canonicalSchoolName =
+              (user.schoolName != null && user.schoolName!.trim().isNotEmpty)
               ? user.schoolName!.trim()
               : (targetName.isNotEmpty ? targetName : 'Sekolah');
 
@@ -388,9 +452,15 @@ class SupabaseAuthRepository implements AuthRepository {
           'photo_url': ?finalPhotoUrl,
           'photoUrl': ?finalPhotoUrl,
           'avatar_url': ?finalPhotoUrl,
-          'school_name': canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
-          'schoolName': canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
-          'school': canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
+          'school_name': canonicalSchoolName.isNotEmpty
+              ? canonicalSchoolName
+              : user.schoolName,
+          'schoolName': canonicalSchoolName.isNotEmpty
+              ? canonicalSchoolName
+              : user.schoolName,
+          'school': canonicalSchoolName.isNotEmpty
+              ? canonicalSchoolName
+              : user.schoolName,
           'school_id': schoolId.isNotEmpty ? schoolId : null,
           'schoolId': schoolId.isNotEmpty ? schoolId : null,
           'nip': user.nip,
@@ -401,27 +471,32 @@ class SupabaseAuthRepository implements AuthRepository {
       if (userId == null) throw Exception('Gagal membuat akun');
 
       // 2. Create or update user profile in database
-      final userData = user.copyWith(
-        id: userId,
-        role: user.role,
-        photoUrl: finalPhotoUrl,
-        schoolId: schoolId.isNotEmpty ? schoolId : null,
-        schoolName: canonicalSchoolName.isNotEmpty ? canonicalSchoolName : user.schoolName,
-      ).toJson();
+      final userData = user
+          .copyWith(
+            id: userId,
+            role: user.role,
+            photoUrl: finalPhotoUrl,
+            schoolId: schoolId.isNotEmpty ? schoolId : null,
+            schoolName: canonicalSchoolName.isNotEmpty
+                ? canonicalSchoolName
+                : user.schoolName,
+          )
+          .toJson();
       try {
-        await _supabase
-            .from('users')
-            .upsert(userData, onConflict: 'id');
+        await _supabase.from('users').upsert(userData, onConflict: 'id');
       } catch (upsertErr) {
-        debugPrint('Note: Upserting public.users during registration skipped due to RLS: $upsertErr');
+        debugPrint(
+          'Note: Upserting public.users during registration skipped due to RLS: $upsertErr',
+        );
       }
 
       // Explicitly update photo_url if provided
       if (finalPhotoUrl != null) {
         try {
-          await _supabase.from('users').update({
-            'photo_url': finalPhotoUrl,
-          }).eq('id', userId);
+          await _supabase
+              .from('users')
+              .update({'photo_url': finalPhotoUrl})
+              .eq('id', userId);
         } catch (_) {}
       }
 
@@ -429,12 +504,15 @@ class SupabaseAuthRepository implements AuthRepository {
       if (schoolId.isNotEmpty) {
         try {
           // Update users table with resolved school_id and canonical school_name
-          await _supabase.from('users').update({
-            'school_id': schoolId,
-            'school_name': canonicalSchoolName,
-            'photo_url': ?finalPhotoUrl,
-            if (user.nip != null && user.nip!.isNotEmpty) 'nip': user.nip,
-          }).eq('id', userId);
+          await _supabase
+              .from('users')
+              .update({
+                'school_id': schoolId,
+                'school_name': canonicalSchoolName,
+                'photo_url': ?finalPhotoUrl,
+                if (user.nip != null && user.nip!.isNotEmpty) 'nip': user.nip,
+              })
+              .eq('id', userId);
 
           // Connect user to school in user_schools table
           await _supabase.from('user_schools').upsert({
@@ -453,29 +531,34 @@ class SupabaseAuthRepository implements AuthRepository {
             }, onConflict: 'user_id, school_id');
           } catch (_) {}
         } catch (schoolRelErr) {
-          debugPrint('Error inserting user_schools during registration: $schoolRelErr');
+          debugPrint(
+            'Error inserting user_schools during registration: $schoolRelErr',
+          );
         }
 
         // Notify Admin Sekolah via FCM Edge Function for new pending teacher registration
         if (user.role == 'pending_guru') {
           try {
-            await _supabase.functions.invoke('send-fcm-notification', body: {
-              'table': 'user_schools',
-              'type': 'TEACHER_JOIN_REQUEST',
-              'record': {
-                'school_id': schoolId,
-                'teacher_name': user.fullName,
-                'role': 'guru',
-                'status': 'pending',
+            await _supabase.functions.invoke(
+              'send-fcm-notification',
+              body: {
+                'table': 'user_schools',
+                'type': 'TEACHER_JOIN_REQUEST',
+                'record': {
+                  'school_id': schoolId,
+                  'teacher_name': user.fullName,
+                  'role': 'guru',
+                  'status': 'pending',
+                },
               },
-            });
+            );
           } catch (fcmErr) {
             debugPrint('FCM Notification to admin log: $fcmErr');
           }
         }
       }
     } catch (e) {
-      if (e.toString().contains('Pendaftaran Anda sedang menunggu') || 
+      if (e.toString().contains('Pendaftaran Anda sedang menunggu') ||
           e.toString().contains('Email ini sudah terdaftar') ||
           e.toString().contains('dinonaktifkan')) {
         rethrow;
@@ -534,7 +617,8 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<UserModel> updateProfile(UserModel user) async {
     try {
-      final validPhotoUrl = (user.photoUrl != null && user.photoUrl!.startsWith('http'))
+      final validPhotoUrl =
+          (user.photoUrl != null && user.photoUrl!.startsWith('http'))
           ? user.photoUrl
           : null;
 
@@ -564,11 +648,13 @@ class SupabaseAuthRepository implements AuthRepository {
           .eq('id', user.id)
           .single();
 
-      final updated = UserModel.fromJson(response).copyWith(
-        status: user.status,
-        membershipRole: user.membershipRole,
+      final updated = UserModel.fromJson(
+        response,
+      ).copyWith(status: user.status, membershipRole: user.membershipRole);
+      await CacheService().save(
+        'user_profile_${user.id}',
+        updated.toCacheJson(),
       );
-      await CacheService().save('user_profile_${user.id}', updated.toCacheJson());
       return updated;
     } catch (e) {
       throw Exception('Gagal memperbarui profil: $e');
@@ -583,9 +669,13 @@ class SupabaseAuthRepository implements AuthRepository {
           .select()
           .order('full_name', ascending: true);
 
-      return (response as List)
-          .map((json) => UserModel.fromJson(json))
-          .toList();
+      final users = <UserModel>[];
+      for (final item in (response as List)) {
+        final json = Map<String, dynamic>.from(item as Map);
+        if (TeacherRoles.isSoftDeleted(json['role']?.toString())) continue;
+        users.add(UserModel.fromJson(json));
+      }
+      return users;
     } catch (e) {
       throw Exception('Gagal memuat semua pengguna: $e');
     }
@@ -594,7 +684,8 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<List<UserModel>> getAllUsersForSchool(String schoolId) async {
     try {
-      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
+      final cleanSchoolId =
+          AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
       if (cleanSchoolId.isEmpty) return [];
 
       // 1, 2, 3. Fetch school info, user_schools memberships, and primary users in parallel
@@ -617,7 +708,9 @@ class SupabaseAuthRepository implements AuthRepository {
             .inFilter('status', ['active', 'pending', 'requested_exit'])
             .timeout(const Duration(seconds: 12))
             .catchError((err) {
-              debugPrint('Error fetching user_schools in getAllUsersForSchool: $err');
+              debugPrint(
+                'Error fetching user_schools in getAllUsersForSchool: $err',
+              );
               return <Map<String, dynamic>>[];
             }),
         _supabase
@@ -667,6 +760,7 @@ class SupabaseAuthRepository implements AuthRepository {
         try {
           final json = Map<String, dynamic>.from(item as Map);
           final uid = json['id']?.toString() ?? '';
+          if (TeacherRoles.isSoftDeleted(json['role']?.toString())) continue;
           final userMems = membershipsByUser[uid] ?? [];
 
           if (userMems.isEmpty) {
@@ -676,14 +770,17 @@ class SupabaseAuthRepository implements AuthRepository {
               'role': baseRole,
               'status': baseRole == 'pending_guru' ? 'pending' : 'active',
               'school_id': cleanSchoolId,
-              'school_name': schoolName.isNotEmpty ? schoolName : json['school_name'],
+              'school_name': schoolName.isNotEmpty
+                  ? schoolName
+                  : json['school_name'],
             });
             result.add(userModel);
             continue;
           }
 
           // 1. Emit pending memberships (so admin sees join requests for both Guru and Admin Cadangan)
-          final isUserPending = json['role']?.toString().toLowerCase() == 'pending_guru';
+          final isUserPending =
+              json['role']?.toString().toLowerCase() == 'pending_guru';
           final pendingMems = userMems.where((m) {
             final s = m['status']?.toString().toLowerCase();
             final r = m['role']?.toString().toLowerCase();
@@ -691,16 +788,24 @@ class SupabaseAuthRepository implements AuthRepository {
           }).toList();
 
           if (pendingMems.isNotEmpty || isUserPending) {
-            final pRole = pendingMems.isNotEmpty ? (pendingMems.first['role']?.toString() ?? 'guru') : 'guru';
-            final cleanRole = (pRole == 'pending_guru' || pRole.isEmpty) ? 'guru' : pRole;
-            result.add(UserModel.fromJson({
-              ...json,
-              'role': cleanRole,
-              'membership_role': cleanRole,
-              'status': 'pending',
-              'school_id': cleanSchoolId,
-              'school_name': schoolName.isNotEmpty ? schoolName : json['school_name'],
-            }));
+            final pRole = pendingMems.isNotEmpty
+                ? (pendingMems.first['role']?.toString() ?? 'guru')
+                : 'guru';
+            final cleanRole = (pRole == 'pending_guru' || pRole.isEmpty)
+                ? 'guru'
+                : pRole;
+            result.add(
+              UserModel.fromJson({
+                ...json,
+                'role': cleanRole,
+                'membership_role': cleanRole,
+                'status': 'pending',
+                'school_id': cleanSchoolId,
+                'school_name': schoolName.isNotEmpty
+                    ? schoolName
+                    : json['school_name'],
+              }),
+            );
           }
 
           // 2. Emit active membership for the active users tab only if user is not globally pending
@@ -708,20 +813,30 @@ class SupabaseAuthRepository implements AuthRepository {
             final activeMems = userMems.where((m) {
               final s = m['status']?.toString().toLowerCase();
               final r = m['role']?.toString().toLowerCase();
-              return s == 'active' && r != 'pending_guru';
+              return s == 'active' &&
+                  r != 'pending_guru' &&
+                  !TeacherRoles.isSoftDeleted(r);
             }).toList();
 
             if (activeMems.isNotEmpty) {
-              final hasAdmin = activeMems.any((m) => m['role']?.toString().toLowerCase() == 'admin');
-              final effectiveRole = hasAdmin ? 'admin' : (activeMems.first['role']?.toString() ?? 'guru');
-              result.add(UserModel.fromJson({
-                ...json,
-                'role': effectiveRole,
-                'membership_role': effectiveRole,
-                'status': 'active',
-                'school_id': cleanSchoolId,
-                'school_name': schoolName.isNotEmpty ? schoolName : json['school_name'],
-              }));
+              final hasAdmin = activeMems.any(
+                (m) => m['role']?.toString().toLowerCase() == 'admin',
+              );
+              final effectiveRole = hasAdmin
+                  ? 'admin'
+                  : (activeMems.first['role']?.toString() ?? 'guru');
+              result.add(
+                UserModel.fromJson({
+                  ...json,
+                  'role': effectiveRole,
+                  'membership_role': effectiveRole,
+                  'status': 'active',
+                  'school_id': cleanSchoolId,
+                  'school_name': schoolName.isNotEmpty
+                      ? schoolName
+                      : json['school_name'],
+                }),
+              );
             }
           }
         } catch (_) {}
@@ -736,7 +851,11 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> updateUserRole(String userId, String role, [String? schoolId]) async {
+  Future<void> updateUserRole(
+    String userId,
+    String role, [
+    String? schoolId,
+  ]) async {
     try {
       final cleanSchoolId = (schoolId != null && schoolId.isNotEmpty)
           ? (AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim())
@@ -819,7 +938,9 @@ class SupabaseAuthRepository implements AuthRepository {
         final currentRole = userRes['role']?.toString().toLowerCase();
         if (currentRole == 'pending_guru') {
           final userUpdate = <String, dynamic>{'role': 'guru'};
-          if (cleanSchoolId != null && (userRes['school_id'] == null || (userRes['school_id'] as String).isEmpty)) {
+          if (cleanSchoolId != null &&
+              (userRes['school_id'] == null ||
+                  (userRes['school_id'] as String).isEmpty)) {
             userUpdate['school_id'] = cleanSchoolId;
           }
           await _supabase.from('users').update(userUpdate).eq('id', userId);
@@ -840,7 +961,9 @@ class SupabaseAuthRepository implements AuthRepository {
           .eq('id', userId)
           .maybeSingle();
       if (userRes != null && userRes['role'] == 'admin') {
-        throw Exception('Akun admin sekolah dilindungi sistem dan tidak dapat dihapus.');
+        throw Exception(
+          'Akun admin sekolah dilindungi sistem dan tidak dapat dihapus.',
+        );
       }
 
       final schoolAdminRes = await _supabase
@@ -850,7 +973,9 @@ class SupabaseAuthRepository implements AuthRepository {
           .eq('role', 'admin')
           .limit(1);
       if (schoolAdminRes.isNotEmpty) {
-        throw Exception('Akun admin sekolah dilindungi sistem dan tidak dapat dihapus.');
+        throw Exception(
+          'Akun admin sekolah dilindungi sistem dan tidak dapat dihapus.',
+        );
       }
 
       // Bersihkan data relasi sekolah terlebih dahulu agar tidak terganjal foreign key constraint
@@ -858,7 +983,10 @@ class SupabaseAuthRepository implements AuthRepository {
         await _supabase.from('user_schools').delete().eq('user_id', userId);
       } catch (_) {}
       try {
-        await _supabase.from('school_memberships').delete().eq('user_id', userId);
+        await _supabase
+            .from('school_memberships')
+            .delete()
+            .eq('user_id', userId);
       } catch (_) {}
 
       await _supabase.from('users').delete().eq('id', userId);
@@ -881,7 +1009,9 @@ class SupabaseAuthRepository implements AuthRepository {
         originalFileName: fileName,
       );
 
-      final ext = compressed.fileName.contains('.') ? compressed.fileName.split('.').last : 'webp';
+      final ext = compressed.fileName.contains('.')
+          ? compressed.fileName.split('.').last
+          : 'webp';
       final filePath = 'avatars/$userId/profile.$ext';
 
       await _supabase.storage
@@ -917,9 +1047,16 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> requestExitFromSchool(String membershipId, {String? schoolId, String? role, String? userId}) async {
+  Future<void> requestExitFromSchool(
+    String membershipId, {
+    String? schoolId,
+    String? role,
+    String? userId,
+  }) async {
     try {
-      final cleanSchoolId = schoolId != null ? (AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId) : null;
+      final cleanSchoolId = schoolId != null
+          ? (AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId)
+          : null;
       bool updated = false;
 
       // Only attempt update by ID if it's a real record ID (not a synthetic fallback ID like us_xxx)
@@ -959,15 +1096,20 @@ class SupabaseAuthRepository implements AuthRepository {
       // Notify school admin about exit request via FCM Edge Function
       if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
         try {
-          await _supabase.functions.invoke('send-fcm-notification', body: {
-            'table': 'user_schools',
-            'type': 'TEACHER_EXIT_REQUEST',
-            'record': {
-              'school_id': cleanSchoolId,
-              'teacher_name': _supabase.auth.currentUser?.userMetadata?['full_name'] ?? 'Guru',
-              'status': 'requested_exit',
+          await _supabase.functions.invoke(
+            'send-fcm-notification',
+            body: {
+              'table': 'user_schools',
+              'type': 'TEACHER_EXIT_REQUEST',
+              'record': {
+                'school_id': cleanSchoolId,
+                'teacher_name':
+                    _supabase.auth.currentUser?.userMetadata?['full_name'] ??
+                    'Guru',
+                'status': 'requested_exit',
+              },
             },
-          });
+          );
         } catch (fcmErr) {
           debugPrint('FCM exit notification log: $fcmErr');
         }
@@ -978,9 +1120,16 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> cancelExitRequest(String membershipId, {String? schoolId, String? role, String? userId}) async {
+  Future<void> cancelExitRequest(
+    String membershipId, {
+    String? schoolId,
+    String? role,
+    String? userId,
+  }) async {
     try {
-      final cleanSchoolId = schoolId != null ? (AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId) : null;
+      final cleanSchoolId = schoolId != null
+          ? (AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId)
+          : null;
       bool updated = false;
 
       if (membershipId.isNotEmpty && !membershipId.startsWith('us_')) {
@@ -1011,7 +1160,9 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getPendingExitRequests(String schoolId) async {
+  Future<List<Map<String, dynamic>>> getPendingExitRequests(
+    String schoolId,
+  ) async {
     try {
       final res = await _supabase
           .from('user_schools')
@@ -1019,8 +1170,10 @@ class SupabaseAuthRepository implements AuthRepository {
           .eq('school_id', schoolId)
           .eq('status', 'requested_exit')
           .timeout(const Duration(seconds: 12));
-      
-      return (res as List).map((row) => Map<String, dynamic>.from(row)).toList();
+
+      return (res as List)
+          .map((row) => Map<String, dynamic>.from(row))
+          .toList();
     } catch (e) {
       debugPrint('Error getting pending exit requests: $e');
       return [];
@@ -1058,7 +1211,9 @@ class SupabaseAuthRepository implements AuthRepository {
             .eq('status', 'active');
 
         final remList = (remaining as List);
-        final stillInThisSchool = remList.where((m) => m['school_id'] == sId).toList();
+        final stillInThisSchool = remList
+            .where((m) => m['school_id'] == sId)
+            .toList();
         final remainingSchoolIds = remList
             .map((r) => r['school_id']?.toString())
             .whereType<String>()
@@ -1066,9 +1221,7 @@ class SupabaseAuthRepository implements AuthRepository {
             .toSet()
             .toList();
 
-        final updates = <String, dynamic>{
-          'school_ids': remainingSchoolIds,
-        };
+        final updates = <String, dynamic>{'school_ids': remainingSchoolIds};
 
         if (stillInThisSchool.isEmpty) {
           // User completely exited this school
@@ -1109,8 +1262,9 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> rejectJoinRequest(String userId, String schoolId) async {
     try {
-      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
-      
+      final cleanSchoolId =
+          AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
+
       // 1. Check existing memberships for this user to determine if they belong to other schools
       final userSchools = await _supabase
           .from('user_schools')
@@ -1119,7 +1273,9 @@ class SupabaseAuthRepository implements AuthRepository {
 
       final schoolRows = (userSchools as List);
       final hasOtherActiveSchools = schoolRows.any(
-        (row) => row['school_id'] != cleanSchoolId && (row['status'] == 'active' || row['status'] == null)
+        (row) =>
+            row['school_id'] != cleanSchoolId &&
+            (row['status'] == 'active' || row['status'] == null),
       );
 
       // 2. Remove the pending membership from user_schools for this specific school
@@ -1148,7 +1304,8 @@ class SupabaseAuthRepository implements AuthRepository {
             .eq('id', userId)
             .maybeSingle();
 
-        if (userRes != null && userRes['role']?.toString().toLowerCase() == 'pending_guru') {
+        if (userRes != null &&
+            userRes['role']?.toString().toLowerCase() == 'pending_guru') {
           await _supabase.from('users').delete().eq('id', userId);
         }
       }
@@ -1158,9 +1315,14 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> leaveSchool({required String schoolId, required String userId, String? membershipId}) async {
+  Future<void> leaveSchool({
+    required String schoolId,
+    required String userId,
+    String? membershipId,
+  }) async {
     try {
-      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
+      final cleanSchoolId =
+          AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
 
       final currentAuthUserId = _supabase.auth.currentUser?.id;
       final isSelf = currentAuthUserId == null || currentAuthUserId == userId;
@@ -1169,14 +1331,17 @@ class SupabaseAuthRepository implements AuthRepository {
       bool rpcSucceeded = false;
       if (isSelf) {
         try {
-          final rpcRes = await _supabase.rpc('leave_school', params: {
-            'p_school_id': cleanSchoolId,
-          });
+          final rpcRes = await _supabase.rpc(
+            'leave_school',
+            params: {'p_school_id': cleanSchoolId},
+          );
           if (rpcRes != null) {
             rpcSucceeded = true;
           }
         } catch (rpcErr) {
-          debugPrint('leave_school RPC note (falling back to direct update): $rpcErr');
+          debugPrint(
+            'leave_school RPC note (falling back to direct update): $rpcErr',
+          );
         }
       }
 
@@ -1211,11 +1376,20 @@ class SupabaseAuthRepository implements AuthRepository {
 
         final remainingList = (remainingRes as List);
         final remainingActiveList = remainingList
-            .where((r) => (AppHelper.parseSingleCleanSchoolId(r['school_id']) ?? r['school_id']) != cleanSchoolId)
+            .where(
+              (r) =>
+                  (AppHelper.parseSingleCleanSchoolId(r['school_id']) ??
+                      r['school_id']) !=
+                  cleanSchoolId,
+            )
             .toList();
 
         final remainingSchoolIds = remainingActiveList
-            .map((r) => (AppHelper.parseSingleCleanSchoolId(r['school_id']) ?? r['school_id']?.toString()))
+            .map(
+              (r) =>
+                  (AppHelper.parseSingleCleanSchoolId(r['school_id']) ??
+                  r['school_id']?.toString()),
+            )
             .whereType<String>()
             .toSet()
             .toList();
@@ -1228,15 +1402,17 @@ class SupabaseAuthRepository implements AuthRepository {
             .maybeSingle();
 
         if (userRow != null) {
-          final currentAssignedSchoolId = AppHelper.parseSingleCleanSchoolId(userRow['school_id']);
-          final updates = <String, dynamic>{
-            'school_ids': remainingSchoolIds,
-          };
+          final currentAssignedSchoolId = AppHelper.parseSingleCleanSchoolId(
+            userRow['school_id'],
+          );
+          final updates = <String, dynamic>{'school_ids': remainingSchoolIds};
 
           if (currentAssignedSchoolId == cleanSchoolId) {
             if (remainingActiveList.isNotEmpty) {
               final next = remainingActiveList.first;
-              final nextId = AppHelper.parseSingleCleanSchoolId(next['school_id']) ?? next['school_id'];
+              final nextId =
+                  AppHelper.parseSingleCleanSchoolId(next['school_id']) ??
+                  next['school_id'];
               updates['school_id'] = nextId;
               if (next['schools'] != null && next['schools'] is Map) {
                 updates['school_name'] = next['schools']['name'];

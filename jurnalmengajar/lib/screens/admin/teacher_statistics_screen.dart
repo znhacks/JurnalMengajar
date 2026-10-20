@@ -654,7 +654,7 @@ class _AdminTeacherStatisticsScreenState
                             fontSize: 12.5.sp,
                             fontWeight: FontWeight.w600,
                             color: titleColor,
-                          ),
+                          ),8222222
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),

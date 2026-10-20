@@ -75,7 +75,8 @@ class MasterDataProvider with ChangeNotifier {
   String? _inFlightSchoolId;
 
   Future<void> loadAllData([String? schoolId]) async {
-    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId?.trim();
+    final cleanSchoolId =
+        AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId?.trim();
 
     if (_inFlightLoadAll != null && _inFlightSchoolId == cleanSchoolId) {
       return _inFlightLoadAll!;
@@ -95,7 +96,10 @@ class MasterDataProvider with ChangeNotifier {
   }
 
   Future<void> _executeLoadAllData(String? cleanSchoolId) async {
-    final isSchoolChanged = cleanSchoolId != null && cleanSchoolId.isNotEmpty && cleanSchoolId != _currentSchoolId;
+    final isSchoolChanged =
+        cleanSchoolId != null &&
+        cleanSchoolId.isNotEmpty &&
+        cleanSchoolId != _currentSchoolId;
 
     if (isSchoolChanged) {
       // ATOMIC TENANT PURGE: Clear previous school's in-memory data immediately
@@ -106,7 +110,9 @@ class MasterDataProvider with ChangeNotifier {
       _classes = [];
       _teachers = [];
       _errorMessage = null;
-      debugPrint('[RUNTIME_DEBUG:MASTER_DATA] Switched school context from "$_currentSchoolId" to "$cleanSchoolId". In-memory state purged.');
+      debugPrint(
+        '[RUNTIME_DEBUG:MASTER_DATA] Switched school context from "$_currentSchoolId" to "$cleanSchoolId". In-memory state purged.',
+      );
     }
 
     _currentSchoolId = cleanSchoolId ?? _currentSchoolId;
@@ -115,7 +121,8 @@ class MasterDataProvider with ChangeNotifier {
 
     // SWR Instant Cache Population: If lists are empty, render from disk cache immediately (0ms)
     final sKey = _currentSchoolId ?? 'default';
-    final bool hasInMemoryData = _classes.isNotEmpty && _subjects.isNotEmpty && _teachers.isNotEmpty;
+    final bool hasInMemoryData =
+        _classes.isNotEmpty && _subjects.isNotEmpty && _teachers.isNotEmpty;
     if (!hasInMemoryData) {
       try {
         final cachedPeriods = await CacheService().loadList('periods_$sKey');
@@ -125,24 +132,43 @@ class MasterDataProvider with ChangeNotifier {
         final cachedTeachers = await CacheService().loadList('teachers_$sKey');
 
         bool hasAnyCache = false;
-        if (cachedPeriods != null && cachedPeriods.isNotEmpty && _periods.isEmpty && sequence == _loadSequence) {
+        if (cachedPeriods != null &&
+            cachedPeriods.isNotEmpty &&
+            _periods.isEmpty &&
+            sequence == _loadSequence) {
           _periods = cachedPeriods.map((p) => PeriodModel.fromJson(p)).toList();
           hasAnyCache = true;
         }
-        if (cachedSubjects != null && cachedSubjects.isNotEmpty && _subjects.isEmpty && sequence == _loadSequence) {
-          _subjects = cachedSubjects.map((s) => SubjectModel.fromJson(s)).toList();
+        if (cachedSubjects != null &&
+            cachedSubjects.isNotEmpty &&
+            _subjects.isEmpty &&
+            sequence == _loadSequence) {
+          _subjects = cachedSubjects
+              .map((s) => SubjectModel.fromJson(s))
+              .toList();
           hasAnyCache = true;
         }
-        if (cachedHours != null && cachedHours.isNotEmpty && _hours.isEmpty && sequence == _loadSequence) {
+        if (cachedHours != null &&
+            cachedHours.isNotEmpty &&
+            _hours.isEmpty &&
+            sequence == _loadSequence) {
           _hours = cachedHours.map((h) => HourModel.fromJson(h)).toList();
           hasAnyCache = true;
         }
-        if (cachedClasses != null && cachedClasses.isNotEmpty && _classes.isEmpty && sequence == _loadSequence) {
+        if (cachedClasses != null &&
+            cachedClasses.isNotEmpty &&
+            _classes.isEmpty &&
+            sequence == _loadSequence) {
           _classes = cachedClasses.map((c) => ClassModel.fromJson(c)).toList();
           hasAnyCache = true;
         }
-        if (cachedTeachers != null && cachedTeachers.isNotEmpty && _teachers.isEmpty && sequence == _loadSequence) {
-          _teachers = cachedTeachers.map((t) => TeacherModel.fromJson(t)).toList();
+        if (cachedTeachers != null &&
+            cachedTeachers.isNotEmpty &&
+            _teachers.isEmpty &&
+            sequence == _loadSequence) {
+          _teachers = cachedTeachers
+              .map((t) => TeacherModel.fromJson(t))
+              .toList();
           hasAnyCache = true;
         }
 
@@ -178,13 +204,21 @@ class MasterDataProvider with ChangeNotifier {
           return <ClassModel>[];
         }),
         (_currentSchoolId != null && _currentSchoolId!.isNotEmpty)
-            ? teacherRepository.getAllForSchool(_currentSchoolId!).catchError((err) {
+            ? teacherRepository.getAllForSchool(_currentSchoolId!).catchError((
+                err,
+              ) {
                 debugPrint('[RUNTIME_DEBUG:MASTER_DATA] teachers error: $err');
                 return <TeacherModel>[];
               })
             : Future.value(<TeacherModel>[]),
-        (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && schoolRepository != null)
-            ? Future.sync(() => schoolRepository!.getById(_currentSchoolId!)).then((s) => s != null ? [s] : <SchoolModel>[]).catchError((err) {
+        (_currentSchoolId != null &&
+                _currentSchoolId!.isNotEmpty &&
+                schoolRepository != null)
+            ? Future.sync(
+                () => schoolRepository!.getById(_currentSchoolId!),
+              ).then((s) => s != null ? [s] : <SchoolModel>[]).catchError((
+                err,
+              ) {
                 debugPrint('[RUNTIME_DEBUG:MASTER_DATA] school error: $err');
                 return <SchoolModel>[];
               })
@@ -192,7 +226,9 @@ class MasterDataProvider with ChangeNotifier {
       ]);
 
       if (sequence != _loadSequence || _currentSchoolId != cleanSchoolId) {
-        debugPrint('[RUNTIME_DEBUG:MASTER_DATA] Stale loadAllData dropped for $cleanSchoolId');
+        debugPrint(
+          '[RUNTIME_DEBUG:MASTER_DATA] Stale loadAllData dropped for $cleanSchoolId',
+        );
         return;
       }
 
@@ -231,7 +267,9 @@ class MasterDataProvider with ChangeNotifier {
       }
       if (newSchools.isNotEmpty) _schools = newSchools;
 
-      debugPrint('[RUNTIME_DEBUG:MASTER_DATA] Loaded isolated data for $_currentSchoolId -> Periods: ${_periods.length}, Subjects: ${_subjects.length}, Hours: ${_hours.length}, Classes: ${_classes.length}, Teachers: ${_teachers.length}');
+      debugPrint(
+        '[RUNTIME_DEBUG:MASTER_DATA] Loaded isolated data for $_currentSchoolId -> Periods: ${_periods.length}, Subjects: ${_subjects.length}, Hours: ${_hours.length}, Classes: ${_classes.length}, Teachers: ${_teachers.length}',
+      );
     } catch (e) {
       if (sequence == _loadSequence) {
         _errorMessage = e.toString();
@@ -250,14 +288,20 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final effectiveSchoolId = (model.schoolId != null && model.schoolId!.isNotEmpty)
+      final effectiveSchoolId =
+          (model.schoolId != null && model.schoolId!.isNotEmpty)
           ? model.schoolId
           : _currentSchoolId;
-      final finalModel = (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+      final finalModel =
+          (effectiveSchoolId != null &&
+              effectiveSchoolId.isNotEmpty &&
+              (model.schoolId == null || model.schoolId!.isEmpty))
           ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await periodRepository.create(finalModel);
-      _periods = await periodRepository.getAll(_currentSchoolId ?? effectiveSchoolId);
+      _periods = await periodRepository.getAll(
+        _currentSchoolId ?? effectiveSchoolId,
+      );
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -272,14 +316,20 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final effectiveSchoolId = (model.schoolId != null && model.schoolId!.isNotEmpty)
+      final effectiveSchoolId =
+          (model.schoolId != null && model.schoolId!.isNotEmpty)
           ? model.schoolId
           : _currentSchoolId;
-      final finalModel = (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+      final finalModel =
+          (effectiveSchoolId != null &&
+              effectiveSchoolId.isNotEmpty &&
+              (model.schoolId == null || model.schoolId!.isEmpty))
           ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await periodRepository.update(finalModel);
-      _periods = await periodRepository.getAll(_currentSchoolId ?? effectiveSchoolId);
+      _periods = await periodRepository.getAll(
+        _currentSchoolId ?? effectiveSchoolId,
+      );
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -311,14 +361,20 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final effectiveSchoolId = (model.schoolId != null && model.schoolId!.isNotEmpty)
+      final effectiveSchoolId =
+          (model.schoolId != null && model.schoolId!.isNotEmpty)
           ? model.schoolId
           : _currentSchoolId;
-      final finalModel = (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+      final finalModel =
+          (effectiveSchoolId != null &&
+              effectiveSchoolId.isNotEmpty &&
+              (model.schoolId == null || model.schoolId!.isEmpty))
           ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await subjectRepository.create(finalModel);
-      _subjects = await subjectRepository.getAll(_currentSchoolId ?? effectiveSchoolId);
+      _subjects = await subjectRepository.getAll(
+        _currentSchoolId ?? effectiveSchoolId,
+      );
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -333,14 +389,20 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final effectiveSchoolId = (model.schoolId != null && model.schoolId!.isNotEmpty)
+      final effectiveSchoolId =
+          (model.schoolId != null && model.schoolId!.isNotEmpty)
           ? model.schoolId
           : _currentSchoolId;
-      final finalModel = (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+      final finalModel =
+          (effectiveSchoolId != null &&
+              effectiveSchoolId.isNotEmpty &&
+              (model.schoolId == null || model.schoolId!.isEmpty))
           ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await subjectRepository.update(finalModel);
-      _subjects = await subjectRepository.getAll(_currentSchoolId ?? effectiveSchoolId);
+      _subjects = await subjectRepository.getAll(
+        _currentSchoolId ?? effectiveSchoolId,
+      );
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -372,14 +434,20 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final effectiveSchoolId = (model.schoolId != null && model.schoolId!.isNotEmpty)
+      final effectiveSchoolId =
+          (model.schoolId != null && model.schoolId!.isNotEmpty)
           ? model.schoolId
           : _currentSchoolId;
-      final finalModel = (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+      final finalModel =
+          (effectiveSchoolId != null &&
+              effectiveSchoolId.isNotEmpty &&
+              (model.schoolId == null || model.schoolId!.isEmpty))
           ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await hourRepository.create(finalModel);
-      _hours = await hourRepository.getAll(_currentSchoolId ?? effectiveSchoolId);
+      _hours = await hourRepository.getAll(
+        _currentSchoolId ?? effectiveSchoolId,
+      );
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -394,14 +462,20 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final effectiveSchoolId = (model.schoolId != null && model.schoolId!.isNotEmpty)
+      final effectiveSchoolId =
+          (model.schoolId != null && model.schoolId!.isNotEmpty)
           ? model.schoolId
           : _currentSchoolId;
-      final finalModel = (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+      final finalModel =
+          (effectiveSchoolId != null &&
+              effectiveSchoolId.isNotEmpty &&
+              (model.schoolId == null || model.schoolId!.isEmpty))
           ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await hourRepository.update(finalModel);
-      _hours = await hourRepository.getAll(_currentSchoolId ?? effectiveSchoolId);
+      _hours = await hourRepository.getAll(
+        _currentSchoolId ?? effectiveSchoolId,
+      );
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -433,14 +507,20 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final effectiveSchoolId = (model.schoolId != null && model.schoolId!.isNotEmpty)
+      final effectiveSchoolId =
+          (model.schoolId != null && model.schoolId!.isNotEmpty)
           ? model.schoolId
           : _currentSchoolId;
-      final finalModel = (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+      final finalModel =
+          (effectiveSchoolId != null &&
+              effectiveSchoolId.isNotEmpty &&
+              (model.schoolId == null || model.schoolId!.isEmpty))
           ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await classRepository.create(finalModel);
-      _classes = await classRepository.getAll(_currentSchoolId ?? effectiveSchoolId);
+      _classes = await classRepository.getAll(
+        _currentSchoolId ?? effectiveSchoolId,
+      );
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -455,14 +535,20 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final effectiveSchoolId = (model.schoolId != null && model.schoolId!.isNotEmpty)
+      final effectiveSchoolId =
+          (model.schoolId != null && model.schoolId!.isNotEmpty)
           ? model.schoolId
           : _currentSchoolId;
-      final finalModel = (effectiveSchoolId != null && effectiveSchoolId.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+      final finalModel =
+          (effectiveSchoolId != null &&
+              effectiveSchoolId.isNotEmpty &&
+              (model.schoolId == null || model.schoolId!.isEmpty))
           ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await classRepository.update(finalModel);
-      _classes = await classRepository.getAll(_currentSchoolId ?? effectiveSchoolId);
+      _classes = await classRepository.getAll(
+        _currentSchoolId ?? effectiveSchoolId,
+      );
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -530,12 +616,20 @@ class MasterDataProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> updateSchoolPlan(String schoolId, String plan, String activationCode) async {
+  Future<bool> updateSchoolPlan(
+    String schoolId,
+    String plan,
+    String activationCode,
+  ) async {
     _isLoading = true;
     notifyListeners();
     try {
       if (schoolRepository != null) {
-        await schoolRepository!.updateSchoolPlan(schoolId, plan, activationCode);
+        await schoolRepository!.updateSchoolPlan(
+          schoolId,
+          plan,
+          activationCode,
+        );
         _schools = await schoolRepository!.getAll();
       }
       return true;
@@ -592,13 +686,20 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      await teacherRepository.delete(id);
-      if (_currentSchoolId != null && _currentSchoolId!.isNotEmpty) {
-        await CacheService().remove('teachers_$_currentSchoolId');
-        _teachers = await teacherRepository.getAllForSchool(_currentSchoolId!);
-      } else {
-        _teachers = <TeacherModel>[];
+      final schoolId = _currentSchoolId;
+      if (schoolId == null || schoolId.isEmpty) {
+        throw Exception('Sekolah aktif tidak ditemukan.');
       }
+      if (teacherRepository is SchoolScopedTeacherRepository) {
+        await (teacherRepository as SchoolScopedTeacherRepository).deactivate(
+          id,
+          schoolId,
+        );
+      } else {
+        await teacherRepository.delete(id);
+      }
+      await CacheService().remove('teachers_$schoolId');
+      _teachers = await teacherRepository.getAllForSchool(schoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -610,9 +711,12 @@ class MasterDataProvider with ChangeNotifier {
   }
 
   void updateTeacherFromUser(UserModel user) {
-    final index = _teachers.indexWhere((t) =>
-        t.id == user.id ||
-        (user.email.isNotEmpty && t.email.toLowerCase() == user.email.toLowerCase()));
+    final index = _teachers.indexWhere(
+      (t) =>
+          t.id == user.id ||
+          (user.email.isNotEmpty &&
+              t.email.toLowerCase() == user.email.toLowerCase()),
+    );
     if (index != -1) {
       _teachers[index] = _teachers[index].copyWith(
         name: user.fullName,
@@ -649,7 +753,10 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+      final finalModel =
+          (_currentSchoolId != null &&
+              _currentSchoolId!.isNotEmpty &&
+              (model.schoolId == null || model.schoolId!.isEmpty))
           ? model.copyWith(schoolId: _currentSchoolId)
           : model;
       await studentRepository.create(finalModel);
@@ -669,7 +776,10 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
+      final finalModel =
+          (_currentSchoolId != null &&
+              _currentSchoolId!.isNotEmpty &&
+              (model.schoolId == null || model.schoolId!.isEmpty))
           ? model.copyWith(schoolId: _currentSchoolId)
           : model;
       await studentRepository.update(finalModel);
@@ -702,7 +812,10 @@ class MasterDataProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> createMultipleStudents(List<StudentModel> models, String classId) async {
+  Future<bool> createMultipleStudents(
+    List<StudentModel> models,
+    String classId,
+  ) async {
     if (models.isEmpty) return true;
     _isLoading = true;
     _errorMessage = null;
@@ -717,7 +830,9 @@ class MasterDataProvider with ChangeNotifier {
       }).toList();
 
       if (studentRepository is SupabaseStudentRepository) {
-        await (studentRepository as SupabaseStudentRepository).createMultiple(finalModels);
+        await (studentRepository as SupabaseStudentRepository).createMultiple(
+          finalModels,
+        );
       } else {
         for (final m in finalModels) {
           await studentRepository.create(m);
@@ -725,7 +840,9 @@ class MasterDataProvider with ChangeNotifier {
       }
 
       // Invalidate class cache so student_count is fresh
-      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(_currentSchoolId);
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(
+        _currentSchoolId,
+      );
       await CacheService().remove('classes_${cleanSchoolId ?? "all"}');
 
       _students = await studentRepository.getAllByClass(classId);
@@ -740,7 +857,9 @@ class MasterDataProvider with ChangeNotifier {
     }
   }
 
-  Future<List<StudentAcademicHistoryModel>> getStudentHistories(String studentId) async {
+  Future<List<StudentAcademicHistoryModel>> getStudentHistories(
+    String studentId,
+  ) async {
     try {
       return await studentRepository.getStudentHistories(studentId);
     } catch (e) {
@@ -777,7 +896,9 @@ class MasterDataProvider with ChangeNotifier {
       );
 
       // Invalidate class cache so counts and list are fresh
-      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(_currentSchoolId);
+      final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(
+        _currentSchoolId,
+      );
       await CacheService().remove('classes_${cleanSchoolId ?? "all"}');
 
       // Refresh classes list
@@ -871,12 +992,18 @@ class MasterDataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      for (final id in ids) {
-        await teacherRepository.delete(id);
+      final schoolId = _currentSchoolId;
+      if (schoolId == null || schoolId.isEmpty) {
+        throw Exception('Sekolah aktif tidak ditemukan.');
       }
-      _teachers = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty)
-          ? await teacherRepository.getAllForSchool(_currentSchoolId!)
-          : <TeacherModel>[];
+      if (teacherRepository is SchoolScopedTeacherRepository) {
+        await (teacherRepository as SchoolScopedTeacherRepository)
+            .deactivateMultiple(ids, schoolId);
+      } else {
+        await teacherRepository.deleteMultiple(ids);
+      }
+      await CacheService().remove('teachers_$schoolId');
+      _teachers = await teacherRepository.getAllForSchool(schoolId);
       return true;
     } catch (e) {
       _errorMessage = e.toString();

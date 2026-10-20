@@ -37,15 +37,31 @@ class FakeAuthRepo implements AuthRepository {
   @override
   Future<List<UserModel>> getAllUsers([String? schoolId]) async => [];
   @override
-  Future<void> updateUserRole(String userId, String role, [String? schoolId]) async {}
+  Future<void> updateUserRole(
+    String userId,
+    String role, [
+    String? schoolId,
+  ]) async {}
   @override
   Future<void> deleteAccount(String userId) async {}
   @override
-  Future<void> requestExitFromSchool(String membershipId, {String? schoolId, String? role, String? userId}) async {}
+  Future<void> requestExitFromSchool(
+    String membershipId, {
+    String? schoolId,
+    String? role,
+    String? userId,
+  }) async {}
   @override
-  Future<void> cancelExitRequest(String membershipId, {String? schoolId, String? role, String? userId}) async {}
+  Future<void> cancelExitRequest(
+    String membershipId, {
+    String? schoolId,
+    String? role,
+    String? userId,
+  }) async {}
   @override
-  Future<List<Map<String, dynamic>>> getPendingExitRequests(String schoolId) async => [];
+  Future<List<Map<String, dynamic>>> getPendingExitRequests(
+    String schoolId,
+  ) async => [];
   @override
   Future<List<UserModel>> getAllUsersForSchool(String schoolId) async => [];
   @override
@@ -55,7 +71,11 @@ class FakeAuthRepo implements AuthRepository {
   @override
   Future<void> rejectJoinRequest(String userId, String schoolId) async {}
   @override
-  Future<void> leaveSchool({required String schoolId, required String userId, String? membershipId}) async {}
+  Future<void> leaveSchool({
+    required String schoolId,
+    required String userId,
+    String? membershipId,
+  }) async {}
 }
 
 void main() {
@@ -115,64 +135,82 @@ void main() {
       expect(authProvider.isExclusiveAdmin, isTrue);
 
       // Attempt to switch to guru or foreign school
-      await authProvider.switchActiveSchool('00000000-0000-0000-0000-000000000099', 'SMKN 99', 'guru');
+      await authProvider.switchActiveSchool(
+        '00000000-0000-0000-0000-000000000099',
+        'SMKN 99',
+        'guru',
+      );
       // Must be clamped to admin and primary school
       expect(authProvider.activeRole, 'admin');
-      expect(authProvider.activeSchoolId, '00000000-0000-0000-0000-000000000001');
+      expect(
+        authProvider.activeSchoolId,
+        '00000000-0000-0000-0000-000000000001',
+      );
       // User model role in memory must remain admin
       expect(authProvider.currentUser?.role, 'admin');
     });
 
-    test('Admin Cadangan can toggle between admin and guru within their school', () async {
-      final fakeRepo = FakeAuthRepo();
-      final cadanganUser = UserModel(
-        id: 'cadangan-id',
-        email: 'guru@jurnal.com',
-        fullName: 'Admin Cadangan',
-        role: 'guru',
-        schoolId: '00000000-0000-0000-0000-000000000001',
-        schoolIds: ['00000000-0000-0000-0000-000000000001'],
-      );
-      fakeRepo.mockUser = cadanganUser;
+    test(
+      'Admin Cadangan can toggle between admin and guru within their school',
+      () async {
+        final fakeRepo = FakeAuthRepo();
+        final cadanganUser = UserModel(
+          id: 'cadangan-id',
+          email: 'guru@jurnal.com',
+          fullName: 'Admin Cadangan',
+          role: 'guru',
+          schoolId: '00000000-0000-0000-0000-000000000001',
+          schoolIds: ['00000000-0000-0000-0000-000000000001'],
+        );
+        fakeRepo.mockUser = cadanganUser;
 
-      // Seed membership cache so user has admin role in SMKN 11
-      await CacheService().save('user_memberships_cadangan-id', [
-        {
-          'id': 'us-1',
-          'user_id': 'cadangan-id',
-          'school_id': '00000000-0000-0000-0000-000000000001',
-          'school_name': 'SMKN 11 Malang',
-          'role': 'admin',
-          'status': 'active',
-        },
-        {
-          'id': 'us-2',
-          'user_id': 'cadangan-id',
-          'school_id': '00000000-0000-0000-0000-000000000001',
-          'school_name': 'SMKN 11 Malang',
-          'role': 'guru',
-          'status': 'active',
-        },
-      ]);
+        // Seed membership cache so user has admin role in SMKN 11
+        await CacheService().save('user_memberships_cadangan-id', [
+          {
+            'id': 'us-1',
+            'user_id': 'cadangan-id',
+            'school_id': '00000000-0000-0000-0000-000000000001',
+            'school_name': 'SMKN 11 Malang',
+            'role': 'admin',
+            'status': 'active',
+          },
+          {
+            'id': 'us-2',
+            'user_id': 'cadangan-id',
+            'school_id': '00000000-0000-0000-0000-000000000001',
+            'school_name': 'SMKN 11 Malang',
+            'role': 'guru',
+            'status': 'active',
+          },
+        ]);
 
-      final authProvider = AuthProvider(authRepository: fakeRepo);
-      await authProvider.login(cadanganUser.email, 'password');
+        final authProvider = AuthProvider(authRepository: fakeRepo);
+        await authProvider.login(cadanganUser.email, 'password');
 
-      expect(authProvider.isAdminAsli, isFalse);
-      expect(authProvider.isAdminCadangan, isTrue);
-      expect(authProvider.isExclusiveAdmin, isFalse);
+        expect(authProvider.isAdminAsli, isFalse);
+        expect(authProvider.isAdminCadangan, isTrue);
+        expect(authProvider.isExclusiveAdmin, isFalse);
 
-      // Switch to guru
-      await authProvider.switchActiveSchool('00000000-0000-0000-0000-000000000001', 'SMKN 11 Malang', 'guru');
-      expect(authProvider.activeRole, 'guru');
-      // User base role in memory remains guru
-      expect(authProvider.currentUser?.role, 'guru');
+        // Switch to guru
+        await authProvider.switchActiveSchool(
+          '00000000-0000-0000-0000-000000000001',
+          'SMKN 11 Malang',
+          'guru',
+        );
+        expect(authProvider.activeRole, 'guru');
+        // User base role in memory remains guru
+        expect(authProvider.currentUser?.role, 'guru');
 
-      // Switch back to admin
-      await authProvider.switchActiveSchool('00000000-0000-0000-0000-000000000001', 'SMKN 11 Malang', 'admin');
-      expect(authProvider.activeRole, 'admin');
-      expect(authProvider.currentUser?.role, 'guru');
-    });
+        // Switch back to admin
+        await authProvider.switchActiveSchool(
+          '00000000-0000-0000-0000-000000000001',
+          'SMKN 11 Malang',
+          'admin',
+        );
+        expect(authProvider.activeRole, 'admin');
+        expect(authProvider.currentUser?.role, 'guru');
+      },
+    );
 
     test('Guru Murni cannot switch to admin role', () async {
       final fakeRepo = FakeAuthRepo();
@@ -193,11 +231,71 @@ void main() {
       expect(authProvider.isGuruMurni, isTrue);
 
       // Attempt to switch to admin
-      await authProvider.switchActiveSchool('00000000-0000-0000-0000-000000000001', 'SMKN 11 Malang', 'admin');
+      await authProvider.switchActiveSchool(
+        '00000000-0000-0000-0000-000000000001',
+        'SMKN 11 Malang',
+        'admin',
+      );
       // Must be clamped to guru
       expect(authProvider.activeRole, 'guru');
       expect(authProvider.currentUser?.role, 'guru');
     });
+
+    test(
+      'Deactivated school membership remains switchable for read-only access',
+      () async {
+        final fakeRepo = FakeAuthRepo();
+        final teacher = UserModel(
+          id: 'guru-deactivated',
+          email: 'guru.deactivated@jurnal.com',
+          fullName: 'Guru Dinonaktifkan',
+          role: 'guru',
+          schoolId: '00000000-0000-0000-0000-000000000001',
+          schoolIds: [
+            '00000000-0000-0000-0000-000000000001',
+            '00000000-0000-0000-0000-000000000002',
+          ],
+        );
+        fakeRepo.mockUser = teacher;
+
+        await CacheService().save('user_memberships_guru-deactivated', [
+          {
+            'id': 'us-active',
+            'user_id': 'guru-deactivated',
+            'school_id': '00000000-0000-0000-0000-000000000001',
+            'school_name': 'Sekolah Aktif',
+            'role': 'guru',
+            'status': 'active',
+          },
+          {
+            'id': 'us-deactivated',
+            'user_id': 'guru-deactivated',
+            'school_id': '00000000-0000-0000-0000-000000000002',
+            'school_name': 'Sekolah Nonaktif',
+            'role': 'guru',
+            'status': 'deactivated',
+          },
+        ]);
+
+        final authProvider = AuthProvider(authRepository: fakeRepo);
+        await authProvider.login(teacher.email, 'password');
+
+        expect(authProvider.isActiveSchoolDeactivated, isFalse);
+
+        await authProvider.switchActiveSchool(
+          '00000000-0000-0000-0000-000000000002',
+          'Sekolah Nonaktif',
+          'guru',
+        );
+
+        expect(
+          authProvider.activeSchoolId,
+          '00000000-0000-0000-0000-000000000002',
+        );
+        expect(authProvider.activeRole, 'guru');
+        expect(authProvider.isActiveSchoolDeactivated, isTrue);
+      },
+    );
 
     test('UserModel status and approval getters work correctly', () {
       final activeGuru = UserModel(
@@ -234,239 +332,303 @@ void main() {
       expect(inactiveUser.isPending, isFalse);
     });
 
-    test('Master User filtering isolates active users vs pending registrations', () {
-      final users = [
-        UserModel(
-          id: 'u1',
-          email: 'admin@jurnal.com',
-          fullName: 'Admin SMKN 11 Malang',
-          role: 'admin',
-          status: 'active',
-          schoolId: '00000000-0000-0000-0000-000000000001',
-        ),
-        UserModel(
-          id: 'u2',
-          email: 'guru@jurnal.com',
-          fullName: 'Heru Sudjatmiko (Admin Cadangan)',
-          role: 'admin',
-          membershipRole: 'admin',
-          status: 'active',
-          schoolId: '00000000-0000-0000-0000-000000000001',
-        ),
-        UserModel(
-          id: 'u3',
-          email: 'jasmine@jurnal.com',
-          fullName: 'Jasmine (Guru Aktif)',
-          role: 'guru',
-          status: 'active',
-          schoolId: '00000000-0000-0000-0000-000000000001',
-        ),
-        UserModel(
-          id: 'u4',
-          email: 'calon@jurnal.com',
-          fullName: 'Calon Guru (Pending)',
-          role: 'pending_guru',
-          status: 'pending',
-          schoolId: '00000000-0000-0000-0000-000000000001',
-        ),
-      ];
+    test(
+      'Master User filtering isolates active users vs pending registrations',
+      () {
+        final users = [
+          UserModel(
+            id: 'u1',
+            email: 'admin@jurnal.com',
+            fullName: 'Admin SMKN 11 Malang',
+            role: 'admin',
+            status: 'active',
+            schoolId: '00000000-0000-0000-0000-000000000001',
+          ),
+          UserModel(
+            id: 'u2',
+            email: 'guru@jurnal.com',
+            fullName: 'Heru Sudjatmiko (Admin Cadangan)',
+            role: 'admin',
+            membershipRole: 'admin',
+            status: 'active',
+            schoolId: '00000000-0000-0000-0000-000000000001',
+          ),
+          UserModel(
+            id: 'u3',
+            email: 'jasmine@jurnal.com',
+            fullName: 'Jasmine (Guru Aktif)',
+            role: 'guru',
+            status: 'active',
+            schoolId: '00000000-0000-0000-0000-000000000001',
+          ),
+          UserModel(
+            id: 'u4',
+            email: 'calon@jurnal.com',
+            fullName: 'Calon Guru (Pending)',
+            role: 'pending_guru',
+            status: 'pending',
+            schoolId: '00000000-0000-0000-0000-000000000001',
+          ),
+        ];
 
-      // Filter for "Pengguna Aktif"
-      final activeUsers = users.where((u) {
-        if (u.isPending || u.status == 'pending' || u.role.toLowerCase() == 'pending_guru') return false;
-        if (u.status != null && u.status != 'active') return false;
-        final r = u.role.toLowerCase();
-        return r == 'guru' || r == 'admin' || r == 'superadmin' || r == 'teacher';
-      }).toList();
-
-      expect(activeUsers.length, 3);
-      expect(activeUsers.map((u) => u.id), containsAll(['u1', 'u2', 'u3']));
-      expect(activeUsers.any((u) => u.id == 'u4'), isFalse);
-
-      // Filter for "Guru Mendaftar"
-      final pendingUsers = users.where((u) {
-        return u.isPending || u.role.toLowerCase() == 'pending_guru' || u.status == 'pending';
-      }).toList();
-
-      expect(pendingUsers.length, 1);
-      expect(pendingUsers.first.id, 'u4');
-
-      // Search for foreign admin in active school dataset returns 0 results
-      final searchResults = users.where((u) => u.email.contains('adminsmkn100')).toList();
-      expect(searchResults.isEmpty, isTrue);
-    });
-
-    test('Calendar schedule indicators identify dates accurately with multi-tenant isolation', () {
-      final schoolA = '00000000-0000-0000-0000-000000000001';
-      final schoolB = '99999999-9999-9999-9999-999999999999';
-
-      final List<ScheduleModel> mockSchedules = [
-        // Active schedule on 2026-09-10 in School A (has time component 08:30)
-        ScheduleModel(
-          id: 's1',
-          periodId: 'p1',
-          teacherId: 't1',
-          subjectId: 'sub1',
-          classId: 'c1',
-          teachingHour: 1,
-          date: DateTime(2026, 9, 10, 8, 30),
-          schoolId: schoolA,
-          isActive: true,
-        ),
-        // Second schedule on 2026-09-10 in School A (hour 2)
-        ScheduleModel(
-          id: 's2',
-          periodId: 'p1',
-          teacherId: 't1',
-          subjectId: 'sub2',
-          classId: 'c1',
-          teachingHour: 2,
-          date: DateTime(2026, 9, 10, 9, 15),
-          schoolId: schoolA,
-          isActive: true,
-        ),
-        // Schedule on 2026-09-15 in School B
-        ScheduleModel(
-          id: 's3',
-          periodId: 'p1',
-          teacherId: 't1',
-          subjectId: 'sub1',
-          classId: 'c2',
-          teachingHour: 3,
-          date: DateTime(2026, 9, 15, 10, 0),
-          schoolId: schoolB,
-          isActive: true,
-        ),
-        // Inactive schedule on 2026-09-20 in School A
-        ScheduleModel(
-          id: 's4',
-          periodId: 'p1',
-          teacherId: 't1',
-          subjectId: 'sub1',
-          classId: 'c1',
-          teachingHour: 1,
-          date: DateTime(2026, 9, 20, 7, 30),
-          schoolId: schoolA,
-          isActive: false,
-        ),
-      ];
-
-      // Helper simulating calendar scheduledDateKeys calculation for School A
-      Set<String> getScheduledDates(List<ScheduleModel> schedules, String activeSchoolId) {
-        final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(activeSchoolId) ?? activeSchoolId.trim();
-        final keys = <String>{};
-        for (final s in schedules) {
-          if (!s.isActive) continue;
-          if (cleanActiveSchoolId.isNotEmpty) {
-            final sSchoolId = AppHelper.parseSingleCleanSchoolId(s.schoolId) ?? s.schoolId?.trim();
-            if (sSchoolId != null && sSchoolId.isNotEmpty && sSchoolId != cleanActiveSchoolId) {
-              continue;
-            }
+        // Filter for "Pengguna Aktif"
+        final activeUsers = users.where((u) {
+          if (u.isPending ||
+              u.status == 'pending' ||
+              u.role.toLowerCase() == 'pending_guru') {
+            return false;
           }
-          final key = '${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}';
-          keys.add(key);
+          if (u.status != null && u.status != 'active') return false;
+          final r = u.role.toLowerCase();
+          return r == 'guru' ||
+              r == 'admin' ||
+              r == 'superadmin' ||
+              r == 'teacher';
+        }).toList();
+
+        expect(activeUsers.length, 3);
+        expect(activeUsers.map((u) => u.id), containsAll(['u1', 'u2', 'u3']));
+        expect(activeUsers.any((u) => u.id == 'u4'), isFalse);
+
+        // Filter for "Guru Mendaftar"
+        final pendingUsers = users.where((u) {
+          return u.isPending ||
+              u.role.toLowerCase() == 'pending_guru' ||
+              u.status == 'pending';
+        }).toList();
+
+        expect(pendingUsers.length, 1);
+        expect(pendingUsers.first.id, 'u4');
+
+        // Search for foreign admin in active school dataset returns 0 results
+        final searchResults = users
+            .where((u) => u.email.contains('adminsmkn100'))
+            .toList();
+        expect(searchResults.isEmpty, isTrue);
+      },
+    );
+
+    test(
+      'Calendar schedule indicators identify dates accurately with multi-tenant isolation',
+      () {
+        final schoolA = '00000000-0000-0000-0000-000000000001';
+        final schoolB = '99999999-9999-9999-9999-999999999999';
+
+        final List<ScheduleModel> mockSchedules = [
+          // Active schedule on 2026-09-10 in School A (has time component 08:30)
+          ScheduleModel(
+            id: 's1',
+            periodId: 'p1',
+            teacherId: 't1',
+            subjectId: 'sub1',
+            classId: 'c1',
+            teachingHour: 1,
+            date: DateTime(2026, 9, 10, 8, 30),
+            schoolId: schoolA,
+            isActive: true,
+          ),
+          // Second schedule on 2026-09-10 in School A (hour 2)
+          ScheduleModel(
+            id: 's2',
+            periodId: 'p1',
+            teacherId: 't1',
+            subjectId: 'sub2',
+            classId: 'c1',
+            teachingHour: 2,
+            date: DateTime(2026, 9, 10, 9, 15),
+            schoolId: schoolA,
+            isActive: true,
+          ),
+          // Schedule on 2026-09-15 in School B
+          ScheduleModel(
+            id: 's3',
+            periodId: 'p1',
+            teacherId: 't1',
+            subjectId: 'sub1',
+            classId: 'c2',
+            teachingHour: 3,
+            date: DateTime(2026, 9, 15, 10, 0),
+            schoolId: schoolB,
+            isActive: true,
+          ),
+          // Inactive schedule on 2026-09-20 in School A
+          ScheduleModel(
+            id: 's4',
+            periodId: 'p1',
+            teacherId: 't1',
+            subjectId: 'sub1',
+            classId: 'c1',
+            teachingHour: 1,
+            date: DateTime(2026, 9, 20, 7, 30),
+            schoolId: schoolA,
+            isActive: false,
+          ),
+        ];
+
+        // Helper simulating calendar scheduledDateKeys calculation for School A
+        Set<String> getScheduledDates(
+          List<ScheduleModel> schedules,
+          String activeSchoolId,
+        ) {
+          final cleanActiveSchoolId =
+              AppHelper.parseSingleCleanSchoolId(activeSchoolId) ??
+              activeSchoolId.trim();
+          final keys = <String>{};
+          for (final s in schedules) {
+            if (!s.isActive) continue;
+            if (cleanActiveSchoolId.isNotEmpty) {
+              final sSchoolId =
+                  AppHelper.parseSingleCleanSchoolId(s.schoolId) ??
+                  s.schoolId?.trim();
+              if (sSchoolId != null &&
+                  sSchoolId.isNotEmpty &&
+                  sSchoolId != cleanActiveSchoolId) {
+                continue;
+              }
+            }
+            final key =
+                '${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}';
+            keys.add(key);
+          }
+          return keys;
         }
-        return keys;
-      }
 
-      // Context 1: School A is active
-      final scheduledDatesSchoolA = getScheduledDates(mockSchedules, schoolA);
+        // Context 1: School A is active
+        final scheduledDatesSchoolA = getScheduledDates(mockSchedules, schoolA);
 
-      // Date with no schedule (e.g. 2026-09-09) -> false (normal)
-      expect(scheduledDatesSchoolA.contains('2026-09-09'), isFalse);
+        // Date with no schedule (e.g. 2026-09-09) -> false (normal)
+        expect(scheduledDatesSchoolA.contains('2026-09-09'), isFalse);
 
-      // Date with schedules (2026-09-10) -> true (yellow indicator)
-      expect(scheduledDatesSchoolA.contains('2026-09-10'), isTrue);
+        // Date with schedules (2026-09-10) -> true (yellow indicator)
+        expect(scheduledDatesSchoolA.contains('2026-09-10'), isTrue);
 
-      // Multiple schedules on same day still result in exactly 1 entry
-      expect(scheduledDatesSchoolA.where((k) => k == '2026-09-10').length, 1);
+        // Multiple schedules on same day still result in exactly 1 entry
+        expect(scheduledDatesSchoolA.where((k) => k == '2026-09-10').length, 1);
 
-      // Date with schedule in School B (2026-09-15) must NOT appear in School A
-      expect(scheduledDatesSchoolA.contains('2026-09-15'), isFalse);
+        // Date with schedule in School B (2026-09-15) must NOT appear in School A
+        expect(scheduledDatesSchoolA.contains('2026-09-15'), isFalse);
 
-      // Inactive schedule (2026-09-20) must NOT appear
-      expect(scheduledDatesSchoolA.contains('2026-09-20'), isFalse);
+        // Inactive schedule (2026-09-20) must NOT appear
+        expect(scheduledDatesSchoolA.contains('2026-09-20'), isFalse);
 
-      // Context 2: School B is active
-      final scheduledDatesSchoolB = getScheduledDates(mockSchedules, schoolB);
+        // Context 2: School B is active
+        final scheduledDatesSchoolB = getScheduledDates(mockSchedules, schoolB);
 
-      // 2026-09-10 from School A must NOT appear in School B
-      expect(scheduledDatesSchoolB.contains('2026-09-10'), isFalse);
+        // 2026-09-10 from School A must NOT appear in School B
+        expect(scheduledDatesSchoolB.contains('2026-09-10'), isFalse);
 
-      // 2026-09-15 from School B appears in School B
-      expect(scheduledDatesSchoolB.contains('2026-09-15'), isTrue);
-    });
+        // 2026-09-15 from School B appears in School B
+        expect(scheduledDatesSchoolB.contains('2026-09-15'), isTrue);
+      },
+    );
 
-    testWidgets('RoleBadge is theme-aware in Light and Dark mode for GURU and ADMIN', (tester) async {
-      // 1. Light Mode - GURU
-      await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: const Size(375, 812),
-          builder: (context, child) => MaterialApp(
-            theme: ThemeData.light(),
-            home: const Scaffold(body: RoleBadge(role: 'guru')),
-          ),
-        ),
-      );
-      expect(find.text('GURU'), findsOneWidget);
-      var container = tester.widget<Container>(find.descendant(of: find.byType(RoleBadge), matching: find.byType(Container)).first);
-      var decoration = container.decoration as BoxDecoration;
-      expect(decoration.color, const Color(0xFFF0FDF4));
-
-      // 2. Dark Mode - GURU
-      await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: const Size(375, 812),
-          builder: (context, child) => MaterialApp(
-            home: Theme(
-              data: ThemeData(brightness: Brightness.dark),
-              child: const Scaffold(body: RoleBadge(role: 'guru')),
+    testWidgets(
+      'RoleBadge is theme-aware in Light and Dark mode for GURU and ADMIN',
+      (tester) async {
+        // 1. Light Mode - GURU
+        await tester.pumpWidget(
+          ScreenUtilInit(
+            designSize: const Size(375, 812),
+            builder: (context, child) => MaterialApp(
+              theme: ThemeData.light(),
+              home: const Scaffold(body: RoleBadge(role: 'guru')),
             ),
           ),
-        ),
-      );
-      expect(find.text('GURU'), findsOneWidget);
-      container = tester.widget<Container>(find.descendant(of: find.byType(RoleBadge), matching: find.byType(Container)).first);
-      decoration = container.decoration as BoxDecoration;
-      expect(decoration.color, isNot(equals(const Color(0xFFF0FDF4))));
-      expect(decoration.color, isNot(equals(Colors.white)));
-      expect(decoration.color, const Color(0xFF14532D).withValues(alpha: 0.35));
+        );
+        expect(find.text('GURU'), findsOneWidget);
+        var container = tester.widget<Container>(
+          find
+              .descendant(
+                of: find.byType(RoleBadge),
+                matching: find.byType(Container),
+              )
+              .first,
+        );
+        var decoration = container.decoration as BoxDecoration;
+        expect(decoration.color, const Color(0xFFF0FDF4));
 
-      // 3. Light Mode - ADMIN
-      await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: const Size(375, 812),
-          builder: (context, child) => MaterialApp(
-            home: Theme(
-              data: ThemeData(brightness: Brightness.light),
-              child: const Scaffold(body: RoleBadge(role: 'admin')),
+        // 2. Dark Mode - GURU
+        await tester.pumpWidget(
+          ScreenUtilInit(
+            designSize: const Size(375, 812),
+            builder: (context, child) => MaterialApp(
+              home: Theme(
+                data: ThemeData(brightness: Brightness.dark),
+                child: const Scaffold(body: RoleBadge(role: 'guru')),
+              ),
             ),
           ),
-        ),
-      );
-      expect(find.text('ADMIN'), findsOneWidget);
-      container = tester.widget<Container>(find.descendant(of: find.byType(RoleBadge), matching: find.byType(Container)).first);
-      decoration = container.decoration as BoxDecoration;
-      expect(decoration.color, const Color(0xFFFEF2F2));
+        );
+        expect(find.text('GURU'), findsOneWidget);
+        container = tester.widget<Container>(
+          find
+              .descendant(
+                of: find.byType(RoleBadge),
+                matching: find.byType(Container),
+              )
+              .first,
+        );
+        decoration = container.decoration as BoxDecoration;
+        expect(decoration.color, isNot(equals(const Color(0xFFF0FDF4))));
+        expect(decoration.color, isNot(equals(Colors.white)));
+        expect(
+          decoration.color,
+          const Color(0xFF14532D).withValues(alpha: 0.35),
+        );
 
-      // 4. Dark Mode - ADMIN
-      await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: const Size(375, 812),
-          builder: (context, child) => MaterialApp(
-            home: Theme(
-              data: ThemeData(brightness: Brightness.dark),
-              child: const Scaffold(body: RoleBadge(role: 'admin')),
+        // 3. Light Mode - ADMIN
+        await tester.pumpWidget(
+          ScreenUtilInit(
+            designSize: const Size(375, 812),
+            builder: (context, child) => MaterialApp(
+              home: Theme(
+                data: ThemeData(brightness: Brightness.light),
+                child: const Scaffold(body: RoleBadge(role: 'admin')),
+              ),
             ),
           ),
-        ),
-      );
-      expect(find.text('ADMIN'), findsOneWidget);
-      container = tester.widget<Container>(find.descendant(of: find.byType(RoleBadge), matching: find.byType(Container)).first);
-      decoration = container.decoration as BoxDecoration;
-      expect(decoration.color, isNot(equals(const Color(0xFFFEF2F2))));
-      expect(decoration.color, isNot(equals(Colors.white)));
-      expect(decoration.color, const Color(0xFF7F1D1D).withValues(alpha: 0.35));
-    });
+        );
+        expect(find.text('ADMIN'), findsOneWidget);
+        container = tester.widget<Container>(
+          find
+              .descendant(
+                of: find.byType(RoleBadge),
+                matching: find.byType(Container),
+              )
+              .first,
+        );
+        decoration = container.decoration as BoxDecoration;
+        expect(decoration.color, const Color(0xFFFEF2F2));
+
+        // 4. Dark Mode - ADMIN
+        await tester.pumpWidget(
+          ScreenUtilInit(
+            designSize: const Size(375, 812),
+            builder: (context, child) => MaterialApp(
+              home: Theme(
+                data: ThemeData(brightness: Brightness.dark),
+                child: const Scaffold(body: RoleBadge(role: 'admin')),
+              ),
+            ),
+          ),
+        );
+        expect(find.text('ADMIN'), findsOneWidget);
+        container = tester.widget<Container>(
+          find
+              .descendant(
+                of: find.byType(RoleBadge),
+                matching: find.byType(Container),
+              )
+              .first,
+        );
+        decoration = container.decoration as BoxDecoration;
+        expect(decoration.color, isNot(equals(const Color(0xFFFEF2F2))));
+        expect(decoration.color, isNot(equals(Colors.white)));
+        expect(
+          decoration.color,
+          const Color(0xFF7F1D1D).withValues(alpha: 0.35),
+        );
+      },
+    );
   });
 }

@@ -1,3 +1,4 @@
+import '../core/constants/teacher_roles.dart';
 import '../core/utils/helper.dart';
 
 class UserModel {
@@ -15,14 +16,20 @@ class UserModel {
   final String? status; // 'active' | 'pending' | 'inactive' | 'requested_exit'
   final String? membershipRole; // role assigned within active school membership
   final String? nip;
-  final String? registeredRole; // role saat registrasi: 'admin' | 'guru' | 'pending_guru'
+  final String?
+  registeredRole; // role saat registrasi: 'admin' | 'guru' | 'pending_guru'
 
   bool get isPending =>
       (status != null && status!.toLowerCase() == 'pending') ||
       role.toLowerCase() == 'pending_guru';
 
+  bool get isSoftDeleted =>
+      TeacherRoles.isSoftDeleted(role) ||
+      (status != null && status!.toLowerCase() == 'deleted');
+
   bool get isActive =>
       !isPending &&
+      !isSoftDeleted &&
       (status == null || status!.toLowerCase() == 'active') &&
       role.toLowerCase() != 'pending_guru' &&
       role.toLowerCase() != 'pending_admin';
@@ -46,22 +53,33 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    final parsedFromSchoolId = AppHelper.parseAndCleanSchoolIds(json['school_id']);
-    final parsedFromSchoolIds = AppHelper.parseAndCleanSchoolIds(json['school_ids']);
-    final allSchoolIds = <String>{...parsedFromSchoolId, ...parsedFromSchoolIds}.toList();
-    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(json['school_id']) ??
+    final parsedFromSchoolId = AppHelper.parseAndCleanSchoolIds(
+      json['school_id'],
+    );
+    final parsedFromSchoolIds = AppHelper.parseAndCleanSchoolIds(
+      json['school_ids'],
+    );
+    final allSchoolIds = <String>{
+      ...parsedFromSchoolId,
+      ...parsedFromSchoolIds,
+    }.toList();
+    final cleanSchoolId =
+        AppHelper.parseSingleCleanSchoolId(json['school_id']) ??
         (allSchoolIds.isNotEmpty ? allSchoolIds.first : null);
 
     String fullName = '';
     final rawFullName = json['full_name']?.toString().trim();
-    final rawName = json['fullName']?.toString().trim() ?? json['name']?.toString().trim();
+    final rawName =
+        json['fullName']?.toString().trim() ?? json['name']?.toString().trim();
     if (rawFullName != null && rawFullName.isNotEmpty) {
       fullName = rawFullName;
     } else if (rawName != null && rawName.isNotEmpty) {
       fullName = rawName;
     } else {
       final rawEmail = json['email']?.toString().trim();
-      fullName = (rawEmail != null && rawEmail.isNotEmpty) ? rawEmail : 'Pengguna';
+      fullName = (rawEmail != null && rawEmail.isNotEmpty)
+          ? rawEmail
+          : 'Pengguna';
     }
 
     return UserModel(
@@ -70,22 +88,29 @@ class UserModel {
       fullName: fullName,
       role: json['role']?.toString() ?? 'guru',
       photoUrl: json['photo_url']?.toString() ?? json['photoUrl']?.toString(),
-      phoneNumber: json['phone']?.toString() ?? json['phoneNumber']?.toString() ?? json['phone_number']?.toString(),
+      phoneNumber:
+          json['phone']?.toString() ??
+          json['phoneNumber']?.toString() ??
+          json['phone_number']?.toString(),
       position: json['position']?.toString(),
       address: json['address']?.toString(),
-      schoolName: json['school_name']?.toString() ?? json['schoolName']?.toString(),
+      schoolName:
+          json['school_name']?.toString() ?? json['schoolName']?.toString(),
       schoolId: cleanSchoolId,
       schoolIds: allSchoolIds,
-      status: json['status']?.toString() ?? json['membership_status']?.toString(),
-      membershipRole: json['membership_role']?.toString() ?? json['membershipRole']?.toString(),
+      status:
+          json['status']?.toString() ?? json['membership_status']?.toString(),
+      membershipRole:
+          json['membership_role']?.toString() ??
+          json['membershipRole']?.toString(),
       nip: json['nip']?.toString(),
-      registeredRole: json['registered_role']?.toString() ??
+      registeredRole:
+          json['registered_role']?.toString() ??
           json['registeredRole']?.toString() ??
           json['meta_role']?.toString() ??
           json['auth_role']?.toString(),
     );
   }
-
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{
@@ -125,7 +150,6 @@ class UserModel {
     }
     return map;
   }
-
 
   UserModel copyWith({
     String? id,

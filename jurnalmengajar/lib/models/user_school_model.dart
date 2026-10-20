@@ -7,7 +7,7 @@ class UserSchoolModel {
   final String role; // 'guru' | 'admin' | 'tenant'
   final String schoolName;
   final String? schoolCode;
-  final String? status; // 'active' | 'requested_exit'
+  final String? status; // 'active' | 'requested_exit' | 'deactivated'
   final String? logoUrl;
 
   UserSchoolModel({
@@ -35,7 +35,8 @@ class UserSchoolModel {
       name = json['school_name']?.toString() ?? 'Sekolah';
     }
 
-    final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(json['school_id']) ?? '';
+    final cleanSchoolId =
+        AppHelper.parseSingleCleanSchoolId(json['school_id']) ?? '';
 
     return UserSchoolModel(
       id: json['id']?.toString() ?? '',
@@ -45,10 +46,10 @@ class UserSchoolModel {
       schoolName: name,
       schoolCode: code,
       status: json['status']?.toString() ?? 'active',
-      logoUrl: logo ?? json['logo_url']?.toString() ?? json['logoUrl']?.toString(),
+      logoUrl:
+          logo ?? json['logo_url']?.toString() ?? json['logoUrl']?.toString(),
     );
   }
-
 
   Map<String, dynamic> toJson() {
     return {
