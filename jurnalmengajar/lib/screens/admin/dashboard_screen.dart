@@ -228,8 +228,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 j.teacherId == _selectedTeacherId;
           }).toList();
 
-    final totalJournals = filteredJournals.length;
-    final totalPending = filteredJournals
+    final journalsForDay = filteredJournals.where((j) {
+      return j.date.year == _selectedDay.year &&
+          j.date.month == _selectedDay.month &&
+          j.date.day == _selectedDay.day;
+    }).toList();
+
+    final totalJournals = journalsForDay.length;
+    final totalPending = journalsForDay
         .where((j) => j.status == 'pending')
         .length;
 
@@ -474,14 +480,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 SizedBox(width: 8.w),
                                 Expanded(
                                   child: _buildStatCard(
-                                    'Jurnal',
-                                    '$totalJournals',
-                                    Icons.assignment_rounded,
-                                    accentColor: const Color(0xFF0284C7),
-                                    bgColor: const Color(0xFFF0F9FF),
-                                    borderColor: const Color(0xFFBAE6FD),
+                                    'Belum Input',
+                                    '$unsubmittedCount',
+                                    Icons.pending_actions_rounded,
+                                    accentColor: const Color(0xFFE11D48),
+                                    bgColor: const Color(0xFFFFE4E6),
+                                    borderColor: const Color(0xFFFECDD3),
                                     onTap: () =>
-                                        context.push('/admin/journals'),
+                                        context.push('/admin/journals?tab=1'),
                                   ),
                                 ),
                                 SizedBox(width: 8.w),
@@ -500,14 +506,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 SizedBox(width: 8.w),
                                 Expanded(
                                   child: _buildStatCard(
-                                    'Belum Input',
-                                    '$unsubmittedCount',
-                                    Icons.pending_actions_rounded,
-                                    accentColor: const Color(0xFFE11D48),
-                                    bgColor: const Color(0xFFFFE4E6),
-                                    borderColor: const Color(0xFFFECDD3),
+                                    'Jurnal',
+                                    '$totalJournals',
+                                    Icons.assignment_rounded,
+                                    accentColor: const Color(0xFF0284C7),
+                                    bgColor: const Color(0xFFF0F9FF),
+                                    borderColor: const Color(0xFFBAE6FD),
                                     onTap: () =>
-                                        context.push('/admin/journals?tab=1'),
+                                        context.push('/admin/journals'),
                                   ),
                                 ),
                               ],
@@ -569,27 +575,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                       ),
                                     ),
                                     SizedBox(width: 10.w),
-                                    Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 12.w,
-                                        vertical: 8.h,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: primaryColor,
-                                        borderRadius: BorderRadius.circular(
-                                          9.r,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.arrow_forward_rounded,
-                                            size: 14.r,
-                                            color: Colors.white,
-                                          ),
-                                        ],
-                                      ),
+                                    Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 20.r,
+                                      color: primaryColor,
                                     ),
                                   ],
                                 ),
@@ -652,27 +641,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                       ),
                                     ),
                                     SizedBox(width: 10.w),
-                                    Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 12.w,
-                                        vertical: 8.h,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF059669),
-                                        borderRadius: BorderRadius.circular(
-                                          9.r,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.arrow_forward_rounded,
-                                            size: 14.r,
-                                            color: Colors.white,
-                                          ),
-                                        ],
-                                      ),
+                                    Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 20.r,
+                                      color: isDark
+                                          ? const Color(0xFF34D399)
+                                          : const Color(0xFF059669),
                                     ),
                                   ],
                                 ),
