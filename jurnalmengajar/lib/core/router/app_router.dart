@@ -37,16 +37,17 @@ import '../../screens/admin/teacher_statistics_screen.dart';
 import '../../screens/admin/class_attendance_recap_screen.dart';
 import '../../screens/auth/school_expired_screen.dart';
 import '../../widgets/swipe_back_wrapper.dart';
+import '../../widgets/desktop_sidebar_shell.dart';
 
 class AppRouter {
   static CustomTransitionPage<void> _buildCustomTransition(
-      BuildContext context, GoRouterState state, Widget child) {
+    BuildContext context,
+    GoRouterState state,
+    Widget child,
+  ) {
     return CustomTransitionPage<void>(
       key: state.pageKey,
-      child: SwipeBackWrapper(
-        enableSwipe: false,
-        child: child,
-      ),
+      child: SwipeBackWrapper(enableSwipe: false, child: child),
       transitionDuration: const Duration(milliseconds: 240),
       reverseTransitionDuration: const Duration(milliseconds: 200),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -54,19 +55,16 @@ class AppRouter {
           parent: animation,
           curve: Curves.easeOutCubic,
         );
-        final slideAnimation = Tween<Offset>(
-          begin: const Offset(0, 0.05),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-        ));
+        final slideAnimation =
+            Tween<Offset>(
+              begin: const Offset(0, 0.05),
+              end: Offset.zero,
+            ).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            );
         return FadeTransition(
           opacity: fadeAnimation,
-          child: SlideTransition(
-            position: slideAnimation,
-            child: child,
-          ),
+          child: SlideTransition(position: slideAnimation, child: child),
         );
       },
     );
@@ -83,12 +81,14 @@ class AppRouter {
         final isLoggedIn = authProvider.isAuthenticated;
         final isSplash = state.matchedLocation == '/splash';
         final isResetPasswordRoute = state.matchedLocation == '/reset-password';
-        final isRecoveryMode = authProvider.isRecoveryMode ||
+        final isRecoveryMode =
+            authProvider.isRecoveryMode ||
             state.uri.queryParameters['type'] == 'recovery' ||
             state.uri.queryParameters.containsKey('access_token') ||
             state.uri.fragment.contains('type=recovery') ||
             state.uri.fragment.contains('access_token=');
-        final isAuthRoute = state.matchedLocation == '/login' ||
+        final isAuthRoute =
+            state.matchedLocation == '/login' ||
             state.matchedLocation == '/register' ||
             state.matchedLocation == '/login-callback' ||
             state.matchedLocation == '/' ||
@@ -122,7 +122,9 @@ class AppRouter {
           if (state.matchedLocation == '/school-expired') {
             final user = authProvider.currentUser;
             if (user != null) {
-              return user.role == 'admin' ? '/admin/dashboard' : '/guru/dashboard';
+              return user.role == 'admin'
+                  ? '/admin/dashboard'
+                  : '/guru/dashboard';
             }
             return '/login';
           }
@@ -147,11 +149,13 @@ class AppRouter {
           return '/login';
         }
 
-        if (state.matchedLocation.startsWith('/admin') && effectiveRole != 'admin') {
+        if (state.matchedLocation.startsWith('/admin') &&
+            effectiveRole != 'admin') {
           return '/guru/dashboard';
         }
 
-        if (state.matchedLocation.startsWith('/guru') && effectiveRole != 'guru') {
+        if (state.matchedLocation.startsWith('/guru') &&
+            effectiveRole != 'guru') {
           return '/admin/dashboard';
         }
 
@@ -169,22 +173,13 @@ class AppRouter {
           pageBuilder: (context, state) => _buildCustomTransition(
             context,
             state,
-            const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
+            const Scaffold(body: Center(child: CircularProgressIndicator())),
           ),
         ),
         GoRoute(
           path: '/splash',
           pageBuilder: (context, state) =>
               _buildCustomTransition(context, state, const SplashScreen()),
-        ),
-        GoRoute(
-          path: '/about',
-          pageBuilder: (context, state) =>
-              _buildCustomTransition(context, state, const AboutAppScreen()),
         ),
         GoRoute(
           path: '/login',
@@ -201,249 +196,382 @@ class AppRouter {
           pageBuilder: (context, state) => _buildCustomTransition(
             context,
             state,
-            ResetPasswordScreen(
-              queryParameters: state.uri.queryParameters,
-            ),
+            ResetPasswordScreen(queryParameters: state.uri.queryParameters),
           ),
         ),
         GoRoute(
           path: '/school-expired',
-          pageBuilder: (context, state) =>
-              _buildCustomTransition(context, state, const SchoolExpiredScreen()),
+          pageBuilder: (context, state) => _buildCustomTransition(
+            context,
+            state,
+            const SchoolExpiredScreen(),
+          ),
         ),
 
-        // Guru Module
-        GoRoute(
-          path: '/guru/dashboard',
-          pageBuilder: (context, state) {
-            final tabStr = state.uri.queryParameters['tab'];
-            final initialIndex = tabStr != null ? int.tryParse(tabStr) : null;
-            return _buildCustomTransition(
-                context, state, GuruMainShell(initialIndex: initialIndex));
-          },
-        ),
-        GoRoute(
-          path: '/guru/schedule/:id',
-          pageBuilder: (context, state) {
-            final id = state.pathParameters['id']!;
-            return _buildCustomTransition(
-                context, state, DetailJadwalScreen(scheduleId: id));
-          },
-        ),
-        GoRoute(
-          path: '/guru/journal-form',
-          pageBuilder: (context, state) {
-            final scheduleId = state.uri.queryParameters['scheduleId'] ?? '';
-            final dateStr = state.uri.queryParameters['date'];
-            final journalId = state.uri.queryParameters['journalId'];
-            return _buildCustomTransition(
+        // ── Shell aplikasi ───────────────────────────────────────────────────────
+        // Semua halaman aplikasi (admin, guru, tentang) berada di dalam
+        // ShellRoute. Pada web desktop sidebar menu dikunci di kiri; karena
+        // posisinya di dalam Navigator, navigasi dan dialog dari sidebar tetap
+        // bekerja normal dan halaman hasil push tidak menutupi sidebar.
+        ShellRoute(
+          builder: (context, state, child) => DesktopSidebarShell(
+            currentRoute: state.uri.hasQuery
+                ? state.uri.toString()
+                : state.uri.path,
+            child: child,
+          ),
+          routes: [
+            GoRoute(
+              path: '/about',
+              pageBuilder: (context, state) => _buildCustomTransition(
                 context,
                 state,
-                FormJurnalScreen(
-                  scheduleId: scheduleId,
-                  dateStr: dateStr,
-                  journalId: journalId,
-                ));
-          },
-        ),
-        GoRoute(
-          path: '/guru/journal/:id',
-          pageBuilder: (context, state) {
-            final id = state.pathParameters['id']!;
-            return _buildCustomTransition(
-                context, state, DetailJurnalScreen(journalId: id));
-          },
-        ),
-        GoRoute(
-          path: '/guru/warning-letters',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const GuruWarningLetterListScreen()),
-        ),
-        GoRoute(
-          path: '/guru/download-jurnal',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const GuruDownloadJurnalScreen()),
-        ),
-        GoRoute(
-          path: '/guru/jadwal-bulan-ini',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const GuruJadwalBulanIniScreen()),
-        ),
-        GoRoute(
-          path: '/guru/statistik',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const GuruStatistikScreen()),
-        ),
-        GoRoute(
-          path: '/guru/statistics',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const GuruStatistikScreen()),
-        ),
-        GoRoute(
-          path: '/guru/profile',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const GuruMainShell(initialIndex: 3)),
-        ),
-        GoRoute(
-          path: '/guru/profil',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const GuruMainShell(initialIndex: 3)),
-        ),
-        GoRoute(
-          path: '/guru/jadwal',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const GuruMainShell(initialIndex: 1)),
-        ),
-        GoRoute(
-          path: '/guru/jurnal',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const GuruMainShell(initialIndex: 2)),
-        ),
+                const AboutAppScreen(),
+              ),
+            ),
 
-        // Admin Module
-        GoRoute(
-          path: '/admin/dashboard',
-          pageBuilder: (context, state) {
-            final teacherId = state.uri.queryParameters['teacherId'];
-            return _buildCustomTransition(
-                context, state, AdminDashboardScreen(selectedTeacherId: teacherId));
-          },
-        ),
-        GoRoute(
-          path: '/admin/approvals',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const ApprovalJurnalScreen()),
-        ),
-        GoRoute(
-          path: '/admin/journals',
-          pageBuilder: (context, state) {
-            final tab = int.tryParse(
-                    state.uri.queryParameters['tab'] ?? '0') ??
-                0;
-            return _buildCustomTransition(
-                context, state, AdminJurnalListScreen(initialTabIndex: tab));
-          },
-        ),
-        GoRoute(
-          path: '/admin/journal/:id',
-          pageBuilder: (context, state) {
-            final id = state.pathParameters['id']!;
-            return _buildCustomTransition(
-                context, state, DetailJurnalScreen(journalId: id));
-          },
-        ),
-        GoRoute(
-          path: '/admin/schedule/:id',
-          pageBuilder: (context, state) {
-            final id = state.pathParameters['id']!;
-            return _buildCustomTransition(
-                context, state, DetailJadwalScreen(scheduleId: id));
-          },
-        ),
-        GoRoute(
-          path: '/admin/warning-letters',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const AdminWarningLetterListScreen()),
-        ),
-        GoRoute(
-          path: '/admin/teacher-statistics',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const AdminTeacherStatisticsScreen()),
-        ),
-        GoRoute(
-          path: '/admin/class-attendance-recap',
-          pageBuilder: (context, state) {
-            final classId = state.uri.queryParameters['classId'];
-            return _buildCustomTransition(
-                context, state, AdminClassAttendanceRecapScreen(initialClassId: classId));
-          },
-        ),
-        GoRoute(
-          path: '/admin/attendance-recap',
-          pageBuilder: (context, state) {
-            final classId = state.uri.queryParameters['classId'];
-            return _buildCustomTransition(
-                context, state, AdminClassAttendanceRecapScreen(initialClassId: classId));
-          },
-        ),
-        GoRoute(
-          path: '/admin/master-data/periods',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const MasterPeriodScreen()),
-        ),
-        GoRoute(
-          path: '/admin/master-data/subjects',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const MasterSubjectScreen()),
-        ),
-        GoRoute(
-          path: '/admin/master-data/hours',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const MasterHourScreen()),
-        ),
-        GoRoute(
-          path: '/admin/master-data/classes',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const MasterClassScreen()),
-        ),
-        GoRoute(
-          path: '/admin/master-data/classes/:classId/students',
-          pageBuilder: (context, state) {
-            final classId = state.pathParameters['classId']!;
-            return _buildCustomTransition(
-                context, state, MasterStudentScreen(classId: classId));
-          },
-        ),
-        GoRoute(
-          path: '/admin/master-data/student-promotions',
-          pageBuilder: (context, state) {
-            final classId = state.uri.queryParameters['classId'];
-            return _buildCustomTransition(
-                context, state, StudentPromotionScreen(initialClassId: classId));
-          },
-        ),
-        GoRoute(
-          path: '/admin/master-data/teachers',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const MasterTeacherScreen()),
-        ),
-        GoRoute(
-          path: '/admin/master-data/teachers/:teacherId',
-          pageBuilder: (context, state) {
-            final teacherId = state.pathParameters['teacherId']!;
-            return _buildCustomTransition(
-                context, state, TeacherDetailScreen(teacherId: teacherId));
-          },
-        ),
-        GoRoute(
-          path: '/admin/schedules',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const MasterScheduleScreen()),
-        ),
-        GoRoute(
-          path: '/admin/settings',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const AdminSettingsScreen()),
-        ),
-        GoRoute(
-          path: '/admin/holidays',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const AdminHolidaysScreen()),
-        ),
-        GoRoute(
-          path: '/admin/teacher-leaves',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const AdminTeacherLeavesScreen()),
-        ),
-        GoRoute(
-          path: '/admin/master-data/users',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const MasterUserScreen()),
-        ),
-        GoRoute(
-          path: '/admin/profile',
-          pageBuilder: (context, state) => _buildCustomTransition(
-              context, state, const AdminProfileScreen()),
+            // Guru Module
+            GoRoute(
+              path: '/guru/dashboard',
+              pageBuilder: (context, state) {
+                final tabStr = state.uri.queryParameters['tab'];
+                final initialIndex = tabStr != null
+                    ? int.tryParse(tabStr)
+                    : null;
+                return _buildCustomTransition(
+                  context,
+                  state,
+                  GuruMainShell(initialIndex: initialIndex),
+                );
+              },
+            ),
+            GoRoute(
+              path: '/guru/schedule/:id',
+              pageBuilder: (context, state) {
+                final id = state.pathParameters['id']!;
+                return _buildCustomTransition(
+                  context,
+                  state,
+                  DetailJadwalScreen(scheduleId: id),
+                );
+              },
+            ),
+            GoRoute(
+              path: '/guru/journal-form',
+              pageBuilder: (context, state) {
+                final scheduleId =
+                    state.uri.queryParameters['scheduleId'] ?? '';
+                final dateStr = state.uri.queryParameters['date'];
+                final journalId = state.uri.queryParameters['journalId'];
+                return _buildCustomTransition(
+                  context,
+                  state,
+                  FormJurnalScreen(
+                    scheduleId: scheduleId,
+                    dateStr: dateStr,
+                    journalId: journalId,
+                  ),
+                );
+              },
+            ),
+            GoRoute(
+              path: '/guru/journal/:id',
+              pageBuilder: (context, state) {
+                final id = state.pathParameters['id']!;
+                return _buildCustomTransition(
+                  context,
+                  state,
+                  DetailJurnalScreen(journalId: id),
+                );
+              },
+            ),
+            GoRoute(
+              path: '/guru/warning-letters',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const GuruWarningLetterListScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/guru/download-jurnal',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const GuruDownloadJurnalScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/guru/jadwal-bulan-ini',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const GuruJadwalBulanIniScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/guru/statistik',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const GuruStatistikScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/guru/statistics',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const GuruStatistikScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/guru/profile',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const GuruMainShell(initialIndex: 3),
+              ),
+            ),
+            GoRoute(
+              path: '/guru/profil',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const GuruMainShell(initialIndex: 3),
+              ),
+            ),
+            GoRoute(
+              path: '/guru/jadwal',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const GuruMainShell(initialIndex: 1),
+              ),
+            ),
+            GoRoute(
+              path: '/guru/jurnal',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const GuruMainShell(initialIndex: 2),
+              ),
+            ),
+
+            // Admin Module
+            GoRoute(
+              path: '/admin/dashboard',
+              pageBuilder: (context, state) {
+                final teacherId = state.uri.queryParameters['teacherId'];
+                return _buildCustomTransition(
+                  context,
+                  state,
+                  AdminDashboardScreen(selectedTeacherId: teacherId),
+                );
+              },
+            ),
+            GoRoute(
+              path: '/admin/approvals',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const ApprovalJurnalScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/admin/journals',
+              pageBuilder: (context, state) {
+                final tab =
+                    int.tryParse(state.uri.queryParameters['tab'] ?? '0') ?? 0;
+                return _buildCustomTransition(
+                  context,
+                  state,
+                  AdminJurnalListScreen(initialTabIndex: tab),
+                );
+              },
+            ),
+            GoRoute(
+              path: '/admin/journal/:id',
+              pageBuilder: (context, state) {
+                final id = state.pathParameters['id']!;
+                return _buildCustomTransition(
+                  context,
+                  state,
+                  DetailJurnalScreen(journalId: id),
+                );
+              },
+            ),
+            GoRoute(
+              path: '/admin/schedule/:id',
+              pageBuilder: (context, state) {
+                final id = state.pathParameters['id']!;
+                return _buildCustomTransition(
+                  context,
+                  state,
+                  DetailJadwalScreen(scheduleId: id),
+                );
+              },
+            ),
+            GoRoute(
+              path: '/admin/warning-letters',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const AdminWarningLetterListScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/admin/teacher-statistics',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const AdminTeacherStatisticsScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/admin/class-attendance-recap',
+              pageBuilder: (context, state) {
+                final classId = state.uri.queryParameters['classId'];
+                return _buildCustomTransition(
+                  context,
+                  state,
+                  AdminClassAttendanceRecapScreen(initialClassId: classId),
+                );
+              },
+            ),
+            GoRoute(
+              path: '/admin/attendance-recap',
+              pageBuilder: (context, state) {
+                final classId = state.uri.queryParameters['classId'];
+                return _buildCustomTransition(
+                  context,
+                  state,
+                  AdminClassAttendanceRecapScreen(initialClassId: classId),
+                );
+              },
+            ),
+            GoRoute(
+              path: '/admin/master-data/periods',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const MasterPeriodScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/admin/master-data/subjects',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const MasterSubjectScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/admin/master-data/hours',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const MasterHourScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/admin/master-data/classes',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const MasterClassScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/admin/master-data/classes/:classId/students',
+              pageBuilder: (context, state) {
+                final classId = state.pathParameters['classId']!;
+                return _buildCustomTransition(
+                  context,
+                  state,
+                  MasterStudentScreen(classId: classId),
+                );
+              },
+            ),
+            GoRoute(
+              path: '/admin/master-data/student-promotions',
+              pageBuilder: (context, state) {
+                final classId = state.uri.queryParameters['classId'];
+                return _buildCustomTransition(
+                  context,
+                  state,
+                  StudentPromotionScreen(initialClassId: classId),
+                );
+              },
+            ),
+            GoRoute(
+              path: '/admin/master-data/teachers',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const MasterTeacherScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/admin/master-data/teachers/:teacherId',
+              pageBuilder: (context, state) {
+                final teacherId = state.pathParameters['teacherId']!;
+                return _buildCustomTransition(
+                  context,
+                  state,
+                  TeacherDetailScreen(teacherId: teacherId),
+                );
+              },
+            ),
+            GoRoute(
+              path: '/admin/schedules',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const MasterScheduleScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/admin/settings',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const AdminSettingsScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/admin/holidays',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const AdminHolidaysScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/admin/teacher-leaves',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const AdminTeacherLeavesScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/admin/master-data/users',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const MasterUserScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/admin/profile',
+              pageBuilder: (context, state) => _buildCustomTransition(
+                context,
+                state,
+                const AdminProfileScreen(),
+              ),
+            ),
+          ],
         ),
       ],
     );

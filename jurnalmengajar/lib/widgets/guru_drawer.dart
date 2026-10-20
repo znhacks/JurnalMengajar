@@ -591,7 +591,6 @@ class GuruDrawerPanel extends StatelessWidget {
 
   void _showLogoutDialog(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(

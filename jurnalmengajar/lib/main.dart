@@ -35,7 +35,6 @@ import 'providers/teacher_leave_provider.dart';
 // Router & Theme
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
-import 'widgets/desktop_sidebar_shell.dart';
 import 'widgets/web_navigation_shortcut_wrapper.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -221,12 +220,7 @@ class _JurnalMengajarAppState extends State<JurnalMengajarApp> {
                 }
                 return WebNavigationShortcutWrapper(
                   router: _router,
-                  // Web desktop: sidebar menu dikunci di kiri dan tetap
-                  // terlihat di semua halaman (termasuk halaman hasil push).
-                  child: DesktopSidebarShell(
-                    router: _router,
-                    child: content,
-                  ),
+                  child: content,
                 );
               },
             );

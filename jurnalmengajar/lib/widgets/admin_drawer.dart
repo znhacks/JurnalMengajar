@@ -104,6 +104,14 @@ class AdminDrawerPanel extends StatelessWidget {
     );
   }
 
+  /// Menutup drawer saat panel ini dipakai sebagai drawer (bukan sidebar
+  /// permanen). Pada sidebar permanen tidak ada drawer yang perlu ditutup,
+  /// memanggil `Navigator.pop` justru akan mengeluarkan route yang aktif.
+  void _closeDrawer(BuildContext context) {
+    if (isPermanentSidebar) return;
+    Navigator.pop(context);
+  }
+
   // ── Header (Logo & Active School) ──────────────────────────────────────────
   Widget _buildHeader(BuildContext context, AuthProvider authProvider) {
     return Container(
@@ -426,7 +434,7 @@ class AdminDrawerPanel extends StatelessWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(dialogCtx);
-              Navigator.pop(context);
+              _closeDrawer(context);
               await authProvider.logout();
               if (context.mounted) {
                 context.go('/login');
@@ -482,9 +490,7 @@ class AdminDrawerPanel extends StatelessWidget {
         selected: isSelected,
         selectedTileColor: AppTheme.primaryColor.withValues(alpha: 0.08),
         onTap: () {
-          if (!isPermanentSidebar) {
-            Navigator.pop(context); // Close drawer
-          }
+          _closeDrawer(context); // Close drawer (hanya pada mode drawer)
           if (!isSelected) {
             if (route == '/admin/dashboard') {
               context.go(route);

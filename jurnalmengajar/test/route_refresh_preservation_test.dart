@@ -89,10 +89,20 @@ void main() {
         ),
       );
 
-      final routes = router.configuration.routes
-          .whereType<GoRoute>()
-          .map((r) => r.path)
-          .toList();
+      // Halaman aplikasi berada di dalam ShellRoute, jadi path dikumpulkan
+      // rekursif dari semua level route.
+      final routes = <String>[];
+      void collectPaths(List<RouteBase> routeList) {
+        for (final route in routeList) {
+          if (route is GoRoute) {
+            routes.add(route.path);
+          } else if (route is ShellRoute) {
+            collectPaths(route.routes);
+          }
+        }
+      }
+
+      collectPaths(router.configuration.routes);
 
       // Guru deep links
       expect(routes, contains('/guru/dashboard'));

@@ -1,7 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
@@ -32,91 +30,36 @@ class AppShell {
   }
 }
 
-/// Membungkus seluruh aplikasi pada web desktop dengan sidebar yang selalu
-/// terlihat di kiri. Karena dibungkus di level aplikasi, sidebar tetap ada
-/// pada halaman yang dibuka lewat tombol push (detail, form, dll).
+/// Layout aplikasi untuk web desktop: menu sidebar dikunci di kiri dan konten
+/// halaman berada di sebelahnya.
 ///
-/// Di luar web desktop widget ini tidak mengubah apa pun.
-class DesktopSidebarShell extends StatefulWidget {
+/// Widget ini dipakai sebagai builder [ShellRoute] sehingga posisinya berada
+/// DI DALAM Navigator. Thanks to that, navigasi (`context.go/push`),
+/// `showDialog`, dan `Navigator.pop` dari menu sidebar tetap bekerja seperti
+/// biasanya, dan halaman yang dibuka lewat push tidak menutupi sidebar.
+///
+/// Di luar web desktop widget ini hanya meneruskan [child] tanpa perubahan.
+class DesktopSidebarShell extends StatelessWidget {
   const DesktopSidebarShell({
     super.key,
-    required this.router,
+    required this.currentRoute,
     required this.child,
   });
 
-  final GoRouter router;
+  /// Route aktif untuk menandai menu yang sedang terbuka.
+  final String currentRoute;
+
   final Widget child;
 
   @override
-  State<DesktopSidebarShell> createState() => _DesktopSidebarShellState();
-}
-
-class _DesktopSidebarShellState extends State<DesktopSidebarShell> {
-  @override
-  void initState() {
-    super.initState();
-    widget.router.routerDelegate.addListener(_handleRouteChanged);
-  }
-
-  @override
-  void didUpdateWidget(covariant DesktopSidebarShell oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.router != widget.router) {
-      oldWidget.router.routerDelegate.removeListener(_handleRouteChanged);
-      widget.router.routerDelegate.addListener(_handleRouteChanged);
-    }
-  }
-
-  @override
-  void dispose() {
-    widget.router.routerDelegate.removeListener(_handleRouteChanged);
-    super.dispose();
-  }
-
-  void _handleRouteChanged() {
-    if (!mounted) return;
-
-    // GoRouter bisa memberi tahu listener saat sedang membangun widget
-    // (mis. saat route awal dipulihkan), jadi rebuild ditunda bila perlu.
-    final phase = SchedulerBinding.instance.schedulerPhase;
-    if (phase == SchedulerPhase.idle ||
-        phase == SchedulerPhase.postFrameCallbacks) {
-      setState(() {});
-      return;
-    }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  String get _currentRoute {
-    final uri = widget.router.routerDelegate.currentConfiguration.uri;
-    return uri.hasQuery ? uri.toString() : uri.path;
-  }
-
-  /// Sidebar hanya ditampilkan pada halaman aplikasi, bukan pada login,
-  /// splash, dan halaman pemulihan akun.
-  bool _isAppRoute(String path) {
-    return path.startsWith('/admin') ||
-        path.startsWith('/guru') ||
-        path == '/about';
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (!AppShell.isDesktopWeb(context)) return widget.child;
-
-    final authProvider = context.watch<AuthProvider>();
-    if (!authProvider.isAuthenticated) return widget.child;
-
-    final currentRoute = _currentRoute;
-    final currentPath = currentRoute.split('?').first;
-    if (!_isAppRoute(currentPath)) return widget.child;
+    if (!AppShell.isDesktopWeb(context)) return child;
 
     final media = MediaQuery.of(context);
     final contentWidth = media.size.width - kDesktopSidebarWidth;
-    if (contentWidth <= 0) return widget.child;
+    if (contentWidth <= 0) return child;
+
+    final isAdmin = context.watch<AuthProvider>().activeRole == 'admin';
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -128,7 +71,7 @@ class _DesktopSidebarShellState extends State<DesktopSidebarShell> {
             // permanen harus menyediakan sendiri agar ListTile/menu tetap
             // bisa menggambar ink splash.
             color: Theme.of(context).colorScheme.surface,
-            child: authProvider.activeRole == 'admin'
+            child: isAdmin
                 ? AdminDrawerPanel(
                     key: const ValueKey('desktop-sidebar-admin'),
                     currentRoute: currentRoute,
@@ -146,7 +89,7 @@ class _DesktopSidebarShellState extends State<DesktopSidebarShell> {
           child: MediaQuery(
             // Halaman di kanan hanya mendapat lebar area kontennya.
             data: media.copyWith(size: Size(contentWidth, media.size.height)),
-            child: widget.child,
+            child: child,
           ),
         ),
       ],

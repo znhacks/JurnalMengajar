@@ -66,9 +66,10 @@ UserModel _guruUser() => UserModel(
 
 /// Halaman uji yang meniru pola layar aplikasi: drawer + tombol menu.
 class _TestScreen extends StatelessWidget {
-  const _TestScreen({this.useGuruDrawer = false});
+  const _TestScreen({this.useGuruDrawer = false, required this.label});
 
   final bool useGuruDrawer;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -87,9 +88,52 @@ class _TestScreen extends StatelessWidget {
         ),
         title: const Text('Halaman Uji'),
       ),
-      body: const Center(child: Text('Isi Halaman')),
+      body: Center(child: Text(label)),
     );
   }
+}
+
+/// Router dengan struktur yang sama dengan app_router.dart: halaman aplikasi
+/// (admin/guru) berada di dalam ShellRoute, halaman auth di luar shell.
+GoRouter _buildTestRouter({required bool guru}) {
+  return GoRouter(
+    initialLocation: guru ? '/guru/dashboard' : '/admin/dashboard',
+    routes: [
+      GoRoute(
+        path: '/login',
+        builder: (context, state) =>
+            const Scaffold(body: Center(child: Text('Form Login'))),
+      ),
+      ShellRoute(
+        builder: (context, state, child) => DesktopSidebarShell(
+          currentRoute: state.uri.hasQuery
+              ? state.uri.toString()
+              : state.uri.path,
+          child: child,
+        ),
+        routes: [
+          if (guru)
+            GoRoute(
+              path: '/guru/dashboard',
+              builder: (context, state) =>
+                  const _TestScreen(useGuruDrawer: true, label: 'Isi Halaman'),
+            ),
+          if (!guru) ...[
+            GoRoute(
+              path: '/admin/dashboard',
+              builder: (context, state) =>
+                  const _TestScreen(label: 'Isi Halaman'),
+            ),
+            GoRoute(
+              path: '/admin/teacher-statistics',
+              builder: (context, state) =>
+                  const _TestScreen(label: 'Halaman Statistik'),
+            ),
+          ],
+        ],
+      ),
+    ],
+  );
 }
 
 void main() {
@@ -107,7 +151,6 @@ void main() {
     required WidgetTester tester,
     required UserModel user,
     required GoRouter router,
-    required Widget home,
     Size screenSize = const Size(1440, 900),
   }) {
     tester.view.physicalSize = screenSize;
@@ -120,17 +163,15 @@ void main() {
     final authProvider = AuthProvider(
       authRepository: _FakeAuthRepository(user),
     );
-    final themeProvider = ThemeProvider();
-    final warningProvider = WarningLetterProvider(
-      warningLetterRepository: _FakeWarningLetterRepo(),
-    );
 
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
-        ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
+        ChangeNotifierProvider<ThemeProvider>.value(value: ThemeProvider()),
         ChangeNotifierProvider<WarningLetterProvider>.value(
-          value: warningProvider,
+          value: WarningLetterProvider(
+            warningLetterRepository: _FakeWarningLetterRepo(),
+          ),
         ),
       ],
       child: ScreenUtilInit(
@@ -138,12 +179,9 @@ void main() {
         builder: (context, _) => MaterialApp.router(
           theme: AppTheme.lightTheme,
           routerConfig: router,
-          builder: (context, child) => DesktopSidebarShell(
-            router: router,
-            child: MediaQuery(
-              data: MediaQueryData(size: screenSize),
-              child: child ?? const SizedBox.shrink(),
-            ),
+          builder: (context, child) => MediaQuery(
+            data: MediaQueryData(size: screenSize),
+            child: child ?? const SizedBox.shrink(),
           ),
         ),
       ),
@@ -155,24 +193,11 @@ void main() {
       tester,
     ) async {
       AppShell.forceDesktopWeb = true;
-      final router = GoRouter(
-        initialLocation: '/admin/dashboard',
-        routes: [
-          GoRoute(
-            path: '/admin/dashboard',
-            builder: (context, state) => const _TestScreen(),
-          ),
-        ],
-      );
+      final router = _buildTestRouter(guru: false);
       addTearDown(router.dispose);
 
       await tester.pumpWidget(
-        buildTestApp(
-          tester: tester,
-          user: _adminUser(),
-          router: router,
-          home: const _TestScreen(),
-        ),
+        buildTestApp(tester: tester, user: _adminUser(), router: router),
       );
       await tester.pumpAndSettle();
 
@@ -193,26 +218,57 @@ void main() {
       );
     });
 
-    testWidgets('sidebar guru tampil permanen di halaman guru', (tester) async {
+    testWidgets('menu di sidebar benar-benar menavigasi halaman', (
+      tester,
+    ) async {
       AppShell.forceDesktopWeb = true;
-      final router = GoRouter(
-        initialLocation: '/guru/dashboard',
-        routes: [
-          GoRoute(
-            path: '/guru/dashboard',
-            builder: (context, state) => const _TestScreen(useGuruDrawer: true),
-          ),
-        ],
-      );
+      final router = _buildTestRouter(guru: false);
       addTearDown(router.dispose);
 
       await tester.pumpWidget(
-        buildTestApp(
-          tester: tester,
-          user: _guruUser(),
-          router: router,
-          home: const _TestScreen(useGuruDrawer: true),
-        ),
+        buildTestApp(tester: tester, user: _adminUser(), router: router),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Statistik Guru'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Halaman Statistik'), findsOneWidget);
+      // Sidebar tetap ada setelah navigasi
+      expect(find.byType(AdminDrawerPanel), findsOneWidget);
+    });
+
+    testWidgets('dialog dari sidebar tetap bisa dibuka', (tester) async {
+      AppShell.forceDesktopWeb = true;
+      final router = _buildTestRouter(guru: false);
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        buildTestApp(tester: tester, user: _adminUser(), router: router),
+      );
+      await tester.pumpAndSettle();
+
+      // Tombol "Keluar" membuka dialog konfirmasi (butuh akses Navigator)
+      await tester.tap(find.text('Keluar'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Konfirmasi Keluar'), findsOneWidget);
+
+      // Batalkan dialog
+      await tester.tap(find.text('Batal'));
+      await tester.pumpAndSettle();
+      expect(find.text('Konfirmasi Keluar'), findsNothing);
+    });
+
+    testWidgets('sidebar guru tampil permanen di halaman guru', (tester) async {
+      AppShell.forceDesktopWeb = true;
+      final router = _buildTestRouter(guru: true);
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        buildTestApp(tester: tester, user: _guruUser(), router: router),
       );
       await tester.pumpAndSettle();
 
@@ -221,7 +277,7 @@ void main() {
       expect(find.byIcon(Icons.menu_rounded), findsNothing);
     });
 
-    testWidgets('sidebar ikut hilang di halaman login (luar area aplikasi)', (
+    testWidgets('sidebar ikut hilang di halaman login (luar shell)', (
       tester,
     ) async {
       AppShell.forceDesktopWeb = true;
@@ -238,12 +294,7 @@ void main() {
       addTearDown(router.dispose);
 
       await tester.pumpWidget(
-        buildTestApp(
-          tester: tester,
-          user: _adminUser(),
-          router: router,
-          home: const SizedBox(),
-        ),
+        buildTestApp(tester: tester, user: _adminUser(), router: router),
       );
       await tester.pumpAndSettle();
 
@@ -255,24 +306,11 @@ void main() {
       tester,
     ) async {
       AppShell.forceDesktopWeb = false;
-      final router = GoRouter(
-        initialLocation: '/admin/dashboard',
-        routes: [
-          GoRoute(
-            path: '/admin/dashboard',
-            builder: (context, state) => const _TestScreen(),
-          ),
-        ],
-      );
+      final router = _buildTestRouter(guru: false);
       addTearDown(router.dispose);
 
       await tester.pumpWidget(
-        buildTestApp(
-          tester: tester,
-          user: _adminUser(),
-          router: router,
-          home: const _TestScreen(),
-        ),
+        buildTestApp(tester: tester, user: _adminUser(), router: router),
       );
       await tester.pumpAndSettle();
 
@@ -284,6 +322,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(AdminDrawerPanel), findsOneWidget);
       expect(find.text('Statistik Guru'), findsOneWidget);
+
+      // Dan menavigasi tetap berfungsi dari drawer
+      await tester.tap(find.text('Statistik Guru'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text('Halaman Statistik'), findsOneWidget);
     });
   });
 }
