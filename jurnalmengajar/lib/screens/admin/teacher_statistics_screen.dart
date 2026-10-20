@@ -352,7 +352,7 @@ class _AdminTeacherStatisticsScreenState
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          'Disiplin Guru',
+          'Statistik Guru',
           style: GoogleFonts.hankenGrotesk(
             fontWeight: FontWeight.bold,
             fontSize: kIsWeb ? 17 : 18.sp,
@@ -448,25 +448,12 @@ class _AdminTeacherStatisticsScreenState
         children: [
           Row(
             children: [
-              Container(
-                padding: EdgeInsets.all(10.r),
-                decoration: BoxDecoration(
-                  color: primaryColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Icon(
-                  Icons.analytics_rounded,
-                  color: primaryColor,
-                  size: 24.r,
-                ),
-              ),
-              SizedBox(width: 12.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Disiplin Guru',
+                      'Statistik Guru',
                       style: GoogleFonts.hankenGrotesk(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.bold,
@@ -674,10 +661,7 @@ class _AdminTeacherStatisticsScreenState
                         SizedBox(height: 2.h),
                         Text(
                           '$totalOnTime dari $totalFilled jurnal tepat',
-                          style: TextStyle(
-                            fontSize: 11.sp,
-                            color: mutedColor,
-                          ),
+                          style: TextStyle(fontSize: 11.sp, color: mutedColor),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -714,10 +698,7 @@ class _AdminTeacherStatisticsScreenState
               SizedBox(height: 8.h),
               Text(
                 '$teachersCount guru • periode ini',
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  color: mutedColor,
-                ),
+                style: TextStyle(fontSize: 11.sp, color: mutedColor),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
