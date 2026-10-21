@@ -425,7 +425,10 @@ class DetailJurnalScreen extends StatelessWidget {
                   ),
                 ),
               ],
-              if (journal.status == 'rejected' && !isAdmin) ...[
+              if (journal.status == 'rejected' &&
+                  !isAdmin &&
+                  authProvider.currentUser?.isSoftDeleted != true &&
+                  !authProvider.isActiveSchoolDeactivated) ...[
                 SizedBox(height: 24.h),
                 ElevatedButton.icon(
                   onPressed: () {

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:jurnalmengajar/core/constants/teacher_roles.dart';
 import 'package:jurnalmengajar/models/user_model.dart';
 import 'package:jurnalmengajar/providers/auth_provider.dart';
 import 'package:jurnalmengajar/repositories/auth_repository.dart';
@@ -76,7 +77,18 @@ class MockAdminUserRemovalRepo implements AuthRepository {
   }
 
   @override
-  Future<void> updateUserRole(String userId, String role, [String? schoolId]) async {}
+  Future<void> updateUserRole(String userId, String role, [String? schoolId]) async {
+    for (int i = 0; i < userSchoolsDb.length; i++) {
+      if (userSchoolsDb[i]['user_id'] == userId &&
+          (schoolId == null || userSchoolsDb[i]['school_id'] == schoolId)) {
+        userSchoolsDb[i]['role'] = role;
+      }
+    }
+    final targetIndex = usersDb.indexWhere((u) => u.id == userId);
+    if (targetIndex != -1) {
+      usersDb[targetIndex] = usersDb[targetIndex].copyWith(role: role);
+    }
+  }
 
   @override
   Future<void> deleteAccount(String userId) async {
@@ -246,6 +258,60 @@ void main() {
       final remainingUser = mockRepo.usersDb.firstWhere((u) => u.id == teacherId);
       expect(remainingUser.schoolIds.isEmpty, isTrue);
       expect(remainingUser.schoolId, isNull);
+    });
+
+    test('updateUserRole deactivates teacher in school preserving membership and data visibility', () async {
+      const teacherId = 'teacher-deact-1';
+      final teacher = UserModel(
+        id: teacherId,
+        email: 'deact@school.com',
+        fullName: 'Guru Mau Dinonaktifkan',
+        role: 'guru',
+        status: 'active',
+        schoolId: 'school-A',
+        schoolIds: ['school-A'],
+      );
+      mockRepo.usersDb.add(teacher);
+      mockRepo.userSchoolsDb.add({
+        'id': 'us-teacher-deact-1',
+        'user_id': teacherId,
+        'school_id': 'school-A',
+        'role': 'guru',
+        'status': 'active',
+      });
+
+      // Admin deactivates teacher
+      final success = await authProvider.updateUserRole(
+        teacherId,
+        TeacherRoles.softDeleted,
+        'school-A',
+      );
+
+      expect(success, isTrue);
+
+      // 1. Membership still exists in user_schools (so teacher can still log in and view!)
+      final member = mockRepo.userSchoolsDb.firstWhere((m) => m['user_id'] == teacherId && m['school_id'] == 'school-A');
+      expect(member['role'], equals(TeacherRoles.softDeleted));
+
+      // 2. Teacher user model is marked as softDeleted
+      final updatedUser = mockRepo.usersDb.firstWhere((u) => u.id == teacherId);
+      expect(updatedUser.isSoftDeleted, isTrue);
+      expect(updatedUser.isActive, isFalse);
+
+      // 3. Reactivate teacher
+      final reactivateSuccess = await authProvider.updateUserRole(
+        teacherId,
+        'guru',
+        'school-A',
+      );
+      expect(reactivateSuccess, isTrue);
+
+      final reactivatedMember = mockRepo.userSchoolsDb.firstWhere((m) => m['user_id'] == teacherId && m['school_id'] == 'school-A');
+      expect(reactivatedMember['role'], equals('guru'));
+
+      final reactivatedUser = mockRepo.usersDb.firstWhere((u) => u.id == teacherId);
+      expect(reactivatedUser.isSoftDeleted, isFalse);
+      expect(reactivatedUser.isActive, isTrue);
     });
   });
 }

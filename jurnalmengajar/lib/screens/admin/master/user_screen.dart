@@ -14,6 +14,7 @@ import '../../../widgets/admin_selection_action_button.dart';
 import '../../../widgets/admin_search_filter_bar.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
+import '../../../core/constants/teacher_roles.dart';
 import '../../../services/excel_export_service.dart';
 import '../../../widgets/app_scaffold.dart';
 
@@ -121,22 +122,22 @@ class _MasterUserScreenState extends State<MasterUserScreen>
     });
   }
 
-  Future<void> _handleBatchRemoveUsers() async {
+  Future<void> _handleBatchDeactivateUsers() async {
     if (_selectedIds.isEmpty) return;
     final count = _selectedIds.length;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Keluarkan $count Pengguna', style: const TextStyle(color: Colors.red)),
+        title: Text('Nonaktifkan $count Guru', style: const TextStyle(color: Colors.orange)),
         content: Text(
-          'Apakah Anda yakin ingin mengeluarkan $count pengguna yang dipilih dari sekolah ini?\n\n'
-          'Akun pengguna tetap aman dan tidak dihapus, namun tidak dapat lagi mengakses data sekolah ini.',
+          'Apakah Anda yakin ingin menonaktifkan $count guru yang dipilih dari sekolah ini?\n\n'
+          'Guru yang dinonaktifkan tetap dapat melihat seluruh jadwal, riwayat jurnal, dan data sekolah, namun tidak dapat mengisi atau mengubah jurnal.',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Keluarkan Massal', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text('Nonaktifkan Massal', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -150,7 +151,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
       setState(() {
         _isLoading = true;
       });
-      final idsToRemove = _selectedIds.where((id) {
+      final idsToDeactivate = _selectedIds.where((id) {
         final u = _allUsers.firstWhere(
           (user) => user.id == id,
           orElse: () => UserModel(id: '', email: '', fullName: '', role: 'admin'),
@@ -158,19 +159,21 @@ class _MasterUserScreenState extends State<MasterUserScreen>
         return u.role != 'admin' && u.role != 'superadmin' && id != authProvider.currentUser?.id;
       }).toList();
 
-      for (final id in idsToRemove) {
-        await authProvider.removeUserFromSchool(
-          userId: id,
-          schoolId: activeSchoolId,
+      for (final id in idsToDeactivate) {
+        await authProvider.updateUserRole(
+          id,
+          TeacherRoles.softDeleted,
+          activeSchoolId,
         );
       }
       if (!mounted) return;
       try {
         final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+        await masterProvider.deleteMultipleTeachers(idsToDeactivate);
         await masterProvider.loadAllData(activeSchoolId);
       } catch (_) {}
       if (!mounted) return;
-      AppHelper.showSnackBar(context, '${idsToRemove.length} pengguna berhasil dikeluarkan dari sekolah.');
+      AppHelper.showSnackBar(context, '${idsToDeactivate.length} guru berhasil dinonaktifkan.');
       setState(() {
         _selectedIds.clear();
         _isSelectionMode = false;
@@ -524,14 +527,14 @@ class _MasterUserScreenState extends State<MasterUserScreen>
     }
   }
 
-  Future<void> _handleRemoveUser(UserModel user) async {
+  Future<void> _handleDeactivateUser(UserModel user) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final activeSchoolId = authProvider.activeSchoolId;
     
     if (user.role == 'admin' || user.role == 'superadmin') {
       AppHelper.showSnackBar(
         context, 
-        'Akun admin sekolah dilindungi sistem dan tidak dapat dikeluarkan.', 
+        'Akun admin sekolah dilindungi sistem dan tidak dapat dinonaktifkan.', 
         isError: true
       );
       return;
@@ -540,7 +543,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
     if (user.id == authProvider.currentUser?.id) {
       AppHelper.showSnackBar(
         context, 
-        'Anda tidak dapat mengeluarkan akun Anda sendiri dari sekolah ini.', 
+        'Anda tidak dapat menonaktifkan akun Anda sendiri.', 
         isError: true
       );
       return;
@@ -554,16 +557,16 @@ class _MasterUserScreenState extends State<MasterUserScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Keluarkan dari Sekolah', style: TextStyle(color: Colors.red)),
+        title: const Text('Nonaktifkan Guru', style: TextStyle(color: Colors.orange)),
         content: Text(
-          'Apakah Anda yakin ingin mengeluarkan ${user.fullName} dari sekolah ini?\n\n'
-          'Akun guru tetap aman dan tidak dihapus, namun tidak dapat lagi mengakses data sekolah ini.',
+          'Apakah Anda yakin ingin menonaktifkan guru ${user.fullName} di sekolah ini?\n\n'
+          'Guru yang dinonaktifkan tetap dapat melihat jadwal, riwayat jurnal, dan data sekolah, namun tidak dapat mengisi atau mengubah jurnal di sekolah ini.',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Keluarkan', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text('Nonaktifkan', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -574,9 +577,72 @@ class _MasterUserScreenState extends State<MasterUserScreen>
         _isLoading = true;
       });
 
-      final success = await authProvider.removeUserFromSchool(
-        userId: user.id,
-        schoolId: activeSchoolId,
+      final success = await authProvider.updateUserRole(
+        user.id,
+        TeacherRoles.softDeleted,
+        activeSchoolId,
+      );
+      
+      if (!mounted) return;
+
+      if (success) {
+        try {
+          final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+          await masterProvider.deleteTeacher(user.id);
+          await masterProvider.loadAllData(activeSchoolId);
+        } catch (_) {}
+        if (!mounted) return;
+        AppHelper.showSnackBar(context, 'Guru ${user.fullName} berhasil dinonaktifkan.');
+        _fetchUsers();
+      } else {
+        AppHelper.showSnackBar(
+          context, 
+          authProvider.errorMessage ?? 'Gagal menonaktifkan guru.', 
+          isError: true
+        );
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleReactivateUser(UserModel user) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final activeSchoolId = authProvider.activeSchoolId;
+
+    if (activeSchoolId == null || activeSchoolId.isEmpty) {
+      AppHelper.showSnackBar(context, 'ID Sekolah tidak valid.', isError: true);
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Aktifkan Kembali Guru', style: TextStyle(color: Colors.green)),
+        content: Text(
+          'Apakah Anda yakin ingin mengaktifkan kembali guru ${user.fullName}?\n\n'
+          'Akun ini akan dapat kembali mengisi dan mengubah jurnal di sekolah ini.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Aktifkan', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final success = await authProvider.updateUserRole(
+        user.id,
+        'guru',
+        activeSchoolId,
       );
       
       if (!mounted) return;
@@ -587,12 +653,12 @@ class _MasterUserScreenState extends State<MasterUserScreen>
           await masterProvider.loadAllData(activeSchoolId);
         } catch (_) {}
         if (!mounted) return;
-        AppHelper.showSnackBar(context, '${user.fullName} berhasil dikeluarkan dari sekolah.');
+        AppHelper.showSnackBar(context, 'Guru ${user.fullName} berhasil diaktifkan kembali.');
         _fetchUsers();
       } else {
         AppHelper.showSnackBar(
           context, 
-          authProvider.errorMessage ?? 'Gagal mengeluarkan guru dari sekolah.', 
+          authProvider.errorMessage ?? 'Gagal mengaktifkan kembali guru.', 
           isError: true
         );
         setState(() {
@@ -787,28 +853,36 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                       decoration: BoxDecoration(
                         color: isPendingTab
                             ? (isDark ? const Color(0xFF78350F).withValues(alpha: 0.35) : const Color(0xFFFFFBEB))
-                            : (isAdmin 
-                                ? (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEFF6FF)) 
-                                : (isDark ? const Color(0xFF134E4A).withValues(alpha: 0.35) : const Color(0xFFF0FDFA))),
+                            : user.isSoftDeleted
+                                ? (isDark ? const Color(0xFF7C2D12).withValues(alpha: 0.35) : const Color(0xFFFFEDD5))
+                                : (isAdmin 
+                                    ? (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.35) : const Color(0xFFEFF6FF)) 
+                                    : (isDark ? const Color(0xFF134E4A).withValues(alpha: 0.35) : const Color(0xFFF0FDFA))),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: isPendingTab
                               ? (isDark ? const Color(0xFF92400E) : const Color(0xFFFDE68A))
-                              : (isAdmin 
-                                  ? (isDark ? const Color(0xFF1E40AF) : const Color(0xFFC7D2FE)) 
-                                  : (isDark ? const Color(0xFF115E59) : const Color(0xFFCCFBF1)))
+                              : user.isSoftDeleted
+                                  ? (isDark ? const Color(0xFFC2410C) : const Color(0xFFFDBA74))
+                                  : (isAdmin 
+                                      ? (isDark ? const Color(0xFF1E40AF) : const Color(0xFFC7D2FE)) 
+                                      : (isDark ? const Color(0xFF115E59) : const Color(0xFFCCFBF1)))
                         ),
                       ),
                       child: Text(
-                        isPendingTab ? 'PENDING' : user.role.toUpperCase(),
+                        isPendingTab
+                            ? 'PENDING'
+                            : (user.isSoftDeleted ? 'NONAKTIF' : user.role.toUpperCase()),
                         style: TextStyle(
                           fontSize: 8.sp,
                           fontWeight: FontWeight.bold,
                           color: isPendingTab
                               ? (isDark ? const Color(0xFFFED7AA) : const Color(0xFFD97706))
-                              : (isAdmin 
-                                  ? (isDark ? const Color(0xFFDBEAFE) : const Color(0xFF2563EB)) 
-                                  : (isDark ? const Color(0xFF5EEAD4) : const Color(0xFF0D9488))),
+                              : user.isSoftDeleted
+                                  ? (isDark ? const Color(0xFFFDBA74) : const Color(0xFFEA580C))
+                                  : (isAdmin 
+                                      ? (isDark ? const Color(0xFFDBEAFE) : const Color(0xFF2563EB)) 
+                                      : (isDark ? const Color(0xFF5EEAD4) : const Color(0xFF0D9488))),
                         ),
                       ),
                     ),
@@ -913,7 +987,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                       ],
                     ),
                   ] else ...[
-                    // Switch to make admin, Delete button for Active Users
+                    // Switch to make admin, Deactivate / Reactivate button for Users
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -923,7 +997,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                             value: isAdmin,
                             activeThumbColor: const Color(0xFF2563EB),
                             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            onChanged: (isSuperAdmin || isCurrentUser || user.email.toLowerCase() == 'admin@jurnal.com')
+                            onChanged: (isSuperAdmin || isCurrentUser || user.isSoftDeleted || user.email.toLowerCase() == 'admin@jurnal.com')
                                 ? null
                                 : (val) => _handleRoleToggle(user, val),
                           ),
@@ -932,7 +1006,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                           'Admin',
                           style: TextStyle(
                             fontSize: 9.sp,
-                            color: (isSuperAdmin || isCurrentUser) 
+                            color: (isSuperAdmin || isCurrentUser || user.isSoftDeleted) 
                                 ? Colors.grey[400] 
                                 : Colors.grey[600],
                             fontWeight: FontWeight.w600,
@@ -941,13 +1015,22 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                       ],
                     ),
                     if (!isSuperAdmin && !isCurrentUser && !isAdmin) ...[
-                      IconButton(
-                        tooltip: 'Keluarkan dari Sekolah',
-                        icon: const Icon(Icons.delete_outline, color: Colors.red),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onPressed: () => _handleRemoveUser(user),
-                      ),
+                      if (user.isSoftDeleted)
+                        IconButton(
+                          tooltip: 'Aktifkan Kembali Guru',
+                          icon: const Icon(Icons.check_circle_outline_rounded, color: Colors.green),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () => _handleReactivateUser(user),
+                        )
+                      else
+                        IconButton(
+                          tooltip: 'Nonaktifkan Guru',
+                          icon: const Icon(Icons.person_off_rounded, color: Colors.orange),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () => _handleDeactivateUser(user),
+                        ),
                     ],
                   ],
                 ],
@@ -965,21 +1048,23 @@ class _MasterUserScreenState extends State<MasterUserScreen>
 
     final isSuperAdminUser = authProvider.currentUser?.role.toLowerCase() == 'superadmin';
 
-    final totalActiveUsers = _allUsers.where((u) => !u.isPending && u.status != 'pending' && u.status != 'pending_exit' && (u.status == null || u.status == 'active')).toList();
-    final totalGuruCount = totalActiveUsers.where((u) => u.role.toLowerCase() == 'guru' || u.role.toLowerCase() == 'teacher').length;
+    final totalActiveUsers = _allUsers.where((u) => !u.isPending && u.status != 'pending' && u.status != 'pending_exit').toList();
+    final totalGuruCount = totalActiveUsers.where((u) => (u.role.toLowerCase() == 'guru' || u.role.toLowerCase() == 'teacher') && !u.isSoftDeleted).length;
+    final totalNonaktifCount = totalActiveUsers.where((u) => u.isSoftDeleted).length;
     final totalAdminCount = totalActiveUsers.where((u) => u.role.toLowerCase() == 'admin' || u.role.toLowerCase() == 'superadmin').length;
 
     final activeUsers = _filteredUsers.where((u) {
-      // Guru yang belum disetujui (pending) DILARANG masuk Pengguna Aktif!
+      // Guru yang belum disetujui (pending) DILARANG masuk Pengguna!
       if (u.isPending || u.status == 'pending' || u.role.toLowerCase() == 'pending_guru') return false;
-      if (u.status != null && u.status != 'active') return false;
+      if (u.status != null && u.status != 'active' && u.status != 'deactivated') return false;
       final r = u.role.toLowerCase();
-      final isRole = r == 'guru' || r == 'admin' || r == 'superadmin' || r == 'teacher';
+      final isRole = r == 'guru' || r == 'admin' || r == 'superadmin' || r == 'teacher' || TeacherRoles.isSoftDeleted(r);
       if (!isRole) return false;
 
       if (_selectedRole == 'all') return true;
       if (_selectedRole == 'admin') return r == 'admin' || r == 'superadmin';
-      if (_selectedRole == 'guru') return r == 'guru' || r == 'teacher';
+      if (_selectedRole == 'guru') return (r == 'guru' || r == 'teacher') && !u.isSoftDeleted;
+      if (_selectedRole == 'nonaktif') return u.isSoftDeleted;
       return true;
     }).toList();
 
@@ -1022,9 +1107,9 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                       onPressed: () => _selectAll(_filteredUsers, authProvider),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                      tooltip: 'Keluarkan Massal',
-                      onPressed: _selectedIds.isEmpty ? null : _handleBatchRemoveUsers,
+                      icon: const Icon(Icons.person_off_rounded, color: Colors.orangeAccent),
+                      tooltip: 'Nonaktifkan Massal',
+                      onPressed: _selectedIds.isEmpty ? null : _handleBatchDeactivateUsers,
                     ),
                   ],
                 )
@@ -1122,10 +1207,17 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                                   ),
                                   AdminFilterItem(
                                     id: 'guru',
-                                    label: 'Guru',
+                                    label: 'Guru Aktif',
                                     icon: Icons.school_rounded,
                                     count: totalGuruCount,
                                   ),
+                                  if (totalNonaktifCount > 0)
+                                    AdminFilterItem(
+                                      id: 'nonaktif',
+                                      label: 'Nonaktif',
+                                      icon: Icons.person_off_rounded,
+                                      count: totalNonaktifCount,
+                                    ),
                                   AdminFilterItem(
                                     id: 'admin',
                                     label: 'Admin',

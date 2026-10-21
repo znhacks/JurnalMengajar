@@ -808,29 +808,33 @@ class SupabaseAuthRepository implements AuthRepository {
             );
           }
 
-          // 2. Emit active membership for the active users tab only if user is not globally pending
+          // 2. Emit active or deactivated membership for the school (so admin can manage/reactivate)
           if (!isUserPending) {
-            final activeMems = userMems.where((m) {
+            final schoolMems = userMems.where((m) {
               final s = m['status']?.toString().toLowerCase();
               final r = m['role']?.toString().toLowerCase();
-              return s == 'active' &&
-                  r != 'pending_guru' &&
-                  !TeacherRoles.isSoftDeleted(r);
+              return (s == 'active' || s == 'deactivated') &&
+                  r != 'pending_guru';
             }).toList();
 
-            if (activeMems.isNotEmpty) {
-              final hasAdmin = activeMems.any(
+            if (schoolMems.isNotEmpty) {
+              final hasAdmin = schoolMems.any(
                 (m) => m['role']?.toString().toLowerCase() == 'admin',
+              );
+              final isSoftDeleted = schoolMems.any(
+                (m) => TeacherRoles.isSoftDeleted(m['role']?.toString()),
               );
               final effectiveRole = hasAdmin
                   ? 'admin'
-                  : (activeMems.first['role']?.toString() ?? 'guru');
+                  : (isSoftDeleted
+                      ? TeacherRoles.softDeleted
+                      : (schoolMems.first['role']?.toString() ?? 'guru'));
               result.add(
                 UserModel.fromJson({
                   ...json,
                   'role': effectiveRole,
                   'membership_role': effectiveRole,
-                  'status': 'active',
+                  'status': isSoftDeleted ? 'deactivated' : 'active',
                   'school_id': cleanSchoolId,
                   'school_name': schoolName.isNotEmpty
                       ? schoolName
@@ -888,23 +892,51 @@ class SupabaseAuthRepository implements AuthRepository {
               'status': 'active',
             });
           }
-        } else {
-          // Setting or activating as 'guru'
-          final existingGuruList = await _supabase
+        } else if (TeacherRoles.isSoftDeleted(normalizedRole)) {
+          // Nonaktifkan Guru di sekolah ini:
+          // Keep user_schools membership so teacher retains read-only view, but role is set to softDeleted
+          final existingRows = await _supabase
               .from('user_schools')
               .select('id')
               .eq('user_id', userId)
-              .eq('school_id', cleanSchoolId)
-              .eq('role', 'guru');
+              .eq('school_id', cleanSchoolId);
 
-          if ((existingGuruList as List).isNotEmpty) {
+          if ((existingRows as List).isNotEmpty) {
             await _supabase
                 .from('user_schools')
                 .update({
+                  'role': TeacherRoles.softDeleted,
                   'status': 'active',
                   'updated_at': DateTime.now().toIso8601String(),
                 })
-                .eq('id', (existingGuruList as List).first['id']);
+                .eq('user_id', userId)
+                .eq('school_id', cleanSchoolId);
+          } else {
+            await _supabase.from('user_schools').insert({
+              'user_id': userId,
+              'school_id': cleanSchoolId,
+              'role': TeacherRoles.softDeleted,
+              'status': 'active',
+            });
+          }
+        } else {
+          // Setting or activating as 'guru' (active teacher)
+          final existingList = await _supabase
+              .from('user_schools')
+              .select('id, role')
+              .eq('user_id', userId)
+              .eq('school_id', cleanSchoolId);
+
+          if ((existingList as List).isNotEmpty) {
+            await _supabase
+                .from('user_schools')
+                .update({
+                  'role': 'guru',
+                  'status': 'active',
+                  'updated_at': DateTime.now().toIso8601String(),
+                })
+                .eq('user_id', userId)
+                .eq('school_id', cleanSchoolId);
           } else {
             await _supabase.from('user_schools').insert({
               'user_id': userId,

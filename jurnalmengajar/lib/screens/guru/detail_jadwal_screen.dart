@@ -210,7 +210,10 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
       );
     }
 
-    if (!isAdmin && _existingJournal == null && !_isFutureDate(schedule.date)) {
+    final isDeactivated = authProvider.currentUser?.isSoftDeleted == true ||
+        authProvider.isActiveSchoolDeactivated;
+
+    if (!isAdmin && !isDeactivated && _existingJournal == null && !_isFutureDate(schedule.date)) {
       return FormJurnalScreen(scheduleId: widget.scheduleId);
     }
 
@@ -333,7 +336,7 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                                 ),
                               ),
                             ),
-                            if (_existingJournal!.status == 'rejected') ...[
+                            if (_existingJournal!.status == 'rejected' && !isDeactivated) ...[
                               SizedBox(width: 12.w),
                               Expanded(
                                 child: ElevatedButton.icon(
@@ -352,10 +355,59 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                             ],
                           ],
                         )
-                      : _buildFutureDateBanner(context, schedule.date),
+                      : isDeactivated
+                          ? _buildDeactivatedBanner(context)
+                          : _buildFutureDateBanner(context, schedule.date),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDeactivatedBanner(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF78350F).withValues(alpha: 0.3) : const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? const Color(0xFFB45309) : const Color(0xFFF59E0B),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.lock_outline_rounded, color: Color(0xFFF59E0B), size: 22),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Akun Guru Dinonaktifkan',
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  'Anda dinonaktifkan sebagai guru di sekolah ini. Anda tetap dapat melihat seluruh jadwal dan riwayat kegiatan, tetapi tidak dapat mengisi jurnal baru.',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: isDark ? const Color(0xFFFCD34D) : const Color(0xFF78350F),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
