@@ -383,10 +383,18 @@ class AppRouter {
               pageBuilder: (context, state) {
                 final tab =
                     int.tryParse(state.uri.queryParameters['tab'] ?? '0') ?? 0;
+                final date = DateTime.tryParse(
+                  state.uri.queryParameters['date'] ?? '',
+                );
+                final teacherId = state.uri.queryParameters['teacher'];
                 return _buildCustomTransition(
                   context,
                   state,
-                  AdminJurnalListScreen(initialTabIndex: tab),
+                  AdminJurnalListScreen(
+                    initialTabIndex: tab,
+                    initialDate: date,
+                    initialTeacherId: teacherId,
+                  ),
                 );
               },
             ),
@@ -525,11 +533,20 @@ class AppRouter {
             ),
             GoRoute(
               path: '/admin/schedules',
-              pageBuilder: (context, state) => _buildCustomTransition(
-                context,
-                state,
-                const MasterScheduleScreen(),
-              ),
+              pageBuilder: (context, state) {
+                final date = DateTime.tryParse(
+                  state.uri.queryParameters['date'] ?? '',
+                );
+                final teacherId = state.uri.queryParameters['teacher'];
+                return _buildCustomTransition(
+                  context,
+                  state,
+                  MasterScheduleScreen(
+                    initialDate: date,
+                    initialTeacherId: teacherId,
+                  ),
+                );
+              },
             ),
             GoRoute(
               path: '/admin/settings',

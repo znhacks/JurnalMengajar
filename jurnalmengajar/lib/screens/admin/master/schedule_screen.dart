@@ -21,7 +21,17 @@ import '../../../services/excel_export_service.dart';
 import '../../../widgets/app_scaffold.dart';
 
 class MasterScheduleScreen extends StatefulWidget {
-  const MasterScheduleScreen({super.key});
+  /// When set, the list is scoped to this date (used by the dashboard stat card).
+  final DateTime? initialDate;
+
+  /// When set, the list is scoped to this teacher (used by the dashboard stat card).
+  final String? initialTeacherId;
+
+  const MasterScheduleScreen({
+    super.key,
+    this.initialDate,
+    this.initialTeacherId,
+  });
 
   @override
   State<MasterScheduleScreen> createState() => _MasterScheduleScreenState();
@@ -30,10 +40,15 @@ class MasterScheduleScreen extends StatefulWidget {
 class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
   String? _selectedPeriodId;
   String? _lastSchoolId;
+  DateTime? _filterDate;
+  String? _filterTeacherId;
 
   @override
   void initState() {
     super.initState();
+    _filterDate = widget.initialDate;
+    _filterTeacherId = widget.initialTeacherId;
+    _selectedDayFilter = widget.initialDate?.weekday ?? 0;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshData();
     });
@@ -41,19 +56,35 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
 
   Future<void> _refreshData({String? periodId}) async {
     if (!mounted) return;
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+    final masterProvider = Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    );
+    final scheduleProvider = Provider.of<ScheduleProvider>(
+      context,
+      listen: false,
+    );
+    final journalProvider = Provider.of<JournalProvider>(
+      context,
+      listen: false,
+    );
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    debugPrint('================================================================');
+    debugPrint(
+      '================================================================',
+    );
     debugPrint('[RUNTIME_DEBUG:MASTER_SCHEDULE] _refreshData initiated.');
-    debugPrint('[RUNTIME_DEBUG:MASTER_SCHEDULE] Auth: user=${authProvider.currentUser?.email}, role=${authProvider.activeRole}, schoolId=${authProvider.activeSchoolId}, schoolName="${authProvider.activeSchoolName}"');
+    debugPrint(
+      '[RUNTIME_DEBUG:MASTER_SCHEDULE] Auth: user=${authProvider.currentUser?.email}, role=${authProvider.activeRole}, schoolId=${authProvider.activeSchoolId}, schoolName="${authProvider.activeSchoolName}"',
+    );
 
     await masterProvider.loadAllData(authProvider.activeSchoolId);
 
-    final activeId = masterProvider.activePeriod?.id ??
-        (masterProvider.periods.isNotEmpty ? masterProvider.periods.first.id : null);
+    final activeId =
+        masterProvider.activePeriod?.id ??
+        (masterProvider.periods.isNotEmpty
+            ? masterProvider.periods.first.id
+            : null);
     final targetPeriodId = periodId ?? _selectedPeriodId ?? activeId;
     if (_selectedPeriodId != targetPeriodId) {
       setState(() {
@@ -62,12 +93,22 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
     }
 
     await Future.wait([
-      scheduleProvider.loadAllSchedules(authProvider.activeSchoolId, targetPeriodId),
-      journalProvider.loadAllJournals(authProvider.activeSchoolId, targetPeriodId),
+      scheduleProvider.loadAllSchedules(
+        authProvider.activeSchoolId,
+        targetPeriodId,
+      ),
+      journalProvider.loadAllJournals(
+        authProvider.activeSchoolId,
+        targetPeriodId,
+      ),
     ]);
 
-    debugPrint('[RUNTIME_DEBUG:MASTER_SCHEDULE] _refreshData complete -> Master Teachers: ${masterProvider.teachers.length}, Schedules: ${scheduleProvider.schedules.length}');
-    debugPrint('================================================================');
+    debugPrint(
+      '[RUNTIME_DEBUG:MASTER_SCHEDULE] _refreshData complete -> Master Teachers: ${masterProvider.teachers.length}, Schedules: ${scheduleProvider.schedules.length}',
+    );
+    debugPrint(
+      '================================================================',
+    );
   }
 
   Future<void> _onPeriodChanged(String newPeriodId) async {
@@ -75,51 +116,100 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
       _selectedPeriodId = newPeriodId;
     });
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+    final scheduleProvider = Provider.of<ScheduleProvider>(
+      context,
+      listen: false,
+    );
+    final journalProvider = Provider.of<JournalProvider>(
+      context,
+      listen: false,
+    );
 
     await Future.wait([
-      scheduleProvider.loadAllSchedules(authProvider.activeSchoolId, newPeriodId),
+      scheduleProvider.loadAllSchedules(
+        authProvider.activeSchoolId,
+        newPeriodId,
+      ),
       journalProvider.loadAllJournals(authProvider.activeSchoolId, newPeriodId),
     ]);
   }
 
   String getWeekdayName(int weekday) {
     switch (weekday) {
-      case 1: return 'Senin';
-      case 2: return 'Selasa';
-      case 3: return 'Rabu';
-      case 4: return 'Kamis';
-      case 5: return 'Jumat';
-      case 6: return 'Sabtu';
-      case 7: return 'Minggu';
-      default: return '';
+      case 1:
+        return 'Senin';
+      case 2:
+        return 'Selasa';
+      case 3:
+        return 'Rabu';
+      case 4:
+        return 'Kamis';
+      case 5:
+        return 'Jumat';
+      case 6:
+        return 'Sabtu';
+      case 7:
+        return 'Minggu';
+      default:
+        return '';
     }
   }
 
-  void _showFormDialog({GroupedMasterSchedule? groupedSchedule, String? initialTeacherId}) {
+  void _showFormDialog({
+    GroupedMasterSchedule? groupedSchedule,
+    String? initialTeacherId,
+  }) {
     final outerContext = context;
-    final noteController = TextEditingController(text: groupedSchedule?.note ?? '');
+    final noteController = TextEditingController(
+      text: groupedSchedule?.note ?? '',
+    );
     DateTime startDate = groupedSchedule?.startDate ?? DateTime.now();
     bool isRoutine = groupedSchedule != null
         ? (groupedSchedule.startDate.year != groupedSchedule.endDate.year ||
-           groupedSchedule.startDate.month != groupedSchedule.endDate.month ||
-           groupedSchedule.startDate.day != groupedSchedule.endDate.day)
+              groupedSchedule.startDate.month !=
+                  groupedSchedule.endDate.month ||
+              groupedSchedule.startDate.day != groupedSchedule.endDate.day)
         : false;
     bool isActive = groupedSchedule?.isActive ?? true;
 
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+    final masterProvider = Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    );
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
+
     // Default Dropdown Values
-    String? selectedPeriodId = groupedSchedule?.periodId ?? _selectedPeriodId ?? masterProvider.activePeriod?.id ?? (masterProvider.periods.isNotEmpty ? masterProvider.periods.first.id : null);
-    String? selectedTeacherId = groupedSchedule?.teacherId ?? initialTeacherId ?? (masterProvider.teachers.isNotEmpty ? masterProvider.teachers.first.id : null);
-    String? selectedClassId = groupedSchedule?.classId ?? (masterProvider.classes.isNotEmpty ? masterProvider.classes.first.id : null);
-    String? selectedSubjectId = groupedSchedule?.subjectId ?? (masterProvider.subjects.isNotEmpty ? masterProvider.subjects.first.id : null);
-    
-    List<int> selectedHours = groupedSchedule != null 
-        ? List<int>.from(groupedSchedule.teachingHours) 
-        : [masterProvider.hours.isNotEmpty ? masterProvider.hours.first.teachingHour : 1];
+    String? selectedPeriodId =
+        groupedSchedule?.periodId ??
+        _selectedPeriodId ??
+        masterProvider.activePeriod?.id ??
+        (masterProvider.periods.isNotEmpty
+            ? masterProvider.periods.first.id
+            : null);
+    String? selectedTeacherId =
+        groupedSchedule?.teacherId ??
+        initialTeacherId ??
+        (masterProvider.teachers.isNotEmpty
+            ? masterProvider.teachers.first.id
+            : null);
+    String? selectedClassId =
+        groupedSchedule?.classId ??
+        (masterProvider.classes.isNotEmpty
+            ? masterProvider.classes.first.id
+            : null);
+    String? selectedSubjectId =
+        groupedSchedule?.subjectId ??
+        (masterProvider.subjects.isNotEmpty
+            ? masterProvider.subjects.first.id
+            : null);
+
+    List<int> selectedHours = groupedSchedule != null
+        ? List<int>.from(groupedSchedule.teachingHours)
+        : [
+            masterProvider.hours.isNotEmpty
+                ? masterProvider.hours.first.teachingHour
+                : 1,
+          ];
     bool isSavingSchedule = false;
 
     showModalBottomSheet(
@@ -160,7 +250,9 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    groupedSchedule == null ? 'Tambah Jadwal Baru' : 'Edit Jadwal',
+                    groupedSchedule == null
+                        ? 'Tambah Jadwal Baru'
+                        : 'Edit Jadwal',
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
@@ -187,7 +279,11 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                         initialValue: selectedPeriodId,
                         hint: Text(
                           'Pilih Periode',
-                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                         dropdownColor: Theme.of(context).colorScheme.surface,
                         style: TextStyle(
@@ -195,8 +291,13 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                         decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
-                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 14.h,
+                          ),
+                          fillColor: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
                           filled: true,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10.r),
@@ -208,11 +309,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                             value: p.id,
                             child: Text(
                               p.name,
-                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                             ),
                           );
                         }).toList(),
-                        onChanged: (val) => setDialogState(() => selectedPeriodId = val),
+                        onChanged: (val) =>
+                            setDialogState(() => selectedPeriodId = val),
                       ),
                     ],
                   ),
@@ -237,26 +341,36 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                             InkWell(
                               onTap: selectStartDate,
                               child: Container(
-                                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12.w,
+                                  vertical: 14.h,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(10.r),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       AppHelper.formatDateShort(startDate),
                                       style: TextStyle(
                                         fontSize: 13.sp,
-                                        color: Theme.of(context).colorScheme.onSurface,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
                                     Icon(
                                       Icons.calendar_month_outlined,
                                       size: 16.sp,
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                     ),
                                   ],
                                 ),
@@ -283,16 +397,27 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                               initialValue: selectedClassId,
                               hint: Text(
                                 'Pilih Kelas',
-                                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
                               ),
-                              dropdownColor: Theme.of(context).colorScheme.surface,
+                              dropdownColor: Theme.of(
+                                context,
+                              ).colorScheme.surface,
                               style: TextStyle(
                                 fontSize: 13.sp,
                                 color: Theme.of(context).colorScheme.onSurface,
                               ),
                               decoration: InputDecoration(
-                                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
-                                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12.w,
+                                  vertical: 14.h,
+                                ),
+                                fillColor: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
                                 filled: true,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10.r),
@@ -304,11 +429,16 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                   value: c.id,
                                   child: Text(
                                     c.name,
-                                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                    ),
                                   ),
                                 );
                               }).toList(),
-                              onChanged: (val) => setDialogState(() => selectedClassId = val),
+                              onChanged: (val) =>
+                                  setDialogState(() => selectedClassId = val),
                             ),
                           ],
                         ),
@@ -333,14 +463,19 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                       if (masterProvider.hours.isEmpty)
                         Text(
                           'Belum ada jam pelajaran',
-                          style: TextStyle(color: Colors.red[600], fontSize: 13.sp),
+                          style: TextStyle(
+                            color: Colors.red[600],
+                            fontSize: 13.sp,
+                          ),
                         )
                       else ...[
                         Wrap(
                           spacing: 8.w,
                           runSpacing: 8.h,
                           children: masterProvider.hours.map((h) {
-                            final isSelected = selectedHours.contains(h.teachingHour);
+                            final isSelected = selectedHours.contains(
+                              h.teachingHour,
+                            );
                             return InkWell(
                               onTap: () {
                                 setDialogState(() {
@@ -348,7 +483,11 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                     if (selectedHours.length > 1) {
                                       selectedHours.remove(h.teachingHour);
                                     } else {
-                                      AppHelper.showSnackBar(context, 'Pilih minimal satu jam pelajaran', isError: true);
+                                      AppHelper.showSnackBar(
+                                        context,
+                                        'Pilih minimal satu jam pelajaran',
+                                        isError: true,
+                                      );
                                     }
                                   } else {
                                     selectedHours.add(h.teachingHour);
@@ -363,12 +502,18 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                 decoration: BoxDecoration(
                                   color: isSelected
                                       ? const Color(0xFF2563EB)
-                                      : (isDark ? Theme.of(context).colorScheme.surfaceContainerHighest : Colors.white),
+                                      : (isDark
+                                            ? Theme.of(context)
+                                                  .colorScheme
+                                                  .surfaceContainerHighest
+                                            : Colors.white),
                                   borderRadius: BorderRadius.circular(8.r),
                                   border: Border.all(
                                     color: isSelected
                                         ? const Color(0xFF2563EB)
-                                        : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                                        : (isDark
+                                              ? const Color(0xFF334155)
+                                              : const Color(0xFFE2E8F0)),
                                     width: 1.5,
                                   ),
                                 ),
@@ -377,7 +522,11 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                   style: TextStyle(
                                     fontSize: 14.sp,
                                     fontWeight: FontWeight.bold,
-                                    color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
                                   ),
                                 ),
                               ),
@@ -406,7 +555,11 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                         initialValue: selectedSubjectId,
                         hint: Text(
                           'Pilih Pelajaran',
-                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                         dropdownColor: Theme.of(context).colorScheme.surface,
                         style: TextStyle(
@@ -414,8 +567,13 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                         decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
-                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 14.h,
+                          ),
+                          fillColor: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
                           filled: true,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10.r),
@@ -427,11 +585,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                             value: s.id,
                             child: Text(
                               s.name,
-                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                             ),
                           );
                         }).toList(),
-                        onChanged: (val) => setDialogState(() => selectedSubjectId = val),
+                        onChanged: (val) =>
+                            setDialogState(() => selectedSubjectId = val),
                       ),
                     ],
                   ),
@@ -454,7 +615,11 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                         initialValue: selectedTeacherId,
                         hint: Text(
                           'Pilih Guru',
-                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                         dropdownColor: Theme.of(context).colorScheme.surface,
                         style: TextStyle(
@@ -462,8 +627,13 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                         decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
-                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 14.h,
+                          ),
+                          fillColor: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
                           filled: true,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10.r),
@@ -475,11 +645,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                             value: t.id,
                             child: Text(
                               t.name,
-                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                             ),
                           );
                         }).toList(),
-                        onChanged: (val) => setDialogState(() => selectedTeacherId = val),
+                        onChanged: (val) =>
+                            setDialogState(() => selectedTeacherId = val),
                       ),
                     ],
                   ),
@@ -501,10 +674,17 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                       hintText: 'Opsional',
                       hintStyle: TextStyle(
                         fontSize: 13.sp,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                       ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 14.h,
+                      ),
+                      fillColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                       filled: true,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10.r),
@@ -543,12 +723,19 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
 
                   // Buat Jadwal Rutin Switch Card
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 12.h,
+                    ),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.25) : const Color(0xFFEFF6FF),
+                      color: isDark
+                          ? const Color(0xFF1E3A8A).withValues(alpha: 0.25)
+                          : const Color(0xFFEFF6FF),
                       borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(
-                        color: isDark ? const Color(0xFF1E40AF).withValues(alpha: 0.5) : const Color(0xFFDBEAFE),
+                        color: isDark
+                            ? const Color(0xFF1E40AF).withValues(alpha: 0.5)
+                            : const Color(0xFFDBEAFE),
                         width: 1.5,
                       ),
                     ),
@@ -557,12 +744,16 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                         Container(
                           padding: EdgeInsets.all(8.w),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.5) : const Color(0xFFDBEAFE),
+                            color: isDark
+                                ? const Color(0xFF1E3A8A).withValues(alpha: 0.5)
+                                : const Color(0xFFDBEAFE),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.sync_alt,
-                            color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB),
+                            color: isDark
+                                ? const Color(0xFF93C5FD)
+                                : const Color(0xFF2563EB),
                             size: 20,
                           ),
                         ),
@@ -576,7 +767,9 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                 style: TextStyle(
                                   fontSize: 13.sp,
                                   fontWeight: FontWeight.bold,
-                                  color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E40AF),
+                                  color: isDark
+                                      ? const Color(0xFF93C5FD)
+                                      : const Color(0xFF1E40AF),
                                 ),
                               ),
                               SizedBox(height: 2.h),
@@ -584,7 +777,9 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                 'Otomatis membuat jadwal mingguan untuk 6 bulan ke depan (1 Semester)',
                                 style: TextStyle(
                                   fontSize: 10.sp,
-                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                  color: isDark
+                                      ? const Color(0xFF94A3B8)
+                                      : const Color(0xFF64748B),
                                 ),
                               ),
                             ],
@@ -609,297 +804,459 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                     onPressed: isSavingSchedule
                         ? null
                         : () async {
-                      if (isSavingSchedule) return;
-                      setDialogState(() => isSavingSchedule = true);
-                      if (selectedPeriodId == null || selectedTeacherId == null || selectedClassId == null || selectedSubjectId == null) {
-                        FocusScope.of(context).unfocus();
-                        await showDialog(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: const Text('Form Belum Lengkap'),
-                            content: const Text('Harap isi semua pilihan (Periode, Guru, Kelas, Mata Pelajaran).'),
-                            actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Oke'))],
-                          ),
-                        );
-                        setDialogState(() => isSavingSchedule = false);
-                        return;
-                      }
-
-                      // Check teacher expertise match
-                      final selectedTeacher = masterProvider.teachers.firstWhere((t) => t.id == selectedTeacherId);
-                      final selectedSubject = masterProvider.subjects.firstWhere((s) => s.id == selectedSubjectId);
-
-                      final teacherPos = selectedTeacher.position.trim().toLowerCase();
-                      final subjectName = selectedSubject.name.trim().toLowerCase();
-                      bool isConflicting = false;
-                      if (teacherPos.startsWith('guru ') && teacherPos != 'guru') {
-                        final expertise = teacherPos.replaceFirst('guru ', '').trim();
-                        isConflicting = !subjectName.contains(expertise) && !expertise.contains(subjectName);
-                      }
-
-                      if (isConflicting) {
-                        FocusScope.of(context).unfocus();
-                        final confirmExpertise = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-                            title: Row(
-                              children: [
-                                Icon(Icons.warning_amber_rounded, color: const Color(0xFFD97706), size: 28.sp),
-                                SizedBox(width: 8.w),
-                                const Text('Peringatan Keahlian'),
-                              ],
-                            ),
-                            content: Text(
-                              'Guru "${selectedTeacher.name}" memiliki keahlian sebagai "${selectedTeacher.position}". '
-                              'Mata pelajaran yang dipilih adalah "${selectedSubject.name}".\n\n'
-                              'Apakah Anda yakin ingin menjadwalkan guru ini untuk pelajaran yang berbeda?',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, false),
-                                child: const Text('Batal'),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, true),
-                                child: const Text(
-                                  'Lanjutkan',
-                                  style: TextStyle(color: Color(0xFFD97706), fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (confirmExpertise != true) {
-                          setDialogState(() => isSavingSchedule = false);
-                          return;
-                        }
-                      }
-
-                      if (!context.mounted) return;
-
-                      final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-                      final dialogContext = context;
-                      bool success = false;
-
-                      final DateTime calculatedEndDate = isRoutine
-                          ? DateTime(startDate.year, startDate.month + 6, startDate.day)
-                          : startDate;
-                      final List<int> selectedWeekdays = [startDate.weekday];
-
-                      if (groupedSchedule == null) {
-                        // Generate batch schedules (Create Mode)
-                        final List<ScheduleModel> schedulesToCreate = [];
-                        DateTime current = startDate;
-                        while (!current.isAfter(calculatedEndDate)) {
-                          if (selectedWeekdays.contains(current.weekday)) {
-                            for (final hour in selectedHours) {
-                              schedulesToCreate.add(
-                                ScheduleModel(
-                                  id: '',
-                                  periodId: selectedPeriodId!,
-                                  date: current,
-                                  teachingHour: hour,
-                                  classId: selectedClassId!,
-                                  subjectId: selectedSubjectId!,
-                                  teacherId: selectedTeacherId!,
-                                  note: noteController.text.trim().isEmpty ? null : noteController.text.trim(),
-                                  isActive: isActive,
-                                  schoolId: authProvider.activeSchoolId,
+                            if (isSavingSchedule) return;
+                            setDialogState(() => isSavingSchedule = true);
+                            if (selectedPeriodId == null ||
+                                selectedTeacherId == null ||
+                                selectedClassId == null ||
+                                selectedSubjectId == null) {
+                              FocusScope.of(context).unfocus();
+                              await showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Form Belum Lengkap'),
+                                  content: const Text(
+                                    'Harap isi semua pilihan (Periode, Guru, Kelas, Mata Pelajaran).',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx),
+                                      child: const Text('Oke'),
+                                    ),
+                                  ],
                                 ),
                               );
+                              setDialogState(() => isSavingSchedule = false);
+                              return;
                             }
-                          }
-                          current = current.add(const Duration(days: 1));
-                        }
 
-                        if (schedulesToCreate.isEmpty) {
-                          FocusScope.of(context).unfocus();
-                          await showDialog(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Tidak Ada Jadwal'),
-                              content: const Text('Tidak ada jadwal yang cocok dengan hari aktif pada rentang tanggal tersebut.'),
-                              actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Oke'))],
-                            ),
-                          );
-                          if (dialogContext.mounted) {
-                            setDialogState(() => isSavingSchedule = false);
-                          }
-                          return;
-                        }
+                            // Check teacher expertise match
+                            final selectedTeacher = masterProvider.teachers
+                                .firstWhere((t) => t.id == selectedTeacherId);
+                            final selectedSubject = masterProvider.subjects
+                                .firstWhere((s) => s.id == selectedSubjectId);
 
-                        success = await scheduleProvider.createMultipleSchedules(schedulesToCreate, masterProvider.teachers, masterProvider.classes);
-                      } else {
-                        // Edit Mode
-                        final journalProvider = Provider.of<JournalProvider>(context, listen: false);
-                        final hasJournal = journalProvider.journals.any((j) => groupedSchedule.scheduleIds.contains(j.scheduleId));
-                        
-                        final sameDates = startDate.year == groupedSchedule.startDate.year &&
-                            startDate.month == groupedSchedule.startDate.month &&
-                            startDate.day == groupedSchedule.startDate.day &&
-                            calculatedEndDate.year == groupedSchedule.endDate.year &&
-                            calculatedEndDate.month == groupedSchedule.endDate.month &&
-                            calculatedEndDate.day == groupedSchedule.endDate.day;
-                        final sameWeekdays = selectedWeekdays.length == groupedSchedule.weekdays.length && selectedWeekdays.every(groupedSchedule.weekdays.contains);
-                        final sameHours = selectedHours.length == groupedSchedule.teachingHours.length && selectedHours.every(groupedSchedule.teachingHours.contains);
+                            final teacherPos = selectedTeacher.position
+                                .trim()
+                                .toLowerCase();
+                            final subjectName = selectedSubject.name
+                                .trim()
+                                .toLowerCase();
+                            bool isConflicting = false;
+                            if (teacherPos.startsWith('guru ') &&
+                                teacherPos != 'guru') {
+                              final expertise = teacherPos
+                                  .replaceFirst('guru ', '')
+                                  .trim();
+                              isConflicting =
+                                  !subjectName.contains(expertise) &&
+                                  !expertise.contains(subjectName);
+                            }
 
-                        if (hasJournal && !(sameDates && sameWeekdays && sameHours)) {
-                          FocusScope.of(context).unfocus();
-                          final confirmChange = await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-                              title: const Row(
-                                children: [
-                                  Icon(Icons.warning_amber_rounded, color: Color(0xFFBA1A1A), size: 28),
-                                  SizedBox(width: 8),
-                                  Text('Konfirmasi Ubah Hari/Jam'),
-                                ],
-                              ),
-                              content: const Text(
-                                'Mengubah tanggal, hari, atau jam akan menghapus seluruh jurnal mengajar yang sudah diisi pada jadwal ini secara permanen.\n\n'
-                                'Apakah Anda yakin ingin melanjutkan?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('Batal'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: const Text(
-                                    'Lanjutkan',
-                                    style: TextStyle(color: Color(0xFFBA1A1A), fontWeight: FontWeight.bold),
+                            if (isConflicting) {
+                              FocusScope.of(context).unfocus();
+                              final confirmExpertise = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16.r),
                                   ),
+                                  title: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.warning_amber_rounded,
+                                        color: const Color(0xFFD97706),
+                                        size: 28.sp,
+                                      ),
+                                      SizedBox(width: 8.w),
+                                      const Text('Peringatan Keahlian'),
+                                    ],
+                                  ),
+                                  content: Text(
+                                    'Guru "${selectedTeacher.name}" memiliki keahlian sebagai "${selectedTeacher.position}". '
+                                    'Mata pelajaran yang dipilih adalah "${selectedSubject.name}".\n\n'
+                                    'Apakah Anda yakin ingin menjadwalkan guru ini untuk pelajaran yang berbeda?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, false),
+                                      child: const Text('Batal'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                      child: const Text(
+                                        'Lanjutkan',
+                                        style: TextStyle(
+                                          color: Color(0xFFD97706),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          );
-                          if (confirmChange != true) {
-                            if (dialogContext.mounted) {
-                              setDialogState(() => isSavingSchedule = false);
+                              );
+                              if (confirmExpertise != true) {
+                                setDialogState(() => isSavingSchedule = false);
+                                return;
+                              }
                             }
-                            return;
-                          }
-                        }
 
-                        if (hasJournal && sameDates && sameWeekdays && sameHours) {
-                          bool allSuccess = true;
-                          for (final id in groupedSchedule.scheduleIds) {
-                            final original = scheduleProvider.schedules.firstWhere((s) => s.id == id);
-                            final updatedSched = ScheduleModel(
-                              id: id,
-                              periodId: selectedPeriodId!,
-                              date: original.date,
-                              teachingHour: original.teachingHour,
-                              classId: selectedClassId!,
-                              subjectId: selectedSubjectId!,
-                              teacherId: selectedTeacherId!,
-                              note: noteController.text.trim().isEmpty ? null : noteController.text.trim(),
-                              isActive: isActive,
-                              schoolId: authProvider.activeSchoolId,
-                            );
-                            final res = await scheduleProvider.updateSchedule(updatedSched, masterProvider.teachers, masterProvider.classes);
-                            if (!res) allSuccess = false;
-                          }
-                          success = allSuccess;
-                        } else {
-                          // Safe edit: delete old and recreate
-                          final bool deleteSuccess = await scheduleProvider.deleteMultipleSchedules(groupedSchedule.scheduleIds);
-                          if (!dialogContext.mounted) return;
-                          if (!deleteSuccess) {
-                            FocusScope.of(context).unfocus();
-                            await showDialog(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: const Text('Gagal Memperbarui'),
-                                content: const Text('Gagal memperbarui jadwal (Gagal menghapus jadwal lama).'),
-                                actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Oke'))],
-                              ),
-                            );
-                            if (dialogContext.mounted) {
-                              setDialogState(() => isSavingSchedule = false);
-                            }
-                            return;
-                          }
-                          
-                          final List<ScheduleModel> schedulesToCreate = [];
-                          DateTime current = startDate;
-                          while (!current.isAfter(calculatedEndDate)) {
-                            if (selectedWeekdays.contains(current.weekday)) {
-                              for (final hour in selectedHours) {
-                                schedulesToCreate.add(
-                                  ScheduleModel(
-                                    id: '',
+                            if (!context.mounted) return;
+
+                            final scheduleProvider =
+                                Provider.of<ScheduleProvider>(
+                                  context,
+                                  listen: false,
+                                );
+                            final dialogContext = context;
+                            bool success = false;
+
+                            final DateTime calculatedEndDate = isRoutine
+                                ? DateTime(
+                                    startDate.year,
+                                    startDate.month + 6,
+                                    startDate.day,
+                                  )
+                                : startDate;
+                            final List<int> selectedWeekdays = [
+                              startDate.weekday,
+                            ];
+
+                            if (groupedSchedule == null) {
+                              // Generate batch schedules (Create Mode)
+                              final List<ScheduleModel> schedulesToCreate = [];
+                              DateTime current = startDate;
+                              while (!current.isAfter(calculatedEndDate)) {
+                                if (selectedWeekdays.contains(
+                                  current.weekday,
+                                )) {
+                                  for (final hour in selectedHours) {
+                                    schedulesToCreate.add(
+                                      ScheduleModel(
+                                        id: '',
+                                        periodId: selectedPeriodId!,
+                                        date: current,
+                                        teachingHour: hour,
+                                        classId: selectedClassId!,
+                                        subjectId: selectedSubjectId!,
+                                        teacherId: selectedTeacherId!,
+                                        note: noteController.text.trim().isEmpty
+                                            ? null
+                                            : noteController.text.trim(),
+                                        isActive: isActive,
+                                        schoolId: authProvider.activeSchoolId,
+                                      ),
+                                    );
+                                  }
+                                }
+                                current = current.add(const Duration(days: 1));
+                              }
+
+                              if (schedulesToCreate.isEmpty) {
+                                FocusScope.of(context).unfocus();
+                                await showDialog(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('Tidak Ada Jadwal'),
+                                    content: const Text(
+                                      'Tidak ada jadwal yang cocok dengan hari aktif pada rentang tanggal tersebut.',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx),
+                                        child: const Text('Oke'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (dialogContext.mounted) {
+                                  setDialogState(
+                                    () => isSavingSchedule = false,
+                                  );
+                                }
+                                return;
+                              }
+
+                              success = await scheduleProvider
+                                  .createMultipleSchedules(
+                                    schedulesToCreate,
+                                    masterProvider.teachers,
+                                    masterProvider.classes,
+                                  );
+                            } else {
+                              // Edit Mode
+                              final journalProvider =
+                                  Provider.of<JournalProvider>(
+                                    context,
+                                    listen: false,
+                                  );
+                              final hasJournal = journalProvider.journals.any(
+                                (j) => groupedSchedule.scheduleIds.contains(
+                                  j.scheduleId,
+                                ),
+                              );
+
+                              final sameDates =
+                                  startDate.year ==
+                                      groupedSchedule.startDate.year &&
+                                  startDate.month ==
+                                      groupedSchedule.startDate.month &&
+                                  startDate.day ==
+                                      groupedSchedule.startDate.day &&
+                                  calculatedEndDate.year ==
+                                      groupedSchedule.endDate.year &&
+                                  calculatedEndDate.month ==
+                                      groupedSchedule.endDate.month &&
+                                  calculatedEndDate.day ==
+                                      groupedSchedule.endDate.day;
+                              final sameWeekdays =
+                                  selectedWeekdays.length ==
+                                      groupedSchedule.weekdays.length &&
+                                  selectedWeekdays.every(
+                                    groupedSchedule.weekdays.contains,
+                                  );
+                              final sameHours =
+                                  selectedHours.length ==
+                                      groupedSchedule.teachingHours.length &&
+                                  selectedHours.every(
+                                    groupedSchedule.teachingHours.contains,
+                                  );
+
+                              if (hasJournal &&
+                                  !(sameDates && sameWeekdays && sameHours)) {
+                                FocusScope.of(context).unfocus();
+                                final confirmChange = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                    ),
+                                    title: const Row(
+                                      children: [
+                                        Icon(
+                                          Icons.warning_amber_rounded,
+                                          color: Color(0xFFBA1A1A),
+                                          size: 28,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text('Konfirmasi Ubah Hari/Jam'),
+                                      ],
+                                    ),
+                                    content: const Text(
+                                      'Mengubah tanggal, hari, atau jam akan menghapus seluruh jurnal mengajar yang sudah diisi pada jadwal ini secara permanen.\n\n'
+                                      'Apakah Anda yakin ingin melanjutkan?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, false),
+                                        child: const Text('Batal'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, true),
+                                        child: const Text(
+                                          'Lanjutkan',
+                                          style: TextStyle(
+                                            color: Color(0xFFBA1A1A),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirmChange != true) {
+                                  if (dialogContext.mounted) {
+                                    setDialogState(
+                                      () => isSavingSchedule = false,
+                                    );
+                                  }
+                                  return;
+                                }
+                              }
+
+                              if (hasJournal &&
+                                  sameDates &&
+                                  sameWeekdays &&
+                                  sameHours) {
+                                bool allSuccess = true;
+                                for (final id in groupedSchedule.scheduleIds) {
+                                  final original = scheduleProvider.schedules
+                                      .firstWhere((s) => s.id == id);
+                                  final updatedSched = ScheduleModel(
+                                    id: id,
                                     periodId: selectedPeriodId!,
-                                    date: current,
-                                    teachingHour: hour,
+                                    date: original.date,
+                                    teachingHour: original.teachingHour,
                                     classId: selectedClassId!,
                                     subjectId: selectedSubjectId!,
                                     teacherId: selectedTeacherId!,
-                                    note: noteController.text.trim().isEmpty ? null : noteController.text.trim(),
+                                    note: noteController.text.trim().isEmpty
+                                        ? null
+                                        : noteController.text.trim(),
                                     isActive: isActive,
                                     schoolId: authProvider.activeSchoolId,
+                                  );
+                                  final res = await scheduleProvider
+                                      .updateSchedule(
+                                        updatedSched,
+                                        masterProvider.teachers,
+                                        masterProvider.classes,
+                                      );
+                                  if (!res) allSuccess = false;
+                                }
+                                success = allSuccess;
+                              } else {
+                                // Safe edit: delete old and recreate
+                                final bool deleteSuccess =
+                                    await scheduleProvider
+                                        .deleteMultipleSchedules(
+                                          groupedSchedule.scheduleIds,
+                                        );
+                                if (!dialogContext.mounted) return;
+                                if (!deleteSuccess) {
+                                  FocusScope.of(context).unfocus();
+                                  await showDialog(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Text('Gagal Memperbarui'),
+                                      content: const Text(
+                                        'Gagal memperbarui jadwal (Gagal menghapus jadwal lama).',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(ctx),
+                                          child: const Text('Oke'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (dialogContext.mounted) {
+                                    setDialogState(
+                                      () => isSavingSchedule = false,
+                                    );
+                                  }
+                                  return;
+                                }
+
+                                final List<ScheduleModel> schedulesToCreate =
+                                    [];
+                                DateTime current = startDate;
+                                while (!current.isAfter(calculatedEndDate)) {
+                                  if (selectedWeekdays.contains(
+                                    current.weekday,
+                                  )) {
+                                    for (final hour in selectedHours) {
+                                      schedulesToCreate.add(
+                                        ScheduleModel(
+                                          id: '',
+                                          periodId: selectedPeriodId!,
+                                          date: current,
+                                          teachingHour: hour,
+                                          classId: selectedClassId!,
+                                          subjectId: selectedSubjectId!,
+                                          teacherId: selectedTeacherId!,
+                                          note:
+                                              noteController.text.trim().isEmpty
+                                              ? null
+                                              : noteController.text.trim(),
+                                          isActive: isActive,
+                                          schoolId: authProvider.activeSchoolId,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                  current = current.add(
+                                    const Duration(days: 1),
+                                  );
+                                }
+
+                                if (schedulesToCreate.isEmpty) {
+                                  FocusScope.of(context).unfocus();
+                                  await showDialog(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Text('Tidak Ada Jadwal'),
+                                      content: const Text(
+                                        'Tidak ada jadwal yang cocok dengan hari aktif pada rentang tanggal tersebut.',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(ctx),
+                                          child: const Text('Oke'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (dialogContext.mounted) {
+                                    setDialogState(
+                                      () => isSavingSchedule = false,
+                                    );
+                                  }
+                                  return;
+                                }
+                                success = await scheduleProvider
+                                    .createMultipleSchedules(
+                                      schedulesToCreate,
+                                      masterProvider.teachers,
+                                      masterProvider.classes,
+                                    );
+                              }
+                            }
+
+                            if (!context.mounted || !dialogContext.mounted) {
+                              return;
+                            }
+
+                            if (success) {
+                              final messenger = ScaffoldMessenger.of(
+                                outerContext,
+                              );
+                              Navigator.pop(dialogContext);
+                              if (outerContext.mounted) {
+                                messenger.showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Jadwal berhasil disimpan!'),
                                   ),
                                 );
                               }
+                            } else {
+                              // Dismiss keyboard first
+                              FocusScope.of(context).unfocus();
+                              final errMsg =
+                                  scheduleProvider.errorMessage ??
+                                  'Gagal menyimpan jadwal.';
+                              await showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  icon: const Icon(
+                                    Icons.warning_amber_rounded,
+                                    color: Color(0xFFB45309),
+                                    size: 40,
+                                  ),
+                                  title: const Text(
+                                    'Tidak Dapat Menyimpan',
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  content: Text(
+                                    errMsg,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx),
+                                      child: const Text('Mengerti'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (dialogContext.mounted) {
+                                setDialogState(() => isSavingSchedule = false);
+                              }
                             }
-                            current = current.add(const Duration(days: 1));
-                          }
-                          
-                          if (schedulesToCreate.isEmpty) {
-                            FocusScope.of(context).unfocus();
-                            await showDialog(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: const Text('Tidak Ada Jadwal'),
-                                content: const Text('Tidak ada jadwal yang cocok dengan hari aktif pada rentang tanggal tersebut.'),
-                                actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Oke'))],
-                              ),
-                            );
-                            if (dialogContext.mounted) {
-                              setDialogState(() => isSavingSchedule = false);
-                            }
-                            return;
-                          }
-                          success = await scheduleProvider.createMultipleSchedules(schedulesToCreate, masterProvider.teachers, masterProvider.classes);
-                        }
-                      }
-
-                      if (!context.mounted || !dialogContext.mounted) return;
-
-                      if (success) {
-                        final messenger = ScaffoldMessenger.of(outerContext);
-                        Navigator.pop(dialogContext);
-                        if (outerContext.mounted) {
-                          messenger.showSnackBar(
-                            const SnackBar(content: Text('Jadwal berhasil disimpan!')),
-                          );
-                        }
-                      } else {
-                        // Dismiss keyboard first
-                        FocusScope.of(context).unfocus();
-                        final errMsg = scheduleProvider.errorMessage ?? 'Gagal menyimpan jadwal.';
-                        await showDialog(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            icon: const Icon(Icons.warning_amber_rounded, color: Color(0xFFB45309), size: 40),
-                            title: const Text('Tidak Dapat Menyimpan', textAlign: TextAlign.center),
-                            content: Text(errMsg, textAlign: TextAlign.center),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx),
-                                child: const Text('Mengerti'),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (dialogContext.mounted) {
-                          setDialogState(() => isSavingSchedule = false);
-                        }
-                      }
-                    },
+                          },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF38BDF8),
                       foregroundColor: Colors.white,
@@ -913,15 +1270,18 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                         ? SizedBox(
                             width: 18.w,
                             height: 18.h,
-                            child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: const CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
                           )
                         : Text(
                             'Simpan',
-                      style: TextStyle(
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                   SizedBox(height: 20.h),
                 ],
@@ -934,18 +1294,32 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
   }
 
   Future<void> _handleDelete(List<String> ids) async {
-    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
-    final hasJournal = journalProvider.journals.any((j) => ids.contains(j.scheduleId));
-    
+    final scheduleProvider = Provider.of<ScheduleProvider>(
+      context,
+      listen: false,
+    );
+    final journalProvider = Provider.of<JournalProvider>(
+      context,
+      listen: false,
+    );
+    final hasJournal = journalProvider.journals.any(
+      (j) => ids.contains(j.scheduleId),
+    );
+
     if (hasJournal) {
       final confirmForce = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
           title: const Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: Color(0xFFBA1A1A), size: 28),
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Color(0xFFBA1A1A),
+                size: 28,
+              ),
               SizedBox(width: 8),
               Text('Hapus Jadwal & Jurnal'),
             ],
@@ -964,7 +1338,10 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
               onPressed: () => Navigator.pop(ctx, true),
               child: const Text(
                 'Hapus Permanen',
-                style: TextStyle(color: Color(0xFFBA1A1A), fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Color(0xFFBA1A1A),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -978,7 +1355,11 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
     if (success) {
       AppHelper.showSnackBar(context, 'Jadwal berhasil dihapus');
     } else {
-      AppHelper.showSnackBar(context, scheduleProvider.errorMessage ?? 'Gagal menghapus jadwal.', isError: true);
+      AppHelper.showSnackBar(
+        context,
+        scheduleProvider.errorMessage ?? 'Gagal menghapus jadwal.',
+        isError: true,
+      );
     }
   }
 
@@ -987,10 +1368,18 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
   int _selectedDayFilter = 0;
   bool _isExporting = false;
 
-  Future<void> _handleExportExcel(List<ScheduleModel> schedules, MasterDataProvider master, AuthProvider auth) async {
+  Future<void> _handleExportExcel(
+    List<ScheduleModel> schedules,
+    MasterDataProvider master,
+    AuthProvider auth,
+  ) async {
     if (_isExporting) return;
     if (schedules.isEmpty) {
-      AppHelper.showSnackBar(context, 'Tidak ada data jadwal untuk diekspor.', isError: true);
+      AppHelper.showSnackBar(
+        context,
+        'Tidak ada data jadwal untuk diekspor.',
+        isError: true,
+      );
       return;
     }
 
@@ -998,7 +1387,9 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
     AppHelper.showSnackBar(context, 'Mempersiapkan file Excel...');
 
     try {
-      final schoolName = auth.activeSchoolName.isNotEmpty ? auth.activeSchoolName : 'Sekolah';
+      final schoolName = auth.activeSchoolName.isNotEmpty
+          ? auth.activeSchoolName
+          : 'Sekolah';
       await ExcelExportService.exportSchedules(
         schedules: schedules,
         masterProvider: master,
@@ -1009,7 +1400,11 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
       }
     } catch (e) {
       if (mounted) {
-        AppHelper.showSnackBar(context, 'Ekspor gagal. Silakan coba lagi.', isError: true);
+        AppHelper.showSnackBar(
+          context,
+          'Ekspor gagal. Silakan coba lagi.',
+          isError: true,
+        );
       }
     } finally {
       if (mounted) {
@@ -1024,6 +1419,89 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
     super.dispose();
   }
 
+  Widget _buildDateFilterBanner(MasterDataProvider master) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final teacherId = _filterTeacherId;
+    final teacherName = teacherId == null || teacherId.isEmpty
+        ? ''
+        : master.teachers
+              .firstWhere(
+                (t) => t.id == teacherId,
+                orElse: () => TeacherModel(
+                  id: '',
+                  name: '',
+                  position: '',
+                  address: '',
+                  phoneNumber: '',
+                  email: '',
+                ),
+              )
+              .name;
+    final label = StringBuffer(
+      'Menampilkan jadwal: ${AppHelper.formatDate(_filterDate!)}',
+    );
+    if (teacherName.isNotEmpty) {
+      label.write(' • $teacherName');
+    }
+
+    return Container(
+      margin: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 0),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF1E3A8A).withValues(alpha: 0.25)
+            : const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E40AF) : const Color(0xFFBFDBFE),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.event_available_rounded,
+            size: 16.r,
+            color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB),
+          ),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              label.toString(),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 11.5.sp,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? const Color(0xFFBFDBFE)
+                    : const Color(0xFF1E40AF),
+              ),
+            ),
+          ),
+          SizedBox(width: 8.w),
+          InkWell(
+            borderRadius: BorderRadius.circular(20.r),
+            onTap: () => setState(() {
+              _filterDate = null;
+              _filterTeacherId = null;
+              _selectedDayFilter = 0;
+            }),
+            child: Padding(
+              padding: EdgeInsets.all(2.w),
+              child: Icon(
+                Icons.close_rounded,
+                size: 18.r,
+                color: isDark
+                    ? const Color(0xFF93C5FD)
+                    : const Color(0xFF2563EB),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final masterProvider = context.watch<MasterDataProvider>();
@@ -1035,34 +1513,61 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
       _selectedPeriodId = null;
     }
 
-    final effectivePeriodId = _selectedPeriodId ?? masterProvider.activePeriod?.id ?? (masterProvider.periods.isNotEmpty ? masterProvider.periods.first.id : null);
+    final effectivePeriodId =
+        _selectedPeriodId ??
+        masterProvider.activePeriod?.id ??
+        (masterProvider.periods.isNotEmpty
+            ? masterProvider.periods.first.id
+            : null);
     final currentPeriod = masterProvider.periods.firstWhere(
       (p) => p.id == effectivePeriodId,
-      orElse: () => masterProvider.activePeriod ?? PeriodModel(id: '', name: '', isActive: true),
+      orElse: () =>
+          masterProvider.activePeriod ??
+          PeriodModel(id: '', name: '', isActive: true),
     );
     final isHistorical = !currentPeriod.isActive && currentPeriod.id.isNotEmpty;
 
-    final validSchedules = scheduleProvider.schedules;
+    final filterDate = _filterDate;
+    final filterTeacherId = _filterTeacherId;
+    final validSchedules = scheduleProvider.schedules.where((s) {
+      if (filterDate != null &&
+          (s.date.year != filterDate.year ||
+              s.date.month != filterDate.month ||
+              s.date.day != filterDate.day)) {
+        return false;
+      }
+      if (filterTeacherId != null &&
+          filterTeacherId.isNotEmpty &&
+          s.teacherId != filterTeacherId) {
+        return false;
+      }
+      return true;
+    }).toList();
     final allGroupedSchedules = groupMasterSchedules(validSchedules);
 
-    debugPrint('[RUNTIME_DEBUG:MASTER_SCHEDULE] build() called -> Total Schedules: ${validSchedules.length}, Grouped: ${allGroupedSchedules.length}, Master Teachers: ${masterProvider.teachers.length}');
+    debugPrint(
+      '[RUNTIME_DEBUG:MASTER_SCHEDULE] build() called -> Total Schedules: ${validSchedules.length}, Grouped: ${allGroupedSchedules.length}, Master Teachers: ${masterProvider.teachers.length}',
+    );
 
     // Map all grouped schedules by Teacher ID, respecting day filter
     final Map<String, List<GroupedMasterSchedule>> teacherGroupedMap = {};
     for (final sched in allGroupedSchedules) {
-      if (_selectedDayFilter == 0 || sched.weekdays.contains(_selectedDayFilter)) {
+      if (_selectedDayFilter == 0 ||
+          sched.weekdays.contains(_selectedDayFilter)) {
         teacherGroupedMap.putIfAbsent(sched.teacherId, () => []).add(sched);
       }
     }
 
     // Build unified set of all teacher IDs to display
     final Set<String> allAvailableTeacherIds = {};
-    if (_selectedDayFilter == 0) {
+    final isDateScoped = filterDate != null;
+    if (_selectedDayFilter == 0 && !isDateScoped) {
       for (final t in masterProvider.teachers) {
         if (t.id.isNotEmpty) allAvailableTeacherIds.add(t.id);
       }
       for (final s in validSchedules) {
-        if (s.teacherId.isNotEmpty && masterProvider.teachers.any((t) => t.id == s.teacherId)) {
+        if (s.teacherId.isNotEmpty &&
+            masterProvider.teachers.any((t) => t.id == s.teacherId)) {
           allAvailableTeacherIds.add(s.teacherId);
         }
       }
@@ -1071,17 +1576,27 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
     }
 
     // Filter by search query
-    final List<String> visibleTeacherIds = allAvailableTeacherIds.where((teacherId) {
+    final List<String> visibleTeacherIds = allAvailableTeacherIds.where((
+      teacherId,
+    ) {
       if (_searchQuery.trim().isEmpty) return true;
       final query = _searchQuery.trim().toLowerCase();
 
       final teacher = masterProvider.teachers.firstWhere(
         (t) => t.id == teacherId,
-        orElse: () => TeacherModel(id: teacherId, name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''),
+        orElse: () => TeacherModel(
+          id: teacherId,
+          name: 'Guru--',
+          position: '',
+          address: '',
+          phoneNumber: '',
+          email: '',
+        ),
       );
 
       // Match teacher name / position
-      if (teacher.name.toLowerCase().contains(query) || teacher.position.toLowerCase().contains(query)) {
+      if (teacher.name.toLowerCase().contains(query) ||
+          teacher.position.toLowerCase().contains(query)) {
         return true;
       }
 
@@ -1090,13 +1605,17 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
       for (final sched in schedules) {
         final cls = masterProvider.classes.firstWhere(
           (c) => c.id == sched.classId,
-          orElse: () => ClassModel(id: '', name: '', periodId: '', studentCount: 0),
+          orElse: () =>
+              ClassModel(id: '', name: '', periodId: '', studentCount: 0),
         );
         final subject = masterProvider.subjects.firstWhere(
           (s) => s.id == sched.subjectId,
           orElse: () => SubjectModel(id: '', name: '', isActive: false),
         );
-        final dayNames = sched.weekdays.map(getWeekdayName).join(' ').toLowerCase();
+        final dayNames = sched.weekdays
+            .map(getWeekdayName)
+            .join(' ')
+            .toLowerCase();
 
         if (cls.name.toLowerCase().contains(query) ||
             subject.name.toLowerCase().contains(query) ||
@@ -1111,8 +1630,28 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
 
     // Sort teachers alphabetically by name
     visibleTeacherIds.sort((a, b) {
-      final tA = masterProvider.teachers.firstWhere((t) => t.id == a, orElse: () => TeacherModel(id: a, name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''));
-      final tB = masterProvider.teachers.firstWhere((t) => t.id == b, orElse: () => TeacherModel(id: b, name: 'Guru--', position: '', address: '', phoneNumber: '', email: ''));
+      final tA = masterProvider.teachers.firstWhere(
+        (t) => t.id == a,
+        orElse: () => TeacherModel(
+          id: a,
+          name: 'Guru--',
+          position: '',
+          address: '',
+          phoneNumber: '',
+          email: '',
+        ),
+      );
+      final tB = masterProvider.teachers.firstWhere(
+        (t) => t.id == b,
+        orElse: () => TeacherModel(
+          id: b,
+          name: 'Guru--',
+          position: '',
+          address: '',
+          phoneNumber: '',
+          email: '',
+        ),
+      );
       return tA.name.compareTo(tB.name);
     });
 
@@ -1137,15 +1676,28 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                 ? SizedBox(
                     width: 18.w,
                     height: 18.w,
-                    child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2563EB)),
+                    child: const CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFF2563EB),
+                    ),
                   )
-                : const Icon(Icons.table_view_rounded, color: Color(0xFF10B981)),
+                : const Icon(
+                    Icons.table_view_rounded,
+                    color: Color(0xFF10B981),
+                  ),
             tooltip: 'Ekspor Excel',
             onPressed: (_isExporting || validSchedules.isEmpty)
                 ? null
                 : () {
-                    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                    _handleExportExcel(validSchedules, masterProvider, authProvider);
+                    final authProvider = Provider.of<AuthProvider>(
+                      context,
+                      listen: false,
+                    );
+                    _handleExportExcel(
+                      validSchedules,
+                      masterProvider,
+                      authProvider,
+                    );
                   },
           ),
         ],
@@ -1163,6 +1715,8 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                     selectedPeriodId: effectivePeriodId,
                     onPeriodChanged: _onPeriodChanged,
                   ),
+                  if (_filterDate != null)
+                    _buildDateFilterBanner(masterProvider),
                   AdminSearchFilterBar(
                     hintText: 'Cari guru, kelas, pelajaran, atau hari...',
                     searchController: _searchController,
@@ -1172,13 +1726,53 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                       });
                     },
                     filterItems: [
-                      AdminFilterItem(id: '0', label: 'Semua Hari', count: allGroupedSchedules.length),
-                      AdminFilterItem(id: '1', label: 'Senin', count: allGroupedSchedules.where((s) => s.weekdays.contains(1)).length),
-                      AdminFilterItem(id: '2', label: 'Selasa', count: allGroupedSchedules.where((s) => s.weekdays.contains(2)).length),
-                      AdminFilterItem(id: '3', label: 'Rabu', count: allGroupedSchedules.where((s) => s.weekdays.contains(3)).length),
-                      AdminFilterItem(id: '4', label: 'Kamis', count: allGroupedSchedules.where((s) => s.weekdays.contains(4)).length),
-                      AdminFilterItem(id: '5', label: 'Jumat', count: allGroupedSchedules.where((s) => s.weekdays.contains(5)).length),
-                      AdminFilterItem(id: '6', label: 'Sabtu', count: allGroupedSchedules.where((s) => s.weekdays.contains(6)).length),
+                      AdminFilterItem(
+                        id: '0',
+                        label: 'Semua Hari',
+                        count: allGroupedSchedules.length,
+                      ),
+                      AdminFilterItem(
+                        id: '1',
+                        label: 'Senin',
+                        count: allGroupedSchedules
+                            .where((s) => s.weekdays.contains(1))
+                            .length,
+                      ),
+                      AdminFilterItem(
+                        id: '2',
+                        label: 'Selasa',
+                        count: allGroupedSchedules
+                            .where((s) => s.weekdays.contains(2))
+                            .length,
+                      ),
+                      AdminFilterItem(
+                        id: '3',
+                        label: 'Rabu',
+                        count: allGroupedSchedules
+                            .where((s) => s.weekdays.contains(3))
+                            .length,
+                      ),
+                      AdminFilterItem(
+                        id: '4',
+                        label: 'Kamis',
+                        count: allGroupedSchedules
+                            .where((s) => s.weekdays.contains(4))
+                            .length,
+                      ),
+                      AdminFilterItem(
+                        id: '5',
+                        label: 'Jumat',
+                        count: allGroupedSchedules
+                            .where((s) => s.weekdays.contains(5))
+                            .length,
+                      ),
+                      AdminFilterItem(
+                        id: '6',
+                        label: 'Sabtu',
+                        count: allGroupedSchedules
+                            .where((s) => s.weekdays.contains(6))
+                            .length,
+                      ),
                     ],
                     selectedFilterId: _selectedDayFilter.toString(),
                     onFilterSelected: (id) {
@@ -1193,39 +1787,54 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                     child: visibleTeacherIds.isEmpty
                         ? const AppEmptyWidget(
                             title: 'Tidak Ada Jadwal Mengajar',
-                            subtitle: 'Belum ada data guru atau jadwal mengajar yang cocok dengan pencarian.',
+                            subtitle:
+                                'Belum ada data guru atau jadwal mengajar yang cocok dengan pencarian.',
                             icon: Icons.calendar_today_rounded,
                           )
                         : ListView.separated(
-                            padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 80.h),
+                            padding: EdgeInsets.fromLTRB(
+                              16.w,
+                              14.h,
+                              16.w,
+                              80.h,
+                            ),
                             itemCount: visibleTeacherIds.length,
-                            separatorBuilder: (context, _) => SizedBox(height: 12.h),
+                            separatorBuilder: (context, _) =>
+                                SizedBox(height: 12.h),
                             itemBuilder: (context, index) {
                               final teacherId = visibleTeacherIds[index];
-                              final teacherSchedules = teacherGroupedMap[teacherId] ?? [];
+                              final teacherSchedules =
+                                  teacherGroupedMap[teacherId] ?? [];
 
-                              final teacher = masterProvider.teachers.firstWhere(
-                                (t) => t.id == teacherId,
-                                orElse: () => TeacherModel(
-                                  id: teacherId,
-                                  name: 'Guru--',
-                                  position: '',
-                                  address: '',
-                                  phoneNumber: '',
-                                  email: '',
-                                ),
-                              );
+                              final teacher = masterProvider.teachers
+                                  .firstWhere(
+                                    (t) => t.id == teacherId,
+                                    orElse: () => TeacherModel(
+                                      id: teacherId,
+                                      name: 'Guru--',
+                                      position: '',
+                                      address: '',
+                                      phoneNumber: '',
+                                      email: '',
+                                    ),
+                                  );
 
                               return Container(
                                 decoration: BoxDecoration(
-                                  color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+                                  color: isDark
+                                      ? Theme.of(context).colorScheme.surface
+                                      : Colors.white,
                                   borderRadius: BorderRadius.circular(18.r),
                                   border: Border.all(
-                                    color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                                    color: isDark
+                                        ? const Color(0xFF334155)
+                                        : const Color(0xFFF1F5F9),
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                                      color: Colors.black.withValues(
+                                        alpha: isDark ? 0.2 : 0.03,
+                                      ),
                                       blurRadius: 10,
                                       offset: const Offset(0, 4),
                                     ),
@@ -1233,11 +1842,12 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                 ),
                                 clipBehavior: Clip.antiAlias,
                                 child: Theme(
-                                  data: Theme.of(context).copyWith(
-                                    dividerColor: Colors.transparent,
-                                  ),
+                                  data: Theme.of(
+                                    context,
+                                  ).copyWith(dividerColor: Colors.transparent),
                                   child: ExpansionTile(
-                                    initiallyExpanded: teacherSchedules.isNotEmpty,
+                                    initiallyExpanded:
+                                        teacherSchedules.isNotEmpty,
                                     tilePadding: EdgeInsets.symmetric(
                                       horizontal: 14.w,
                                       vertical: 6.h,
@@ -1252,24 +1862,36 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                          color: isDark
+                                              ? const Color(0xFF334155)
+                                              : const Color(0xFFE2E8F0),
                                           width: 1.5,
                                         ),
                                       ),
                                       child: CircleAvatar(
                                         radius: 20.r,
                                         backgroundColor: isDark
-                                            ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
+                                            ? const Color(
+                                                0xFF1E3A8A,
+                                              ).withValues(alpha: 0.35)
                                             : const Color(0xFFEFF6FF),
-                                        backgroundImage: teacher.photoUrl != null &&
-                                                teacher.photoUrl!.startsWith('http')
+                                        backgroundImage:
+                                            teacher.photoUrl != null &&
+                                                teacher.photoUrl!.startsWith(
+                                                  'http',
+                                                )
                                             ? NetworkImage(teacher.photoUrl!)
                                             : null,
-                                        child: teacher.photoUrl == null ||
-                                                !teacher.photoUrl!.startsWith('http')
+                                        child:
+                                            teacher.photoUrl == null ||
+                                                !teacher.photoUrl!.startsWith(
+                                                  'http',
+                                                )
                                             ? Icon(
                                                 Icons.person_rounded,
-                                                color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB),
+                                                color: isDark
+                                                    ? const Color(0xFF93C5FD)
+                                                    : const Color(0xFF2563EB),
                                                 size: 20.r,
                                               )
                                             : null,
@@ -1280,7 +1902,9 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                       style: GoogleFonts.hankenGrotesk(
                                         fontSize: 14.5.sp,
                                         fontWeight: FontWeight.w800,
-                                        color: Theme.of(context).colorScheme.onSurface,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
                                       ),
                                     ),
                                     subtitle: Text(
@@ -1289,7 +1913,9 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                           : 'Guru Pengajar',
                                       style: GoogleFonts.hankenGrotesk(
                                         fontSize: 11.5.sp,
-                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -1301,16 +1927,26 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                       decoration: BoxDecoration(
                                         color: teacherSchedules.isNotEmpty
                                             ? (isDark
-                                                ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
-                                                : const Color(0xFFEFF6FF))
+                                                  ? const Color(
+                                                      0xFF1E3A8A,
+                                                    ).withValues(alpha: 0.35)
+                                                  : const Color(0xFFEFF6FF))
                                             : (isDark
-                                                ? const Color(0xFF334155).withValues(alpha: 0.35)
-                                                : const Color(0xFFF1F5F9)),
-                                        borderRadius: BorderRadius.circular(20.r),
+                                                  ? const Color(
+                                                      0xFF334155,
+                                                    ).withValues(alpha: 0.35)
+                                                  : const Color(0xFFF1F5F9)),
+                                        borderRadius: BorderRadius.circular(
+                                          20.r,
+                                        ),
                                         border: Border.all(
                                           color: teacherSchedules.isNotEmpty
-                                              ? (isDark ? const Color(0xFF1E40AF) : const Color(0xFFDBEAFE))
-                                              : (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
+                                              ? (isDark
+                                                    ? const Color(0xFF1E40AF)
+                                                    : const Color(0xFFDBEAFE))
+                                              : (isDark
+                                                    ? const Color(0xFF475569)
+                                                    : const Color(0xFFCBD5E1)),
                                         ),
                                       ),
                                       child: Text(
@@ -1319,33 +1955,50 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                           fontSize: 10.5.sp,
                                           fontWeight: FontWeight.w700,
                                           color: teacherSchedules.isNotEmpty
-                                              ? (isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB))
-                                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                                              ? (isDark
+                                                    ? const Color(0xFF93C5FD)
+                                                    : const Color(0xFF2563EB))
+                                              : Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant,
                                         ),
                                       ),
                                     ),
                                     children: teacherSchedules.isEmpty
                                         ? [
                                             Padding(
-                                              padding: EdgeInsets.symmetric(vertical: 8.h),
+                                              padding: EdgeInsets.symmetric(
+                                                vertical: 8.h,
+                                              ),
                                               child: Container(
                                                 padding: EdgeInsets.all(12.w),
                                                 decoration: BoxDecoration(
                                                   color: isDark
-                                                      ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                                      ? Theme.of(context)
+                                                            .colorScheme
+                                                            .surfaceContainerHighest
                                                       : const Color(0xFFF8FAFC),
-                                                  borderRadius: BorderRadius.circular(14.r),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        14.r,
+                                                      ),
                                                   border: Border.all(
                                                     color: isDark
-                                                        ? const Color(0xFF334155)
-                                                        : const Color(0xFFE2E8F0),
+                                                        ? const Color(
+                                                            0xFF334155,
+                                                          )
+                                                        : const Color(
+                                                            0xFFE2E8F0,
+                                                          ),
                                                   ),
                                                 ),
-                                                child: Row( 
+                                                child: Row(
                                                   children: [
                                                     Icon(
                                                       Icons.event_busy_rounded,
-                                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurfaceVariant,
                                                       size: 20.sp,
                                                     ),
                                                     SizedBox(width: 10.w),
@@ -1353,38 +2006,66 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                       child: Text(
                                                         'Belum ada jadwal mengajar',
                                                         maxLines: 1,
-                                                        overflow: TextOverflow.ellipsis,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
                                                         softWrap: false,
                                                         style: GoogleFonts.hankenGrotesk(
                                                           fontSize: 12.sp,
-                                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                                          fontStyle: FontStyle.italic,
+                                                          color: Theme.of(context)
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                          fontStyle:
+                                                              FontStyle.italic,
                                                         ),
                                                       ),
                                                     ),
                                                     if (!isHistorical) ...[
                                                       SizedBox(width: 8.w),
                                                       ElevatedButton.icon(
-                                                        onPressed: () => _showFormDialog(
-                                                          initialTeacherId: teacherId,
+                                                        onPressed: () =>
+                                                            _showFormDialog(
+                                                              initialTeacherId:
+                                                                  teacherId,
+                                                            ),
+                                                        icon: const Icon(
+                                                          Icons.add_rounded,
+                                                          size: 16,
                                                         ),
-                                                        icon: const Icon(Icons.add_rounded, size: 16),
-                                                        label: const Text('Buat Jadwal'),
+                                                        label: const Text(
+                                                          'Buat Jadwal',
+                                                        ),
                                                         style: ElevatedButton.styleFrom(
-                                                          backgroundColor: const Color(0xFF2563EB),
-                                                          foregroundColor: Colors.white,
-                                                          minimumSize: const Size(0, 34),
-                                                          maximumSize: const Size(160, 40),
-                                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                                          padding: EdgeInsets.symmetric(
-                                                            horizontal: 12,
-                                                            vertical: 6.h,
-                                                          ),
-                                                          visualDensity: VisualDensity.compact,
-                                                          textStyle: GoogleFonts.hankenGrotesk(
-                                                            fontSize: 11.sp,
-                                                            fontWeight: FontWeight.bold,
-                                                          ),
+                                                          backgroundColor:
+                                                              const Color(
+                                                                0xFF2563EB,
+                                                              ),
+                                                          foregroundColor:
+                                                              Colors.white,
+                                                          minimumSize:
+                                                              const Size(0, 34),
+                                                          maximumSize:
+                                                              const Size(
+                                                                160,
+                                                                40,
+                                                              ),
+                                                          tapTargetSize:
+                                                              MaterialTapTargetSize
+                                                                  .shrinkWrap,
+                                                          padding:
+                                                              EdgeInsets.symmetric(
+                                                                horizontal: 12,
+                                                                vertical: 6.h,
+                                                              ),
+                                                          visualDensity:
+                                                              VisualDensity
+                                                                  .compact,
+                                                          textStyle:
+                                                              GoogleFonts.hankenGrotesk(
+                                                                fontSize: 11.sp,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
                                                         ),
                                                       ),
                                                     ],
@@ -1394,36 +2075,53 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                             ),
                                           ]
                                         : teacherSchedules.map((sched) {
-                                            final cls = masterProvider.classes.firstWhere(
-                                              (c) => c.id == sched.classId,
-                                              orElse: () => ClassModel(
-                                                id: '',
-                                                name: 'Kelas--',
-                                                periodId: '',
-                                                studentCount: 0,
-                                              ),
-                                            );
+                                            final cls = masterProvider.classes
+                                                .firstWhere(
+                                                  (c) => c.id == sched.classId,
+                                                  orElse: () => ClassModel(
+                                                    id: '',
+                                                    name: 'Kelas--',
+                                                    periodId: '',
+                                                    studentCount: 0,
+                                                  ),
+                                                );
 
-                                            final subject = masterProvider.subjects.firstWhere(
-                                              (s) => s.id == sched.subjectId,
-                                              orElse: () => SubjectModel(
-                                                id: '',
-                                                name: 'Mapel--',
-                                                isActive: false,
-                                              ),
-                                            );
+                                            final subject = masterProvider
+                                                .subjects
+                                                .firstWhere(
+                                                  (s) =>
+                                                      s.id == sched.subjectId,
+                                                  orElse: () => SubjectModel(
+                                                    id: '',
+                                                    name: 'Mapel--',
+                                                    isActive: false,
+                                                  ),
+                                                );
 
                                             return Padding(
-                                              padding: EdgeInsets.only(top: 8.h),
+                                              padding: EdgeInsets.only(
+                                                top: 8.h,
+                                              ),
                                               child: Dismissible(
-                                                key: Key(sched.scheduleIds.first),
-                                                direction: DismissDirection.endToStart,
+                                                key: Key(
+                                                  sched.scheduleIds.first,
+                                                ),
+                                                direction:
+                                                    DismissDirection.endToStart,
                                                 background: Container(
-                                                  alignment: Alignment.centerRight,
-                                                  padding: EdgeInsets.only(right: 16.w),
+                                                  alignment:
+                                                      Alignment.centerRight,
+                                                  padding: EdgeInsets.only(
+                                                    right: 16.w,
+                                                  ),
                                                   decoration: BoxDecoration(
-                                                    color: const Color(0xFFE11D48),
-                                                    borderRadius: BorderRadius.circular(14.r),
+                                                    color: const Color(
+                                                      0xFFE11D48,
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          14.r,
+                                                        ),
                                                   ),
                                                   child: const Icon(
                                                     Icons.delete_rounded,
@@ -1431,33 +2129,51 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                   ),
                                                 ),
                                                 onDismissed: (_) =>
-                                                    _handleDelete(sched.scheduleIds),
+                                                    _handleDelete(
+                                                      sched.scheduleIds,
+                                                    ),
                                                 confirmDismiss: (_) async {
                                                   return await showDialog<bool>(
                                                     context: context,
                                                     builder: (context) => AlertDialog(
                                                       shape: RoundedRectangleBorder(
                                                         borderRadius:
-                                                            BorderRadius.circular(16.r),
+                                                            BorderRadius.circular(
+                                                              16.r,
+                                                            ),
                                                       ),
-                                                      title: const Text('Hapus Jadwal'),
+                                                      title: const Text(
+                                                        'Hapus Jadwal',
+                                                      ),
                                                       content: const Text(
                                                         'Apakah Anda yakin ingin menghapus jadwal mengajar ini?',
                                                       ),
                                                       actions: [
                                                         TextButton(
                                                           onPressed: () =>
-                                                              Navigator.pop(context, false),
-                                                          child: const Text('Batal'),
+                                                              Navigator.pop(
+                                                                context,
+                                                                false,
+                                                              ),
+                                                          child: const Text(
+                                                            'Batal',
+                                                          ),
                                                         ),
                                                         TextButton(
                                                           onPressed: () =>
-                                                              Navigator.pop(context, true),
+                                                              Navigator.pop(
+                                                                context,
+                                                                true,
+                                                              ),
                                                           child: const Text(
                                                             'Hapus',
                                                             style: TextStyle(
-                                                              color: Color(0xFFE11D48),
-                                                              fontWeight: FontWeight.bold,
+                                                              color: Color(
+                                                                0xFFE11D48,
+                                                              ),
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
                                                             ),
                                                           ),
                                                         ),
@@ -1469,154 +2185,242 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                   padding: EdgeInsets.all(12.w),
                                                   decoration: BoxDecoration(
                                                     color: isDark
-                                                        ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                                        : const Color(0xFFF8FAFC),
-                                                    borderRadius: BorderRadius.circular(14.r),
+                                                        ? Theme.of(context)
+                                                              .colorScheme
+                                                              .surfaceContainerHighest
+                                                        : const Color(
+                                                            0xFFF8FAFC,
+                                                          ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          14.r,
+                                                        ),
                                                     border: Border.all(
-                                                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                                      color: isDark
+                                                          ? const Color(
+                                                              0xFF334155,
+                                                            )
+                                                          : const Color(
+                                                              0xFFE2E8F0,
+                                                            ),
                                                     ),
                                                   ),
                                                   child: Column(
                                                     crossAxisAlignment:
-                                                        CrossAxisAlignment.start,
+                                                        CrossAxisAlignment
+                                                            .start,
                                                     children: [
                                                       Row(
                                                         mainAxisAlignment:
-                                                            MainAxisAlignment.spaceBetween,
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
                                                         children: [
                                                           Expanded(
                                                             child: Text(
                                                               '${cls.name} • Jam Ke-${AppHelper.formatTeachingHours(sched.teachingHours)}',
                                                               style: GoogleFonts.hankenGrotesk(
                                                                 fontSize: 13.sp,
-                                                                fontWeight: FontWeight.w800,
-                                                                color: Theme.of(context).colorScheme.onSurface,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w800,
+                                                                color: Theme.of(
+                                                                  context,
+                                                                ).colorScheme.onSurface,
                                                               ),
                                                             ),
                                                           ),
                                                           if (!isHistorical)
                                                             Row(
-                                                              mainAxisSize: MainAxisSize.min,
+                                                              mainAxisSize:
+                                                                  MainAxisSize
+                                                                      .min,
                                                               children: [
-                                                              IconButton(
-                                                                icon: const Icon(
-                                                                  Icons.edit_rounded,
-                                                                  color: Color(0xFF2563EB),
-                                                                  size: 18,
-                                                                ),
-                                                                onPressed: () =>
-                                                                    _showFormDialog(
-                                                                  groupedSchedule: sched,
-                                                                ),
-                                                                constraints:
-                                                                    const BoxConstraints(
-                                                                  minWidth: 24,
-                                                                  minHeight: 24,
-                                                                ),
-                                                                padding: EdgeInsets.zero,
-                                                                visualDensity:
-                                                                    VisualDensity.compact,
-                                                              ),
-                                                              SizedBox(width: 8.w),
-                                                              IconButton(
-                                                                icon: const Icon(
-                                                                  Icons.delete_outline_rounded,
-                                                                  color: Color(0xFFE11D48),
-                                                                  size: 18,
-                                                                ),
-                                                                onPressed: () async {
-                                                                  final confirm =
-                                                                      await showDialog<bool>(
-                                                                    context: context,
-                                                                    builder: (context) =>
-                                                                        AlertDialog(
-                                                                      shape: RoundedRectangleBorder(
-                                                                        borderRadius:
-                                                                            BorderRadius.circular(
-                                                                          16.r,
-                                                                        ),
+                                                                IconButton(
+                                                                  icon: const Icon(
+                                                                    Icons
+                                                                        .edit_rounded,
+                                                                    color: Color(
+                                                                      0xFF2563EB,
+                                                                    ),
+                                                                    size: 18,
+                                                                  ),
+                                                                  onPressed: () =>
+                                                                      _showFormDialog(
+                                                                        groupedSchedule:
+                                                                            sched,
                                                                       ),
-                                                                      title: const Text(
-                                                                        'Hapus Jadwal',
+                                                                  constraints:
+                                                                      const BoxConstraints(
+                                                                        minWidth:
+                                                                            24,
+                                                                        minHeight:
+                                                                            24,
                                                                       ),
-                                                                      content: const Text(
-                                                                        'Apakah Anda yakin ingin menghapus jadwal mengajar ini?',
-                                                                      ),
-                                                                      actions: [
-                                                                        TextButton(
-                                                                          onPressed: () =>
-                                                                              Navigator.pop(
-                                                                            context,
-                                                                            false,
-                                                                          ),
-                                                                          child: const Text(
-                                                                            'Batal',
+                                                                  padding:
+                                                                      EdgeInsets
+                                                                          .zero,
+                                                                  visualDensity:
+                                                                      VisualDensity
+                                                                          .compact,
+                                                                ),
+                                                                SizedBox(
+                                                                  width: 8.w,
+                                                                ),
+                                                                IconButton(
+                                                                  icon: const Icon(
+                                                                    Icons
+                                                                        .delete_outline_rounded,
+                                                                    color: Color(
+                                                                      0xFFE11D48,
+                                                                    ),
+                                                                    size: 18,
+                                                                  ),
+                                                                  onPressed: () async {
+                                                                    final confirm = await showDialog<bool>(
+                                                                      context:
+                                                                          context,
+                                                                      builder: (context) => AlertDialog(
+                                                                        shape: RoundedRectangleBorder(
+                                                                          borderRadius: BorderRadius.circular(
+                                                                            16.r,
                                                                           ),
                                                                         ),
-                                                                        TextButton(
-                                                                          onPressed: () =>
-                                                                              Navigator.pop(
-                                                                            context,
-                                                                            true,
-                                                                          ),
-                                                                          child: const Text(
-                                                                            'Hapus',
-                                                                            style: TextStyle(
-                                                                              color: Color(
-                                                                                0xFFE11D48,
-                                                                              ),
-                                                                              fontWeight:
-                                                                                  FontWeight.bold,
+                                                                        title: const Text(
+                                                                          'Hapus Jadwal',
+                                                                        ),
+                                                                        content:
+                                                                            const Text(
+                                                                              'Apakah Anda yakin ingin menghapus jadwal mengajar ini?',
+                                                                            ),
+                                                                        actions: [
+                                                                          TextButton(
+                                                                            onPressed: () => Navigator.pop(
+                                                                              context,
+                                                                              false,
+                                                                            ),
+                                                                            child: const Text(
+                                                                              'Batal',
                                                                             ),
                                                                           ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  );
-                                                                  if (confirm == true) {
-                                                                    _handleDelete(
-                                                                      sched.scheduleIds,
+                                                                          TextButton(
+                                                                            onPressed: () => Navigator.pop(
+                                                                              context,
+                                                                              true,
+                                                                            ),
+                                                                            child: const Text(
+                                                                              'Hapus',
+                                                                              style: TextStyle(
+                                                                                color: Color(
+                                                                                  0xFFE11D48,
+                                                                                ),
+                                                                                fontWeight: FontWeight.bold,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
                                                                     );
-                                                                  }
-                                                                },
-                                                                constraints:
-                                                                    const BoxConstraints(
-                                                                  minWidth: 24,
-                                                                  minHeight: 24,
-                                                                ),
-                                                                padding: EdgeInsets.zero,
-                                                                visualDensity:
-                                                                    VisualDensity.compact,
-                                                              ),
-                                                            ],
-                                                          )
-                                                        else
-                                                          Container(
-                                                            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                                                            decoration: BoxDecoration(
-                                                              color: isDark ? const Color(0xFF334155).withValues(alpha: 0.4) : const Color(0xFFF1F5F9),
-                                                              borderRadius: BorderRadius.circular(6.r),
-                                                              border: Border.all(
-                                                                color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
-                                                                width: 0.8,
-                                                              ),
-                                                            ),
-                                                            child: Row(
-                                                              mainAxisSize: MainAxisSize.min,
-                                                              children: [
-                                                                Icon(Icons.lock_outline_rounded, size: 12.sp, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                                                                SizedBox(width: 3.w),
-                                                                Text(
-                                                                  'Arsip',
-                                                                  style: GoogleFonts.hankenGrotesk(
-                                                                    fontSize: 10.sp,
-                                                                    fontWeight: FontWeight.w700,
-                                                                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                                                  ),
+                                                                    if (confirm ==
+                                                                        true) {
+                                                                      _handleDelete(
+                                                                        sched
+                                                                            .scheduleIds,
+                                                                      );
+                                                                    }
+                                                                  },
+                                                                  constraints:
+                                                                      const BoxConstraints(
+                                                                        minWidth:
+                                                                            24,
+                                                                        minHeight:
+                                                                            24,
+                                                                      ),
+                                                                  padding:
+                                                                      EdgeInsets
+                                                                          .zero,
+                                                                  visualDensity:
+                                                                      VisualDensity
+                                                                          .compact,
                                                                 ),
                                                               ],
+                                                            )
+                                                          else
+                                                            Container(
+                                                              padding:
+                                                                  EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        6.w,
+                                                                    vertical:
+                                                                        2.h,
+                                                                  ),
+                                                              decoration: BoxDecoration(
+                                                                color: isDark
+                                                                    ? const Color(
+                                                                        0xFF334155,
+                                                                      ).withValues(
+                                                                        alpha:
+                                                                            0.4,
+                                                                      )
+                                                                    : const Color(
+                                                                        0xFFF1F5F9,
+                                                                      ),
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      6.r,
+                                                                    ),
+                                                                border: Border.all(
+                                                                  color: isDark
+                                                                      ? const Color(
+                                                                          0xFF475569,
+                                                                        )
+                                                                      : const Color(
+                                                                          0xFFCBD5E1,
+                                                                        ),
+                                                                  width: 0.8,
+                                                                ),
+                                                              ),
+                                                              child: Row(
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: [
+                                                                  Icon(
+                                                                    Icons
+                                                                        .lock_outline_rounded,
+                                                                    size: 12.sp,
+                                                                    color:
+                                                                        isDark
+                                                                        ? const Color(
+                                                                            0xFF94A3B8,
+                                                                          )
+                                                                        : const Color(
+                                                                            0xFF64748B,
+                                                                          ),
+                                                                  ),
+                                                                  SizedBox(
+                                                                    width: 3.w,
+                                                                  ),
+                                                                  Text(
+                                                                    'Arsip',
+                                                                    style: GoogleFonts.hankenGrotesk(
+                                                                      fontSize:
+                                                                          10.sp,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w700,
+                                                                      color:
+                                                                          isDark
+                                                                          ? const Color(
+                                                                              0xFF94A3B8,
+                                                                            )
+                                                                          : const Color(
+                                                                              0xFF64748B,
+                                                                            ),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
                                                             ),
-                                                          ),
                                                         ],
                                                       ),
                                                       SizedBox(height: 2.h),
@@ -1624,72 +2428,132 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                         'Mata Pelajaran: ${subject.name}',
                                                         style: GoogleFonts.hankenGrotesk(
                                                           fontSize: 11.5.sp,
-                                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                                          fontWeight: FontWeight.w600,
+                                                          color: Theme.of(context)
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                          fontWeight:
+                                                              FontWeight.w600,
                                                         ),
                                                       ),
                                                       if (sched.note != null &&
-                                                          sched.note!.isNotEmpty) ...[
+                                                          sched
+                                                              .note!
+                                                              .isNotEmpty) ...[
                                                         SizedBox(height: 2.h),
                                                         Text(
                                                           'Catatan: ${sched.note}',
                                                           style: GoogleFonts.hankenGrotesk(
                                                             fontSize: 11.sp,
-                                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                                            fontStyle: FontStyle.italic,
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .onSurfaceVariant,
+                                                            fontStyle: FontStyle
+                                                                .italic,
                                                           ),
                                                         ),
                                                       ],
                                                       Divider(
                                                         height: 12,
-                                                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                                        color: isDark
+                                                            ? const Color(
+                                                                0xFF334155,
+                                                              )
+                                                            : const Color(
+                                                                0xFFE2E8F0,
+                                                              ),
                                                       ),
                                                       Row(
                                                         mainAxisAlignment:
-                                                            MainAxisAlignment.spaceBetween,
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
                                                         children: [
                                                           Expanded(
                                                             child: Column(
                                                               crossAxisAlignment:
-                                                                  CrossAxisAlignment.start,
+                                                                  CrossAxisAlignment
+                                                                      .start,
                                                               children: [
                                                                 Text(
                                                                   'Hari: ${sched.weekdays.map(getWeekdayName).join(', ')}',
-                                                                  style:
-                                                                      GoogleFonts.hankenGrotesk(
-                                                                    fontSize: 11.sp,
-                                                                    color: Theme.of(context).colorScheme.onSurface,
+                                                                  style: GoogleFonts.hankenGrotesk(
+                                                                    fontSize:
+                                                                        11.sp,
+                                                                    color: Theme.of(
+                                                                      context,
+                                                                    ).colorScheme.onSurface,
                                                                     fontWeight:
-                                                                        FontWeight.w700,
+                                                                        FontWeight
+                                                                            .w700,
                                                                   ),
                                                                 ),
-                                                                SizedBox(height: 1.h),
+                                                                SizedBox(
+                                                                  height: 1.h,
+                                                                ),
                                                                 Text(
                                                                   '${AppHelper.formatDateShort(sched.startDate)} s/d ${AppHelper.formatDateShort(sched.endDate)}',
-                                                                  style:
-                                                                      GoogleFonts.hankenGrotesk(
-                                                                    fontSize: 10.5.sp,
-                                                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                                  style: GoogleFonts.hankenGrotesk(
+                                                                    fontSize:
+                                                                        10.5.sp,
+                                                                    color: Theme.of(
+                                                                      context,
+                                                                    ).colorScheme.onSurfaceVariant,
                                                                   ),
                                                                 ),
                                                               ],
                                                             ),
                                                           ),
                                                           Container(
-                                                            padding: EdgeInsets.symmetric(
-                                                              horizontal: 8.w,
-                                                              vertical: 2.h,
-                                                            ),
+                                                            padding:
+                                                                EdgeInsets.symmetric(
+                                                                  horizontal:
+                                                                      8.w,
+                                                                  vertical: 2.h,
+                                                                ),
                                                             decoration: BoxDecoration(
-                                                              color: sched.isActive
-                                                                  ? (isDark ? const Color(0xFF064E3B).withValues(alpha: 0.35) : const Color(0xFFECFDF5))
-                                                                  : (isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.35) : const Color(0xFFFFE4E6)),
+                                                              color:
+                                                                  sched.isActive
+                                                                  ? (isDark
+                                                                        ? const Color(
+                                                                            0xFF064E3B,
+                                                                          ).withValues(
+                                                                            alpha:
+                                                                                0.35,
+                                                                          )
+                                                                        : const Color(
+                                                                            0xFFECFDF5,
+                                                                          ))
+                                                                  : (isDark
+                                                                        ? const Color(
+                                                                            0xFF7F1D1D,
+                                                                          ).withValues(
+                                                                            alpha:
+                                                                                0.35,
+                                                                          )
+                                                                        : const Color(
+                                                                            0xFFFFE4E6,
+                                                                          )),
                                                               borderRadius:
-                                                                  BorderRadius.circular(20.r),
+                                                                  BorderRadius.circular(
+                                                                    20.r,
+                                                                  ),
                                                               border: Border.all(
-                                                                color: sched.isActive
-                                                                    ? (isDark ? const Color(0xFF059669) : const Color(0xFFA7F3D0))
-                                                                    : (isDark ? const Color(0xFFE11D48) : const Color(0xFFFECDD3)),
+                                                                color:
+                                                                    sched
+                                                                        .isActive
+                                                                    ? (isDark
+                                                                          ? const Color(
+                                                                              0xFF059669,
+                                                                            )
+                                                                          : const Color(
+                                                                              0xFFA7F3D0,
+                                                                            ))
+                                                                    : (isDark
+                                                                          ? const Color(
+                                                                              0xFFE11D48,
+                                                                            )
+                                                                          : const Color(
+                                                                              0xFFFECDD3,
+                                                                            )),
                                                               ),
                                                             ),
                                                             child: Text(
@@ -1698,10 +2562,26 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                                   : 'Nonaktif',
                                                               style: GoogleFonts.hankenGrotesk(
                                                                 fontSize: 10.sp,
-                                                                fontWeight: FontWeight.w800,
-                                                                color: sched.isActive
-                                                                    ? (isDark ? const Color(0xFF34D399) : const Color(0xFF059669))
-                                                                    : (isDark ? const Color(0xFFF87171) : const Color(0xFFE11D48)),
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w800,
+                                                                color:
+                                                                    sched
+                                                                        .isActive
+                                                                    ? (isDark
+                                                                          ? const Color(
+                                                                              0xFF34D399,
+                                                                            )
+                                                                          : const Color(
+                                                                              0xFF059669,
+                                                                            ))
+                                                                    : (isDark
+                                                                          ? const Color(
+                                                                              0xFFF87171,
+                                                                            )
+                                                                          : const Color(
+                                                                              0xFFE11D48,
+                                                                            )),
                                                               ),
                                                             ),
                                                           ),

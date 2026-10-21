@@ -27,7 +27,19 @@ import '../../widgets/app_scaffold.dart';
 class AdminJurnalListScreen extends StatefulWidget {
   /// If non-null, jump directly to a specific tab index (0=Semua, 1=Belum Diisi, 2=Menunggu, 3=Terverifikasi)
   final int initialTabIndex;
-  const AdminJurnalListScreen({super.key, this.initialTabIndex = 0});
+
+  /// When set, the list is scoped to this date (used by the dashboard stat cards).
+  final DateTime? initialDate;
+
+  /// When set, the list is scoped to this teacher (used by the dashboard stat cards).
+  final String? initialTeacherId;
+
+  const AdminJurnalListScreen({
+    super.key,
+    this.initialTabIndex = 0,
+    this.initialDate,
+    this.initialTeacherId,
+  });
 
   @override
   State<AdminJurnalListScreen> createState() => _AdminJurnalListScreenState();
@@ -45,6 +57,8 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
 
   String? _selectedPeriodId;
   String? _lastSchoolId;
+  DateTime? _filterDate;
+  String? _filterTeacherId;
 
   void _toggleSelectionMode({String? initialId}) {
     setState(() {
@@ -85,20 +99,34 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Hapus $count Jurnal', style: const TextStyle(color: Colors.red)),
-        content: Text('Apakah Anda yakin ingin menghapus $count data jurnal yang dipilih secara permanen?'),
+        title: Text(
+          'Hapus $count Jurnal',
+          style: const TextStyle(color: Colors.red),
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus $count data jurnal yang dipilih secara permanen?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hapus Massal', style: TextStyle(color: Colors.red)),
+            child: const Text(
+              'Hapus Massal',
+              style: TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
     );
 
     if (confirmed == true && mounted) {
-      final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+      final journalProvider = Provider.of<JournalProvider>(
+        context,
+        listen: false,
+      );
       final idsToDelete = _selectedIds.toList();
       final success = await journalProvider.deleteMultipleJournals(idsToDelete);
       if (!mounted) return;
@@ -109,17 +137,29 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
           _isSelectionMode = false;
         });
       } else {
-        AppHelper.showSnackBar(context, journalProvider.errorMessage ?? 'Gagal menghapus jurnal.', isError: true);
+        AppHelper.showSnackBar(
+          context,
+          journalProvider.errorMessage ?? 'Gagal menghapus jurnal.',
+          isError: true,
+        );
       }
     }
   }
 
   bool _isExporting = false;
 
-  Future<void> _handleExportExcel(List<JournalModel> journals, MasterDataProvider master, AuthProvider auth) async {
+  Future<void> _handleExportExcel(
+    List<JournalModel> journals,
+    MasterDataProvider master,
+    AuthProvider auth,
+  ) async {
     if (_isExporting) return;
     if (journals.isEmpty) {
-      AppHelper.showSnackBar(context, 'Tidak ada data jurnal untuk diekspor.', isError: true);
+      AppHelper.showSnackBar(
+        context,
+        'Tidak ada data jurnal untuk diekspor.',
+        isError: true,
+      );
       return;
     }
 
@@ -127,7 +167,9 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     AppHelper.showSnackBar(context, 'Mempersiapkan file Excel...');
 
     try {
-      final schoolName = auth.activeSchoolName.isNotEmpty ? auth.activeSchoolName : 'Sekolah';
+      final schoolName = auth.activeSchoolName.isNotEmpty
+          ? auth.activeSchoolName
+          : 'Sekolah';
       await ExcelExportService.exportJournals(
         journals: journals,
         masterProvider: master,
@@ -138,7 +180,11 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
       }
     } catch (e) {
       if (mounted) {
-        AppHelper.showSnackBar(context, 'Ekspor gagal. Silakan coba lagi.', isError: true);
+        AppHelper.showSnackBar(
+          context,
+          'Ekspor gagal. Silakan coba lagi.',
+          isError: true,
+        );
       }
     } finally {
       if (mounted) {
@@ -150,6 +196,8 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
   @override
   void initState() {
     super.initState();
+    _filterDate = widget.initialDate;
+    _filterTeacherId = widget.initialTeacherId;
     _tabController = TabController(
       length: 4,
       vsync: this,
@@ -167,15 +215,27 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
 
   Future<void> _refreshData({String? periodId}) async {
     if (!mounted) return;
-    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
-    final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+    final journalProvider = Provider.of<JournalProvider>(
+      context,
+      listen: false,
+    );
+    final masterProvider = Provider.of<MasterDataProvider>(
+      context,
+      listen: false,
+    );
+    final scheduleProvider = Provider.of<ScheduleProvider>(
+      context,
+      listen: false,
+    );
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     await masterProvider.loadAllData(authProvider.activeSchoolId);
 
-    final activeId = masterProvider.activePeriod?.id ??
-        (masterProvider.periods.isNotEmpty ? masterProvider.periods.first.id : null);
+    final activeId =
+        masterProvider.activePeriod?.id ??
+        (masterProvider.periods.isNotEmpty
+            ? masterProvider.periods.first.id
+            : null);
     final targetPeriodId = periodId ?? _selectedPeriodId ?? activeId;
     if (_selectedPeriodId != targetPeriodId) {
       setState(() {
@@ -184,8 +244,14 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     }
 
     await Future.wait([
-      journalProvider.loadAllJournals(authProvider.activeSchoolId, targetPeriodId),
-      scheduleProvider.loadAllSchedules(authProvider.activeSchoolId, targetPeriodId),
+      journalProvider.loadAllJournals(
+        authProvider.activeSchoolId,
+        targetPeriodId,
+      ),
+      scheduleProvider.loadAllSchedules(
+        authProvider.activeSchoolId,
+        targetPeriodId,
+      ),
     ]);
   }
 
@@ -197,12 +263,21 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
       _selectedIds.clear();
     });
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
-    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
+    final journalProvider = Provider.of<JournalProvider>(
+      context,
+      listen: false,
+    );
+    final scheduleProvider = Provider.of<ScheduleProvider>(
+      context,
+      listen: false,
+    );
 
     await Future.wait([
       journalProvider.loadAllJournals(authProvider.activeSchoolId, newPeriodId),
-      scheduleProvider.loadAllSchedules(authProvider.activeSchoolId, newPeriodId),
+      scheduleProvider.loadAllSchedules(
+        authProvider.activeSchoolId,
+        newPeriodId,
+      ),
     ]);
   }
 
@@ -218,34 +293,101 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
       _selectedPeriodId = null;
     }
 
-    final effectivePeriodId = _selectedPeriodId ?? masterProvider.activePeriod?.id ?? (masterProvider.periods.isNotEmpty ? masterProvider.periods.first.id : null);
+    final effectivePeriodId =
+        _selectedPeriodId ??
+        masterProvider.activePeriod?.id ??
+        (masterProvider.periods.isNotEmpty
+            ? masterProvider.periods.first.id
+            : null);
     final currentPeriod = masterProvider.periods.firstWhere(
       (p) => p.id == effectivePeriodId,
-      orElse: () => masterProvider.activePeriod ?? PeriodModel(id: '', name: '', isActive: true),
+      orElse: () =>
+          masterProvider.activePeriod ??
+          PeriodModel(id: '', name: '', isActive: true),
     );
     final isHistorical = !currentPeriod.isActive && currentPeriod.id.isNotEmpty;
 
-    final allJournals = journalProvider.journals;
-    final pendingJournals = allJournals.where((j) => j.status == 'pending').toList();
-    final verifiedJournals = allJournals.where((j) => j.status == 'verified' || j.status == 'approved').toList();
+    final providerJournals = journalProvider.journals;
+    final filterDate = _filterDate;
+    final filterTeacherId = _filterTeacherId;
+    final scheduleTeacherById = {
+      for (final s in scheduleProvider.schedules) s.id: s.teacherId,
+    };
+
+    final allJournals = providerJournals.where((j) {
+      if (filterDate != null) {
+        final sameDate =
+            j.date.year == filterDate.year &&
+            j.date.month == filterDate.month &&
+            j.date.day == filterDate.day;
+        if (!sameDate) return false;
+      }
+      if (filterTeacherId != null &&
+          filterTeacherId.isNotEmpty &&
+          j.teacherId != filterTeacherId &&
+          scheduleTeacherById[j.scheduleId] != filterTeacherId) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    final pendingJournals = allJournals
+        .where((j) => j.status == 'pending')
+        .toList();
+    final verifiedJournals = allJournals
+        .where((j) => j.status == 'verified' || j.status == 'approved')
+        .toList();
 
     // Get unfilled schedules
-    final activeSchedules = scheduleProvider.schedules.where((s) => s.isActive).toList();
+    final activeSchedules = scheduleProvider.schedules
+        .where((s) => s.isActive)
+        .toList();
     final groupedDailySchedules = groupDailySchedules(activeSchedules);
-    
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
-    final unfilledGroups = groupedDailySchedules.where((group) {
-      if (!group.date.isBefore(today)) return false;
-      final hasJournal = allJournals.any(
-        (j) => group.scheduleIds.contains(j.scheduleId),
-      );
-      return !hasJournal;
-    }).toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
 
-    final isLoading = journalProvider.isLoading || masterProvider.isLoading || scheduleProvider.isLoading;
+    final List<GroupedDailySchedule> unfilledGroups;
+    if (filterDate != null) {
+      // Same-day view: mirror the dashboard cards exactly so the number of
+      // items shown here matches the stat card that was tapped.
+      final daySchedules = scheduleProvider.schedules.where((s) {
+        if (s.date.year != filterDate.year ||
+            s.date.month != filterDate.month ||
+            s.date.day != filterDate.day) {
+          return false;
+        }
+        if (filterTeacherId != null &&
+            filterTeacherId.isNotEmpty &&
+            s.teacherId != filterTeacherId) {
+          return false;
+        }
+        return true;
+      }).toList();
+      final dayGroupedSchedules = groupDailySchedules(daySchedules);
+
+      unfilledGroups = dayGroupedSchedules.where((group) {
+        final hasCompletedJournal = providerJournals.any(
+          (j) =>
+              group.scheduleIds.contains(j.scheduleId) &&
+              j.status != 'rejected',
+        );
+        return !hasCompletedJournal;
+      }).toList()..sort((a, b) => b.date.compareTo(a.date));
+    } else {
+      unfilledGroups = groupedDailySchedules.where((group) {
+        if (!group.date.isBefore(today)) return false;
+        final hasJournal = allJournals.any(
+          (j) => group.scheduleIds.contains(j.scheduleId),
+        );
+        return !hasJournal;
+      }).toList()..sort((a, b) => b.date.compareTo(a.date));
+    }
+
+    final isLoading =
+        journalProvider.isLoading ||
+        masterProvider.isLoading ||
+        scheduleProvider.isLoading;
 
     return PopScope(
       canPop: false,
@@ -266,14 +408,19 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                     _selectedIds.clear();
                   }),
                 ),
-                title: Text('${_selectedIds.length} Terpilih', style: const TextStyle(color: Colors.white)),
+                title: Text(
+                  '${_selectedIds.length} Terpilih',
+                  style: const TextStyle(color: Colors.white),
+                ),
                 actions: [
                   IconButton(
                     icon: const Icon(
                       Icons.checklist_rounded,
                       color: Colors.white,
                     ),
-                    tooltip: _selectedIds.length == allJournals.length ? 'Batal Pilih Semua' : 'Pilih Semua',
+                    tooltip: _selectedIds.length == allJournals.length
+                        ? 'Batal Pilih Semua'
+                        : 'Pilih Semua',
                     onPressed: () => _selectAll(allJournals),
                   ),
                   IconButton(
@@ -300,9 +447,15 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                         ? SizedBox(
                             width: 18.w,
                             height: 18.w,
-                            child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2563EB)),
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFF2563EB),
+                            ),
                           )
-                        : const Icon(Icons.table_view_rounded, color: Color(0xFF10B981)),
+                        : const Icon(
+                            Icons.table_view_rounded,
+                            color: Color(0xFF10B981),
+                          ),
                     tooltip: 'Ekspor Excel',
                     onPressed: (_isExporting || allJournals.isEmpty)
                         ? null
@@ -319,15 +472,31 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                               targetJournals = targetJournals.where((j) {
                                 final t = masterProvider.teachers.firstWhere(
                                   (teacher) => teacher.id == j.teacherId,
-                                  orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
+                                  orElse: () => TeacherModel(
+                                    id: '',
+                                    name: '',
+                                    position: '',
+                                    address: '',
+                                    phoneNumber: '',
+                                    email: '',
+                                  ),
                                 );
                                 final c = masterProvider.classes.firstWhere(
                                   (cls) => cls.id == j.classId,
-                                  orElse: () => ClassModel(id: '', name: '', periodId: '', studentCount: 0),
+                                  orElse: () => ClassModel(
+                                    id: '',
+                                    name: '',
+                                    periodId: '',
+                                    studentCount: 0,
+                                  ),
                                 );
                                 final s = masterProvider.subjects.firstWhere(
                                   (subj) => subj.id == j.subjectId,
-                                  orElse: () => SubjectModel(id: '', name: '', isActive: false),
+                                  orElse: () => SubjectModel(
+                                    id: '',
+                                    name: '',
+                                    isActive: false,
+                                  ),
                                 );
                                 return t.name.toLowerCase().contains(query) ||
                                     c.name.toLowerCase().contains(query) ||
@@ -335,114 +504,247 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                                     j.material.toLowerCase().contains(query);
                               }).toList();
                             }
-                            final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                            _handleExportExcel(targetJournals, masterProvider, authProvider);
+                            final authProvider = Provider.of<AuthProvider>(
+                              context,
+                              listen: false,
+                            );
+                            _handleExportExcel(
+                              targetJournals,
+                              masterProvider,
+                              authProvider,
+                            );
                           },
                   ),
                   if (!isHistorical)
                     AdminSelectionActionButton(
-                      onPressed: allJournals.isEmpty ? null : () => _toggleSelectionMode(),
+                      onPressed: allJournals.isEmpty
+                          ? null
+                          : () => _toggleSelectionMode(),
                     ),
                 ],
-              bottom: PreferredSize(
-                preferredSize: Size.fromHeight(48.h),
-                child: Container(
-                  color: Theme.of(context).appBarTheme.backgroundColor,
-                  child: TabBar(
-                    controller: _tabController,
-                    isScrollable: true,
-                    tabAlignment: TabAlignment.start,
-                    indicatorColor: const Color(0xFF2563EB),
-                    indicatorWeight: 2.5,
-                    indicatorSize: TabBarIndicatorSize.label,
-                    dividerColor: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFE2E8F0),
-                    dividerHeight: 1,
-                    tabs: [
-                      _buildTab('Semua', allJournals.length,
-                          badgeColor: Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFF60A5FA)
-                              : const Color(0xFF2563EB)),
-                      _buildTab('Belum Diisi', unfilledGroups.length,
-                          badgeColor: Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFFF87171)
-                              : const Color(0xFFBA1A1A)),
-                      _buildTab('Menunggu', pendingJournals.length,
-                          badgeColor: Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFFFBBF24)
-                              : const Color(0xFFD97706)),
-                      _buildTab('Terverifikasi', verifiedJournals.length,
-                          badgeColor: Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFF60A5FA)
-                              : const Color(0xFF2563EB)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-      drawer: const AdminDrawer(currentRoute: '/admin/journals'),
-      body: SafeArea(
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  AdminPeriodSelectorBar(
-                    periods: masterProvider.periods,
-                    selectedPeriodId: effectivePeriodId,
-                    onPeriodChanged: _onPeriodChanged,
-                  ),
-                  AdminSearchFilterBar(
-                    hintText: 'Cari guru, kelas, atau mapel...',
-                    searchController: _searchController,
-                    onSearchChanged: (val) {
-                      setState(() {
-                        _searchQuery = val.trim();
-                        if (val.isNotEmpty) {
-                          _expandedTeacherIds.addAll(
-                            masterProvider.teachers.map((t) => t.id),
-                          );
-                        }
-                      });
-                    },
-                    filterItems: [
-                      AdminFilterItem(id: 'all', label: 'Semua Kelas', count: allJournals.length),
-                      ...masterProvider.classes.where((c) {
-                        if (c.periodId == currentPeriod.id) return true;
-                        return allJournals.any((j) => j.classId == c.id);
-                      }).map((c) => AdminFilterItem(
-                        id: c.id,
-                        label: c.name,
-                        count: allJournals.where((j) => j.classId == c.id).length,
-                      )),
-                    ],
-                    selectedFilterId: _selectedClassId,
-                    onFilterSelected: (id) => setState(() => _selectedClassId = id),
-                  ),
-                  // ── Tab Content ──────────────────────────────────────
-                  Expanded(
-                    child: TabBarView(
+                bottom: PreferredSize(
+                  preferredSize: Size.fromHeight(48.h),
+                  child: Container(
+                    color: Theme.of(context).appBarTheme.backgroundColor,
+                    child: TabBar(
                       controller: _tabController,
-                      children: [
-                        _buildJournalList(allJournals, masterProvider,
-                            badgeColor: Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFF60A5FA)
-                                : const Color(0xFF2563EB)),
-                        _buildUnfilledList(unfilledGroups, masterProvider),
-                        _buildJournalList(pendingJournals, masterProvider,
-                            badgeColor: Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFFFBBF24)
-                                : const Color(0xFFD97706)),
-                        _buildJournalList(verifiedJournals, masterProvider,
-                            badgeColor: Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFF60A5FA)
-                                : const Color(0xFF2563EB)),
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      indicatorColor: const Color(0xFF2563EB),
+                      indicatorWeight: 2.5,
+                      indicatorSize: TabBarIndicatorSize.label,
+                      dividerColor:
+                          Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0),
+                      dividerHeight: 1,
+                      tabs: [
+                        _buildTab(
+                          'Semua',
+                          allJournals.length,
+                          badgeColor:
+                              Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFF60A5FA)
+                              : const Color(0xFF2563EB),
+                        ),
+                        _buildTab(
+                          'Belum Diisi',
+                          unfilledGroups.length,
+                          badgeColor:
+                              Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFFF87171)
+                              : const Color(0xFFBA1A1A),
+                        ),
+                        _buildTab(
+                          'Menunggu',
+                          pendingJournals.length,
+                          badgeColor:
+                              Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFFFBBF24)
+                              : const Color(0xFFD97706),
+                        ),
+                        _buildTab(
+                          'Terverifikasi',
+                          verifiedJournals.length,
+                          badgeColor:
+                              Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFF60A5FA)
+                              : const Color(0xFF2563EB),
+                        ),
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
+        drawer: const AdminDrawer(currentRoute: '/admin/journals'),
+        body: SafeArea(
+          child: isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                  children: [
+                    AdminPeriodSelectorBar(
+                      periods: masterProvider.periods,
+                      selectedPeriodId: effectivePeriodId,
+                      onPeriodChanged: _onPeriodChanged,
+                    ),
+                    if (_filterDate != null)
+                      _buildDateFilterBanner(masterProvider),
+                    AdminSearchFilterBar(
+                      hintText: 'Cari guru, kelas, atau mapel...',
+                      searchController: _searchController,
+                      onSearchChanged: (val) {
+                        setState(() {
+                          _searchQuery = val.trim();
+                          if (val.isNotEmpty) {
+                            _expandedTeacherIds.addAll(
+                              masterProvider.teachers.map((t) => t.id),
+                            );
+                          }
+                        });
+                      },
+                      filterItems: [
+                        AdminFilterItem(
+                          id: 'all',
+                          label: 'Semua Kelas',
+                          count: allJournals.length,
+                        ),
+                        ...masterProvider.classes
+                            .where((c) {
+                              if (c.periodId == currentPeriod.id) return true;
+                              return allJournals.any((j) => j.classId == c.id);
+                            })
+                            .map(
+                              (c) => AdminFilterItem(
+                                id: c.id,
+                                label: c.name,
+                                count: allJournals
+                                    .where((j) => j.classId == c.id)
+                                    .length,
+                              ),
+                            ),
+                      ],
+                      selectedFilterId: _selectedClassId,
+                      onFilterSelected: (id) =>
+                          setState(() => _selectedClassId = id),
+                    ),
+                    // ── Tab Content ──────────────────────────────────────
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildJournalList(
+                            allJournals,
+                            masterProvider,
+                            badgeColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF60A5FA)
+                                : const Color(0xFF2563EB),
+                          ),
+                          _buildUnfilledList(unfilledGroups, masterProvider),
+                          _buildJournalList(
+                            pendingJournals,
+                            masterProvider,
+                            badgeColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFFFBBF24)
+                                : const Color(0xFFD97706),
+                          ),
+                          _buildJournalList(
+                            verifiedJournals,
+                            masterProvider,
+                            badgeColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF60A5FA)
+                                : const Color(0xFF2563EB),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDateFilterBanner(MasterDataProvider master) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final teacherId = _filterTeacherId;
+    final teacherName = teacherId == null || teacherId.isEmpty
+        ? ''
+        : master.teachers
+              .firstWhere(
+                (t) => t.id == teacherId,
+                orElse: () => TeacherModel(
+                  id: '',
+                  name: '',
+                  position: '',
+                  address: '',
+                  phoneNumber: '',
+                  email: '',
+                ),
+              )
+              .name;
+    final label = StringBuffer(
+      'Menampilkan jurnal: ${AppHelper.formatDate(_filterDate!)}',
+    );
+    if (teacherName.isNotEmpty) {
+      label.write(' • $teacherName');
+    }
+
+    return Container(
+      margin: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 0),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF1E3A8A).withValues(alpha: 0.25)
+            : const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E40AF) : const Color(0xFFBFDBFE),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.event_available_rounded,
+            size: 16.r,
+            color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB),
+          ),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              label.toString(),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 11.5.sp,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? const Color(0xFFBFDBFE)
+                    : const Color(0xFF1E40AF),
+              ),
+            ),
+          ),
+          SizedBox(width: 8.w),
+          InkWell(
+            borderRadius: BorderRadius.circular(20.r),
+            onTap: () => setState(() {
+              _filterDate = null;
+              _filterTeacherId = null;
+            }),
+            child: Padding(
+              padding: EdgeInsets.all(2.w),
+              child: Icon(
+                Icons.close_rounded,
+                size: 18.r,
+                color: isDark
+                    ? const Color(0xFF93C5FD)
+                    : const Color(0xFF2563EB),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -466,7 +768,9 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
             Container(
               padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.h),
               decoration: BoxDecoration(
-                color: isDark ? color.withValues(alpha: 0.2) : color.withValues(alpha: 0.1),
+                color: isDark
+                    ? color.withValues(alpha: 0.2)
+                    : color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
@@ -499,11 +803,18 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
       final teacher = master.teachers.firstWhere(
         (t) => t.id == j.teacherId,
         orElse: () => TeacherModel(
-            id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
+          id: '',
+          name: '',
+          position: '',
+          address: '',
+          phoneNumber: '',
+          email: '',
+        ),
       );
       final cls = master.classes.firstWhere(
         (c) => c.id == j.classId,
-        orElse: () => ClassModel(id: '', name: '', periodId: '', studentCount: 0),
+        orElse: () =>
+            ClassModel(id: '', name: '', periodId: '', studentCount: 0),
       );
       final subject = master.subjects.firstWhere(
         (s) => s.id == j.subjectId,
@@ -530,12 +841,13 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
       final teacher = master.teachers.firstWhere(
         (t) => t.id == item.teacherId,
         orElse: () => TeacherModel(
-            id: item.teacherId,
-            name: 'Guru--',
-            position: '',
-            address: '',
-            phoneNumber: '',
-            email: ''),
+          id: item.teacherId,
+          name: 'Guru--',
+          position: '',
+          address: '',
+          phoneNumber: '',
+          email: '',
+        ),
       );
       groups.putIfAbsent(teacher, () => []).add(item);
     }
@@ -565,12 +877,16 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
               side: BorderSide(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFE2E8F0),
               ),
             ),
             clipBehavior: Clip.antiAlias,
             child: Theme(
-              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              data: Theme.of(
+                context,
+              ).copyWith(dividerColor: Colors.transparent),
               child: ExpansionTile(
                 key: ValueKey<String>('journal_teacher_${teacher.id}'),
                 initiallyExpanded: isExpanded,
@@ -587,13 +903,22 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                   children: [
                     CircleAvatar(
                       radius: 16.r,
-                      backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
-                      backgroundImage: teacher.photoUrl != null &&
+                      backgroundColor: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFF1F5F9),
+                      backgroundImage:
+                          teacher.photoUrl != null &&
                               teacher.photoUrl!.startsWith('http')
                           ? NetworkImage(teacher.photoUrl!)
                           : null,
                       child: teacher.photoUrl == null
-                          ? Icon(Icons.person, size: 16.r, color: isDark ? const Color(0xFF94A3B8) : Colors.grey[450])
+                          ? Icon(
+                              Icons.person,
+                              size: 16.r,
+                              color: isDark
+                                  ? const Color(0xFF94A3B8)
+                                  : Colors.grey[450],
+                            )
                           : null,
                     ),
                     SizedBox(width: 10.w),
@@ -612,10 +937,14 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
-                            teacher.position.isNotEmpty ? teacher.position : 'Guru',
+                            teacher.position.isNotEmpty
+                                ? teacher.position
+                                : 'Guru',
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 11.sp,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -627,7 +956,9 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                 trailing: Container(
                   padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                   decoration: BoxDecoration(
-                    color: isDark ? activeColor.withValues(alpha: 0.25) : activeColor.withValues(alpha: 0.1),
+                    color: isDark
+                        ? activeColor.withValues(alpha: 0.25)
+                        : activeColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -642,16 +973,23 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                 children: [
                   Container(
                     color: isDark
-                        ? Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
+                        ? Theme.of(context).colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.5)
                         : const Color(0xFFF8FAFC),
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 12.h,
+                    ),
                     child: ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: teacherItems.length,
                       separatorBuilder: (context, _) => SizedBox(height: 10.h),
                       itemBuilder: (context, itemIndex) {
-                        return _buildJournalCard(teacherItems[itemIndex], master);
+                        return _buildJournalCard(
+                          teacherItems[itemIndex],
+                          master,
+                        );
                       },
                     ),
                   ),
@@ -677,19 +1015,23 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     final teacher = master.teachers.firstWhere(
       (t) => t.id == journal.teacherId,
       orElse: () => TeacherModel(
-          id: '',
-          name: 'Guru--',
-          position: '',
-          address: '',
-          phoneNumber: '',
-          email: ''),
+        id: '',
+        name: 'Guru--',
+        position: '',
+        address: '',
+        phoneNumber: '',
+        email: '',
+      ),
     );
 
     final statusColor = AppHelper.getStatusColor(journal.status);
     final isSelected = _selectedIds.contains(journal.id);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final isHistorical = master.periods.any((p) => p.id == (_selectedPeriodId ?? master.activePeriod?.id) && !p.isActive);
+    final isHistorical = master.periods.any(
+      (p) =>
+          p.id == (_selectedPeriodId ?? master.activePeriod?.id) && !p.isActive,
+    );
 
     return FadeSlideIn(
       delay: const Duration(milliseconds: 60),
@@ -710,237 +1052,312 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
           decoration: BoxDecoration(
             color: isSelected
                 ? (isDark
-                    ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
-                    : const Color(0xFFEFF6FF))
-                : (Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface),
+                      ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
+                      : const Color(0xFFEFF6FF))
+                : (Theme.of(context).cardTheme.color ??
+                      Theme.of(context).colorScheme.surface),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected
                   ? const Color(0xFF2563EB)
-                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                  : (isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0)),
               width: isSelected ? 1.5 : 1.0,
             ),
           ),
           child: IntrinsicHeight(
             child: Row(
-            children: [
-              if (_isSelectionMode) ...[
-                Padding(
-                  padding: EdgeInsets.only(left: 8.w),
-                  child: Checkbox(
-                    value: isSelected,
-                    activeColor: const Color(0xFF2563EB),
-                    onChanged: (_) => _toggleSelectItem(journal.id),
+              children: [
+                if (_isSelectionMode) ...[
+                  Padding(
+                    padding: EdgeInsets.only(left: 8.w),
+                    child: Checkbox(
+                      value: isSelected,
+                      activeColor: const Color(0xFF2563EB),
+                      onChanged: (_) => _toggleSelectItem(journal.id),
+                    ),
+                  ),
+                ],
+                // Status left accent bar
+                Container(
+                  width: 4.w,
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      bottomLeft: Radius.circular(16),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 10.h,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    cls.name,
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontSize: 15.sp,
+                                      fontWeight: FontWeight.w700,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  SizedBox(height: 2.h),
+                                  Text(
+                                    subject.name,
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontSize: 13.sp,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (journal.isTeacherAbsence) ...[
+                                  Container(
+                                    margin: EdgeInsets.only(right: 6.w),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8.w,
+                                      vertical: 3.h,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: journal.isTeacherSick
+                                          ? (isDark
+                                                ? const Color(
+                                                    0xFF7F1D1D,
+                                                  ).withValues(alpha: 0.5)
+                                                : const Color(0xFFFEE2E2))
+                                          : (isDark
+                                                ? const Color(
+                                                    0xFF78350F,
+                                                  ).withValues(alpha: 0.5)
+                                                : const Color(0xFFFEF3C7)),
+                                      borderRadius: BorderRadius.circular(999),
+                                      border: Border.all(
+                                        color: journal.isTeacherSick
+                                            ? const Color(0xFFEF4444)
+                                            : const Color(0xFFF59E0B),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          journal.isTeacherSick
+                                              ? Icons.local_hospital_rounded
+                                              : Icons.assignment_outlined,
+                                          size: 11.sp,
+                                          color: journal.isTeacherSick
+                                              ? const Color(0xFFEF4444)
+                                              : const Color(0xFFD97706),
+                                        ),
+                                        SizedBox(width: 3.w),
+                                        Text(
+                                          journal.isTeacherSick
+                                              ? 'SAKIT'
+                                              : 'IZIN',
+                                          style: GoogleFonts.hankenGrotesk(
+                                            fontSize: 9.sp,
+                                            color: journal.isTeacherSick
+                                                ? const Color(0xFFEF4444)
+                                                : const Color(0xFFD97706),
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 10.w,
+                                    vertical: 4.h,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? statusColor.withValues(alpha: 0.25)
+                                        : statusColor.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    AppHelper.getStatusLabel(journal.status),
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontSize: 10.sp,
+                                      color: statusColor,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 4.h),
+                        // Teacher name
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.person_outline,
+                              size: 13.sp,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                            SizedBox(width: 4.w),
+                            Expanded(
+                              child: Text(
+                                teacher.name,
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 12.sp,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 5.h),
+                        // Material preview
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10.w,
+                            vertical: 6.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: journal.isTeacherAbsence
+                                ? (journal.isTeacherSick
+                                      ? (isDark
+                                            ? const Color(
+                                                0xFF450A0A,
+                                              ).withValues(alpha: 0.3)
+                                            : const Color(0xFFFEF2F2))
+                                      : (isDark
+                                            ? const Color(
+                                                0xFF78350F,
+                                              ).withValues(alpha: 0.3)
+                                            : const Color(0xFFFFFBEB)))
+                                : (isDark
+                                      ? Theme.of(
+                                          context,
+                                        ).colorScheme.surfaceContainerHighest
+                                      : const Color(0xFFF8FAFC)),
+                            borderRadius: BorderRadius.circular(8),
+                            border: journal.isTeacherAbsence
+                                ? Border.all(
+                                    color: journal.isTeacherSick
+                                        ? (isDark
+                                              ? const Color(0xFF991B1B)
+                                              : const Color(0xFFFECACA))
+                                        : (isDark
+                                              ? const Color(0xFF92400E)
+                                              : const Color(0xFFFDE68A)),
+                                  )
+                                : null,
+                          ),
+                          child: Text(
+                            journal.material,
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 12.sp,
+                              fontWeight: journal.isTeacherAbsence
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                              color: journal.isTeacherAbsence
+                                  ? (journal.isTeacherSick
+                                        ? const Color(0xFFDC2626)
+                                        : const Color(0xFFB45309))
+                                  : Theme.of(context).colorScheme.onSurface,
+                              height: 1.4,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        SizedBox(height: 6.h),
+                        // Footer row
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 12,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                            SizedBox(width: 4.w),
+                            Text(
+                              AppHelper.formatDateShort(journal.date),
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 11.sp,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const Spacer(),
+                            Icon(
+                              Icons.people_outline,
+                              size: 12,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                            SizedBox(width: 4.w),
+                            Text(
+                              'S:${journal.sickCount} I:${journal.permissionCount} A:${journal.alphaCount}',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 11.sp,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
-              // Status left accent bar
-              Container(
-                width: 4.w,
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  cls.name,
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 15.sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                                SizedBox(height: 2.h),
-                                Text(
-                                  subject.name,
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 13.sp,
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(width: 8.w),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (journal.isTeacherAbsence) ...[
-                                Container(
-                                  margin: EdgeInsets.only(right: 6.w),
-                                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                                  decoration: BoxDecoration(
-                                    color: journal.isTeacherSick
-                                        ? (isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.5) : const Color(0xFFFEE2E2))
-                                        : (isDark ? const Color(0xFF78350F).withValues(alpha: 0.5) : const Color(0xFFFEF3C7)),
-                                    borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(
-                                      color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFF59E0B),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        journal.isTeacherSick ? Icons.local_hospital_rounded : Icons.assignment_outlined,
-                                        size: 11.sp,
-                                        color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFD97706),
-                                      ),
-                                      SizedBox(width: 3.w),
-                                      Text(
-                                        journal.isTeacherSick ? 'SAKIT' : 'IZIN',
-                                        style: GoogleFonts.hankenGrotesk(
-                                          fontSize: 9.sp,
-                                          color: journal.isTeacherSick ? const Color(0xFFEF4444) : const Color(0xFFD97706),
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 10.w, vertical: 4.h),
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? statusColor.withValues(alpha: 0.25)
-                                      : statusColor.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  AppHelper.getStatusLabel(journal.status),
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 10.sp,
-                                    color: statusColor,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.2,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 4.h),
-                      // Teacher name
-                      Row(
-                        children: [
-                          Icon(Icons.person_outline,
-                              size: 13.sp,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant),
-                          SizedBox(width: 4.w),
-                          Expanded(
-                            child: Text(
-                              teacher.name,
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 12.sp,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 5.h),
-                      // Material preview
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                        decoration: BoxDecoration(
-                          color: journal.isTeacherAbsence
-                              ? (journal.isTeacherSick
-                                  ? (isDark ? const Color(0xFF450A0A).withValues(alpha: 0.3) : const Color(0xFFFEF2F2))
-                                  : (isDark ? const Color(0xFF78350F).withValues(alpha: 0.3) : const Color(0xFFFFFBEB)))
-                              : (isDark
-                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                  : const Color(0xFFF8FAFC)),
-                          borderRadius: BorderRadius.circular(8),
-                          border: journal.isTeacherAbsence
-                              ? Border.all(
-                                  color: journal.isTeacherSick
-                                      ? (isDark ? const Color(0xFF991B1B) : const Color(0xFFFECACA))
-                                      : (isDark ? const Color(0xFF92400E) : const Color(0xFFFDE68A)),
-                                )
-                              : null,
-                        ),
-                        child: Text(
-                          journal.material,
-                          style: GoogleFonts.hankenGrotesk(
-                            fontSize: 12.sp,
-                            fontWeight: journal.isTeacherAbsence ? FontWeight.w600 : FontWeight.normal,
-                            color: journal.isTeacherAbsence
-                                ? (journal.isTeacherSick ? const Color(0xFFDC2626) : const Color(0xFFB45309))
-                                : Theme.of(context).colorScheme.onSurface,
-                            height: 1.4,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      SizedBox(height: 6.h),
-                      // Footer row
-                      Row(
-                        children: [
-                          Icon(Icons.calendar_today_outlined,
-                              size: 12,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant),
-                          SizedBox(width: 4.w),
-                          Text(
-                            AppHelper.formatDateShort(journal.date),
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 11.sp,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const Spacer(),
-                          Icon(Icons.people_outline,
-                              size: 12,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant),
-                          SizedBox(width: 4.w),
-                          Text(
-                            'S:${journal.sickCount} I:${journal.permissionCount} A:${journal.alphaCount}',
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 11.sp,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-  Widget _buildUnfilledList(List<GroupedDailySchedule> list, MasterDataProvider master) {
+  Widget _buildUnfilledList(
+    List<GroupedDailySchedule> list,
+    MasterDataProvider master,
+  ) {
     // 1. Filter list by universal search & class filter
     final filteredList = list.where((group) {
       if (_selectedClassId != 'all' && group.classId != _selectedClassId) {
@@ -949,21 +1366,29 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
       if (_searchQuery.isEmpty) return true;
       final teacher = master.teachers.firstWhere(
         (t) => t.id == group.teacherId,
-        orElse: () => TeacherModel(id: '', name: '', position: '', address: '', phoneNumber: '', email: ''),
+        orElse: () => TeacherModel(
+          id: '',
+          name: '',
+          position: '',
+          address: '',
+          phoneNumber: '',
+          email: '',
+        ),
       );
       final cls = master.classes.firstWhere(
         (c) => c.id == group.classId,
-        orElse: () => ClassModel(id: '', name: '', periodId: '', studentCount: 0),
+        orElse: () =>
+            ClassModel(id: '', name: '', periodId: '', studentCount: 0),
       );
       final subject = master.subjects.firstWhere(
         (s) => s.id == group.subjectId,
         orElse: () => SubjectModel(id: '', name: '', isActive: false),
       );
-      
+
       final query = _searchQuery.toLowerCase();
       return teacher.name.toLowerCase().contains(query) ||
-             cls.name.toLowerCase().contains(query) ||
-             subject.name.toLowerCase().contains(query);
+          cls.name.toLowerCase().contains(query) ||
+          subject.name.toLowerCase().contains(query);
     }).toList();
 
     // 2. Group by teacher
@@ -972,12 +1397,13 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
       final teacher = master.teachers.firstWhere(
         (t) => t.id == item.teacherId,
         orElse: () => TeacherModel(
-            id: item.teacherId,
-            name: 'Guru--',
-            position: '',
-            address: '',
-            phoneNumber: '',
-            email: ''),
+          id: item.teacherId,
+          name: 'Guru--',
+          position: '',
+          address: '',
+          phoneNumber: '',
+          email: '',
+        ),
       );
       groups.putIfAbsent(teacher, () => []).add(item);
     }
@@ -1008,25 +1434,33 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
         Expanded(
           child: sortedTeachers.isEmpty
               ? (_searchQuery.isNotEmpty
-                  ? const AppEmptyWidget(
-                      title: 'Tidak Ditemukan',
-                      subtitle: 'Tidak ada jadwal belum diisi yang cocok dengan pencarian.',
-                    )
-                  : const AppEmptyWidget(
-                      title: 'Semua Jurnal Terisi',
-                      subtitle: 'Tidak ada jadwal yang belum diisi jurnalnya.',
-                    ))
+                    ? const AppEmptyWidget(
+                        title: 'Tidak Ditemukan',
+                        subtitle:
+                            'Tidak ada jadwal belum diisi yang cocok dengan pencarian.',
+                      )
+                    : const AppEmptyWidget(
+                        title: 'Semua Jurnal Terisi',
+                        subtitle:
+                            'Tidak ada jadwal yang belum diisi jurnalnya.',
+                      ))
               : RefreshIndicator(
                   onRefresh: _refreshData,
                   color: const Color(0xFF2563EB),
                   child: ListView.builder(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 8.h,
+                    ),
                     itemCount: sortedTeachers.length,
                     itemBuilder: (context, teacherIndex) {
                       final teacher = sortedTeachers[teacherIndex];
                       final teacherItems = groups[teacher]!;
-                      final isExpanded = _expandedTeacherIds.contains(teacher.id);
-                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      final isExpanded = _expandedTeacherIds.contains(
+                        teacher.id,
+                      );
+                      final isDark =
+                          Theme.of(context).brightness == Brightness.dark;
 
                       return Card(
                         margin: EdgeInsets.only(bottom: 12.h),
@@ -1034,12 +1468,16 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                           side: BorderSide(
-                            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                            color: isDark
+                                ? const Color(0xFF334155)
+                                : const Color(0xFFE2E8F0),
                           ),
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: Theme(
-                          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                          data: Theme.of(
+                            context,
+                          ).copyWith(dividerColor: Colors.transparent),
                           child: ExpansionTile(
                             key: ValueKey<String>('teacher_${teacher.id}'),
                             initiallyExpanded: isExpanded,
@@ -1056,35 +1494,51 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                               children: [
                                 CircleAvatar(
                                   radius: 16.r,
-                                  backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
-                                  backgroundImage: teacher.photoUrl != null &&
+                                  backgroundColor: isDark
+                                      ? const Color(0xFF334155)
+                                      : const Color(0xFFF1F5F9),
+                                  backgroundImage:
+                                      teacher.photoUrl != null &&
                                           teacher.photoUrl!.startsWith('http')
                                       ? NetworkImage(teacher.photoUrl!)
                                       : null,
                                   child: teacher.photoUrl == null
-                                      ? Icon(Icons.person, size: 16.r, color: isDark ? const Color(0xFF94A3B8) : Colors.grey[450])
+                                      ? Icon(
+                                          Icons.person,
+                                          size: 16.r,
+                                          color: isDark
+                                              ? const Color(0xFF94A3B8)
+                                              : Colors.grey[450],
+                                        )
                                       : null,
                                 ),
                                 SizedBox(width: 10.w),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         teacher.name,
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 14.sp,
                                           fontWeight: FontWeight.w700,
-                                          color: Theme.of(context).colorScheme.onSurface,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       Text(
-                                        teacher.position.isNotEmpty ? teacher.position : 'Guru',
+                                        teacher.position.isNotEmpty
+                                            ? teacher.position
+                                            : 'Guru',
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 11.sp,
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -1094,18 +1548,27 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                               ],
                             ),
                             trailing: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8.w,
+                                vertical: 4.h,
+                              ),
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? const Color(0xFFF87171).withValues(alpha: 0.25)
-                                    : const Color(0xFFBA1A1A).withValues(alpha: 0.1),
+                                    ? const Color(
+                                        0xFFF87171,
+                                      ).withValues(alpha: 0.25)
+                                    : const Color(
+                                        0xFFBA1A1A,
+                                      ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
                                 '${teacherItems.length}',
                                 style: GoogleFonts.hankenGrotesk(
                                   fontSize: 10.sp,
-                                  color: isDark ? const Color(0xFFF87171) : const Color(0xFFBA1A1A),
+                                  color: isDark
+                                      ? const Color(0xFFF87171)
+                                      : const Color(0xFFBA1A1A),
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -1113,16 +1576,26 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                             children: [
                               Container(
                                 color: isDark
-                                    ? Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
+                                    ? Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest
+                                          .withValues(alpha: 0.5)
                                     : const Color(0xFFF8FAFC),
-                                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12.w,
+                                  vertical: 12.h,
+                                ),
                                 child: ListView.separated(
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
                                   itemCount: teacherItems.length,
-                                  separatorBuilder: (context, _) => SizedBox(height: 10.h),
+                                  separatorBuilder: (context, _) =>
+                                      SizedBox(height: 10.h),
                                   itemBuilder: (context, itemIndex) {
-                                    return _buildUnfilledScheduleCard(teacherItems[itemIndex], master);
+                                    return _buildUnfilledScheduleCard(
+                                      teacherItems[itemIndex],
+                                      master,
+                                    );
                                   },
                                 ),
                               ),
@@ -1138,7 +1611,10 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     );
   }
 
-  Widget _buildUnfilledScheduleCard(GroupedDailySchedule group, MasterDataProvider master) {
+  Widget _buildUnfilledScheduleCard(
+    GroupedDailySchedule group,
+    MasterDataProvider master,
+  ) {
     final cls = master.classes.firstWhere(
       (c) => c.id == group.classId,
       orElse: () =>
@@ -1151,20 +1627,25 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     final teacher = master.teachers.firstWhere(
       (t) => t.id == group.teacherId,
       orElse: () => TeacherModel(
-          id: '',
-          name: 'Guru--',
-          position: '',
-          address: '',
-          phoneNumber: '',
-          email: ''),
+        id: '',
+        name: 'Guru--',
+        position: '',
+        address: '',
+        phoneNumber: '',
+        email: '',
+      ),
     );
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final statusColor = isDark ? const Color(0xFFF87171) : const Color(0xFFBA1A1A);
+    final statusColor = isDark
+        ? const Color(0xFFF87171)
+        : const Color(0xFFBA1A1A);
 
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+        color:
+            Theme.of(context).cardTheme.color ??
+            Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
@@ -1202,7 +1683,9 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                                 style: GoogleFonts.hankenGrotesk(
                                   fontSize: 15.sp,
                                   fontWeight: FontWeight.w700,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                 ),
                               ),
                               SizedBox(height: 2.h),
@@ -1210,7 +1693,9 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                                 subject.name,
                                 style: GoogleFonts.hankenGrotesk(
                                   fontSize: 13.sp,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -1220,7 +1705,9 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                         SizedBox(width: 8.w),
                         Container(
                           padding: EdgeInsets.symmetric(
-                              horizontal: 10.w, vertical: 4.h),
+                            horizontal: 10.w,
+                            vertical: 4.h,
+                          ),
                           decoration: BoxDecoration(
                             color: isDark
                                 ? statusColor.withValues(alpha: 0.25)
@@ -1242,16 +1729,20 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                     SizedBox(height: 4.h),
                     Row(
                       children: [
-                        Icon(Icons.person_outline,
-                            size: 13.sp,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        Icon(
+                          Icons.person_outline,
+                          size: 13.sp,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                         SizedBox(width: 4.w),
                         Expanded(
                           child: Text(
                             teacher.name,
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 12.sp,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                               fontWeight: FontWeight.w600,
                             ),
                             maxLines: 1,
@@ -1263,10 +1754,15 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                     SizedBox(height: 5.h),
                     Container(
                       width: double.infinity,
-                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 6.h,
+                      ),
                       decoration: BoxDecoration(
                         color: isDark
-                            ? Theme.of(context).colorScheme.surfaceContainerHighest
+                            ? Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest
                             : const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -1283,17 +1779,25 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                     SizedBox(height: 6.h),
                     Row(
                       children: [
-                        const Icon(Icons.calendar_today_outlined,
-                            size: 12, color: AppTheme.outline),
+                        const Icon(
+                          Icons.calendar_today_outlined,
+                          size: 12,
+                          color: AppTheme.outline,
+                        ),
                         SizedBox(width: 4.w),
                         Text(
                           AppHelper.formatDateShort(group.date),
                           style: GoogleFonts.hankenGrotesk(
-                              fontSize: 11.sp, color: AppTheme.outline),
+                            fontSize: 11.sp,
+                            color: AppTheme.outline,
+                          ),
                         ),
                         const Spacer(),
-                        Icon(Icons.access_time,
-                            size: 12, color: AppTheme.outline),
+                        Icon(
+                          Icons.access_time,
+                          size: 12,
+                          color: AppTheme.outline,
+                        ),
                         SizedBox(width: 4.w),
                         Text(
                           'Jam ke-${AppHelper.formatTeachingHours(group.teachingHours)}',

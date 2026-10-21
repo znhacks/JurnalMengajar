@@ -473,8 +473,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     accentColor: const Color(0xFF2563EB),
                                     bgColor: const Color(0xFFEFF6FF),
                                     borderColor: const Color(0xFFDBEAFE),
-                                    onTap: () =>
-                                        context.push('/admin/schedules'),
+                                    onTap: () => context.push(
+                                      '/admin/schedules?${_statQuery()}',
+                                    ),
                                   ),
                                 ),
                                 SizedBox(width: 8.w),
@@ -486,8 +487,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     accentColor: const Color(0xFFE11D48),
                                     bgColor: const Color(0xFFFFE4E6),
                                     borderColor: const Color(0xFFFECDD3),
-                                    onTap: () =>
-                                        context.push('/admin/journals?tab=1'),
+                                    onTap: () => context.push(
+                                      '/admin/journals?${_statQuery(tab: 1)}',
+                                    ),
                                   ),
                                 ),
                                 SizedBox(width: 8.w),
@@ -499,8 +501,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     accentColor: const Color(0xFFD97706),
                                     bgColor: const Color(0xFFFEF3C7),
                                     borderColor: const Color(0xFFFDE68A),
-                                    onTap: () =>
-                                        context.push('/admin/journals?tab=2'),
+                                    onTap: () => context.push(
+                                      '/admin/journals?${_statQuery(tab: 2)}',
+                                    ),
                                   ),
                                 ),
                                 SizedBox(width: 8.w),
@@ -512,8 +515,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     accentColor: const Color(0xFF0284C7),
                                     bgColor: const Color(0xFFF0F9FF),
                                     borderColor: const Color(0xFFBAE6FD),
-                                    onTap: () =>
-                                        context.push('/admin/journals'),
+                                    onTap: () => context.push(
+                                      '/admin/journals?${_statQuery()}',
+                                    ),
                                   ),
                                 ),
                               ],
@@ -683,6 +687,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
       ),
     );
+  }
+
+  String _statQuery({int? tab}) {
+    final params = <String, String>{
+      'date': DateFormat('yyyy-MM-dd').format(_selectedDay),
+      if (tab != null) 'tab': '$tab',
+    };
+    final teacherId = _selectedTeacherId;
+    if (teacherId != null && teacherId.isNotEmpty) {
+      params['teacher'] = teacherId;
+    }
+    return Uri(queryParameters: params).query;
   }
 
   // ─── Section Title ─────────────────────────────────────────────────────────
