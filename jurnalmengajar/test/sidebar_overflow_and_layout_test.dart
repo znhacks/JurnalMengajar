@@ -33,7 +33,10 @@ class _FakeAuthRepository implements AuthRepository {
 
 class _FakeWarningLetterRepo implements WarningLetterRepository {
   @override
-  Future<List<WarningLetterModel>> getByTeacherId(String teacherId, [String? schoolId]) async => [];
+  Future<List<WarningLetterModel>> getByTeacherId(
+    String teacherId, [
+    String? schoolId,
+  ]) async => [];
   @override
   Future<List<WarningLetterModel>> getAll([String? schoolId]) async => [];
   @override
@@ -61,13 +64,17 @@ void main() {
     final fakeRepo = _FakeAuthRepository();
     final authProvider = AuthProvider(authRepository: fakeRepo);
     final themeProvider = ThemeProvider();
-    final warningProvider = WarningLetterProvider(warningLetterRepository: _FakeWarningLetterRepo());
+    final warningProvider = WarningLetterProvider(
+      warningLetterRepository: _FakeWarningLetterRepo(),
+    );
 
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
         ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
-        ChangeNotifierProvider<WarningLetterProvider>.value(value: warningProvider),
+        ChangeNotifierProvider<WarningLetterProvider>.value(
+          value: warningProvider,
+        ),
       ],
       child: ScreenUtilInit(
         designSize: const Size(360, 690),
@@ -94,132 +101,149 @@ void main() {
   }
 
   group('Sidebar / Drawer Overflow & Layout Tests', () {
-    testWidgets('AdminDrawer renders without overflow and enforces antiAlias clipping & rounded corners', (tester) async {
-      tester.view.physicalSize = const Size(1080, 1920);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+    testWidgets(
+      'AdminDrawer renders without overflow and enforces antiAlias clipping & rounded corners',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 1920);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
 
-      await tester.pumpWidget(
-        buildTestApp(
-          child: const AdminDrawer(currentRoute: '/admin/dashboard'),
-          screenSize: const Size(540, 960),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildTestApp(
+            child: const AdminDrawer(currentRoute: '/admin/dashboard'),
+            screenSize: const Size(540, 960),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      // Open drawer
-      await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+        // Open drawer
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
 
-      // Verify Drawer shape and clipBehavior
-      final drawerFinder = find.byType(Drawer);
-      expect(drawerFinder, findsOneWidget);
-      final drawerWidget = tester.widget<Drawer>(drawerFinder);
-      expect(drawerWidget.clipBehavior, equals(Clip.antiAlias));
-      expect(drawerWidget.shape, isA<RoundedRectangleBorder>());
+        // Verify Drawer shape and clipBehavior
+        final drawerFinder = find.byType(Drawer);
+        expect(drawerFinder, findsOneWidget);
+        final drawerWidget = tester.widget<Drawer>(drawerFinder);
+        expect(drawerWidget.clipBehavior, equals(Clip.antiAlias));
+        expect(drawerWidget.shape, isA<RoundedRectangleBorder>());
 
-      // Verify dedicated footer items exist
-      expect(find.text('Profil Saya'), findsOneWidget);
-      expect(find.text('Mode Terang'), findsOneWidget);
-      expect(find.text('Keluar'), findsOneWidget);
+        // Verify dedicated footer items exist
+        expect(find.text('Profil Saya'), findsOneWidget);
+        expect(find.text('Mode Terang'), findsOneWidget);
+        expect(find.text('Keluar'), findsOneWidget);
 
-      // Verify no RenderFlex overflow exception occurred
-      expect(tester.takeException(), isNull);
-    });
+        // Verify no RenderFlex overflow exception occurred
+        expect(tester.takeException(), isNull);
+      },
+    );
 
-    testWidgets('AdminDrawer does NOT overflow on compact / small screen height (e.g. 400px)', (tester) async {
-      tester.view.physicalSize = const Size(800, 800); // 400px logical height
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+    testWidgets(
+      'AdminDrawer does NOT overflow on compact / small screen height (e.g. 400px)',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 800); // 400px logical height
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
 
-      await tester.pumpWidget(
-        buildTestApp(
-          child: const AdminDrawer(currentRoute: '/admin/dashboard'),
-          screenSize: const Size(400, 400),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildTestApp(
+            child: const AdminDrawer(currentRoute: '/admin/dashboard'),
+            screenSize: const Size(400, 400),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      // Open drawer
-      await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+        // Open drawer
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
 
-      // On compact height, SingleChildScrollView is used to prevent any overflow
-      expect(find.byType(SingleChildScrollView), findsOneWidget);
+        // On compact height, SingleChildScrollView is used to prevent any overflow
+        expect(find.byType(SingleChildScrollView), findsOneWidget);
 
-      // All items should still exist and be accessible via scrolling
-      expect(find.text('Dashboard'), findsOneWidget);
+        // All items should still exist and be accessible via scrolling
+        expect(find.text('Dashboard'), findsOneWidget);
 
-      // Scroll to bottom
-      await tester.drag(find.text('Dashboard'), const Offset(0, -600));
-      await tester.pumpAndSettle();
+        // Scroll to bottom
+        await tester.drag(find.text('Dashboard'), const Offset(0, -600));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Profil Saya'), findsOneWidget);
-      expect(find.text('Keluar'), findsOneWidget);
+        expect(find.text('Profil Saya'), findsOneWidget);
+        expect(find.text('Keluar'), findsOneWidget);
 
-      // Absolutely zero RenderFlex overflow
-      expect(tester.takeException(), isNull);
-    });
+        // Absolutely zero RenderFlex overflow
+        expect(tester.takeException(), isNull);
+      },
+    );
 
-    testWidgets('GuruDrawer renders without overflow and enforces antiAlias clipping & rounded corners', (tester) async {
-      tester.view.physicalSize = const Size(1080, 1920);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+    testWidgets(
+      'GuruDrawer renders without overflow and enforces antiAlias clipping & rounded corners',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 1920);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
 
-      await tester.pumpWidget(
-        buildTestApp(
-          child: const GuruDrawer(currentRoute: '/guru/dashboard'),
-          screenSize: const Size(540, 960),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildTestApp(
+            child: const GuruDrawer(currentRoute: '/guru/dashboard'),
+            screenSize: const Size(540, 960),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      // Open drawer
-      await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+        // Open drawer
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
 
-      // Verify Drawer shape and clipBehavior
-      final drawerFinder = find.byType(Drawer);
-      expect(drawerFinder, findsOneWidget);
-      final drawerWidget = tester.widget<Drawer>(drawerFinder);
-      expect(drawerWidget.clipBehavior, equals(Clip.antiAlias));
-      expect(drawerWidget.shape, isA<RoundedRectangleBorder>());
+        // Verify Drawer shape and clipBehavior
+        final drawerFinder = find.byType(Drawer);
+        expect(drawerFinder, findsOneWidget);
+        final drawerWidget = tester.widget<Drawer>(drawerFinder);
+        expect(drawerWidget.clipBehavior, equals(Clip.antiAlias));
+        expect(drawerWidget.shape, isA<RoundedRectangleBorder>());
 
-      expect(find.text('Keluar'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
+        // "Keluar" sekarang menjadi bagian dari daftar menu yang bisa
+        // di-scroll, bukan footer terpisah di bawah.
+        await tester.drag(find.byType(ListView).last, const Offset(0, -400));
+        await tester.pumpAndSettle();
 
-    testWidgets('GuruDrawer does NOT overflow on compact screen height (e.g. 400px)', (tester) async {
-      tester.view.physicalSize = const Size(800, 800);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+        expect(find.text('Keluar'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
 
-      await tester.pumpWidget(
-        buildTestApp(
-          child: const GuruDrawer(currentRoute: '/guru/dashboard'),
-          screenSize: const Size(400, 400),
-        ),
-      );
-      await tester.pumpAndSettle();
+    testWidgets(
+      'GuruDrawer does NOT overflow on compact screen height (e.g. 400px)',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 800);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
 
-      // Open drawer
-      await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildTestApp(
+            child: const GuruDrawer(currentRoute: '/guru/dashboard'),
+            screenSize: const Size(400, 400),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.byType(SingleChildScrollView), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
+        // Open drawer
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(SingleChildScrollView), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }

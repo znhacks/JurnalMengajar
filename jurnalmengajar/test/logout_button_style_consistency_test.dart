@@ -144,6 +144,14 @@ void main() {
   }
 
   group('Logout Button "Keluar" Color Consistency Tests', () {
+    Future<void> revealGuruLogout(WidgetTester tester) async {
+      final listViews = find.byType(ListView);
+      if (listViews.evaluate().isNotEmpty) {
+        await tester.drag(listViews.last, const Offset(0, -400));
+        await tester.pumpAndSettle();
+      }
+    }
+
     testWidgets('AdminDrawer (Left Reference) uses onSurface in Light Mode', (
       tester,
     ) async {
@@ -198,6 +206,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
+        await revealGuruLogout(tester);
 
         final keluarText = tester.widget<Text>(find.text('Keluar'));
         expect(keluarText.style?.color, equals(expectedColor));
@@ -265,6 +274,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
+        await revealGuruLogout(tester);
 
         final keluarText = tester.widget<Text>(find.text('Keluar'));
         expect(keluarText.style?.color, equals(expectedColor));
@@ -298,6 +308,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
+        await revealGuruLogout(tester);
 
         // Tap Keluar
         await tester.tap(find.text('Keluar'));

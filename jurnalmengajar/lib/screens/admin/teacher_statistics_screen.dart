@@ -437,7 +437,7 @@ class _AdminTeacherStatisticsScreenState
         : 'Sekolah';
 
     return Container(
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(16.r),
@@ -446,49 +446,17 @@ class _AdminTeacherStatisticsScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Statistik Guru',
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      schoolName,
-                      style: TextStyle(
-                        fontSize: 12.5.sp,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 14.h),
-          const Divider(height: 1),
-          SizedBox(height: 12.h),
           Text(
-            'Periode',
-            style: TextStyle(
-              fontSize: 12.5.sp,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            schoolName,
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          SizedBox(height: 8.h),
+          SizedBox(height: 10.h),
           LayoutBuilder(
             builder: (context, constraints) {
               return Container(

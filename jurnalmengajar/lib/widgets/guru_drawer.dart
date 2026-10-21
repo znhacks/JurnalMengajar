@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -546,36 +545,18 @@ class GuruDrawerPanel extends StatelessWidget {
             }
           },
         ),
-      ];
-    }
-
-    Widget buildFooterWidget() {
-      return Container(
-        color: Theme.of(context).colorScheme.surface,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Divider(height: 1, color: Color(0xFFE2E8F0)),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-              child: _buildDrawerItem(
-                icon: Icons.logout_rounded,
-                label: 'Keluar',
-                isSelected: false,
-                iconColor: Theme.of(context).colorScheme.onSurface,
-                textColor: Theme.of(context).colorScheme.onSurface,
-                onTap: () {
-                  _showLogoutDialog(context);
-                },
-              ),
-            ),
-            SizedBox(
-              height: math.max(6.h, MediaQuery.of(context).padding.bottom),
-            ),
-          ],
+        _buildDrawerItem(
+          icon: Icons.logout_rounded,
+          label: 'Keluar',
+          isSelected: false,
+          iconColor: Theme.of(context).colorScheme.onSurface,
+          textColor: Theme.of(context).colorScheme.onSurface,
+          onTap: () {
+            _showLogoutDialog(context);
+          },
         ),
-      );
+        SizedBox(height: MediaQuery.of(context).padding.bottom + 4.h),
+      ];
     }
 
     return LayoutBuilder(
@@ -598,7 +579,6 @@ class GuruDrawerPanel extends StatelessWidget {
                     children: buildMenuItems(),
                   ),
                 ),
-                buildFooterWidget(),
               ],
             ),
           );
@@ -614,7 +594,6 @@ class GuruDrawerPanel extends StatelessWidget {
                 children: buildMenuItems(),
               ),
             ),
-            buildFooterWidget(),
           ],
         );
       },
