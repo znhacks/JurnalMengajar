@@ -457,6 +457,15 @@ class _AdminTeacherStatisticsScreenState
             overflow: TextOverflow.ellipsis,
           ),
           SizedBox(height: 10.h),
+          Text(
+            'Periode',
+            style: TextStyle(
+              fontSize: 12.5.sp,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          SizedBox(height: 8.h),
           LayoutBuilder(
             builder: (context, constraints) {
               return Container(
