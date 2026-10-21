@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -843,24 +844,33 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                   ? teacher.photoUrl
                                   : null);
 
-                        return displayPhoto != null
-                            ? Image.network(
-                                displayPhoto,
+                        return Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            // Placeholder tetap tampil selama foto diunduh
+                            // agar lingkaran avatar tidak kosong pada sinyal
+                            // lambat.
+                            const Center(
+                              child: Icon(
+                                Icons.face_rounded,
+                                color: Color(0xFF2563EB),
+                                size: 26,
+                              ),
+                            ),
+                            if (displayPhoto != null)
+                              CachedNetworkImage(
+                                imageUrl: displayPhoto,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(
-                                      Icons.face_rounded,
-                                      color: Color(0xFF2563EB),
-                                      size: 26,
-                                    ),
-                              )
-                            : const Center(
-                                child: Icon(
-                                  Icons.face_rounded,
-                                  color: Color(0xFF2563EB),
-                                  size: 26,
+                                fadeInDuration: const Duration(
+                                  milliseconds: 200,
                                 ),
-                              );
+                                placeholder: (context, url) =>
+                                    const SizedBox.shrink(),
+                                errorWidget: (context, url, error) =>
+                                    const SizedBox.shrink(),
+                              ),
+                          ],
+                        );
                       },
                     ),
                   ),

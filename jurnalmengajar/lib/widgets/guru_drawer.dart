@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -173,6 +174,7 @@ class GuruDrawerPanel extends StatelessWidget {
         ? currentUser.position!.trim()
         : 'Guru Pengajar';
     final photoUrl = currentUser?.photoUrl;
+    final initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'G';
 
     final shellState = context.findAncestorStateOfType<GuruMainShellState>();
 
@@ -229,34 +231,34 @@ class GuruDrawerPanel extends StatelessWidget {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(52.r),
-                    child: photoUrl != null && photoUrl.startsWith('http')
-                        ? Image.network(
-                            photoUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Center(
-                                  child: Text(
-                                    name.isNotEmpty
-                                        ? name[0].toUpperCase()
-                                        : 'G',
-                                    style: GoogleFonts.hankenGrotesk(
-                                      color: const Color(0xFF1E1B4B),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 22.sp,
-                                    ),
-                                  ),
-                                ),
-                          )
-                        : Center(
-                            child: Text(
-                              name.isNotEmpty ? name[0].toUpperCase() : 'G',
-                              style: GoogleFonts.hankenGrotesk(
-                                color: const Color(0xFF1E1B4B),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 22.sp,
-                              ),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // Inisial selalu tampil sebagai dasar avatar, sehingga
+                        // tidak ada lingkaran kuning kosong saat foto masih
+                        // diunduh pada sinyal lambat.
+                        Center(
+                          child: Text(
+                            initial,
+                            style: GoogleFonts.hankenGrotesk(
+                              color: const Color(0xFF1E1B4B),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 22.sp,
                             ),
                           ),
+                        ),
+                        if (photoUrl != null && photoUrl.startsWith('http'))
+                          CachedNetworkImage(
+                            imageUrl: photoUrl,
+                            fit: BoxFit.cover,
+                            fadeInDuration: const Duration(milliseconds: 200),
+                            placeholder: (context, url) =>
+                                const SizedBox.shrink(),
+                            errorWidget: (context, url, error) =>
+                                const SizedBox.shrink(),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
                 RoleBadge(role: authProvider.activeRole),
