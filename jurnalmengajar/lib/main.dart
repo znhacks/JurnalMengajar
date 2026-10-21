@@ -11,7 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'repositories/supabase_auth_repository.dart';
 import 'repositories/supabase_period_repository.dart';
 import 'repositories/supabase_subject_repository.dart';
-import 'repositories/supabase_hour_repository.dart';    
+import 'repositories/supabase_hour_repository.dart';
 import 'repositories/supabase_class_repository.dart';
 import 'repositories/supabase_teacher_repository.dart';
 import 'repositories/supabase_schedule_repository.dart';
@@ -74,12 +74,18 @@ void main() async {
   final studentRepo = SupabaseStudentRepository(supabaseClient);
   final schoolRepo = SupabaseSchoolRepository(supabaseClient);
 
+  // Hidrasi identitas dari cache lokal sebelum frame pertama. Dengan begitu
+  // sidebar web desktop langsung menampilkan nama/foto/peran/sekolah yang
+  // benar saat refresh, tanpa placeholder "Guru Pengajar" + avatar kuning.
+  final authProvider = await AuthProvider.restoreCachedSession(
+    authRepository: authRepo,
+    sessionUserId: supabaseClient.auth.currentSession?.user.id,
+  );
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => AuthProvider(authRepository: authRepo),
-        ),
+        ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
         ChangeNotifierProvider(
           create: (_) => MasterDataProvider(
             periodRepository: periodRepo,
@@ -97,21 +103,16 @@ void main() async {
         ChangeNotifierProvider(
           create: (_) => JournalProvider(journalRepository: journalRepo),
         ),
-        ChangeNotifierProvider(
-          create: (_) => HolidayProvider(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => TeacherLeaveProvider(),
-        ),
+        ChangeNotifierProvider(create: (_) => HolidayProvider()),
+        ChangeNotifierProvider(create: (_) => TeacherLeaveProvider()),
         ChangeNotifierProvider(
           create: (_) => SettingsProvider(settingsRepository: settingsRepo),
         ),
         ChangeNotifierProvider(
-          create: (_) => WarningLetterProvider(warningLetterRepository: warningRepo),
+          create: (_) =>
+              WarningLetterProvider(warningLetterRepository: warningRepo),
         ),
-        ChangeNotifierProvider(
-          create: (_) => ThemeProvider(),
-        ),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: const JurnalMengajarApp(),
     ),
@@ -159,12 +160,12 @@ class _JurnalMengajarAppState extends State<JurnalMengajarApp> {
         } else if (width < 1024) {
           // Tablet (Web & Native): use tablet-proportional canvas
           final isPortrait = height >= width;
-          designSize = isPortrait ? const Size(768, 1024) : const Size(1024, 768);
+          designSize = isPortrait
+              ? const Size(768, 1024)
+              : const Size(1024, 768);
         } else {
           // Laptop / Desktop PC: preserve exact desktop canvas
-          designSize = kIsWeb
-              ? const Size(1280, 800)
-              : Size(width, height);
+          designSize = kIsWeb ? const Size(1280, 800) : Size(width, height);
         }
 
         return ScreenUtilInit(
@@ -201,9 +202,7 @@ class _JurnalMengajarAppState extends State<JurnalMengajarApp> {
                   if (media.padding.bottom < minBottomInset) {
                     content = MediaQuery(
                       data: media.copyWith(
-                        padding: media.padding.copyWith(
-                          bottom: minBottomInset,
-                        ),
+                        padding: media.padding.copyWith(bottom: minBottomInset),
                         viewPadding: EdgeInsets.only(
                           left: media.viewPadding.left,
                           top: media.viewPadding.top,

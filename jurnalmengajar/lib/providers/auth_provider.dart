@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,6 +11,7 @@ import '../core/constants/teacher_roles.dart';
 import '../services/fcm_service.dart';
 import '../core/utils/helper.dart';
 import '../core/services/cache_service.dart';
+import '../core/services/profile_photo_cache.dart';
 import '../core/utils/network_resilience.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -30,8 +33,181 @@ class AuthProvider with ChangeNotifier {
   bool _isRecoveryMode = false;
   bool _isSchoolExpired = false;
 
-  AuthProvider({required AuthRepository authRepository})
-    : _authRepository = authRepository {
+  /// Pulihkan profil, membership, peran, sekolah, dan foto dari cache lokal
+  /// sebelum frame pertama dirender.
+  ///
+  /// Tujuannya agar sidebar langsung menampilkan identitas guru yang benar
+  /// saat refresh/login, termasuk pada sinyal lemah. Data tetap divalidasi
+  /// ulang dari Supabase oleh [_loadCurrentUser] di latar belakang.
+  static Future<AuthProvider> restoreCachedSession({
+    required AuthRepository authRepository,
+    required String? sessionUserId,
+  }) async {
+    UserModel? initialUser;
+    List<UserSchoolModel> initialMemberships = const [];
+    SchoolModel? initialSchool;
+    String? initialRole;
+    String? initialSchoolId;
+    String? initialSchoolName;
+
+    if (sessionUserId != null && sessionUserId.isNotEmpty) {
+      try {
+        await CacheService().init();
+
+        final cachedProfile = await CacheService().loadMap(
+          'user_profile_$sessionUserId',
+        );
+        if (cachedProfile != null && cachedProfile.isNotEmpty) {
+          final user = UserModel.fromJson(cachedProfile);
+          if (user.isActive) {
+            initialUser = user;
+          }
+        }
+
+        final cachedMemberships = await CacheService().loadList(
+          'user_memberships_$sessionUserId',
+        );
+        if (cachedMemberships != null) {
+          initialMemberships = cachedMemberships
+              .map(UserSchoolModel.fromJson)
+              .where((membership) => membership.schoolId.isNotEmpty)
+              .toList();
+        }
+
+        final prefs = await SharedPreferences.getInstance();
+        initialRole =
+            prefs.getString(_userRoleKey(sessionUserId)) ??
+            prefs.getString(_kActiveRoleKey);
+        initialSchoolId =
+            prefs.getString(_userSchoolKey(sessionUserId)) ??
+            prefs.getString(_kActiveSchoolIdKey);
+
+        if (initialUser != null) {
+          initialRole ??= initialUser.role;
+          initialSchoolId ??= initialUser.schoolId;
+          initialSchoolName = initialUser.schoolName;
+        }
+
+        final selectedSchoolId = initialSchoolId;
+        final selectedRole = initialRole?.toLowerCase();
+        UserSchoolModel? activeMember;
+        if (selectedSchoolId != null && selectedSchoolId.isNotEmpty) {
+          activeMember = _findMembership(
+            initialMemberships,
+            (membership) =>
+                membership.schoolId == selectedSchoolId &&
+                (selectedRole == null ||
+                    membership.role.toLowerCase() == selectedRole),
+          );
+          activeMember ??= _findMembership(
+            initialMemberships,
+            (membership) => membership.schoolId == selectedSchoolId,
+          );
+        }
+        activeMember ??= _findMembership(
+          initialMemberships,
+          (membership) =>
+              membership.status == null ||
+              membership.status!.toLowerCase() == 'active',
+        );
+        activeMember ??= initialMemberships.isNotEmpty
+            ? initialMemberships.first
+            : null;
+
+        initialSchoolId ??= activeMember?.schoolId;
+        initialSchoolName ??= activeMember?.schoolName;
+        initialRole ??= activeMember?.role;
+
+        if (initialSchoolId != null && initialSchoolId.isNotEmpty) {
+          final schoolId = initialSchoolId;
+          final cachedSchool = await CacheService().loadMap(
+            'active_school_$schoolId',
+          );
+          if (cachedSchool != null && cachedSchool.isNotEmpty) {
+            initialSchool = SchoolModel.fromJson(cachedSchool);
+            initialSchoolName = initialSchool.name;
+          }
+        }
+
+        initialRole = (initialRole ?? 'guru').toLowerCase();
+        final registeredRole = initialUser?.registeredRole?.toLowerCase();
+        final baseRole = initialUser?.role.toLowerCase();
+        final cachedIsAdminAsli =
+            initialUser != null &&
+            registeredRole != 'guru' &&
+            registeredRole != 'pending_guru' &&
+            (baseRole == 'admin' ||
+                baseRole == 'superadmin' ||
+                baseRole == 'school_admin');
+        if (cachedIsAdminAsli) {
+          initialRole = 'admin';
+        } else if (initialRole != 'admin' && initialRole != 'guru') {
+          initialRole = 'guru';
+        }
+
+        final user = initialUser;
+        final photoUrl = user?.photoUrl;
+        if (user != null && photoUrl != null && photoUrl.startsWith('http')) {
+          // Hanya baca cache lokal (tanpa jaringan) supaya foto sudah siap
+          // dipakai pada frame pertama.
+          await ProfilePhotoCache().loadFromStorage(user.id, photoUrl);
+        }
+      } catch (e) {
+        debugPrint('[AuthProvider] Gagal memulihkan sesi dari cache: $e');
+      }
+    }
+
+    return AuthProvider(
+      authRepository: authRepository,
+      initialUser: initialUser,
+      initialMemberships: initialMemberships,
+      initialActiveSchool: initialSchool,
+      initialActiveRole: initialRole,
+      initialActiveSchoolId: initialSchoolId,
+      initialActiveSchoolName: initialSchoolName,
+    );
+  }
+
+  static UserSchoolModel? _findMembership(
+    List<UserSchoolModel> memberships,
+    bool Function(UserSchoolModel membership) test,
+  ) {
+    for (final membership in memberships) {
+      if (test(membership)) return membership;
+    }
+    return null;
+  }
+
+  AuthProvider({
+    required AuthRepository authRepository,
+    UserModel? initialUser,
+    List<UserSchoolModel>? initialMemberships,
+    SchoolModel? initialActiveSchool,
+    String? initialActiveRole,
+    String? initialActiveSchoolId,
+    String? initialActiveSchoolName,
+  }) : _authRepository = authRepository,
+       _currentUser = initialUser {
+    if (initialMemberships != null && initialMemberships.isNotEmpty) {
+      _userMemberships = List<UserSchoolModel>.of(initialMemberships);
+    }
+    if (initialActiveSchool != null) {
+      _activeSchool = initialActiveSchool;
+    }
+    if (initialActiveRole != null && initialActiveRole.isNotEmpty) {
+      _activeRole = initialActiveRole;
+    }
+    if (initialActiveSchoolId != null && initialActiveSchoolId.isNotEmpty) {
+      _activeSchoolId = initialActiveSchoolId;
+    }
+    if (initialActiveSchoolName != null && initialActiveSchoolName.isNotEmpty) {
+      _activeSchoolName = initialActiveSchoolName;
+    }
+    if (initialUser != null) {
+      // Profil dari cache cukup untuk merender sidebar dengan identitas yang
+      // benar. Refresh jaringan tetap berjalan di bawah ini.
+      _initialized = true;
+    }
     _loadCurrentUser(isInitialBoot: true);
 
     // Automatically reload profile on Auth state change (e.g. OAuth Redirect Callback)
@@ -1349,6 +1525,7 @@ class AuthProvider with ChangeNotifier {
       } else {
         _currentUser = user;
         if (user != null) {
+          unawaited(ProfilePhotoCache().preload(user.id, user.photoUrl));
           final prefs = await SharedPreferences.getInstance();
           final uid = user.id;
           final savedUserRole =
@@ -1375,6 +1552,13 @@ class AuthProvider with ChangeNotifier {
             // Non-Admin Asli: Allow 'admin' if explicitly saved by this user, then loadUserMemberships() will strictly sanitize
             final canRestoreAdmin = savedUserRole?.toLowerCase() == 'admin';
             _activeRole = canRestoreAdmin ? 'admin' : 'guru';
+          }
+          final cachedSchoolName = user.schoolName?.trim();
+          if ((_activeSchoolName.trim().isEmpty ||
+                  _activeSchoolName == 'Sekolah') &&
+              cachedSchoolName != null &&
+              cachedSchoolName.isNotEmpty) {
+            _activeSchoolName = cachedSchoolName;
           }
           if (_userMemberships.isEmpty) {
             try {
@@ -1427,6 +1611,9 @@ class AuthProvider with ChangeNotifier {
         );
       }
       _currentUser = loggedInUser;
+      unawaited(
+        ProfilePhotoCache().preload(loggedInUser.id, loggedInUser.photoUrl),
+      );
       if (isAdminAsli) {
         _activeRole = 'admin';
         _activeSchoolId =
@@ -1437,6 +1624,11 @@ class AuthProvider with ChangeNotifier {
         _activeSchoolId =
             AppHelper.parseSingleCleanSchoolId(loggedInUser.schoolId) ??
             loggedInUser.schoolId;
+      }
+
+      final loginSchoolName = loggedInUser.schoolName?.trim();
+      if (loginSchoolName != null && loginSchoolName.isNotEmpty) {
+        _activeSchoolName = loginSchoolName;
       }
 
       // Immediately write safe initial preferences for this user
@@ -1676,6 +1868,12 @@ class AuthProvider with ChangeNotifier {
       // Evict Flutter memory image cache to guarantee instant refresh of avatars
       PaintingBinding.instance.imageCache.clear();
       PaintingBinding.instance.imageCache.clearLiveImages();
+      final currentUser = _currentUser;
+      if (currentUser != null) {
+        unawaited(
+          ProfilePhotoCache().preload(currentUser.id, currentUser.photoUrl),
+        );
+      }
       await CacheService().purgePrefix('teachers_');
 
       await loadUserMemberships();

@@ -83,7 +83,7 @@ class SupabaseAuthRepository implements AuthRepository {
             userJson['registered_role'] = rawMetaRole;
           }
           final user = UserModel.fromJson(userJson);
-          await CacheService().save('user_profile_$userId', user.toJson());
+          await CacheService().save('user_profile_$userId', user.toCacheJson());
           return user;
         },
         fallback: () async {
@@ -152,7 +152,7 @@ class SupabaseAuthRepository implements AuthRepository {
         userJson['registered_role'] = rawMetaRole;
       }
       final user = UserModel.fromJson(userJson);
-      await CacheService().save('user_profile_$userId', user.toJson());
+      await CacheService().save('user_profile_$userId', user.toCacheJson());
       return user;
     } on AuthException catch (e) {
       throw Exception(e.message);
@@ -1007,6 +1007,10 @@ class SupabaseAuthRepository implements AuthRepository {
       final compressed = await ImageCompressor.compressToWebp(
         bytes: imageBytes,
         originalFileName: fileName,
+        // Avatar tidak perlu resolusi penuh; ukuran lebih kecil membuat
+        // unduhan jauh lebih cepat pada sinyal lemah.
+        maxWidth: 512,
+        maxHeight: 512,
       );
 
       final ext = compressed.fileName.contains('.')
@@ -1019,7 +1023,12 @@ class SupabaseAuthRepository implements AuthRepository {
           .uploadBinary(
             filePath,
             compressed.bytes,
-            fileOptions: const FileOptions(cacheControl: '0', upsert: true),
+            // URL avatar memakai cache buster (?t=...) saat foto diganti,
+            // jadi aman menyimpan cache lama di browser/perangkat.
+            fileOptions: const FileOptions(
+              cacheControl: '31536000',
+              upsert: true,
+            ),
           );
 
       final publicUrl = _supabase.storage

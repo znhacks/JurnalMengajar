@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +10,7 @@ import '../providers/theme_provider.dart';
 import '../core/utils/helper.dart';
 import '../screens/guru/main_shell.dart';
 import '../screens/guru/dashboard_screen.dart';
+import 'profile_photo_view.dart';
 import 'role_badge.dart';
 import 'school_switcher_modal.dart';
 
@@ -167,7 +167,8 @@ class GuruDrawerPanel extends StatelessWidget {
           wSchoolId == cleanActiveSchoolId;
     }).length;
 
-    final name = currentUser?.fullName ?? 'Guru Pengajar';
+    final isProfileReady = currentUser != null;
+    final name = currentUser?.fullName ?? '';
     final position =
         (currentUser?.position != null &&
             currentUser!.position!.trim().isNotEmpty)
@@ -205,91 +206,115 @@ class GuruDrawerPanel extends StatelessWidget {
           20.w,
           20.h,
         ),
-        decoration: const BoxDecoration(
-          color: Color(0xFF2563EB),
-        ),
+        decoration: const BoxDecoration(color: Color(0xFF2563EB)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  width: 52.w,
-                  height: 52.w,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFACC15),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(52.r),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        // Inisial selalu tampil sebagai dasar avatar, sehingga
-                        // tidak ada lingkaran kuning kosong saat foto masih
-                        // diunduh pada sinyal lambat.
-                        Center(
-                          child: Text(
-                            initial,
-                            style: GoogleFonts.hankenGrotesk(
-                              color: const Color(0xFF1E1B4B),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 22.sp,
+                isProfileReady
+                    ? Container(
+                        width: 52.w,
+                        height: 52.w,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFACC15),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(52.r),
+                          child: ProfilePhotoView(
+                            userId: currentUser.id,
+                            photoUrl: photoUrl,
+                            fallback: Center(
+                              child: Text(
+                                initial,
+                                style: GoogleFonts.hankenGrotesk(
+                                  color: const Color(0xFF1E1B4B),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 22.sp,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                        if (photoUrl != null && photoUrl.startsWith('http'))
-                          CachedNetworkImage(
-                            imageUrl: photoUrl,
-                            fit: BoxFit.cover,
-                            fadeInDuration: const Duration(milliseconds: 200),
-                            placeholder: (context, url) =>
-                                const SizedBox.shrink(),
-                            errorWidget: (context, url, error) =>
-                                const SizedBox.shrink(),
+                      )
+                    : Container(
+                        width: 52.w,
+                        height: 52.w,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.35),
+                            width: 2,
                           ),
-                      ],
-                    ),
-                  ),
-                ),
+                        ),
+                        child: Icon(
+                          Icons.person_rounded,
+                          color: Colors.white.withValues(alpha: 0.8),
+                          size: 26.sp,
+                        ),
+                      ),
                 RoleBadge(role: authProvider.activeRole),
               ],
             ),
             SizedBox(height: 14.h),
-            Text(
-              name,
-              style: GoogleFonts.hankenGrotesk(
-                color: Colors.white,
-                fontSize: 18.sp,
-                fontWeight: FontWeight.bold,
+            if (isProfileReady) ...[
+              Text(
+                name,
+                style: GoogleFonts.hankenGrotesk(
+                  color: Colors.white,
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: 2.h),
-            Text(
-              position,
-              style: GoogleFonts.hankenGrotesk(
-                color: Colors.white70,
-                fontSize: 12.sp,
+              SizedBox(height: 2.h),
+              Text(
+                position,
+                style: GoogleFonts.hankenGrotesk(
+                  color: Colors.white70,
+                  fontSize: 12.sp,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            ] else ...[
+              Container(
+                width: 148.w,
+                height: 15.h,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(6.r),
+                ),
+              ),
+              SizedBox(height: 7.h),
+              Container(
+                width: 104.w,
+                height: 10.h,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(5.r),
+                ),
+              ),
+            ],
             SizedBox(height: 12.h),
             // Interactive School Switcher Banner
             Builder(
               builder: (context) {
-                final canSwitch = !authProvider.isGuruMurni || authProvider.hasMultipleSchools;
+                final canSwitch =
+                    !authProvider.isGuruMurni ||
+                    authProvider.hasMultipleSchools;
                 final switcherWidget = Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: 12.w,
@@ -311,16 +336,24 @@ class GuruDrawerPanel extends StatelessWidget {
                       ),
                       SizedBox(width: 8.w),
                       Expanded(
-                        child: Text(
-                          authProvider.activeSchoolName,
-                          style: GoogleFonts.hankenGrotesk(
-                            color: Colors.white,
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        child: isProfileReady
+                            ? Text(
+                                authProvider.activeSchoolName,
+                                style: GoogleFonts.hankenGrotesk(
+                                  color: Colors.white,
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              )
+                            : Container(
+                                height: 12.h,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.25),
+                                  borderRadius: BorderRadius.circular(4.r),
+                                ),
+                              ),
                       ),
                       if (canSwitch)
                         const Icon(
@@ -546,48 +579,45 @@ class GuruDrawerPanel extends StatelessWidget {
     }
 
     return LayoutBuilder(
-        builder: (context, constraints) {
-          final isCompactHeight = constraints.maxHeight < 560;
+      builder: (context, constraints) {
+        final isCompactHeight = constraints.maxHeight < 560;
 
-          if (isCompactHeight) {
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  buildHeaderWidget(),
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: 12.h,
-                      horizontal: 12.w,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: buildMenuItems(),
-                    ),
-                  ),
-                  buildFooterWidget(),
-                ],
-              ),
-            );
-          }
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              buildHeaderWidget(),
-              Expanded(
-                child: ListView(
+        if (isCompactHeight) {
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                buildHeaderWidget(),
+                Padding(
                   padding: EdgeInsets.symmetric(
                     vertical: 12.h,
                     horizontal: 12.w,
                   ),
-                  children: buildMenuItems(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: buildMenuItems(),
+                  ),
                 ),
-              ),
-              buildFooterWidget(),
-            ],
+                buildFooterWidget(),
+              ],
+            ),
           );
-        },
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            buildHeaderWidget(),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
+                children: buildMenuItems(),
+              ),
+            ),
+            buildFooterWidget(),
+          ],
+        );
+      },
     );
   }
 

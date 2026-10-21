@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -22,6 +21,7 @@ import '../../core/theme/app_theme.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/warning_letter_provider.dart';
 import '../../widgets/animated_widgets.dart';
+import '../../widgets/profile_photo_view.dart';
 import '../../widgets/role_badge.dart';
 import '../../widgets/school_switcher_modal.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -844,32 +844,16 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                                   ? teacher.photoUrl
                                   : null);
 
-                        return Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            // Placeholder tetap tampil selama foto diunduh
-                            // agar lingkaran avatar tidak kosong pada sinyal
-                            // lambat.
-                            const Center(
-                              child: Icon(
-                                Icons.face_rounded,
-                                color: Color(0xFF2563EB),
-                                size: 26,
-                              ),
+                        return ProfilePhotoView(
+                          userId: authUser?.id ?? teacher.id,
+                          photoUrl: displayPhoto,
+                          fallback: const Center(
+                            child: Icon(
+                              Icons.face_rounded,
+                              color: Color(0xFF2563EB),
+                              size: 26,
                             ),
-                            if (displayPhoto != null)
-                              CachedNetworkImage(
-                                imageUrl: displayPhoto,
-                                fit: BoxFit.cover,
-                                fadeInDuration: const Duration(
-                                  milliseconds: 200,
-                                ),
-                                placeholder: (context, url) =>
-                                    const SizedBox.shrink(),
-                                errorWidget: (context, url, error) =>
-                                    const SizedBox.shrink(),
-                              ),
-                          ],
+                          ),
                         );
                       },
                     ),
