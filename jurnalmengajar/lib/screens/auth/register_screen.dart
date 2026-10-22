@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/master_data_provider.dart';
-import '../../providers/theme_provider.dart';
 import '../../models/school_model.dart';
 import '../../repositories/supabase_auth_repository.dart';
 import '../../core/utils/helper.dart';
@@ -528,31 +527,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 } else {
                                   context.go('/login');
                                 }
-                              },
-                            ),
-                          ),
-                          Positioned(
-                            top: 8.h,
-                            right: 8.w,
-                            child: Consumer<ThemeProvider>(
-                              builder: (context, themeProvider, child) {
-                                return IconButton(
-                                  icon: Icon(
-                                    themeProvider.isDarkMode
-                                        ? Icons.dark_mode_rounded
-                                        : Icons.light_mode_rounded,
-                                    color: Colors.white,
-                                    size: 22.sp,
-                                  ),
-                                  tooltip: themeProvider.isDarkMode
-                                      ? 'Mode Gelap'
-                                      : 'Mode Terang',
-                                  onPressed: () {
-                                    themeProvider.toggleTheme(
-                                      !themeProvider.isDarkMode,
-                                    );
-                                  },
-                                );
                               },
                             ),
                           ),

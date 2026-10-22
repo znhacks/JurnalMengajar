@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/theme_provider.dart';
 import '../../core/utils/helper.dart';
 import '../../widgets/wave_clipper.dart';
 
@@ -224,29 +223,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ],
                               ),
-                            ),
-                          ),
-                          Positioned(
-                            top: 8.h,
-                            right: 8.w,
-                            child: Consumer<ThemeProvider>(
-                              builder: (context, themeProvider, child) {
-                                return IconButton(
-                                  icon: Icon(
-                                    themeProvider.isDarkMode
-                                        ? Icons.dark_mode_rounded
-                                        : Icons.light_mode_rounded,
-                                    color: Colors.white,
-                                    size: 22.sp,
-                                  ),
-                                  tooltip: themeProvider.isDarkMode
-                                      ? 'Mode Gelap'
-                                      : 'Mode Terang',
-                                  onPressed: () {
-                                    themeProvider.toggleTheme(!themeProvider.isDarkMode);
-                                  },
-                                );
-                              },
                             ),
                           ),
                         ],

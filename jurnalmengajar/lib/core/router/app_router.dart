@@ -38,6 +38,7 @@ import '../../screens/admin/class_attendance_recap_screen.dart';
 import '../../screens/auth/school_expired_screen.dart';
 import '../../widgets/swipe_back_wrapper.dart';
 import '../../widgets/desktop_sidebar_shell.dart';
+import '../theme/app_theme.dart';
 
 class AppRouter {
   static CustomTransitionPage<void> _buildCustomTransition(
@@ -183,13 +184,19 @@ class AppRouter {
         ),
         GoRoute(
           path: '/login',
-          pageBuilder: (context, state) =>
-              _buildCustomTransition(context, state, const LoginScreen()),
+          pageBuilder: (context, state) => _buildCustomTransition(
+            context,
+            state,
+            const _SystemThemeScope(child: LoginScreen()),
+          ),
         ),
         GoRoute(
           path: '/register',
-          pageBuilder: (context, state) =>
-              _buildCustomTransition(context, state, const RegisterScreen()),
+          pageBuilder: (context, state) => _buildCustomTransition(
+            context,
+            state,
+            const _SystemThemeScope(child: RegisterScreen()),
+          ),
         ),
         GoRoute(
           path: '/reset-password',
@@ -591,6 +598,23 @@ class AppRouter {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// Applies the device (system) brightness to the auth pages so login and
+/// register always follow the device theme instead of the saved app theme.
+class _SystemThemeScope extends StatelessWidget {
+  final Widget child;
+
+  const _SystemThemeScope({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    return Theme(
+      data: isDark ? AppTheme.darkTheme : AppTheme.lightTheme,
+      child: child,
     );
   }
 }
