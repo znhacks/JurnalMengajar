@@ -13,7 +13,6 @@ import '../../providers/holiday_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../core/utils/helper.dart';
-import '../../models/teacher_model.dart';
 import '../../models/schedule_model.dart';
 import '../../models/journal_model.dart';
 import '../../core/utils/schedule_grouper.dart';
@@ -291,7 +290,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       );
       return !hasCompletedJournal;
     }).length;
-    final hasUnsubmitted = unsubmittedCount > 0;
 
     final isLoading =
         masterProvider.isLoading ||
@@ -441,30 +439,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           ),
                           SizedBox(height: 14.h),
 
-                          // 2. Teacher Selector Filter
-                          _buildTeacherSelectorCompact(masterProvider.teachers),
-                          SizedBox(height: 12.h),
-
-                          // 3. Stat Cards: prioritas belum input + 3 ringkasan
-                          _buildPriorityStatCard(
-                            title: 'Belum Input',
-                            subtitle: 'Jadwal tanpa jurnal',
-                            count: '$unsubmittedCount',
-                            icon: Icons.pending_actions_rounded,
-                            accentColor: hasUnsubmitted
-                                ? const Color(0xFFE11D48)
-                                : const Color(0xFF2563EB),
-                            bgColor: hasUnsubmitted
-                                ? const Color(0xFFFFE4E6)
-                                : const Color(0xFFEFF6FF),
-                            borderColor: hasUnsubmitted
-                                ? const Color(0xFFFECDD3)
-                                : const Color(0xFFDBEAFE),
-                            onTap: () => context.push(
-                              '/admin/journals?${_statQuery(tab: 1)}',
-                            ),
-                          ),
-                          SizedBox(height: 8.h),
+                          // 2. Stat Cards Row (4 Grid Cards)
                           Row(
                             children: [
                               Expanded(
@@ -477,6 +452,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   borderColor: const Color(0xFFDBEAFE),
                                   onTap: () => context.push(
                                     '/admin/schedules?${_statQuery()}',
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              Expanded(
+                                child: _buildStatCard(
+                                  'Belum Input',
+                                  '$unsubmittedCount',
+                                  Icons.pending_actions_rounded,
+                                  accentColor: const Color(0xFFE11D48),
+                                  bgColor: const Color(0xFFFFE4E6),
+                                  borderColor: const Color(0xFFFECDD3),
+                                  onTap: () => context.push(
+                                    '/admin/journals?${_statQuery(tab: 1)}',
                                   ),
                                 ),
                               ),
@@ -500,9 +489,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   'Jurnal',
                                   '$totalJournals',
                                   Icons.assignment_rounded,
-                                  accentColor: const Color(0xFF1E40AF),
-                                  bgColor: const Color(0xFFDBEAFE),
-                                  borderColor: const Color(0xFFBFDBFE),
+                                  accentColor: const Color(0xFF0284C7),
+                                  bgColor: const Color(0xFFF0F9FF),
+                                  borderColor: const Color(0xFFBAE6FD),
                                   onTap: () => context.push(
                                     '/admin/journals?${_statQuery()}',
                                   ),
@@ -660,90 +649,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Uri(queryParameters: params).query;
   }
 
-  Widget _buildPriorityStatCard({
-    required String title,
-    required String subtitle,
-    required String count,
-    required IconData icon,
-    required Color accentColor,
-    required Color bgColor,
-    required Color borderColor,
-    required VoidCallback onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16.r),
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-          decoration: BoxDecoration(
-            color: isDark
-                ? Theme.of(context).colorScheme.surfaceContainerHighest
-                : Colors.white,
-            borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(
-              color: isDark ? accentColor.withValues(alpha: 0.35) : borderColor,
-              width: 1.4,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(10.w),
-                decoration: BoxDecoration(
-                  color: isDark ? accentColor.withValues(alpha: 0.2) : bgColor,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: accentColor, size: 20.w),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 13.5.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(width: 12.w),
-              Text(
-                count,
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.w800,
-                  color: Theme.of(context).colorScheme.onSurface,
-                  height: 1.0,
-                ),
-              ),
-              SizedBox(width: 6.w),
-              Icon(Icons.arrow_forward_rounded, size: 18.r, color: accentColor),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   // ─── Stat Card ─────────────────────────────────────────────────────────────
   Widget _buildStatCard(
     String title,
@@ -777,6 +682,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               color: isDark ? accentColor.withValues(alpha: 0.3) : borderColor,
               width: 1.2,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1368,613 +1280,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           },
         );
       },
-    );
-  }
-
-  Widget _buildTeacherSelectorCompact(List<TeacherModel> teachers) {
-    return AdminTeacherSearchSelector(
-      teachers: teachers,
-      selectedTeacherId: _selectedTeacherId,
-      onTeacherSelected: (value) => setState(() => _selectedTeacherId = value),
-    );
-  }
-}
-
-class AdminTeacherSearchSelector extends StatefulWidget {
-  final List<TeacherModel> teachers;
-  final String? selectedTeacherId;
-  final ValueChanged<String?> onTeacherSelected;
-
-  const AdminTeacherSearchSelector({
-    super.key,
-    required this.teachers,
-    required this.selectedTeacherId,
-    required this.onTeacherSelected,
-  });
-
-  @override
-  State<AdminTeacherSearchSelector> createState() =>
-      _AdminTeacherSearchSelectorState();
-}
-
-class _AdminTeacherSearchSelectorState
-    extends State<AdminTeacherSearchSelector> {
-  late final TextEditingController _controller;
-  late final FocusNode _focusNode;
-  final LayerLink _layerLink = LayerLink();
-  OverlayEntry? _overlayEntry;
-  bool _isOpen = false;
-
-  @override
-  void initState() {
-    super.initState();
-    final initialName = _getTeacherName(widget.selectedTeacherId);
-    _controller = TextEditingController(text: initialName);
-    _focusNode = FocusNode();
-
-    _focusNode.addListener(() {
-      if (_focusNode.hasFocus) {
-        _controller.selection = TextSelection(
-          baseOffset: 0,
-          extentOffset: _controller.text.length,
-        );
-        _openDropdown();
-      }
-    });
-  }
-
-  @override
-  void didUpdateWidget(covariant AdminTeacherSearchSelector oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.selectedTeacherId != oldWidget.selectedTeacherId ||
-        widget.teachers != oldWidget.teachers) {
-      if (!_focusNode.hasFocus) {
-        _syncTextWithSelection();
-      }
-      if (_isOpen) {
-        _overlayEntry?.markNeedsBuild();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _closeDropdown();
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  String _getTeacherName(String? id) {
-    if (id == null) return '';
-    try {
-      return widget.teachers.firstWhere((t) => t.id == id).name;
-    } catch (_) {
-      return '';
-    }
-  }
-
-  void _syncTextWithSelection() {
-    if (widget.selectedTeacherId == null) {
-      if (_controller.text.isNotEmpty) {
-        _controller.clear();
-      }
-    } else {
-      final name = _getTeacherName(widget.selectedTeacherId);
-      if (_controller.text != name) {
-        _controller.text = name;
-      }
-    }
-  }
-
-  List<TeacherModel> _getFilteredTeachers() {
-    final query = _controller.text.trim().toLowerCase();
-    final selectedName = _getTeacherName(
-      widget.selectedTeacherId,
-    ).toLowerCase();
-
-    // If query matches the currently selected teacher's full name or is empty, show all teachers
-    if (query.isEmpty ||
-        (widget.selectedTeacherId != null && query == selectedName)) {
-      return widget.teachers;
-    }
-
-    return widget.teachers.where((t) {
-      final nameMatches = t.name.toLowerCase().contains(query);
-      final posMatches = t.position.toLowerCase().contains(query);
-      final nipMatches = t.nip != null && t.nip!.contains(query);
-      return nameMatches || posMatches || nipMatches;
-    }).toList();
-  }
-
-  void _openDropdown() {
-    if (_isOpen || !mounted) return;
-    final overlay = Overlay.maybeOf(context);
-    if (overlay == null) return;
-    _overlayEntry = _createOverlayEntry();
-    overlay.insert(_overlayEntry!);
-    setState(() {
-      _isOpen = true;
-    });
-  }
-
-  void _closeDropdown() {
-    if (!_isOpen && _overlayEntry == null) return;
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-    if (mounted) {
-      setState(() {
-        _isOpen = false;
-      });
-    }
-  }
-
-  void _selectTeacher(String? teacherId) {
-    if (teacherId == null) {
-      _controller.clear();
-    } else {
-      _controller.text = _getTeacherName(teacherId);
-    }
-    widget.onTeacherSelected(teacherId);
-    _closeDropdown();
-    _focusNode.unfocus();
-    setState(() {});
-  }
-
-  void _clearInput() {
-    _controller.clear();
-    widget.onTeacherSelected(null);
-    if (_isOpen) {
-      _overlayEntry?.markNeedsBuild();
-    }
-    setState(() {});
-  }
-
-  void _handleSubmitted(String val) {
-    final q = val.trim().toLowerCase();
-    if (q.isEmpty || q == 'semua' || q == 'semua guru') {
-      _selectTeacher(null);
-      return;
-    }
-    try {
-      final exact = widget.teachers.firstWhere(
-        (t) => t.name.toLowerCase() == q,
-      );
-      _selectTeacher(exact.id);
-      return;
-    } catch (_) {}
-
-    try {
-      final partial = widget.teachers.firstWhere(
-        (t) => t.name.toLowerCase().contains(q),
-      );
-      _selectTeacher(partial.id);
-      return;
-    } catch (_) {}
-
-    _syncTextWithSelection();
-    _closeDropdown();
-    _focusNode.unfocus();
-  }
-
-  OverlayEntry _createOverlayEntry() {
-    return OverlayEntry(
-      builder: (overlayContext) {
-        final renderBox = context.findRenderObject() as RenderBox?;
-        final size = renderBox?.size ?? Size(300.w, 42.h);
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        final query = _controller.text.trim().toLowerCase();
-        final selectedName = _getTeacherName(
-          widget.selectedTeacherId,
-        ).toLowerCase();
-        final filteredTeachers = _getFilteredTeachers();
-        final showSemuaOption =
-            query.isEmpty ||
-            'semua guru'.contains(query) ||
-            (widget.selectedTeacherId != null && query == selectedName);
-
-        return Stack(
-          children: [
-            // Barrier to dismiss when tapping outside
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: () {
-                  _closeDropdown();
-                  _focusNode.unfocus();
-                  _syncTextWithSelection();
-                },
-                child: Container(color: Colors.transparent),
-              ),
-            ),
-            // Floating dropdown menu
-            Positioned(
-              width: size.width,
-              child: CompositedTransformFollower(
-                link: _layerLink,
-                showWhenUnlinked: false,
-                offset: Offset(0, size.height + 4.h),
-                child: Material(
-                  elevation: 8,
-                  shadowColor: Colors.black38,
-                  borderRadius: BorderRadius.circular(12.r),
-                  color: isDark
-                      ? Theme.of(context).colorScheme.surfaceContainerHighest
-                      : Colors.white,
-                  clipBehavior: Clip.antiAlias,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(
-                        color: isDark
-                            ? const Color(0xFF334155)
-                            : const Color(0xFFE2E8F0),
-                      ),
-                    ),
-                    constraints: BoxConstraints(maxHeight: 280.h),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (showSemuaOption) ...[
-                          InkWell(
-                            onTap: () => _selectTeacher(null),
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 14.w,
-                                vertical: 10.h,
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 30.w,
-                                    height: 30.w,
-                                    decoration: BoxDecoration(
-                                      color: widget.selectedTeacherId == null
-                                          ? const Color(
-                                              0xFF2563EB,
-                                            ).withValues(alpha: 0.15)
-                                          : (isDark
-                                                ? const Color(0xFF334155)
-                                                : const Color(0xFFF1F5F9)),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.groups_rounded,
-                                      size: 16.sp,
-                                      color: widget.selectedTeacherId == null
-                                          ? const Color(0xFF2563EB)
-                                          : Theme.of(
-                                              context,
-                                            ).colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                  SizedBox(width: 10.w),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Semua Guru',
-                                          style: GoogleFonts.hankenGrotesk(
-                                            fontSize: 13.sp,
-                                            fontWeight:
-                                                widget.selectedTeacherId == null
-                                                ? FontWeight.w700
-                                                : FontWeight.w600,
-                                            color:
-                                                widget.selectedTeacherId == null
-                                                ? const Color(0xFF2563EB)
-                                                : Theme.of(
-                                                    context,
-                                                  ).colorScheme.onSurface,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Tampilkan jadwal & jurnal seluruh guru',
-                                          style: GoogleFonts.hankenGrotesk(
-                                            fontSize: 11.sp,
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.onSurfaceVariant,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (widget.selectedTeacherId == null)
-                                    Icon(
-                                      Icons.check_circle_rounded,
-                                      color: const Color(0xFF2563EB),
-                                      size: 18.sp,
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          if (filteredTeachers.isNotEmpty)
-                            Divider(
-                              height: 1,
-                              thickness: 1,
-                              color: isDark
-                                  ? const Color(0xFF334155)
-                                  : const Color(0xFFE2E8F0),
-                            ),
-                        ],
-                        if (filteredTeachers.isEmpty && !showSemuaOption)
-                          Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 14.w,
-                              vertical: 16.h,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.search_off_rounded,
-                                  size: 18.sp,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                                SizedBox(width: 8.w),
-                                Text(
-                                  'Guru tidak ditemukan',
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 12.sp,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        else
-                          Flexible(
-                            child: ListView.separated(
-                              padding: EdgeInsets.zero,
-                              shrinkWrap: true,
-                              itemCount: filteredTeachers.length,
-                              separatorBuilder: (context, index) => Divider(
-                                height: 1,
-                                thickness: 0.5,
-                                color: isDark
-                                    ? const Color(
-                                        0xFF334155,
-                                      ).withValues(alpha: 0.5)
-                                    : const Color(0xFFF1F5F9),
-                              ),
-                              itemBuilder: (context, index) {
-                                final teacher = filteredTeachers[index];
-                                final isSelected =
-                                    teacher.id == widget.selectedTeacherId;
-                                return InkWell(
-                                  onTap: () => _selectTeacher(teacher.id),
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 14.w,
-                                      vertical: 9.h,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 30.w,
-                                          height: 30.w,
-                                          decoration: BoxDecoration(
-                                            color: isSelected
-                                                ? const Color(
-                                                    0xFF2563EB,
-                                                  ).withValues(alpha: 0.15)
-                                                : (isDark
-                                                      ? const Color(0xFF334155)
-                                                      : const Color(
-                                                          0xFFF1F5F9,
-                                                        )),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Text(
-                                            teacher.name.isNotEmpty
-                                                ? teacher.name[0].toUpperCase()
-                                                : 'G',
-                                            style: GoogleFonts.hankenGrotesk(
-                                              fontSize: 13.sp,
-                                              fontWeight: FontWeight.w700,
-                                              color: isSelected
-                                                  ? const Color(0xFF2563EB)
-                                                  : Theme.of(
-                                                      context,
-                                                    ).colorScheme.onSurface,
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(width: 10.w),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                teacher.name,
-                                                style:
-                                                    GoogleFonts.hankenGrotesk(
-                                                      fontSize: 13.sp,
-                                                      fontWeight: isSelected
-                                                          ? FontWeight.w700
-                                                          : FontWeight.w500,
-                                                      color: isSelected
-                                                          ? const Color(
-                                                              0xFF2563EB,
-                                                            )
-                                                          : Theme.of(context)
-                                                                .colorScheme
-                                                                .onSurface,
-                                                    ),
-                                              ),
-                                              if (teacher.position.isNotEmpty ||
-                                                  (teacher.nip != null &&
-                                                      teacher.nip!.isNotEmpty))
-                                                Text(
-                                                  teacher.nip != null &&
-                                                          teacher
-                                                              .nip!
-                                                              .isNotEmpty
-                                                      ? '${teacher.position} • NIP: ${teacher.nip}'
-                                                      : teacher.position,
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style:
-                                                      GoogleFonts.hankenGrotesk(
-                                                        fontSize: 11.sp,
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurfaceVariant,
-                                                      ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                        if (isSelected)
-                                          Icon(
-                                            Icons.check_circle_rounded,
-                                            color: const Color(0xFF2563EB),
-                                            size: 18.sp,
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final hasSelection = widget.selectedTeacherId != null;
-    final hasText = _controller.text.isNotEmpty;
-
-    return CompositedTransformTarget(
-      link: _layerLink,
-      child: TextField(
-        controller: _controller,
-        focusNode: _focusNode,
-        textInputAction: TextInputAction.search,
-        onSubmitted: _handleSubmitted,
-        onChanged: (val) {
-          if (!_isOpen) {
-            _openDropdown();
-          } else {
-            _overlayEntry?.markNeedsBuild();
-          }
-          setState(() {});
-        },
-        style: GoogleFonts.hankenGrotesk(
-          fontSize: 13.sp,
-          color: Theme.of(context).colorScheme.onSurface,
-          fontWeight: FontWeight.w600,
-        ),
-        decoration: InputDecoration(
-          isDense: true,
-          contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 9.h),
-          hintText: 'Semua Guru',
-          hintStyle: GoogleFonts.hankenGrotesk(
-            fontSize: 13.sp,
-            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-            fontWeight: FontWeight.w600,
-          ),
-          prefixIcon: Icon(
-            Icons.search_rounded,
-            size: 19.sp,
-            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-          ),
-          prefixIconConstraints: BoxConstraints(
-            minWidth: 38.w,
-            minHeight: 20.h,
-          ),
-          suffixIcon: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (hasSelection || hasText)
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
-                    onTap: _clearInput,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 6.w),
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 18.sp,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ),
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  onTap: () {
-                    if (_isOpen) {
-                      _closeDropdown();
-                      _focusNode.unfocus();
-                    } else {
-                      _focusNode.requestFocus();
-                      _openDropdown();
-                    }
-                  },
-                  child: Padding(
-                    padding: EdgeInsets.only(right: 12.w, left: 4.w),
-                    child: Icon(
-                      _isOpen
-                          ? Icons.keyboard_arrow_up_rounded
-                          : Icons.keyboard_arrow_down_rounded,
-                      size: 20.sp,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          suffixIconConstraints: BoxConstraints(
-            minWidth: 40.w,
-            minHeight: 20.h,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.r),
-            borderSide: BorderSide(
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-            ),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.r),
-            borderSide: BorderSide(
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.r),
-            borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-          ),
-          filled: true,
-          fillColor: isDark
-              ? Theme.of(context).colorScheme.surfaceContainerHighest
-              : Colors.white,
-        ),
-      ),
     );
   }
 }
