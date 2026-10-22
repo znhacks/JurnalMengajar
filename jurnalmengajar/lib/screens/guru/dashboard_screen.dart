@@ -588,25 +588,19 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       SizedBox(height: 16.h),
 
                       // ── 2. KARTU KALENDER (Atas) ────────────────────────────
-                      FadeSlideIn(
-                        delay: const Duration(milliseconds: 80),
-                        child: _buildCalendarCard(
-                          scheduledDateKeys,
-                          completedDateKeys,
-                          teacher,
-                          scheduleProvider,
-                          journalProvider,
-                          holidayProvider,
-                        ),
+                      _buildCalendarCard(
+                        scheduledDateKeys,
+                        completedDateKeys,
+                        teacher,
+                        scheduleProvider,
+                        journalProvider,
+                        holidayProvider,
                       ),
 
                       SizedBox(height: 16.h),
 
                       // ── 3. TAB FILTER (Di bawah Kalender) ──────────────────
-                      FadeSlideIn(
-                        delay: const Duration(milliseconds: 100),
-                        child: _buildFilterChips(),
-                      ),
+                      _buildFilterChips(),
 
                       SizedBox(height: 20.h),
 

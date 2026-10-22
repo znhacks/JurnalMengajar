@@ -527,10 +527,8 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                   final isSelected = _selectedIds.contains(item.id);
                   final isDark = Theme.of(context).brightness == Brightness.dark;
 
-                  return FadeSlideIn(
-                    delay: Duration(milliseconds: (index * 40).clamp(0, 400)),
-                    child: ScaleTap(
-                      onTap: _isSelectionMode
+                  return ScaleTap(
+                    onTap: _isSelectionMode
                           ? () => _toggleSelectItem(item.id)
                           : () => context.push(
                               '/admin/master-data/classes/${item.id}/students',
@@ -722,8 +720,7 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                         ],
                       ),
                     ),
-                  ),
-                );
+                  );
               },
             ),
           ),

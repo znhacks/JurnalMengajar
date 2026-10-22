@@ -1294,11 +1294,11 @@ class _AdminClassAttendanceRecapScreenState
                   },
                 ),
 
-              // 2. High-Level Metrics Banner (Sleek, Modern Card)
-              _buildTopMetricsBanner(classSummaries, isDark),
+              // 2. Ringkasan kehadiran
+              _buildTopMetricsBanner(classSummaries),
 
-              // 3. Segmented Pill Mode Switcher (Modern iOS/M3 Pill Slider)
-              _buildModernModeSegmentedControl(isDark),
+              // 3. Pemilih mode tampilan
+              _buildModeSwitcher(),
 
               // 4. Content by Mode
               if (_viewModeIndex == 0)
@@ -1326,11 +1326,8 @@ class _AdminClassAttendanceRecapScreenState
     );
   }
 
-  // ── Top Metrics Banner (Modern & Elegant Design) ────────────────────────────
-  Widget _buildTopMetricsBanner(
-    List<ClassAttendanceSummary> summaries,
-    bool isDark,
-  ) {
+  // ── Ringkasan kehadiran seluruh kelas ──────────────────────────────────────
+  Widget _buildTopMetricsBanner(List<ClassAttendanceSummary> summaries) {
     final totalClasses = summaries.length;
     final totalMeetings = summaries.fold<int>(
       0,
@@ -1360,284 +1357,113 @@ class _AdminClassAttendanceRecapScreenState
         ? const Color(0xFFF59E0B)
         : const Color(0xFFF43F5E);
     final statusLabel = overallRate >= 95
-        ? 'Sangat Baik'
+        ? 'Sangat baik'
         : overallRate >= 85
         ? 'Baik'
         : overallRate >= 75
         ? 'Cukup'
-        : 'Perlu Perhatian';
+        : 'Perlu perhatian';
+
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 6.h),
+      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 4.h),
       child: Container(
+        padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22.r),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? const [Color(0xFF1E293B), Color(0xFF0F172A)]
-                : const [Color(0xFF1E40AF), Color(0xFF1D4ED8)],
-          ),
-          border: Border.all(
-            color: isDark
-                ? const Color(0xFF334155)
-                : Colors.white.withValues(alpha: 0.15),
-            width: 1.2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isDark
-                  ? Colors.black.withValues(alpha: 0.35)
-                  : const Color(0xFF1D4ED8).withValues(alpha: 0.22),
-              blurRadius: 22,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(18.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header Row: Analysis Tag + Circular Rate Indicator
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 6.r,
-                                height: 6.r,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF60A5FA),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              SizedBox(width: 6.w),
-                              Text(
-                                'ANALISIS KEHADIRAN KESELURUHAN',
-                                style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.8,
-                                  color: const Color(0xFF93C5FD),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 8.h),
-                        Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 10.w,
-                          runSpacing: 4.h,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
-                              textBaseline: TextBaseline.alphabetic,
-                              children: [
-                                Text(
-                                  overallRate.toStringAsFixed(1),
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 34.sp,
-                                    fontWeight: FontWeight.w800,
-                                    height: 1.0,
-                                    color: Colors.white,
-                                    letterSpacing: -0.5,
-                                  ),
-                                ),
-                                Text(
-                                  '%',
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 16.sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFFBFDBFE),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8.w,
-                                vertical: 3.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: rateAccent.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: rateAccent.withValues(alpha: 0.6),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 6.r,
-                                    height: 6.r,
-                                    decoration: BoxDecoration(
-                                      color: rateAccent,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  SizedBox(width: 5.w),
-                                  Text(
-                                    statusLabel,
-                                    style: GoogleFonts.hankenGrotesk(
-                                      fontSize: 10.5.sp,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 6.h),
-                        Text(
-                          '$totalClasses Kelas Aktif  ·  $totalMeetings Total Sesi Pertemuan',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.hankenGrotesk(
-                            fontSize: 11.5.sp,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withValues(alpha: 0.72),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  SizedBox(
-                    width: 62.r,
-                    height: 62.r,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox(
-                          width: 62.r,
-                          height: 62.r,
-                          child: CircularProgressIndicator(
-                            value: (overallRate / 100.0).clamp(0.0, 1.0),
-                            strokeWidth: 6.5.r,
-                            strokeCap: StrokeCap.round,
-                            backgroundColor: Colors.white.withValues(
-                              alpha: 0.15,
-                            ),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              rateAccent,
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          Icons.insights_rounded,
-                          size: 22.sp,
-                          color: Colors.white,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16.h),
-
-              // Modern 4-Col Stat Cards (Replacing stark dividers)
-              Row(
-                children: [
-                  _buildModernStatCard(
-                    label: 'Hadir',
-                    count: '$totalPresent',
-                    color: const Color(0xFF10B981),
-                    icon: Icons.check_circle_outline_rounded,
-                  ),
-                  SizedBox(width: 8.w),
-                  _buildModernStatCard(
-                    label: 'Sakit',
-                    count: '$totalSick',
-                    color: const Color(0xFFF59E0B),
-                    icon: Icons.healing_rounded,
-                  ),
-                  SizedBox(width: 8.w),
-                  _buildModernStatCard(
-                    label: 'Izin',
-                    count: '$totalPerm',
-                    color: const Color(0xFF38BDF8),
-                    icon: Icons.assignment_outlined,
-                  ),
-                  SizedBox(width: 8.w),
-                  _buildModernStatCard(
-                    label: 'Alpha',
-                    count: '$totalAlpha',
-                    color: const Color(0xFFF43F5E),
-                    icon: Icons.cancel_outlined,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModernStatCard({
-    required String label,
-    required String count,
-    required Color color,
-    required IconData icon,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 8.h),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.1),
-            width: 0.8,
-          ),
+          border: Border.all(color: colorScheme.outlineVariant),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, size: 11.sp, color: color),
-                  SizedBox(width: 4.w),
-                  Text(
-                    count,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Kehadiran keseluruhan',
                     style: GoogleFonts.hankenGrotesk(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
-                ],
+                ),
+                Text(
+                  statusLabel,
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w700,
+                    color: rateAccent,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 4.h),
+            Wrap(
+              spacing: 10.w,
+              runSpacing: 2.h,
+              crossAxisAlignment: WrapCrossAlignment.end,
+              children: [
+                Text(
+                  '${overallRate.toStringAsFixed(1)}%',
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 32.sp,
+                    fontWeight: FontWeight.w800,
+                    height: 1.1,
+                    letterSpacing: -0.5,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(bottom: 5.h),
+                  child: Text(
+                    '$totalClasses kelas · $totalMeetings sesi',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 11.5.sp,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 10.h),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3.r),
+              child: LinearProgressIndicator(
+                value: (overallRate / 100.0).clamp(0.0, 1.0),
+                minHeight: 5.h,
+                backgroundColor: colorScheme.surfaceContainerHighest,
+                valueColor: AlwaysStoppedAnimation<Color>(rateAccent),
               ),
             ),
-            SizedBox(height: 2.h),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.hankenGrotesk(
-                fontSize: 10.sp,
-                fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.7),
-              ),
+            SizedBox(height: 12.h),
+            Wrap(
+              spacing: 16.w,
+              runSpacing: 8.h,
+              children: [
+                _buildBreakdownMetric(
+                  'Hadir',
+                  totalPresent,
+                  const Color(0xFF10B981),
+                ),
+                _buildBreakdownMetric(
+                  'Sakit',
+                  totalSick,
+                  const Color(0xFFF59E0B),
+                ),
+                _buildBreakdownMetric(
+                  'Izin',
+                  totalPerm,
+                  const Color(0xFF38BDF8),
+                ),
+                _buildBreakdownMetric(
+                  'Alfa',
+                  totalAlpha,
+                  const Color(0xFFF43F5E),
+                ),
+              ],
             ),
           ],
         ),
@@ -1645,32 +1471,52 @@ class _AdminClassAttendanceRecapScreenState
     );
   }
 
-  // ── Modern Segmented Control ───────────────────────────────────────────────
-  Widget _buildModernModeSegmentedControl(bool isDark) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 0),
-      child: Container(
-        padding: EdgeInsets.all(4.w),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+  Widget _buildBreakdownMetric(String label, int value, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7.r,
+          height: 7.r,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        SizedBox(width: 6.w),
+        Text(
+          '$label $value',
+          style: GoogleFonts.hankenGrotesk(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
+        ),
+      ],
+    );
+  }
+
+  // ── Pemilih mode tampilan ──────────────────────────────────────────────────
+  Widget _buildModeSwitcher() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 0),
+      child: Container(
+        padding: EdgeInsets.all(3.w),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(color: colorScheme.outlineVariant),
         ),
         child: Row(
           children: [
             Expanded(
-              child: _buildSegmentedTabButton(
+              child: _buildModeTab(
                 title: 'Ringkasan Kelas',
                 icon: Icons.grid_view_rounded,
                 isSelected: _viewModeIndex == 0,
                 onTap: () => setState(() => _viewModeIndex = 0),
-                isDark: isDark,
               ),
             ),
             Expanded(
-              child: _buildSegmentedTabButton(
+              child: _buildModeTab(
                 title: 'Detail Kelas',
                 icon: Icons.view_agenda_rounded,
                 isSelected: _viewModeIndex == 1,
@@ -1681,7 +1527,6 @@ class _AdminClassAttendanceRecapScreenState
                         _loadStudentsForClass(_selectedClassId!);
                       }
                     : null,
-                isDark: isDark,
               ),
             ),
           ],
@@ -1690,43 +1535,27 @@ class _AdminClassAttendanceRecapScreenState
     );
   }
 
-  Widget _buildSegmentedTabButton({
+  Widget _buildModeTab({
     required String title,
     required IconData icon,
     required bool isSelected,
     required VoidCallback? onTap,
-    required bool isDark,
     bool enabled = true,
   }) {
-    final effectiveOnTap = enabled ? onTap : null;
-    final activeBg = isDark ? const Color(0xFF0F172A) : Colors.white;
-    final activeTextColor = isDark
-        ? AppTheme.primaryAccent
-        : AppTheme.primaryColor;
-    final inactiveTextColor = Theme.of(context).colorScheme.onSurfaceVariant;
+    final colorScheme = Theme.of(context).colorScheme;
+    final activeTextColor = colorScheme.primary;
+    final inactiveTextColor = colorScheme.onSurfaceVariant;
 
     return Opacity(
       opacity: enabled ? 1.0 : 0.45,
       child: InkWell(
-        onTap: effectiveOnTap,
-        borderRadius: BorderRadius.circular(12.r),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(8.r),
+        child: Container(
           padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 9.h),
           decoration: BoxDecoration(
-            color: isSelected ? activeBg : Colors.transparent,
-            borderRadius: BorderRadius.circular(12.r),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: isDark ? 0.2 : 0.05,
-                      ),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
+            color: isSelected ? colorScheme.surface : Colors.transparent,
+            borderRadius: BorderRadius.circular(8.r),
           ),
           child: FittedBox(
             fit: BoxFit.scaleDown,
@@ -1736,7 +1565,7 @@ class _AdminClassAttendanceRecapScreenState
               children: [
                 Icon(
                   icon,
-                  size: 16.sp,
+                  size: 15.sp,
                   color: isSelected ? activeTextColor : inactiveTextColor,
                 ),
                 SizedBox(width: 6.w),
@@ -1744,7 +1573,7 @@ class _AdminClassAttendanceRecapScreenState
                   title,
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 12.5.sp,
-                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                     color: isSelected ? activeTextColor : inactiveTextColor,
                   ),
                 ),
@@ -1776,79 +1605,63 @@ class _AdminClassAttendanceRecapScreenState
           _buildTimeFilterChips(isDark),
           SizedBox(height: 14.h),
 
-          // Search Bar (Refined & Modern)
-          Container(
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
+          // Pencarian kelas
+          TextField(
+            controller: _classSearchController,
+            textInputAction: TextInputAction.search,
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 13.sp,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
-            child: TextField(
-              controller: _classSearchController,
-              textInputAction: TextInputAction.search,
-              style: GoogleFonts.hankenGrotesk(
+            decoration: InputDecoration(
+              hintText: 'Cari nama kelas...',
+              hintStyle: GoogleFonts.hankenGrotesk(
                 fontSize: 13.sp,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: onSurfaceVariant,
               ),
-              decoration: InputDecoration(
-                hintText: 'Cari nama kelas...',
-                hintStyle: GoogleFonts.hankenGrotesk(
-                  fontSize: 13.sp,
-                  color: onSurfaceVariant.withValues(alpha: 0.7),
+              prefixIcon: Icon(
+                Icons.search_rounded,
+                size: 20.sp,
+                color: onSurfaceVariant,
+              ),
+              prefixIconConstraints: BoxConstraints(
+                minWidth: 42.w,
+                minHeight: 40.h,
+              ),
+              suffixIcon: _classSearchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded),
+                      iconSize: 18.sp,
+                      color: onSurfaceVariant,
+                      onPressed: () => _classSearchController.clear(),
+                    )
+                  : null,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 14.w,
+                vertical: 12.h,
+              ),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.r),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.outlineVariant,
                 ),
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                  size: 20.sp,
-                  color: onSurfaceVariant,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.r),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.outlineVariant,
                 ),
-                prefixIconConstraints: BoxConstraints(
-                  minWidth: 42.w,
-                  minHeight: 40.h,
-                ),
-                suffixIcon: _classSearchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded),
-                        iconSize: 18.sp,
-                        color: onSurfaceVariant,
-                        onPressed: () => _classSearchController.clear(),
-                      )
-                    : null,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 14.w,
-                  vertical: 12.h,
-                ),
-                filled: true,
-                fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14.r),
-                  borderSide: BorderSide(
-                    color: isDark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFE2E8F0),
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14.r),
-                  borderSide: BorderSide(
-                    color: isDark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFE2E8F0),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14.r),
-                  borderSide: BorderSide(color: accentColor, width: 1.5),
-                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.r),
+                borderSide: BorderSide(color: accentColor, width: 1.5),
               ),
             ),
           ),
           SizedBox(height: 18.h),
 
-          // Section header with modern badge
           Row(
             children: [
               Text(
@@ -1860,19 +1673,12 @@ class _AdminClassAttendanceRecapScreenState
                 ),
               ),
               SizedBox(width: 8.w),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  '${summaries.length}',
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w800,
-                    color: accentColor,
-                  ),
+              Text(
+                '${summaries.length} kelas',
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 11.5.sp,
+                  fontWeight: FontWeight.w600,
+                  color: onSurfaceVariant,
                 ),
               ),
             ],
@@ -1883,30 +1689,20 @@ class _AdminClassAttendanceRecapScreenState
             Container(
               padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 36.h),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(18.r),
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(12.r),
                 border: Border.all(
-                  color: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFE2E8F0),
+                  color: Theme.of(context).colorScheme.outlineVariant,
                 ),
               ),
               child: Column(
                 children: [
-                  Container(
-                    width: 56.r,
-                    height: 56.r,
-                    decoration: BoxDecoration(
-                      color: accentColor.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      isSearching
-                          ? Icons.search_off_rounded
-                          : Icons.school_outlined,
-                      size: 26.r,
-                      color: accentColor,
-                    ),
+                  Icon(
+                    isSearching
+                        ? Icons.search_off_rounded
+                        : Icons.school_outlined,
+                    size: 28.r,
+                    color: onSurfaceVariant,
                   ),
                   SizedBox(height: 12.h),
                   Text(

@@ -1438,10 +1438,10 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                 ),
                                 Chip(
                                   label: const Text('Aktif'),
-                                  backgroundColor: const Color(0xFFDCFCE7),
+                                  backgroundColor: const Color(0xFFDBEAFE),
                                   labelStyle: TextStyle(
                                     fontSize: 10.sp,
-                                    color: const Color(0xFF166534),
+                                    color: const Color(0xFF1E40AF),
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -1695,24 +1695,32 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                             ),
                                             if (isPendingJoin)
                                               Chip(
-                                                avatar: const Text('⏳', style: TextStyle(fontSize: 11)),
+                                                avatar: const Icon(
+                                                  Icons.hourglass_top_rounded,
+                                                  size: 14,
+                                                  color: Color(0xFFB45309),
+                                                ),
                                                 label: const Text('Menunggu Persetujuan'),
                                                 backgroundColor: const Color(0xFFFEF3C7),
                                                 labelStyle: TextStyle(
                                                   fontSize: 10.sp,
-                                                  color: const Color(0xFFD97706),
+                                                  color: const Color(0xFFB45309),
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               )
                                             else ...[
                                               if (isActive)
                                                 Chip(
-                                                  avatar: const Text('✓', style: TextStyle(fontSize: 11, color: Color(0xFF166534), fontWeight: FontWeight.bold)),
+                                                  avatar: const Icon(
+                                                    Icons.check_circle_rounded,
+                                                    size: 14,
+                                                    color: Color(0xFF1E40AF),
+                                                  ),
                                                   label: const Text('Aktif'),
-                                                  backgroundColor: const Color(0xFFDCFCE7),
+                                                  backgroundColor: const Color(0xFFDBEAFE),
                                                   labelStyle: TextStyle(
                                                     fontSize: 10.sp,
-                                                    color: const Color(0xFF166534),
+                                                    color: const Color(0xFF1E40AF),
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                                 )
@@ -1795,7 +1803,13 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                             ),
                                             child: Row(
                                               children: [
-                                                Text('⏳', style: TextStyle(fontSize: 11.sp)),
+                                                Icon(
+                                                  Icons.hourglass_top_rounded,
+                                                  size: 14.sp,
+                                                  color: isDark
+                                                      ? const Color(0xFFFDE68A)
+                                                      : const Color(0xFFB45309),
+                                                ),
                                                 SizedBox(width: 6.w),
                                                 Expanded(
                                                   child: Text(
@@ -2271,7 +2285,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20.r),
               ),
               child: Row(
@@ -2280,14 +2294,14 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   Icon(
                     Icons.verified,
                     size: 10.r,
-                    color: const Color(0xFF10B981),
+                    color: const Color(0xFF1E40AF),
                   ),
                   SizedBox(width: 3.w),
                   Text(
                     'Aktif',
                     style: TextStyle(
                       fontSize: 9.sp,
-                      color: const Color(0xFF10B981),
+                      color: const Color(0xFF1E40AF),
                       fontWeight: FontWeight.bold,
                     ),
                   ),

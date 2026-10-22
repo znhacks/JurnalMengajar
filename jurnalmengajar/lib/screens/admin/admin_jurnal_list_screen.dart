@@ -1033,10 +1033,8 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
           p.id == (_selectedPeriodId ?? master.activePeriod?.id) && !p.isActive,
     );
 
-    return FadeSlideIn(
-      delay: const Duration(milliseconds: 60),
-      child: ScaleTap(
-        onTap: _isSelectionMode
+    return ScaleTap(
+      onTap: _isSelectionMode
             ? () => _toggleSelectItem(journal.id)
             : () => context.push('/admin/journal/${journal.id}'),
         onLongPress: isHistorical
@@ -1350,7 +1348,6 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
             ),
           ),
         ),
-      ),
     );
   }
 

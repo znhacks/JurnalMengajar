@@ -569,10 +569,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final themeColor = isUltra
-        ? const Color(0xFF7C3AED)
+        ? const Color(0xFF1E40AF)
         : (isEnterprise
-              ? const Color(0xFF0284C7)
-              : (isPro ? const Color(0xFFD97706) : const Color(0xFF2563EB)));
+              ? const Color(0xFF2563EB)
+              : (isPro ? const Color(0xFFB45309) : const Color(0xFF64748B)));
 
     showDialog(
       context: context,
@@ -584,12 +584,12 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           children: [
             Icon(
               isUltra
-                  ? Icons.auto_awesome_rounded
+                  ? Icons.verified_rounded
                   : (isEnterprise
                         ? Icons.business_center_rounded
                         : (isPro
-                              ? Icons.stars_rounded
-                              : Icons.verified_rounded)),
+                              ? Icons.workspace_premium_rounded
+                              : Icons.school_rounded)),
               color: themeColor,
               size: 28,
             ),
@@ -623,14 +623,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               decoration: BoxDecoration(
                 color: isUltra
                     ? (isDark
-                          ? const Color(0xFF581C87).withValues(alpha: 0.35)
-                          : const Color(0xFFF5F3FF))
+                          ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
+                          : const Color(0xFFDBEAFE))
                     : (isEnterprise
                           ? (isDark
                                 ? const Color(
-                                    0xFF0C4A6E,
+                                    0xFF1E3A8A,
                                   ).withValues(alpha: 0.35)
-                                : const Color(0xFFF0F9FF))
+                                : const Color(0xFFEFF6FF))
                           : (isPro
                                 ? (isDark
                                       ? const Color(
@@ -639,9 +639,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                       : const Color(0xFFFFFBEB))
                                 : (isDark
                                       ? const Color(
-                                          0xFF1E3A8A,
+                                          0xFF334155,
                                         ).withValues(alpha: 0.35)
-                                      : const Color(0xFFEFF6FF)))),
+                                      : const Color(0xFFF1F5F9)))),
                 borderRadius: BorderRadius.circular(14.r),
                 border: Border.all(
                   color: themeColor.withValues(alpha: 0.5),
@@ -696,11 +696,11 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       color: isUltra
                           ? (isDark
                                 ? const Color(0xFFDDD6FE)
-                                : const Color(0xFF6D28D9))
+                                : const Color(0xFF1E40AF))
                           : (isEnterprise
                                 ? (isDark
                                       ? const Color(0xFFBAE6FD)
-                                      : const Color(0xFF0369A1))
+                                      : const Color(0xFF2563EB))
                                 : (isPro
                                       ? (isDark
                                             ? const Color(0xFFFED7AA)
@@ -741,7 +741,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       Icon(
                         Icons.check_circle_outline_rounded,
                         size: 16.sp,
-                        color: Colors.green[600],
+                        color: const Color(0xFF2563EB),
                       ),
                       SizedBox(width: 6.w),
                       Text(
@@ -1035,19 +1035,19 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     // ─── 1. KARTU PAKET BERLANGGANAN & PERKS ────────────────────────
                     Card(
                       margin: EdgeInsets.zero,
-                      elevation: 2,
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18.r),
                         side: BorderSide(
                           color: isUltra
-                              ? const Color(0xFF8B5CF6).withValues(alpha: 0.6)
+                              ? const Color(0xFF1E40AF).withValues(alpha: 0.6)
                               : (isEnterprise
                                     ? const Color(
-                                        0xFF0EA5E9,
+                                        0xFF2563EB,
                                       ).withValues(alpha: 0.6)
                                     : (isPro
                                           ? const Color(
-                                              0xFFF59E0B,
+                                              0xFFB45309,
                                             ).withValues(alpha: 0.5)
                                           : Colors.grey.withValues(
                                               alpha: 0.25,
@@ -1070,12 +1070,12 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                         padding: EdgeInsets.all(10.w),
                                         decoration: BoxDecoration(
                                           color: isUltra
-                                              ? const Color(0xFF6D28D9)
+                                              ? const Color(0xFF1E40AF)
                                               : (isEnterprise
-                                                    ? const Color(0xFF0369A1)
+                                                    ? const Color(0xFF2563EB)
                                                     : (isPro
                                                           ? const Color(
-                                                              0xFFD97706,
+                                                              0xFFB45309,
                                                             )
                                                           : const Color(
                                                               0xFF64748B,
@@ -1086,7 +1086,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                         ),
                                         child: Icon(
                                           isUltra
-                                              ? Icons.auto_awesome_rounded
+                                              ? Icons.verified_rounded
                                               : (isEnterprise
                                                     ? Icons
                                                           .business_center_rounded
@@ -1127,14 +1127,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                                 fontSize: 18.sp,
                                                 fontWeight: FontWeight.w900,
                                                 color: isUltra
-                                                    ? const Color(0xFF7C3AED)
+                                                    ? const Color(0xFF1E40AF)
                                                     : (isEnterprise
                                                           ? const Color(
-                                                              0xFF0284C7,
+                                                              0xFF2563EB,
                                                             )
                                                           : (isPro
                                                                 ? const Color(
-                                                                    0xFFD97706,
+                                                                    0xFFB45309,
                                                                   )
                                                                 : Theme.of(
                                                                         context,
@@ -1158,11 +1158,11 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: isUltra
-                                        ? const Color(0xFF7C3AED)
+                                        ? const Color(0xFF1E40AF)
                                         : (isEnterprise
-                                              ? const Color(0xFF0284C7)
+                                              ? const Color(0xFF2563EB)
                                               : (isPro
-                                                    ? const Color(0xFFD97706)
+                                                    ? const Color(0xFFB45309)
                                                     : const Color(0xFF64748B))),
                                     borderRadius: BorderRadius.circular(20.r),
                                   ),
@@ -1171,11 +1171,13 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                     children: [
                                       Icon(
                                         isUltra
-                                            ? Icons.auto_awesome_rounded
+                                            ? Icons.verified_rounded
                                             : (isEnterprise
-                                                  ? Icons.verified_rounded
+                                                  ? Icons
+                                                        .business_center_rounded
                                                   : (isPro
-                                                        ? Icons.star_rounded
+                                                        ? Icons
+                                                              .workspace_premium_rounded
                                                         : Icons.check_rounded)),
                                         size: 14.sp,
                                         color: Colors.white,
@@ -1248,13 +1250,13 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                             style: TextStyle(
                                               fontSize: 11.5.sp,
                                               color: isUltra
-                                                  ? const Color(0xFF7C3AED)
+                                                  ? const Color(0xFF1E40AF)
                                                   : (isEnterprise
                                                         ? const Color(
-                                                            0xFF0284C7,
+                                                            0xFF2563EB,
                                                           )
                                                         : const Color(
-                                                            0xFFD97706,
+                                                            0xFFB45309,
                                                           )),
                                               fontWeight: FontWeight.w600,
                                             ),
@@ -1306,11 +1308,11 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                     fontSize: 13.sp,
                                     fontWeight: FontWeight.bold,
                                     color: currentTeacherCount >= maxTeachers
-                                        ? Colors.red
+                                        ? const Color(0xFFBE123C)
                                         : (isUltra
-                                              ? const Color(0xFF7C3AED)
+                                              ? const Color(0xFF1E40AF)
                                               : (isEnterprise
-                                                    ? const Color(0xFF0284C7)
+                                                    ? const Color(0xFF2563EB)
                                                     : const Color(0xFF2563EB))),
                                   ),
                                 ),
@@ -1327,14 +1329,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                 ),
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   currentTeacherCount >= maxTeachers
-                                      ? Colors.red
+                                      ? const Color(0xFFBE123C)
                                       : (isUltra
-                                            ? const Color(0xFF7C3AED)
+                                            ? const Color(0xFF1E40AF)
                                             : (isEnterprise
-                                                  ? const Color(0xFF0284C7)
+                                                  ? const Color(0xFF2563EB)
                                                   : (isPro
                                                         ? const Color(
-                                                            0xFFD97706,
+                                                            0xFFB45309,
                                                           )
                                                         : const Color(
                                                             0xFF2563EB,
@@ -1505,7 +1507,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       key: _formKey,
                       child: Card(
                         margin: EdgeInsets.zero,
-                        elevation: 2,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18.r),
                           side: BorderSide(
@@ -1623,7 +1625,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       key: _supervisorFormKey,
                       child: Card(
                         margin: EdgeInsets.zero,
-                        elevation: 2,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18.r),
                           side: BorderSide(
@@ -1769,7 +1771,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     // ─── 4. INTEGRASI NOTIFIKASI ORANG TUA (NOBOX.AI) ───────────────
                     Card(
                       margin: EdgeInsets.zero,
-                      elevation: 2,
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18.r),
                         side: BorderSide(
@@ -2024,7 +2026,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                                 : (noboxConfig.isFailed
                                                       ? const Color(0xFFDC2626)
                                                       : const Color(
-                                                          0xFFD97706,
+                                                          0xFFB45309,
                                                         ))),
                                     ),
                                   ),

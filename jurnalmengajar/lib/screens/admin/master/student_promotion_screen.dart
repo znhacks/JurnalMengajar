@@ -181,17 +181,25 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'naik':
-        return const Color(0xFF10B981);
+        return const Color(0xFF2563EB);
       case 'lulus':
-        return const Color(0xFF8B5CF6);
+        return const Color(0xFF1E40AF);
       case 'tidak_naik':
-        return const Color(0xFFF59E0B);
+        return const Color(0xFFD97706);
       case 'pindah':
-        return const Color(0xFF06B6D4);
+        return const Color(0xFF64748B);
       case 'tetap':
       default:
         return const Color(0xFF64748B);
     }
+  }
+
+  Color _statusTextColor(Color color) {
+    if (color == const Color(0xFFD97706)) return const Color(0xFFB45309);
+    if (color == const Color(0xFF2563EB)) return const Color(0xFF1E40AF);
+    if (color == const Color(0xFFE11D48)) return const Color(0xFFBE123C);
+    if (color == const Color(0xFF64748B)) return const Color(0xFF475569);
+    return color;
   }
 
   bool _validateStep1() {
@@ -445,8 +453,8 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
               final color = isCurrent
                   ? AppTheme.primaryColor
                   : isCompleted
-                      ? Colors.green
-                      : Colors.grey;
+                      ? const Color(0xFF1E40AF)
+                      : const Color(0xFF94A3B8);
 
               return Expanded(
                 child: Row(
@@ -717,7 +725,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.logout_rounded, color: Colors.green, size: 20),
+                      const Icon(Icons.logout_rounded, color: Color(0xFF2563EB), size: 20),
                       SizedBox(width: 8.w),
                       Text(
                         '2. Kelas & Periode Tujuan (Target)',
@@ -745,7 +753,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                       style: GoogleFonts.hankenGrotesk(fontSize: 11.sp, color: Colors.grey),
                     ),
                     value: _isGraduationMode,
-                    activeThumbColor: const Color(0xFF8B5CF6),
+                    activeThumbColor: const Color(0xFF1E40AF),
                     onChanged: (val) {
                       setState(() {
                         _isGraduationMode = val;
@@ -868,8 +876,12 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                             Icons.checklist_rounded,
                             size: 16,
                             color: isAllSelected
-                                ? const Color(0xFF38BDF8)
-                                : (isDark ? Colors.white70 : const Color(0xFF0284C7)),
+                                ? (isDark
+                                      ? const Color(0xFF93C5FD)
+                                      : const Color(0xFF1E40AF))
+                                : (isDark
+                                      ? Colors.white70
+                                      : const Color(0xFF475569)),
                           ),
                           label: Text(
                             isAllSelected
@@ -879,19 +891,31 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                               fontSize: 11.sp,
                               fontWeight: FontWeight.bold,
                               color: isAllSelected
-                                  ? (isDark ? const Color(0xFF7DD3FC) : const Color(0xFF0369A1))
-                                  : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                                  ? (isDark
+                                        ? const Color(0xFFBFDBFE)
+                                        : const Color(0xFF1E40AF))
+                                  : (isDark
+                                        ? Colors.white
+                                        : const Color(0xFF0F172A)),
                             ),
                           ),
                           backgroundColor: isAllSelected
                               ? (isDark
-                                  ? const Color(0xFF0C4A6E).withValues(alpha: 0.6)
-                                  : const Color(0xFFE0F2FE))
-                              : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
+                                  ? const Color(
+                                      0xFF1E3A8A,
+                                    ).withValues(alpha: 0.6)
+                                  : const Color(0xFFDBEAFE))
+                              : (isDark
+                                    ? const Color(0xFF334155)
+                                    : const Color(0xFFF1F5F9)),
                           side: BorderSide(
                             color: isAllSelected
-                                ? const Color(0xFF38BDF8)
-                                : (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
+                                ? (isDark
+                                      ? const Color(0xFF3B82F6)
+                                      : const Color(0xFF2563EB))
+                                : (isDark
+                                      ? const Color(0xFF475569)
+                                      : const Color(0xFFCBD5E1)),
                             width: 1,
                           ),
                           onPressed: () => _toggleSelectAll(filtered),
@@ -900,12 +924,12 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                     ),
                     SizedBox(width: 6.w),
                     ActionChip(
-                      avatar: const Icon(Icons.trending_up_rounded, size: 16, color: Color(0xFF10B981)),
+                      avatar: const Icon(Icons.trending_up_rounded, size: 16, color: Color(0xFF2563EB)),
                       label: Text(
                         'Set Semua Naik',
                         style: GoogleFonts.hankenGrotesk(
                           fontSize: 11.sp,
-                          color: const Color(0xFF10B981),
+                          color: const Color(0xFF2563EB),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -913,12 +937,12 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                     ),
                     SizedBox(width: 6.w),
                     ActionChip(
-                      avatar: const Icon(Icons.school_rounded, size: 16, color: Color(0xFF8B5CF6)),
+                      avatar: const Icon(Icons.school_rounded, size: 16, color: Color(0xFF1E40AF)),
                       label: Text(
                         'Set Semua Lulus',
                         style: GoogleFonts.hankenGrotesk(
                           fontSize: 11.sp,
-                          color: const Color(0xFF8B5CF6),
+                          color: const Color(0xFF1E40AF),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -926,12 +950,12 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                     ),
                     SizedBox(width: 6.w),
                     ActionChip(
-                      avatar: const Icon(Icons.replay_rounded, size: 16, color: Color(0xFFF59E0B)),
+                      avatar: const Icon(Icons.replay_rounded, size: 16, color: Color(0xFFD97706)),
                       label: Text(
                         'Set Semua Tinggal',
                         style: GoogleFonts.hankenGrotesk(
                           fontSize: 11.sp,
-                          color: const Color(0xFFF59E0B),
+                          color: const Color(0xFFD97706),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1035,7 +1059,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                                     : 'S',
                                 style: GoogleFonts.hankenGrotesk(
                                   fontWeight: FontWeight.bold,
-                                  color: statusColor,
+                                  color: _statusTextColor(statusColor),
                                   fontSize: 12.sp,
                                 ),
                               ),
@@ -1083,7 +1107,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 11.sp,
                                       fontWeight: FontWeight.bold,
-                                      color: statusColor,
+                                      color: _statusTextColor(statusColor),
                                     ),
                                     items: const [
                                       DropdownMenuItem(value: 'naik', child: Text('Naik')),
@@ -1153,7 +1177,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFFFEF3C7),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFF59E0B)),
+              border: Border.all(color: const Color(0xFFD97706)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1215,7 +1239,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                           'KE (TUJUAN)',
                           targetPeriodName,
                           targetClassName,
-                          _isGraduationMode ? const Color(0xFF8B5CF6) : const Color(0xFF10B981),
+                          _isGraduationMode ? const Color(0xFF1E40AF) : const Color(0xFF2563EB),
                           isDark,
                         ),
                       ),
@@ -1234,13 +1258,13 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                     runSpacing: 8.h,
                     children: [
                       if (naikCount > 0)
-                        _buildStatusPill('Naik Kelas', naikCount, const Color(0xFF10B981)),
+                        _buildStatusPill('Naik Kelas', naikCount, const Color(0xFF2563EB)),
                       if (tidakNaikCount > 0)
-                        _buildStatusPill('Tinggal Kelas', tidakNaikCount, const Color(0xFFF59E0B)),
+                        _buildStatusPill('Tinggal Kelas', tidakNaikCount, const Color(0xFFD97706)),
                       if (lulusCount > 0)
-                        _buildStatusPill('Lulus', lulusCount, const Color(0xFF8B5CF6)),
+                        _buildStatusPill('Lulus', lulusCount, const Color(0xFF1E40AF)),
                       if (pindahCount > 0)
-                        _buildStatusPill('Pindah', pindahCount, const Color(0xFF06B6D4)),
+                        _buildStatusPill('Pindah', pindahCount, const Color(0xFF64748B)),
                       if (tetapCount > 0)
                         _buildStatusPill('Tetap', tetapCount, const Color(0xFF64748B)),
                     ],
@@ -1317,7 +1341,7 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
                         style: GoogleFonts.hankenGrotesk(
                           fontSize: 11.sp,
                           fontWeight: FontWeight.bold,
-                          color: statusColor,
+                          color: _statusTextColor(statusColor),
                         ),
                       ),
                     ),

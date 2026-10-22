@@ -13,6 +13,7 @@ import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../widgets/app_scaffold.dart';
+import '../../widgets/state_widgets.dart';
 
 enum StatTimeFilter { all, thisMonth, thisSemester }
 
@@ -253,6 +254,14 @@ class _AdminTeacherStatisticsScreenState
 
     final teachers = masterProvider.teachers;
     final schoolJournals = journalProvider.journals;
+    final isLoading =
+        masterProvider.isLoading ||
+        scheduleProvider.isLoading ||
+        journalProvider.isLoading;
+    final loadError =
+        masterProvider.errorMessage ??
+        scheduleProvider.errorMessage ??
+        journalProvider.errorMessage;
 
     final allStats = _calculateStatistics(
       teachers: teachers,
@@ -362,64 +371,68 @@ class _AdminTeacherStatisticsScreenState
         centerTitle: false,
       ),
       drawer: const AdminDrawer(currentRoute: '/admin/teacher-statistics'),
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.symmetric(
-            horizontal: kIsWeb ? 24.w : 16.w,
-            vertical: 16.h,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Banner sekolah dan filter waktu
-              _buildHeaderSection(
-                context,
-                authProvider,
-                isDark,
-                primaryColor,
-                surfaceColor,
-                borderColor,
-              ),
-              SizedBox(height: 16.h),
+      body: isLoading && teachers.isEmpty
+          ? const AppLoadingWidget(message: 'Memuat statistik guru...')
+          : loadError != null && teachers.isEmpty
+          ? AppErrorWidget(message: loadError, onRetry: _refreshData)
+          : RefreshIndicator(
+              onRefresh: _refreshData,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.symmetric(
+                  horizontal: kIsWeb ? 24.w : 16.w,
+                  vertical: 16.h,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Banner sekolah dan filter waktu
+                    _buildHeaderSection(
+                      context,
+                      authProvider,
+                      isDark,
+                      primaryColor,
+                      surfaceColor,
+                      borderColor,
+                    ),
+                    SizedBox(height: 16.h),
 
-              // Ringkasan disiplin sekolah
-              _buildKpiSection(
-                context,
-                isDark,
-                teachersCount: teachers.length,
-                onTimeRate: schoolPunctualityRate,
-                totalOnTime: totalSchoolOnTime,
-                totalLate: totalSchoolLate,
-                totalUnsubmitted: totalSchoolUnsubmitted,
-              ),
-              SizedBox(height: 20.h),
+                    // Ringkasan disiplin sekolah
+                    _buildKpiSection(
+                      context,
+                      isDark,
+                      teachersCount: teachers.length,
+                      onTimeRate: schoolPunctualityRate,
+                      totalOnTime: totalSchoolOnTime,
+                      totalLate: totalSchoolLate,
+                      totalUnsubmitted: totalSchoolUnsubmitted,
+                    ),
+                    SizedBox(height: 20.h),
 
-              // Papan peringkat tepat waktu dan perlu perhatian
-              _buildHighlightsSection(
-                context,
-                isDark,
-                topOnTimeTeachers: topOnTimeTeachers.take(3).toList(),
-                topLateTeachers: topLateTeachers.take(3).toList(),
-              ),
-              SizedBox(height: 24.h),
+                    // Papan peringkat tepat waktu dan perlu perhatian
+                    _buildHighlightsSection(
+                      context,
+                      isDark,
+                      topOnTimeTeachers: topOnTimeTeachers.take(3).toList(),
+                      topLateTeachers: topLateTeachers.take(3).toList(),
+                    ),
+                    SizedBox(height: 24.h),
 
-              // Daftar dan pencarian seluruh guru
-              _buildTeacherListSection(
-                context,
-                isDark,
-                primaryColor,
-                surfaceColor,
-                borderColor,
-                stats: filteredStats,
-                totalCount: allStats.length,
+                    // Daftar dan pencarian seluruh guru
+                    _buildTeacherListSection(
+                      context,
+                      isDark,
+                      primaryColor,
+                      surfaceColor,
+                      borderColor,
+                      stats: filteredStats,
+                      totalCount: allStats.length,
+                    ),
+                    SizedBox(height: 40.h),
+                  ],
+                ),
               ),
-              SizedBox(height: 40.h),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
@@ -574,8 +587,8 @@ class _AdminTeacherStatisticsScreenState
     required int totalUnsubmitted,
   }) {
     final disciplineColor = onTimeRate >= 80
-        ? const Color(0xFF10B981)
-        : const Color(0xFFF59E0B);
+        ? const Color(0xFF2563EB)
+        : const Color(0xFFD97706);
     final totalFilled = totalOnTime + totalLate;
     final onTimeShare = totalFilled > 0 ? totalOnTime / totalFilled : 0.0;
     final titleColor = isDark
@@ -695,7 +708,7 @@ class _AdminTeacherStatisticsScreenState
                     value: '$totalOnTime',
                     subtitle: 'Hari H',
                     icon: Icons.check_circle_rounded,
-                    color: const Color(0xFF10B981),
+                    color: const Color(0xFF2563EB),
                     isDark: isDark,
                   ),
                 ),
@@ -706,7 +719,7 @@ class _AdminTeacherStatisticsScreenState
                     value: '$totalLate',
                     subtitle: '> Hari H',
                     icon: Icons.history_toggle_off_rounded,
-                    color: const Color(0xFFF59E0B),
+                    color: const Color(0xFFD97706),
                     isDark: isDark,
                   ),
                 ),
@@ -717,7 +730,7 @@ class _AdminTeacherStatisticsScreenState
                     value: '$totalUnsubmitted',
                     subtitle: 'Belum isi',
                     icon: Icons.warning_amber_rounded,
-                    color: const Color(0xFFEF4444),
+                    color: const Color(0xFFE11D48),
                     isDark: isDark,
                   ),
                 ),
@@ -727,6 +740,13 @@ class _AdminTeacherStatisticsScreenState
         ),
       ],
     );
+  }
+
+  Color _accessibleTextColor(Color color) {
+    if (color == const Color(0xFFD97706)) return const Color(0xFFB45309);
+    if (color == const Color(0xFF2563EB)) return const Color(0xFF1E40AF);
+    if (color == const Color(0xFFE11D48)) return const Color(0xFFBE123C);
+    return color;
   }
 
   Widget _buildKpiCard({
@@ -780,7 +800,7 @@ class _AdminTeacherStatisticsScreenState
             style: TextStyle(
               fontSize: 11.sp,
               fontWeight: FontWeight.w700,
-              color: color,
+              color: _accessibleTextColor(color),
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -842,7 +862,7 @@ class _AdminTeacherStatisticsScreenState
     bool isDark,
     List<TeacherPunctualityStat> teachers,
   ) {
-    const headerColor = Color(0xFF10B981);
+    const headerColor = Color(0xFF2563EB);
 
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -936,7 +956,7 @@ class _AdminTeacherStatisticsScreenState
     bool isDark,
     List<TeacherPunctualityStat> teachers,
   ) {
-    const headerColor = Color(0xFFF59E0B);
+    const headerColor = Color(0xFFD97706);
 
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -974,7 +994,7 @@ class _AdminTeacherStatisticsScreenState
                       style: GoogleFonts.hankenGrotesk(
                         fontSize: 14.5.sp,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFFD97706),
+                        color: const Color(0xFFB45309),
                       ),
                     ),
                     Text(
@@ -1001,7 +1021,7 @@ class _AdminTeacherStatisticsScreenState
                   children: [
                     const Icon(
                       Icons.check_circle_rounded,
-                      color: Color(0xFF10B981),
+                      color: Color(0xFF2563EB),
                       size: 18,
                     ),
                     SizedBox(width: 6.w),
@@ -1010,7 +1030,7 @@ class _AdminTeacherStatisticsScreenState
                       style: TextStyle(
                         fontSize: 12.5.sp,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF10B981),
+                        color: const Color(0xFF2563EB),
                       ),
                     ),
                   ],
@@ -1046,7 +1066,7 @@ class _AdminTeacherStatisticsScreenState
     Color medalColor;
     if (isPositive) {
       if (rank == 1) {
-        medalColor = const Color(0xFFF59E0B);
+        medalColor = const Color(0xFFD97706);
       } else if (rank == 2) {
         medalColor = const Color(0xFF94A3B8);
       } else {
@@ -1054,8 +1074,8 @@ class _AdminTeacherStatisticsScreenState
       }
     } else {
       medalColor = rank == 1
-          ? const Color(0xFFEF4444)
-          : const Color(0xFFF59E0B);
+          ? const Color(0xFFE11D48)
+          : const Color(0xFFD97706);
     }
 
     return Container(
@@ -1125,10 +1145,10 @@ class _AdminTeacherStatisticsScreenState
             Container(
               padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 6.h),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                color: const Color(0xFF2563EB).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(9.r),
                 border: Border.all(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -1140,14 +1160,14 @@ class _AdminTeacherStatisticsScreenState
                     style: TextStyle(
                       fontSize: 11.5.sp,
                       fontWeight: FontWeight.w800,
-                      color: const Color(0xFF059669),
+                      color: const Color(0xFF1E40AF),
                     ),
                   ),
                   Text(
                     '${stat.onTimeCount} jurnal',
                     style: TextStyle(
                       fontSize: 10.sp,
-                      color: const Color(0xFF059669),
+                      color: const Color(0xFF1E40AF),
                     ),
                   ),
                 ],
@@ -1157,10 +1177,10 @@ class _AdminTeacherStatisticsScreenState
             Container(
               padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 6.h),
               decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                color: const Color(0xFFE11D48).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(9.r),
                 border: Border.all(
-                  color: const Color(0xFFEF4444).withValues(alpha: 0.28),
+                  color: const Color(0xFFE11D48).withValues(alpha: 0.28),
                 ),
               ),
               child: Column(
@@ -1172,7 +1192,7 @@ class _AdminTeacherStatisticsScreenState
                     style: TextStyle(
                       fontSize: 11.5.sp,
                       fontWeight: FontWeight.w800,
-                      color: const Color(0xFFDC2626),
+                      color: const Color(0xFFBE123C),
                     ),
                   ),
                   if (stat.averageLateDays > 0)
@@ -1303,21 +1323,21 @@ class _AdminTeacherStatisticsScreenState
                   'Tepat Waktu (≥80%)',
                   TeacherFilterCategory.onTime,
                   isDark,
-                  const Color(0xFF10B981),
+                  const Color(0xFF2563EB),
                 ),
                 SizedBox(width: 8.w),
                 _buildCategoryChip(
                   'Ada Keterlambatan',
                   TeacherFilterCategory.lateOnly,
                   isDark,
-                  const Color(0xFFF59E0B),
+                  const Color(0xFFD97706),
                 ),
                 SizedBox(width: 8.w),
                 _buildCategoryChip(
                   'Ada Tunggakan',
                   TeacherFilterCategory.unsubmittedOnly,
                   isDark,
-                  const Color(0xFFEF4444),
+                  const Color(0xFFE11D48),
                 ),
               ],
             ),
@@ -1418,7 +1438,7 @@ class _AdminTeacherStatisticsScreenState
               fontSize: 12.sp,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
               color: isSelected
-                  ? activeColor
+                  ? _accessibleTextColor(activeColor)
                   : (isDark ? Colors.grey[300] : const Color(0xFF475569)),
             ),
           ),
@@ -1442,10 +1462,10 @@ class _AdminTeacherStatisticsScreenState
       statusColor = const Color(0xFF64748B);
     } else if (stat.onTimeRate >= 85.0 && stat.unsubmittedCount == 0) {
       statusLabel = 'Sangat disiplin';
-      statusColor = const Color(0xFF10B981);
+      statusColor = const Color(0xFF2563EB);
     } else if (stat.onTimeRate >= 65.0) {
       statusLabel = 'Cukup disiplin';
-      statusColor = const Color(0xFFF59E0B);
+      statusColor = const Color(0xFFD97706);
     }
 
     return Container(
@@ -1454,7 +1474,7 @@ class _AdminTeacherStatisticsScreenState
         borderRadius: BorderRadius.circular(14.r),
         border: Border.all(
           color: stat.lateCount > 0 && stat.onTimeRate < 60
-              ? const Color(0xFFEF4444).withValues(alpha: 0.35)
+              ? const Color(0xFFE11D48).withValues(alpha: 0.35)
               : (isDark
                     ? Colors.white.withValues(alpha: 0.08)
                     : const Color(0xFFE2E8F0)),
@@ -1543,7 +1563,7 @@ class _AdminTeacherStatisticsScreenState
                           style: TextStyle(
                             fontSize: 10.5.sp,
                             fontWeight: FontWeight.w700,
-                            color: statusColor,
+                            color: _accessibleTextColor(statusColor),
                           ),
                         ),
                       ),
@@ -1565,17 +1585,17 @@ class _AdminTeacherStatisticsScreenState
                           if (stat.onTimeCount > 0)
                             Expanded(
                               flex: stat.onTimeCount,
-                              child: Container(color: const Color(0xFF10B981)),
+                              child: Container(color: const Color(0xFF2563EB)),
                             ),
                           if (stat.lateCount > 0)
                             Expanded(
                               flex: stat.lateCount,
-                              child: Container(color: const Color(0xFFF59E0B)),
+                              child: Container(color: const Color(0xFFD97706)),
                             ),
                           if (stat.unsubmittedCount > 0)
                             Expanded(
                               flex: stat.unsubmittedCount,
-                              child: Container(color: const Color(0xFFEF4444)),
+                              child: Container(color: const Color(0xFFE11D48)),
                             ),
                         ],
                       ),
@@ -1603,21 +1623,21 @@ class _AdminTeacherStatisticsScreenState
                           _buildStatPill(
                             'Tepat',
                             '${stat.onTimeCount}',
-                            const Color(0xFF10B981),
+                            const Color(0xFF2563EB),
                             isDark,
                           ),
                           SizedBox(width: 8.w),
                           _buildStatPill(
                             'Telat',
                             '${stat.lateCount}',
-                            const Color(0xFFF59E0B),
+                            const Color(0xFFD97706),
                             isDark,
                           ),
                           SizedBox(width: 8.w),
                           _buildStatPill(
                             'Kosong',
                             '${stat.unsubmittedCount}',
-                            const Color(0xFFEF4444),
+                            const Color(0xFFE11D48),
                             isDark,
                           ),
                           const Spacer(),
@@ -1638,19 +1658,19 @@ class _AdminTeacherStatisticsScreenState
                             _buildStatPill(
                               'Tepat',
                               '${stat.onTimeCount}',
-                              const Color(0xFF10B981),
+                              const Color(0xFF2563EB),
                               isDark,
                             ),
                             _buildStatPill(
                               'Telat',
                               '${stat.lateCount}',
-                              const Color(0xFFF59E0B),
+                              const Color(0xFFD97706),
                               isDark,
                             ),
                             _buildStatPill(
                               'Kosong',
                               '${stat.unsubmittedCount}',
-                              const Color(0xFFEF4444),
+                              const Color(0xFFE11D48),
                               isDark,
                             ),
                           ],
@@ -1732,7 +1752,7 @@ class _AdminTeacherStatisticsScreenState
                               padding: EdgeInsets.all(6.r),
                               decoration: BoxDecoration(
                                 color: const Color(
-                                  0xFFF59E0B,
+                                  0xFFD97706,
                                 ).withValues(alpha: 0.14),
                                 borderRadius: BorderRadius.circular(8.r),
                               ),
@@ -1777,7 +1797,7 @@ class _AdminTeacherStatisticsScreenState
                               ),
                               decoration: BoxDecoration(
                                 color: const Color(
-                                  0xFFF59E0B,
+                                  0xFFD97706,
                                 ).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(99.r),
                               ),
@@ -1869,7 +1889,7 @@ class _AdminTeacherStatisticsScreenState
             style: TextStyle(
               fontSize: 11.sp,
               fontWeight: FontWeight.w700,
-              color: color,
+              color: _accessibleTextColor(color),
             ),
           ),
         ],

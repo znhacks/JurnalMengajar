@@ -538,17 +538,25 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
   Color _getEnrollmentStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'naik':
-        return const Color(0xFF10B981);
+        return const Color(0xFF2563EB);
       case 'lulus':
-        return const Color(0xFF8B5CF6);
+        return const Color(0xFF1E40AF);
       case 'tidak_naik':
-        return const Color(0xFFF59E0B);
+        return const Color(0xFFD97706);
       case 'pindah':
-        return const Color(0xFF06B6D4);
+        return const Color(0xFF64748B);
       case 'aktif':
       default:
         return const Color(0xFF2563EB);
     }
+  }
+
+  Color _statusTextColor(Color color) {
+    if (color == const Color(0xFFD97706)) return const Color(0xFFB45309);
+    if (color == const Color(0xFF2563EB)) return const Color(0xFF1E40AF);
+    if (color == const Color(0xFFE11D48)) return const Color(0xFFBE123C);
+    if (color == const Color(0xFF64748B)) return const Color(0xFF475569);
+    return color;
   }
 
   String _formatEnrollmentStatus(String status) {
@@ -708,7 +716,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                           Icon(
                             Icons.table_view_rounded,
                             color: (!_isExporting && filteredStudents.isNotEmpty)
-                                ? const Color(0xFF10B981)
+                                ? const Color(0xFF2563EB)
                                 : Colors.grey,
                             size: 20.r,
                           ),
@@ -723,7 +731,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                         children: [
                           Icon(
                             Icons.trending_up_rounded,
-                            color: const Color(0xFFF59E0B),
+                            color: const Color(0xFFD97706),
                             size: 20.r,
                           ),
                           SizedBox(width: 12.w),
@@ -941,12 +949,8 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                   Theme.of(context).brightness ==
                                   Brightness.dark;
 
-                              return FadeSlideIn(
-                                delay: Duration(
-                                  milliseconds: (index * 35).clamp(0, 400),
-                                ),
-                                child: ScaleTap(
-                                  onTap: _isSelectionMode
+                              return ScaleTap(
+                                onTap: _isSelectionMode
                                       ? () => _toggleSelectItem(student.id)
                                       : () => StudentHistoryModal.show(
                                             context,
@@ -1105,10 +1109,12 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                                       fontWeight:
                                                           FontWeight.bold,
                                                       color:
-                                                          _getEnrollmentStatusColor(
-                                                        student
-                                                            .enrollmentStatus!,
-                                                      ),
+                                                          _statusTextColor(
+                                                            _getEnrollmentStatusColor(
+                                                              student
+                                                                  .enrollmentStatus!,
+                                                            ),
+                                                          ),
                                                     ),
                                                   ),
                                                 ),
@@ -1204,7 +1210,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                                   children: [
                                                     Icon(
                                                       Icons.history_edu_outlined,
-                                                      color: const Color(0xFF8B5CF6),
+                                                      color: const Color(0xFF1E40AF),
                                                       size: 20.r,
                                                     ),
                                                     SizedBox(width: 12.w),
@@ -1250,8 +1256,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                       ],
                                     ),
                                   ),
-                                ),
-                              );
+                                );
                             },
                           ),
                   ),

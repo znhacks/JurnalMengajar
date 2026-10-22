@@ -463,8 +463,8 @@ class SupabaseJournalRepository implements JournalRepository {
 
           if (teacherId != null && teacherId.isNotEmpty) {
             final title = isApproved
-                ? 'Jurnal Disetujui ✅'
-                : 'Jurnal Ditolak ❌';
+                ? 'Jurnal Disetujui'
+                : 'Jurnal Ditolak';
             final body = isApproved
                 ? 'Jurnal Anda tanggal $journalDate telah diverifikasi dan disetujui.'
                 : 'Jurnal Anda tanggal $journalDate ditolak.${rejectionNote != null && rejectionNote.isNotEmpty ? " Catatan: $rejectionNote" : ""}';

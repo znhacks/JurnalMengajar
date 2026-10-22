@@ -18,7 +18,6 @@ import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/utils/image_crop_helper.dart';
 import '../../../repositories/supabase_auth_repository.dart';
-import '../../../widgets/animated_widgets.dart';
 import '../../../services/excel_export_service.dart';
 import '../../../widgets/app_scaffold.dart';
 
@@ -775,10 +774,8 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
         }
         return false;
       },
-      child: FadeSlideIn(
-        delay: const Duration(milliseconds: 60),
-        child: Builder(
-          builder: (context) {
+      child: Builder(
+        builder: (context) {
             final isDark = Theme.of(context).brightness == Brightness.dark;
             return InkWell(
               onTap: _isSelectionMode
@@ -931,7 +928,6 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
             );
           },
         ),
-      ),
     );
   }
 

@@ -19,11 +19,11 @@ import '../../models/journal_model.dart';
 import '../../core/utils/schedule_grouper.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/warning_letter_provider.dart';
-import '../../widgets/animated_widgets.dart';
 import '../../widgets/role_badge.dart';
 import '../../widgets/school_switcher_modal.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/app_scaffold.dart';
+import '../../widgets/state_widgets.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final String? selectedTeacherId;
@@ -291,11 +291,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       );
       return !hasCompletedJournal;
     }).length;
+    final hasUnsubmitted = unsubmittedCount > 0;
 
     final isLoading =
         masterProvider.isLoading ||
         scheduleProvider.isLoading ||
         journalProvider.isLoading;
+    final loadError =
+        masterProvider.errorMessage ??
+        scheduleProvider.errorMessage ??
+        journalProvider.errorMessage;
 
     final primaryColor = isDark
         ? const Color(0xFF60A5FA)
@@ -410,8 +415,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ],
         ),
         drawer: const AdminDrawer(currentRoute: '/admin/dashboard'),
-        body: isLoading
-            ? const Center(child: CircularProgressIndicator())
+        body: isLoading && schoolSchedules.isEmpty && schoolJournals.isEmpty
+            ? const AppLoadingWidget(message: 'Memuat dashboard...')
+            : loadError != null &&
+                  schoolSchedules.isEmpty &&
+                  schoolJournals.isEmpty
+            ? AppErrorWidget(message: loadError, onRetry: _refreshData)
             : RefreshIndicator(
                 onRefresh: _refreshData,
                 color: const Color(0xFF2563EB),
@@ -424,220 +433,208 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // 1. Calendar Card (Top Section)
-                          FadeSlideIn(
-                            delay: const Duration(milliseconds: 50),
-                            child: _buildCalendarCard(
-                              schoolSchedules,
-                              schoolJournals,
-                              hasHighlightBefore,
-                              hasHighlightAfter,
-                            ),
+                          _buildCalendarCard(
+                            schoolSchedules,
+                            schoolJournals,
+                            hasHighlightBefore,
+                            hasHighlightAfter,
                           ),
                           SizedBox(height: 14.h),
 
                           // 2. Teacher Selector Filter
-                          FadeSlideIn(
-                            delay: const Duration(milliseconds: 100),
-                            child: _buildTeacherSelectorCompact(
-                              masterProvider.teachers,
-                            ),
-                          ),
+                          _buildTeacherSelectorCompact(masterProvider.teachers),
                           SizedBox(height: 12.h),
 
-                          // 3. Stat Cards Row (4 Grid Cards)
-                          FadeSlideIn(
-                            delay: const Duration(milliseconds: 150),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: _buildStatCard(
-                                    'Jadwal',
-                                    '${groupedSchedulesForDay.length}',
-                                    Icons.calendar_month_rounded,
-                                    accentColor: const Color(0xFF2563EB),
-                                    bgColor: const Color(0xFFEFF6FF),
-                                    borderColor: const Color(0xFFDBEAFE),
-                                    onTap: () => context.push(
-                                      '/admin/schedules?${_statQuery()}',
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: 8.w),
-                                Expanded(
-                                  child: _buildStatCard(
-                                    'Belum Input',
-                                    '$unsubmittedCount',
-                                    Icons.pending_actions_rounded,
-                                    accentColor: const Color(0xFFE11D48),
-                                    bgColor: const Color(0xFFFFE4E6),
-                                    borderColor: const Color(0xFFFECDD3),
-                                    onTap: () => context.push(
-                                      '/admin/journals?${_statQuery(tab: 1)}',
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: 8.w),
-                                Expanded(
-                                  child: _buildStatCard(
-                                    'Menunggu',
-                                    '$totalPending',
-                                    Icons.rate_review_rounded,
-                                    accentColor: const Color(0xFFD97706),
-                                    bgColor: const Color(0xFFFEF3C7),
-                                    borderColor: const Color(0xFFFDE68A),
-                                    onTap: () => context.push(
-                                      '/admin/journals?${_statQuery(tab: 2)}',
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: 8.w),
-                                Expanded(
-                                  child: _buildStatCard(
-                                    'Jurnal',
-                                    '$totalJournals',
-                                    Icons.assignment_rounded,
-                                    accentColor: const Color(0xFF0284C7),
-                                    bgColor: const Color(0xFFF0F9FF),
-                                    borderColor: const Color(0xFFBAE6FD),
-                                    onTap: () => context.push(
-                                      '/admin/journals?${_statQuery()}',
-                                    ),
-                                  ),
-                                ),
-                              ],
+                          // 3. Stat Cards: prioritas belum input + 3 ringkasan
+                          _buildPriorityStatCard(
+                            title: 'Belum Input',
+                            subtitle: 'Jadwal tanpa jurnal',
+                            count: '$unsubmittedCount',
+                            icon: Icons.pending_actions_rounded,
+                            accentColor: hasUnsubmitted
+                                ? const Color(0xFFE11D48)
+                                : const Color(0xFF2563EB),
+                            bgColor: hasUnsubmitted
+                                ? const Color(0xFFFFE4E6)
+                                : const Color(0xFFEFF6FF),
+                            borderColor: hasUnsubmitted
+                                ? const Color(0xFFFECDD3)
+                                : const Color(0xFFDBEAFE),
+                            onTap: () => context.push(
+                              '/admin/journals?${_statQuery(tab: 1)}',
                             ),
+                          ),
+                          SizedBox(height: 8.h),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildStatCard(
+                                  'Jadwal',
+                                  '${groupedSchedulesForDay.length}',
+                                  Icons.calendar_month_rounded,
+                                  accentColor: const Color(0xFF2563EB),
+                                  bgColor: const Color(0xFFEFF6FF),
+                                  borderColor: const Color(0xFFDBEAFE),
+                                  onTap: () => context.push(
+                                    '/admin/schedules?${_statQuery()}',
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              Expanded(
+                                child: _buildStatCard(
+                                  'Menunggu',
+                                  '$totalPending',
+                                  Icons.rate_review_rounded,
+                                  accentColor: const Color(0xFFD97706),
+                                  bgColor: const Color(0xFFFEF3C7),
+                                  borderColor: const Color(0xFFFDE68A),
+                                  onTap: () => context.push(
+                                    '/admin/journals?${_statQuery(tab: 2)}',
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              Expanded(
+                                child: _buildStatCard(
+                                  'Jurnal',
+                                  '$totalJournals',
+                                  Icons.assignment_rounded,
+                                  accentColor: const Color(0xFF1E40AF),
+                                  bgColor: const Color(0xFFDBEAFE),
+                                  borderColor: const Color(0xFFBFDBFE),
+                                  onTap: () => context.push(
+                                    '/admin/journals?${_statQuery()}',
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           SizedBox(height: 16.h),
 
                           // Shortcut ke halaman statistik kedisiplinan guru
-                          FadeSlideIn(
-                            delay: const Duration(milliseconds: 175),
-                            child: InkWell(
-                              onTap: () =>
-                                  context.push('/admin/teacher-statistics'),
-                              borderRadius: BorderRadius.circular(14.r),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 14.w,
-                                  vertical: 12.h,
-                                ),
-                                decoration: BoxDecoration(
+                          InkWell(
+                            onTap: () =>
+                                context.push('/admin/teacher-statistics'),
+                            borderRadius: BorderRadius.circular(14.r),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 14.w,
+                                vertical: 12.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(0xFF1E293B)
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(14.r),
+                                border: Border.all(
                                   color: isDark
-                                      ? const Color(0xFF1E293B)
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(14.r),
-                                  border: Border.all(
-                                    color: isDark
-                                        ? const Color(0xFF334155)
-                                        : const Color(0xFFBFDBFE),
+                                      ? const Color(0xFF334155)
+                                      : const Color(0xFFBFDBFE),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Statistik & Kedisiplinan Guru',
+                                          style: GoogleFonts.hankenGrotesk(
+                                            fontSize: 13.5.sp,
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        SizedBox(height: 2.h),
+                                        Text(
+                                          'Pantau ketepatan waktu guru mengisi jurnal.',
+                                          style: TextStyle(
+                                            fontSize: 11.sp,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Statistik & Kedisiplinan Guru',
-                                            style: GoogleFonts.hankenGrotesk(
-                                              fontSize: 13.5.sp,
-                                              fontWeight: FontWeight.bold,
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.onSurface,
-                                            ),
-                                          ),
-                                          SizedBox(height: 2.h),
-                                          Text(
-                                            'Pantau ketepatan waktu guru mengisi jurnal.',
-                                            style: TextStyle(
-                                              fontSize: 11.sp,
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.onSurfaceVariant,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    SizedBox(width: 10.w),
-                                    Icon(
-                                      Icons.arrow_forward_rounded,
-                                      size: 20.r,
-                                      color: primaryColor,
-                                    ),
-                                  ],
-                                ),
+                                  SizedBox(width: 10.w),
+                                  Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 20.r,
+                                    color: primaryColor,
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                           SizedBox(height: 10.h),
 
                           // Shortcut ke halaman rekap kehadiran siswa per kelas
-                          FadeSlideIn(
-                            delay: const Duration(milliseconds: 185),
-                            child: InkWell(
-                              onTap: () =>
-                                  context.push('/admin/class-attendance-recap'),
-                              borderRadius: BorderRadius.circular(14.r),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 14.w,
-                                  vertical: 12.h,
-                                ),
-                                decoration: BoxDecoration(
+                          InkWell(
+                            onTap: () =>
+                                context.push('/admin/class-attendance-recap'),
+                            borderRadius: BorderRadius.circular(14.r),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 14.w,
+                                vertical: 12.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(0xFF132E27)
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(14.r),
+                                border: Border.all(
                                   color: isDark
-                                      ? const Color(0xFF132E27)
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(14.r),
-                                  border: Border.all(
-                                    color: isDark
-                                        ? const Color(0xFF065F46)
-                                        : const Color(0xFFA7F3D0),
+                                      ? const Color(0xFF065F46)
+                                      : const Color(0xFFA7F3D0),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Rekap Kehadiran Siswa',
+                                          style: GoogleFonts.hankenGrotesk(
+                                            fontSize: 13.5.sp,
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        SizedBox(height: 2.h),
+                                        Text(
+                                          'Pantau kehadiran, sakit, izin, dan alpa per kelas.',
+                                          style: TextStyle(
+                                            fontSize: 11.sp,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Rekap Kehadiran Siswa',
-                                            style: GoogleFonts.hankenGrotesk(
-                                              fontSize: 13.5.sp,
-                                              fontWeight: FontWeight.bold,
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.onSurface,
-                                            ),
-                                          ),
-                                          SizedBox(height: 2.h),
-                                          Text(
-                                            'Pantau kehadiran, sakit, izin, dan alpa per kelas.',
-                                            style: TextStyle(
-                                              fontSize: 11.sp,
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.onSurfaceVariant,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    SizedBox(width: 10.w),
-                                    Icon(
-                                      Icons.arrow_forward_rounded,
-                                      size: 20.r,
-                                      color: isDark
-                                          ? const Color(0xFF34D399)
-                                          : const Color(0xFF059669),
-                                    ),
-                                  ],
-                                ),
+                                  SizedBox(width: 10.w),
+                                  Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 20.r,
+                                    color: isDark
+                                        ? const Color(0xFF34D399)
+                                        : const Color(0xFF059669),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -661,6 +658,90 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       params['teacher'] = teacherId;
     }
     return Uri(queryParameters: params).query;
+  }
+
+  Widget _buildPriorityStatCard({
+    required String title,
+    required String subtitle,
+    required String count,
+    required IconData icon,
+    required Color accentColor,
+    required Color bgColor,
+    required Color borderColor,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16.r),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Theme.of(context).colorScheme.surfaceContainerHighest
+                : Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(
+              color: isDark ? accentColor.withValues(alpha: 0.35) : borderColor,
+              width: 1.4,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(10.w),
+                decoration: BoxDecoration(
+                  color: isDark ? accentColor.withValues(alpha: 0.2) : bgColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: accentColor, size: 20.w),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 13.5.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Text(
+                count,
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 24.sp,
+                  fontWeight: FontWeight.w800,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  height: 1.0,
+                ),
+              ),
+              SizedBox(width: 6.w),
+              Icon(Icons.arrow_forward_rounded, size: 18.r, color: accentColor),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   // ─── Stat Card ─────────────────────────────────────────────────────────────
@@ -696,13 +777,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               color: isDark ? accentColor.withValues(alpha: 0.3) : borderColor,
               width: 1.2,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -934,15 +1008,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         fontWeight = FontWeight.w700;
         border = Border.all(color: const Color(0xFF3B82F6), width: 1.5);
       } else {
-        // Memiliki jadwal tetapi belum semua mengisi jurnal: berwarna hijau
+        // Memiliki jadwal tetapi belum semua mengisi jurnal: berwarna amber
         bgColor = const Color(
-          0xFF10B981,
+          0xFFD97706,
         ).withValues(alpha: isDark ? 0.22 : 0.15);
         textColor = isOutside
             ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
-            : (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF047857));
+            : (isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309));
         fontWeight = FontWeight.w700;
-        border = Border.all(color: const Color(0xFF10B981), width: 1.5);
+        border = Border.all(color: const Color(0xFFD97706), width: 1.5);
       }
     } else if (isToday) {
       bgColor = AppTheme.primaryColor.withValues(alpha: isDark ? 0.25 : 0.15);

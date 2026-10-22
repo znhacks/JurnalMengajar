@@ -372,9 +372,12 @@ class SchoolSwitcherModal extends StatelessWidget {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text(
-                                        '⏳',
-                                        style: TextStyle(fontSize: 10.sp),
+                                      Icon(
+                                        Icons.hourglass_top_rounded,
+                                        size: 12.sp,
+                                        color: isDark
+                                            ? const Color(0xFFFDE68A)
+                                            : const Color(0xFFB45309),
                                       ),
                                       SizedBox(width: 4.w),
                                       Flexible(

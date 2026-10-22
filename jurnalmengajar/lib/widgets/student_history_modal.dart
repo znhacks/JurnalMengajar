@@ -67,17 +67,25 @@ class _StudentHistorySheetState extends State<_StudentHistorySheet> {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'naik':
-        return const Color(0xFF10B981); // Emerald
+        return const Color(0xFF2563EB);
       case 'lulus':
-        return const Color(0xFF8B5CF6); // Purple
+        return const Color(0xFF1E40AF);
       case 'tidak_naik':
-        return const Color(0xFFF59E0B); // Amber
+        return const Color(0xFFD97706);
       case 'pindah':
-        return const Color(0xFF06B6D4); // Cyan
+        return const Color(0xFF64748B);
       case 'aktif':
       default:
-        return const Color(0xFF2563EB); // Blue
+        return const Color(0xFF2563EB);
     }
+  }
+
+  Color _statusTextColor(Color color) {
+    if (color == const Color(0xFFD97706)) return const Color(0xFFB45309);
+    if (color == const Color(0xFF2563EB)) return const Color(0xFF1E40AF);
+    if (color == const Color(0xFFE11D48)) return const Color(0xFFBE123C);
+    if (color == const Color(0xFF64748B)) return const Color(0xFF475569);
+    return color;
   }
 
   IconData _getStatusIcon(String status) {
@@ -325,7 +333,7 @@ class _StudentHistorySheetState extends State<_StudentHistorySheet> {
                                                 style: GoogleFonts.hankenGrotesk(
                                                   fontSize: 11.sp,
                                                   fontWeight: FontWeight.bold,
-                                                  color: statusColor,
+                                                  color: _statusTextColor(statusColor),
                                                 ),
                                               ),
                                             ],
@@ -372,7 +380,7 @@ class _StudentHistorySheetState extends State<_StudentHistorySheet> {
                                             style: GoogleFonts.hankenGrotesk(
                                               fontSize: 13.sp,
                                               fontWeight: FontWeight.bold,
-                                              color: statusColor,
+                                              color: _statusTextColor(statusColor),
                                             ),
                                           ),
                                         ],
