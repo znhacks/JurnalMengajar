@@ -331,7 +331,7 @@ void main() {
     isActive: true,
   );
 
-  testWidgets('When journal is rejected, schedule item displays red clock icon instead of checkmark', (tester) async {
+  testWidgets('Admin dashboard does not render the daily schedule list', (tester) async {
     const screenSize = Size(1024, 768);
     tester.view.physicalSize = screenSize;
     tester.view.devicePixelRatio = 1.0;
@@ -425,21 +425,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Verify schedule title exists
-    expect(find.textContaining('XII RPL 2 - Beta • Matematika'), findsWidgets);
+    // The daily schedule list section has been removed from the admin dashboard.
+    expect(find.textContaining('XII RPL 2 - Beta • Matematika'), findsNothing);
+    expect(find.textContaining('Jadwal:'), findsNothing);
 
-    // Because journal is rejected, it should show Icons.access_time_filled_rounded (red clock icon), NOT checkmark!
-    expect(find.byIcon(Icons.access_time_filled_rounded), findsWidgets);
-    expect(find.byIcon(Icons.check_rounded), findsNothing);
-
-    // Tapping on the schedule item should still open the rejected journal detail
-    await tester.tap(find.textContaining('XII RPL 2 - Beta • Matematika').first);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Detail Jurnal j-1'), findsOneWidget);
+    // Dashboard itself still renders normally.
+    expect(find.byType(AdminDashboardScreen), findsOneWidget);
+    expect(find.text('Jadwal'), findsOneWidget);
   });
 
-  testWidgets('When journal is approved or pending, schedule item displays blue checkmark icon', (tester) async {
+  testWidgets('Admin dashboard does not render schedule status icons', (tester) async {
     const screenSize = Size(1024, 768);
     tester.view.physicalSize = screenSize;
     tester.view.devicePixelRatio = 1.0;
@@ -520,7 +515,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Verify blue checkmark icon is displayed
-    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+    // The schedule list (and its status icons) is no longer rendered.
+    expect(find.textContaining('XII RPL 2 - Beta • Matematika'), findsNothing);
+    expect(find.byIcon(Icons.check_rounded), findsNothing);
+    expect(find.byIcon(Icons.access_time_filled_rounded), findsNothing);
   });
 }

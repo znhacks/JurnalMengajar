@@ -86,8 +86,9 @@ class _AdminClassAttendanceRecapScreenState
 
     _studentSearchController.addListener(() {
       setState(() {
-        _studentSearchQuery =
-            _studentSearchController.text.trim().toLowerCase();
+        _studentSearchQuery = _studentSearchController.text
+            .trim()
+            .toLowerCase();
       });
     });
 
@@ -160,7 +161,9 @@ class _AdminClassAttendanceRecapScreenState
         });
       }
     } catch (e) {
-      debugPrint('[REKAP_KEHADIRAN] Error load students for class $classId: $e');
+      debugPrint(
+        '[REKAP_KEHADIRAN] Error load students for class $classId: $e',
+      );
     } finally {
       if (mounted) {
         setState(() => _isLoadingStudents = false);
@@ -514,7 +517,9 @@ class _AdminClassAttendanceRecapScreenState
                   height: 4.h,
                   margin: EdgeInsets.only(bottom: 16.h),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                    color: isDark
+                        ? const Color(0xFF475569)
+                        : const Color(0xFFCBD5E1),
                     borderRadius: BorderRadius.circular(2.r),
                   ),
                 ),
@@ -827,7 +832,9 @@ class _AdminClassAttendanceRecapScreenState
                       height: 4.5.h,
                       margin: EdgeInsets.only(bottom: 14.h),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                        color: isDark
+                            ? const Color(0xFF475569)
+                            : const Color(0xFFCBD5E1),
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),
@@ -840,15 +847,23 @@ class _AdminClassAttendanceRecapScreenState
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: isDark
-                                ? [const Color(0xFF1E3A8A), const Color(0xFF2563EB)]
-                                : [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
+                                ? [
+                                    const Color(0xFF1E3A8A),
+                                    const Color(0xFF2563EB),
+                                  ]
+                                : [
+                                    const Color(0xFF3B82F6),
+                                    const Color(0xFF1D4ED8),
+                                  ],
                           ),
                           borderRadius: BorderRadius.circular(14.r),
                         ),
                         child: Center(
                           child: Text(
                             summary.student.name.isNotEmpty
-                                ? summary.student.name.substring(0, 1).toUpperCase()
+                                ? summary.student.name
+                                      .substring(0, 1)
+                                      .toUpperCase()
                                 : '?',
                             style: GoogleFonts.hankenGrotesk(
                               fontSize: 18.sp,
@@ -928,12 +943,19 @@ class _AdminClassAttendanceRecapScreenState
 
                   // Attendance Rate Bar inside Modal
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 14.w,
+                      vertical: 10.h,
+                    ),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                      color: isDark
+                          ? const Color(0xFF1E293B)
+                          : const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0),
                       ),
                     ),
                     child: Row(
@@ -944,7 +966,9 @@ class _AdminClassAttendanceRecapScreenState
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 12.sp,
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
                         Text(
@@ -955,8 +979,8 @@ class _AdminClassAttendanceRecapScreenState
                             color: summary.attendancePercentage >= 85
                                 ? const Color(0xFF10B981)
                                 : (summary.attendancePercentage >= 75
-                                    ? const Color(0xFFF59E0B)
-                                    : const Color(0xFFF43F5E)),
+                                      ? const Color(0xFFF59E0B)
+                                      : const Color(0xFFF43F5E)),
                           ),
                         ),
                       ],
@@ -984,7 +1008,9 @@ class _AdminClassAttendanceRecapScreenState
                                 Container(
                                   padding: EdgeInsets.all(14.r),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                                    color: const Color(
+                                      0xFF10B981,
+                                    ).withValues(alpha: 0.12),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
@@ -1060,7 +1086,9 @@ class _AdminClassAttendanceRecapScreenState
                                           8.r,
                                         ),
                                         border: Border.all(
-                                          color: statusColor.withValues(alpha: 0.5),
+                                          color: statusColor.withValues(
+                                            alpha: 0.5,
+                                          ),
                                           width: 1,
                                         ),
                                       ),
@@ -1503,8 +1531,12 @@ class _AdminClassAttendanceRecapScreenState
                             value: (overallRate / 100.0).clamp(0.0, 1.0),
                             strokeWidth: 6.5.r,
                             strokeCap: StrokeCap.round,
-                            backgroundColor: Colors.white.withValues(alpha: 0.15),
-                            valueColor: AlwaysStoppedAnimation<Color>(rateAccent),
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.15,
+                            ),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              rateAccent,
+                            ),
                           ),
                         ),
                         Icon(
@@ -1668,7 +1700,9 @@ class _AdminClassAttendanceRecapScreenState
   }) {
     final effectiveOnTap = enabled ? onTap : null;
     final activeBg = isDark ? const Color(0xFF0F172A) : Colors.white;
-    final activeTextColor = isDark ? AppTheme.primaryAccent : AppTheme.primaryColor;
+    final activeTextColor = isDark
+        ? AppTheme.primaryAccent
+        : AppTheme.primaryColor;
     final inactiveTextColor = Theme.of(context).colorScheme.onSurfaceVariant;
 
     return Opacity(
@@ -1685,7 +1719,9 @@ class _AdminClassAttendanceRecapScreenState
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.2 : 0.05,
+                      ),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -1977,7 +2013,10 @@ class _AdminClassAttendanceRecapScreenState
                       gradient: LinearGradient(
                         colors: isDark
                             ? [const Color(0xFF1E3A8A), const Color(0xFF2563EB)]
-                            : [const Color(0xFFEFF6FF), const Color(0xFFDBEAFE)],
+                            : [
+                                const Color(0xFFEFF6FF),
+                                const Color(0xFFDBEAFE),
+                              ],
                       ),
                       borderRadius: BorderRadius.circular(12.r),
                     ),
@@ -2009,7 +2048,9 @@ class _AdminClassAttendanceRecapScreenState
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 11.5.sp,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -2269,9 +2310,13 @@ class _AdminClassAttendanceRecapScreenState
             children: [
               IconButton(
                 style: IconButton.styleFrom(
-                  backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  backgroundColor: isDark
+                      ? const Color(0xFF1E293B)
+                      : Colors.white,
                   side: BorderSide(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0),
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.r),
@@ -2286,7 +2331,10 @@ class _AdminClassAttendanceRecapScreenState
               SizedBox(width: 10.w),
               Expanded(
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 14.w,
+                    vertical: 2.h,
+                  ),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF1E293B) : Colors.white,
                     borderRadius: BorderRadius.circular(14.r),
@@ -2349,14 +2397,17 @@ class _AdminClassAttendanceRecapScreenState
               color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(14.r),
               border: Border.all(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFE2E8F0),
               ),
             ),
             child: Row(
               children: [
                 Expanded(
                   child: _buildSubTabButton(
-                    title: 'Presensi Siswa (${filteredStudentSummaries.length})',
+                    title:
+                        'Presensi Siswa (${filteredStudentSummaries.length})',
                     isSelected: _detailSubTabIndex == 0,
                     onTap: () => setState(() => _detailSubTabIndex = 0),
                     isDark: isDark,
@@ -2396,7 +2447,9 @@ class _AdminClassAttendanceRecapScreenState
     required bool isDark,
   }) {
     final activeBg = isDark ? const Color(0xFF0F172A) : Colors.white;
-    final activeTextColor = isDark ? AppTheme.primaryAccent : AppTheme.primaryColor;
+    final activeTextColor = isDark
+        ? AppTheme.primaryAccent
+        : AppTheme.primaryColor;
 
     return InkWell(
       onTap: onTap,
@@ -2472,11 +2525,7 @@ class _AdminClassAttendanceRecapScreenState
               AttendanceTimeFilter.lastMonth,
               isDark,
             ),
-            _buildFilterChip(
-              'Rentang',
-              AttendanceTimeFilter.custom,
-              isDark,
-            ),
+            _buildFilterChip('Rentang', AttendanceTimeFilter.custom, isDark),
           ],
         ),
         if (_timeFilter == AttendanceTimeFilter.custom &&
@@ -2495,7 +2544,9 @@ class _AdminClassAttendanceRecapScreenState
                 Icon(
                   Icons.date_range_rounded,
                   size: 12.sp,
-                  color: isDark ? AppTheme.primaryAccent : AppTheme.primaryColor,
+                  color: isDark
+                      ? AppTheme.primaryAccent
+                      : AppTheme.primaryColor,
                 ),
                 SizedBox(width: 6.w),
                 Text(
@@ -2503,7 +2554,9 @@ class _AdminClassAttendanceRecapScreenState
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 11.sp,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? AppTheme.primaryAccent : AppTheme.primaryColor,
+                    color: isDark
+                        ? AppTheme.primaryAccent
+                        : AppTheme.primaryColor,
                   ),
                 ),
               ],
@@ -2720,7 +2773,9 @@ class _AdminClassAttendanceRecapScreenState
             hintText: 'Cari siswa berdasarkan nama atau NIS...',
             hintStyle: GoogleFonts.hankenGrotesk(
               fontSize: 12.sp,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
             ),
             prefixIcon: const Icon(Icons.search_rounded, size: 19),
             suffixIcon: _studentSearchQuery.isNotEmpty
@@ -2895,7 +2950,10 @@ class _AdminClassAttendanceRecapScreenState
                       decoration: BoxDecoration(
                         color: rateColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(8.r),
-                        border: Border.all(color: rateColor.withValues(alpha: 0.5), width: 0.8),
+                        border: Border.all(
+                          color: rateColor.withValues(alpha: 0.5),
+                          width: 0.8,
+                        ),
                       ),
                       child: Text(
                         '${rate.toStringAsFixed(1)}%',
@@ -3040,7 +3098,10 @@ class _AdminClassAttendanceRecapScreenState
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 3.h,
+                      ),
                       decoration: BoxDecoration(
                         color: AppTheme.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6.r),
@@ -3085,7 +3146,10 @@ class _AdminClassAttendanceRecapScreenState
                   SizedBox(height: 6.h),
                   Container(
                     width: double.infinity,
-                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.w,
+                      vertical: 6.h,
+                    ),
                     decoration: BoxDecoration(
                       color: isDark
                           ? const Color(0xFF0F172A).withValues(alpha: 0.6)
