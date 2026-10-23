@@ -617,6 +617,77 @@ class ScheduleProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> updateMultipleSchedules(
+    List<ScheduleModel> models,
+    List<dynamic> teachers, [
+    List<dynamic>? classes,
+  ]) async {
+    if (models.isEmpty) return true;
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final updatedIds = models.map((m) => m.id).toSet();
+      for (final model in models) {
+        _validateNoActiveOverlap(
+          model,
+          excludeIds: updatedIds,
+          teachers: teachers,
+          classes: classes,
+        );
+      }
+
+      final finalModels = models.map((model) {
+        return (_currentSchoolId != null &&
+                _currentSchoolId!.isNotEmpty &&
+                (model.schoolId == null || model.schoolId!.isEmpty))
+            ? model.copyWith(schoolId: _currentSchoolId)
+            : model;
+      }).toList();
+
+      if (scheduleRepository is SupabaseScheduleRepository) {
+        await (scheduleRepository as SupabaseScheduleRepository).updateMultiple(finalModels);
+      } else {
+        await Future.wait(finalModels.map((m) => scheduleRepository.update(m)));
+      }
+
+      final modelMap = {for (final m in finalModels) m.id: m};
+      for (int i = 0; i < _schedules.length; i++) {
+        final existing = _schedules[i];
+        if (modelMap.containsKey(existing.id)) {
+          _schedules[i] = modelMap[existing.id]!;
+        }
+      }
+      _schedules.sort((a, b) => a.date.compareTo(b.date));
+
+      if (_cachedTeacherId != null) {
+        for (int i = 0; i < _cachedTeacherSchedules.length; i++) {
+          final existing = _cachedTeacherSchedules[i];
+          if (modelMap.containsKey(existing.id)) {
+            _cachedTeacherSchedules[i] = modelMap[existing.id]!;
+          }
+        }
+        _cachedTeacherSchedules.sort((a, b) => a.date.compareTo(b.date));
+      }
+
+      for (int i = 0; i < _teacherSchedulesForSelectedDate.length; i++) {
+        final existing = _teacherSchedulesForSelectedDate[i];
+        if (modelMap.containsKey(existing.id)) {
+          _teacherSchedulesForSelectedDate[i] = modelMap[existing.id]!;
+        }
+      }
+
+      _syncDiskCache();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<bool> deleteSchedule(String id) async {
     final removedIndex = _schedules.indexWhere((s) => s.id == id);
     final removedModel = removedIndex != -1 ? _schedules[removedIndex] : null;

@@ -1081,11 +1081,11 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                   sameDates &&
                                   sameWeekdays &&
                                   sameHours) {
-                                bool allSuccess = true;
+                                final schedulesToUpdate = <ScheduleModel>[];
                                 for (final id in groupedSchedule.scheduleIds) {
                                   final original = scheduleProvider.schedules
                                       .firstWhere((s) => s.id == id);
-                                  final updatedSched = ScheduleModel(
+                                  schedulesToUpdate.add(ScheduleModel(
                                     id: id,
                                     periodId: selectedPeriodId!,
                                     date: original.date,
@@ -1098,16 +1098,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                         : noteController.text.trim(),
                                     isActive: isActive,
                                     schoolId: authProvider.activeSchoolId,
-                                  );
-                                  final res = await scheduleProvider
-                                      .updateSchedule(
-                                        updatedSched,
-                                        masterProvider.teachers,
-                                        masterProvider.classes,
-                                      );
-                                  if (!res) allSuccess = false;
+                                  ));
                                 }
-                                success = allSuccess;
+                                success = await scheduleProvider
+                                    .updateMultipleSchedules(
+                                      schedulesToUpdate,
+                                      masterProvider.teachers,
+                                      masterProvider.classes,
+                                    );
                               } else {
                                 // Safe edit: delete old and recreate
                                 final bool deleteSuccess =

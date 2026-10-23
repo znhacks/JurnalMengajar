@@ -283,6 +283,31 @@ class MasterDataProvider with ChangeNotifier {
     }
   }
 
+  void _syncPeriodsCache() {
+    final sKey = _currentSchoolId ?? 'default';
+    CacheService().save('periods_$sKey', _periods.map((e) => e.toJson()).toList());
+  }
+
+  void _syncSubjectsCache() {
+    final sKey = _currentSchoolId ?? 'default';
+    CacheService().save('subjects_$sKey', _subjects.map((e) => e.toJson()).toList());
+  }
+
+  void _syncHoursCache() {
+    final sKey = _currentSchoolId ?? 'default';
+    CacheService().save('hours_$sKey', _hours.map((e) => e.toJson()).toList());
+  }
+
+  void _syncClassesCache() {
+    final sKey = _currentSchoolId ?? 'default';
+    CacheService().save('classes_$sKey', _classes.map((e) => e.toJson()).toList());
+  }
+
+  void _syncTeachersCache() {
+    final sKey = _currentSchoolId ?? 'default';
+    CacheService().save('teachers_$sKey', _teachers.map((e) => e.toJson()).toList());
+  }
+
   // Periods.
   Future<bool> createPeriod(PeriodModel model) async {
     _isLoading = true;
@@ -299,9 +324,10 @@ class MasterDataProvider with ChangeNotifier {
           ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await periodRepository.create(finalModel);
-      _periods = await periodRepository.getAll(
-        _currentSchoolId ?? effectiveSchoolId,
-      );
+      _periods.removeWhere((p) => p.id == finalModel.id);
+      _periods.add(finalModel);
+      _periods.sort((a, b) => b.isActive ? 1 : (a.isActive ? -1 : a.name.compareTo(b.name)));
+      _syncPeriodsCache();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -327,9 +353,14 @@ class MasterDataProvider with ChangeNotifier {
           ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await periodRepository.update(finalModel);
-      _periods = await periodRepository.getAll(
-        _currentSchoolId ?? effectiveSchoolId,
-      );
+      final idx = _periods.indexWhere((p) => p.id == finalModel.id);
+      if (idx != -1) {
+        _periods[idx] = finalModel;
+      } else {
+        _periods.add(finalModel);
+      }
+      _periods.sort((a, b) => b.isActive ? 1 : (a.isActive ? -1 : a.name.compareTo(b.name)));
+      _syncPeriodsCache();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -345,7 +376,8 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await periodRepository.delete(id);
-      _periods = await periodRepository.getAll(_currentSchoolId);
+      _periods.removeWhere((p) => p.id == id);
+      _syncPeriodsCache();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -372,9 +404,10 @@ class MasterDataProvider with ChangeNotifier {
           ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await subjectRepository.create(finalModel);
-      _subjects = await subjectRepository.getAll(
-        _currentSchoolId ?? effectiveSchoolId,
-      );
+      _subjects.removeWhere((s) => s.id == finalModel.id);
+      _subjects.add(finalModel);
+      _subjects.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      _syncSubjectsCache();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -400,9 +433,14 @@ class MasterDataProvider with ChangeNotifier {
           ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await subjectRepository.update(finalModel);
-      _subjects = await subjectRepository.getAll(
-        _currentSchoolId ?? effectiveSchoolId,
-      );
+      final idx = _subjects.indexWhere((s) => s.id == finalModel.id);
+      if (idx != -1) {
+        _subjects[idx] = finalModel;
+      } else {
+        _subjects.add(finalModel);
+      }
+      _subjects.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      _syncSubjectsCache();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -418,7 +456,8 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await subjectRepository.delete(id);
-      _subjects = await subjectRepository.getAll(_currentSchoolId);
+      _subjects.removeWhere((s) => s.id == id);
+      _syncSubjectsCache();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -445,9 +484,10 @@ class MasterDataProvider with ChangeNotifier {
           ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await hourRepository.create(finalModel);
-      _hours = await hourRepository.getAll(
-        _currentSchoolId ?? effectiveSchoolId,
-      );
+      _hours.removeWhere((h) => h.id == finalModel.id);
+      _hours.add(finalModel);
+      _hours.sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
+      _syncHoursCache();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -473,9 +513,14 @@ class MasterDataProvider with ChangeNotifier {
           ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await hourRepository.update(finalModel);
-      _hours = await hourRepository.getAll(
-        _currentSchoolId ?? effectiveSchoolId,
-      );
+      final idx = _hours.indexWhere((h) => h.id == finalModel.id);
+      if (idx != -1) {
+        _hours[idx] = finalModel;
+      } else {
+        _hours.add(finalModel);
+      }
+      _hours.sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
+      _syncHoursCache();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -491,7 +536,8 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await hourRepository.delete(id);
-      _hours = await hourRepository.getAll(_currentSchoolId);
+      _hours.removeWhere((h) => h.id == id);
+      _syncHoursCache();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -518,9 +564,10 @@ class MasterDataProvider with ChangeNotifier {
           ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await classRepository.create(finalModel);
-      _classes = await classRepository.getAll(
-        _currentSchoolId ?? effectiveSchoolId,
-      );
+      _classes.removeWhere((c) => c.id == finalModel.id);
+      _classes.add(finalModel);
+      _classes.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      _syncClassesCache();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -546,9 +593,14 @@ class MasterDataProvider with ChangeNotifier {
           ? model.copyWith(schoolId: effectiveSchoolId)
           : model;
       await classRepository.update(finalModel);
-      _classes = await classRepository.getAll(
-        _currentSchoolId ?? effectiveSchoolId,
-      );
+      final idx = _classes.indexWhere((c) => c.id == finalModel.id);
+      if (idx != -1) {
+        _classes[idx] = finalModel;
+      } else {
+        _classes.add(finalModel);
+      }
+      _classes.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      _syncClassesCache();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -564,7 +616,8 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await classRepository.delete(id);
-      _classes = await classRepository.getAll(_currentSchoolId);
+      _classes.removeWhere((c) => c.id == id);
+      _syncClassesCache();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -648,9 +701,10 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await teacherRepository.create(model);
-      _teachers = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty)
-          ? await teacherRepository.getAllForSchool(_currentSchoolId!)
-          : <TeacherModel>[];
+      _teachers.removeWhere((t) => t.id == model.id);
+      _teachers.add(model);
+      _teachers.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      _syncTeachersCache();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -668,10 +722,14 @@ class MasterDataProvider with ChangeNotifier {
       await teacherRepository.update(model);
       PaintingBinding.instance.imageCache.clear();
       PaintingBinding.instance.imageCache.clearLiveImages();
-      if (_currentSchoolId != null && _currentSchoolId!.isNotEmpty) {
-        await CacheService().remove('teachers_$_currentSchoolId');
-        _teachers = await teacherRepository.getAllForSchool(_currentSchoolId!);
+      final idx = _teachers.indexWhere((t) => t.id == model.id);
+      if (idx != -1) {
+        _teachers[idx] = model;
+      } else {
+        _teachers.add(model);
       }
+      _teachers.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      _syncTeachersCache();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -698,8 +756,8 @@ class MasterDataProvider with ChangeNotifier {
       } else {
         await teacherRepository.delete(id);
       }
-      await CacheService().remove('teachers_$schoolId');
-      _teachers = await teacherRepository.getAllForSchool(schoolId);
+      _teachers.removeWhere((t) => t.id == id);
+      _syncTeachersCache();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -760,8 +818,14 @@ class MasterDataProvider with ChangeNotifier {
           ? model.copyWith(schoolId: _currentSchoolId)
           : model;
       await studentRepository.create(finalModel);
-      _students = await studentRepository.getAllByClass(model.classId);
-      _classes = await classRepository.getAll(_currentSchoolId);
+      _students.removeWhere((s) => s.id == finalModel.id);
+      _students.add(finalModel);
+      _students.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      final cIdx = _classes.indexWhere((c) => c.id == finalModel.classId);
+      if (cIdx != -1) {
+        _classes[cIdx] = _classes[cIdx].copyWith(studentCount: _classes[cIdx].studentCount + 1);
+        _syncClassesCache();
+      }
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -783,8 +847,13 @@ class MasterDataProvider with ChangeNotifier {
           ? model.copyWith(schoolId: _currentSchoolId)
           : model;
       await studentRepository.update(finalModel);
-      _students = await studentRepository.getAllByClass(model.classId);
-      _classes = await classRepository.getAll(_currentSchoolId);
+      final idx = _students.indexWhere((s) => s.id == finalModel.id);
+      if (idx != -1) {
+        _students[idx] = finalModel;
+      } else {
+        _students.add(finalModel);
+      }
+      _students.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -800,8 +869,12 @@ class MasterDataProvider with ChangeNotifier {
     notifyListeners();
     try {
       await studentRepository.delete(id);
-      _students = await studentRepository.getAllByClass(classId);
-      _classes = await classRepository.getAll(_currentSchoolId);
+      _students.removeWhere((s) => s.id == id);
+      final cIdx = _classes.indexWhere((c) => c.id == classId);
+      if (cIdx != -1 && _classes[cIdx].studentCount > 0) {
+        _classes[cIdx] = _classes[cIdx].copyWith(studentCount: _classes[cIdx].studentCount - 1);
+        _syncClassesCache();
+      }
       return true;
     } catch (e) {
       _errorMessage = e.toString();

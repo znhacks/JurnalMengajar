@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -68,24 +70,48 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return FadeTransition(
-              opacity: _fadeAnim,
-              child: ScaleTransition(
-                scale: _scaleAnim,
-                child: child,
-              ),
-            );
-          },
-          child: Image.asset(
-            'assets/LogoJr.png',
-            width: 180,
-            fit: BoxFit.contain,
+    // Menyesuaikan tema loading dengan tema bawaan perangkat (device brightness)
+    final deviceBrightness = MediaQuery.maybePlatformBrightnessOf(context) ??
+        View.of(context).platformDispatcher.platformBrightness;
+    final isDark = deviceBrightness == Brightness.dark;
+
+    final backgroundColor = isDark
+        ? AppTheme.darkTheme.scaffoldBackgroundColor
+        : AppTheme.lightTheme.scaffoldBackgroundColor;
+
+    final overlayStyle = SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      systemNavigationBarColor: backgroundColor,
+      systemNavigationBarIconBrightness:
+          isDark ? Brightness.light : Brightness.dark,
+    );
+
+    const logoWidth = 180.0;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: overlayStyle,
+      child: Scaffold(
+        backgroundColor: backgroundColor,
+        body: Center(
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return FadeTransition(
+                opacity: _fadeAnim,
+                child: ScaleTransition(scale: _scaleAnim, child: child),
+              );
+            },
+            child: Image.asset(
+              isDark
+                  ? 'assets/logoJurnalMengajarLogin.png'
+                  : 'assets/LogoJr.png',
+              width: logoWidth,
+              cacheWidth:
+                  (logoWidth * MediaQuery.devicePixelRatioOf(context)).round(),
+              fit: BoxFit.contain,
+            ),
           ),
         ),
       ),

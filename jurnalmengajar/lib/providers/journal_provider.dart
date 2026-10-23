@@ -338,9 +338,22 @@ class JournalProvider with ChangeNotifier {
         }
       }
 
-      await loadAllJournals(_currentSchoolId);
+      final jIdx = _journals.indexWhere((j) => j.id == finalModel.id);
+      if (jIdx != -1) {
+        _journals[jIdx] = finalModel;
+      }
+      final tIdx = _teacherJournals.indexWhere((j) => j.id == finalModel.id);
+      if (tIdx != -1) {
+        _teacherJournals[tIdx] = finalModel;
+      }
+
+      // Sync in background without blocking
+      final sId = _currentSchoolId;
+      if (sId != null && sId.isNotEmpty) {
+        loadAllJournals(sId);
+      }
       if (model.teacherId.isNotEmpty) {
-        await loadTeacherJournals(model.teacherId);
+        loadTeacherJournals(model.teacherId);
       }
       return true;
     } catch (e) {
