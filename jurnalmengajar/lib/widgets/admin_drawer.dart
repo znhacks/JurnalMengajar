@@ -473,7 +473,7 @@ class _AdminDrawerPanelState extends State<AdminDrawerPanel> {
         children: [
           Divider(height: 1, color: dividerColor, thickness: 1),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 2.h),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 1.h),
             child: _buildMenuItem(
               context,
               Icons.person_rounded,
@@ -484,13 +484,14 @@ class _AdminDrawerPanelState extends State<AdminDrawerPanel> {
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               return Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 2.h),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 1.h),
                 child: ListTile(
                   dense: true,
                   visualDensity: const VisualDensity(
                     horizontal: -3,
-                    vertical: -3,
+                    vertical: -4,
                   ),
+                  minVerticalPadding: 0,
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 12.w,
                     vertical: 0,
@@ -514,9 +515,10 @@ class _AdminDrawerPanelState extends State<AdminDrawerPanel> {
                     ),
                   ),
                   trailing: Transform.scale(
-                    scale: 0.8,
+                    scale: 0.75,
                     child: Switch(
                       value: themeProvider.isDarkMode,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       onChanged: (val) {
                         themeProvider.toggleTheme(val);
                       },
@@ -526,12 +528,12 @@ class _AdminDrawerPanelState extends State<AdminDrawerPanel> {
               );
             },
           ),
-          Divider(height: 1, color: dividerColor, thickness: 1),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 1.h),
             child: ListTile(
               dense: true,
-              visualDensity: const VisualDensity(horizontal: -3, vertical: -3),
+              visualDensity: const VisualDensity(horizontal: -3, vertical: -4),
+              minVerticalPadding: 0,
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 12.w,
                 vertical: 0,
@@ -556,7 +558,7 @@ class _AdminDrawerPanelState extends State<AdminDrawerPanel> {
             ),
           ),
           SizedBox(
-            height: math.max(8.h, MediaQuery.of(context).padding.bottom),
+            height: math.max(4.h, MediaQuery.of(context).padding.bottom),
           ),
         ],
       ),
