@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -529,7 +528,12 @@ class _AdminDrawerPanelState extends State<AdminDrawerPanel> {
             },
           ),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 1.h),
+            padding: EdgeInsets.only(
+              left: 12.w,
+              right: 12.w,
+              top: 1.h,
+              bottom: 2.h,
+            ),
             child: ListTile(
               dense: true,
               visualDensity: const VisualDensity(horizontal: -3, vertical: -4),
@@ -557,9 +561,10 @@ class _AdminDrawerPanelState extends State<AdminDrawerPanel> {
               onTap: () => _showLogoutDialog(context, authProvider),
             ),
           ),
-          SizedBox(
-            height: math.max(4.h, MediaQuery.of(context).padding.bottom),
-          ),
+          if (MediaQuery.of(context).padding.bottom > 0)
+            SizedBox(
+              height: MediaQuery.of(context).padding.bottom,
+            ),
         ],
       ),
     );
