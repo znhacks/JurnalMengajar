@@ -53,6 +53,16 @@ class MockScheduleRepository implements ScheduleRepository {
     }
   }
 
+  Future<void> updateMultiple(List<ScheduleModel> models) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final modelMap = {for (final m in models) m.id: m};
+    for (int i = 0; i < _db.schedules.length; i++) {
+      if (modelMap.containsKey(_db.schedules[i].id)) {
+        _db.schedules[i] = modelMap[_db.schedules[i].id]!;
+      }
+    }
+  }
+
   @override
   Future<void> delete(String id) async {
     await Future.delayed(const Duration(milliseconds: 400));

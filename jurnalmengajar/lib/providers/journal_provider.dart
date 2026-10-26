@@ -338,9 +338,22 @@ class JournalProvider with ChangeNotifier {
         }
       }
 
-      await loadAllJournals(_currentSchoolId);
+      final jIdx = _journals.indexWhere((j) => j.id == finalModel.id);
+      if (jIdx != -1) {
+        _journals[jIdx] = finalModel;
+      }
+      final tIdx = _teacherJournals.indexWhere((j) => j.id == finalModel.id);
+      if (tIdx != -1) {
+        _teacherJournals[tIdx] = finalModel;
+      }
+
+      // Sync in background without blocking
+      final sId = _currentSchoolId;
+      if (sId != null && sId.isNotEmpty) {
+        loadAllJournals(sId);
+      }
       if (model.teacherId.isNotEmpty) {
-        await loadTeacherJournals(model.teacherId);
+        loadTeacherJournals(model.teacherId);
       }
       return true;
     } catch (e) {
@@ -396,6 +409,16 @@ class JournalProvider with ChangeNotifier {
 
       await journalRepository.verifyJournal(journalId, status, rejectionNote: rejectionNote);
 
+      // Optimistic update: instantly update status in memory so pending list removes it in 0ms
+      final jIdx = _journals.indexWhere((j) => j.id == journalId);
+      if (jIdx != -1) {
+        _journals[jIdx] = _journals[jIdx].copyWith(status: status, rejectionNote: rejectionNote);
+      }
+      final tIdx = _teacherJournals.indexWhere((j) => j.id == journalId);
+      if (tIdx != -1) {
+        _teacherJournals[tIdx] = _teacherJournals[tIdx].copyWith(status: status, rejectionNote: rejectionNote);
+      }
+
       // If an absence journal (sakit/izin) is rejected, automatically reject all other absence journals
       // for this teacher on the same date (e.g. multi-schedule absence today)
       if (status == 'rejected' && targetJournal != null && targetJournal.isTeacherAbsence) {
@@ -434,15 +457,27 @@ class JournalProvider with ChangeNotifier {
             'rejected',
             rejectionNote: rejectionNote ?? targetJournal.rejectionNote,
           );
+          final oIdx = _journals.indexWhere((j) => j.id == other.id);
+          if (oIdx != -1) {
+            _journals[oIdx] = _journals[oIdx].copyWith(status: 'rejected', rejectionNote: rejectionNote ?? targetJournal.rejectionNote);
+          }
+          final otIdx = _teacherJournals.indexWhere((j) => j.id == other.id);
+          if (otIdx != -1) {
+            _teacherJournals[otIdx] = _teacherJournals[otIdx].copyWith(status: 'rejected', rejectionNote: rejectionNote ?? targetJournal.rejectionNote);
+          }
         }
       }
 
-      await loadAllJournals(_currentSchoolId);
+      // Background refresh without blocking UI
+      final sId = _currentSchoolId;
+      if (sId != null && sId.isNotEmpty) {
+        loadAllJournals(sId);
+      }
       final effectiveTeacherId = (teacherId != null && teacherId.isNotEmpty)
           ? teacherId
           : targetJournal?.teacherId;
       if (effectiveTeacherId != null && effectiveTeacherId.isNotEmpty) {
-        await loadTeacherJournals(effectiveTeacherId);
+        loadTeacherJournals(effectiveTeacherId);
       }
       return true;
     } catch (e) {

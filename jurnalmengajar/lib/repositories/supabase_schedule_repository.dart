@@ -183,21 +183,29 @@ class SupabaseScheduleRepository implements ScheduleRepository {
 
   @override
   Future<void> createMultiple(List<ScheduleModel> models) async {
+    if (models.isEmpty) return;
     try {
-      // Auto-resolve school_id if needed
+      // Auto-resolve school_id if needed, only query users if any model is missing it
+      final bool needsFallbackSchoolId = models.any((m) {
+        final clean = AppHelper.parseSingleCleanSchoolId(m.schoolId);
+        return clean == null || clean.isEmpty;
+      });
+
       String? fallbackSchoolId;
-      final currentUid = _supabase.auth.currentUser?.id;
-      if (currentUid != null) {
-        try {
-          final userRes = await _supabase
-              .from('users')
-              .select('school_id')
-              .eq('id', currentUid)
-              .maybeSingle();
-          if (userRes != null && userRes['school_id'] != null) {
-            fallbackSchoolId = AppHelper.parseSingleCleanSchoolId(userRes['school_id']);
-          }
-        } catch (_) {}
+      if (needsFallbackSchoolId) {
+        final currentUid = _supabase.auth.currentUser?.id;
+        if (currentUid != null) {
+          try {
+            final userRes = await _supabase
+                .from('users')
+                .select('school_id')
+                .eq('id', currentUid)
+                .maybeSingle();
+            if (userRes != null && userRes['school_id'] != null) {
+              fallbackSchoolId = AppHelper.parseSingleCleanSchoolId(userRes['school_id']);
+            }
+          } catch (_) {}
+        }
       }
 
       final payloads = models.map((model) {
@@ -233,6 +241,18 @@ class SupabaseScheduleRepository implements ScheduleRepository {
           .eq(SupabaseConstants.fieldId, model.id);
     } catch (e) {
       throw Exception('Gagal memperbarui jadwal: $e');
+    }
+  }
+
+  Future<void> updateMultiple(List<ScheduleModel> models) async {
+    if (models.isEmpty) return;
+    try {
+      final payloads = models.map((m) => m.toJson()).toList();
+      await _supabase
+          .from(SupabaseConstants.tableSchedules)
+          .upsert(payloads);
+    } catch (e) {
+      throw Exception('Gagal memperbarui beberapa jadwal: $e');
     }
   }
 

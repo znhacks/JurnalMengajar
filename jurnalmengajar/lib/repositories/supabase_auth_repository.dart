@@ -683,15 +683,37 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<List<UserModel>> getAllUsersForSchool(String schoolId) async {
-    try {
-      final cleanSchoolId =
-          AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
-      if (cleanSchoolId.isEmpty) return [];
+    final cleanSchoolId =
+        AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
+    if (cleanSchoolId.isEmpty) return [];
 
-      // 1, 2, 3. Fetch school info, user_schools memberships, and primary users in parallel
-      String schoolName = '';
-      final Map<String, List<Map<String, dynamic>>> membershipsByUser = {};
-      final Set<String> targetUserIds = <String>{};
+    final cacheKey = 'school_users_$cleanSchoolId';
+    Future<List<UserModel>> loadFromCache() async {
+      try {
+        final cached = await CacheService().loadList(cacheKey);
+        if (cached != null && cached.isNotEmpty) {
+          final list = <UserModel>[];
+          for (final item in cached) {
+            try {
+              list.add(UserModel.fromJson(item));
+            } catch (_) {}
+          }
+          if (list.isNotEmpty) return list;
+        }
+      } catch (_) {}
+      return [];
+    }
+
+    try {
+      return await NetworkResilience.execute<List<UserModel>>(
+        operationName: 'getAllUsersForSchool',
+        timeout: const Duration(seconds: 4),
+        fallback: loadFromCache,
+        networkTask: () async {
+          // 1, 2, 3. Fetch school info, user_schools memberships, and primary users in parallel
+          String schoolName = '';
+          final Map<String, List<Map<String, dynamic>>> membershipsByUser = {};
+          final Set<String> targetUserIds = <String>{};
 
       final results = await Future.wait([
         _supabase
@@ -846,11 +868,17 @@ class SupabaseAuthRepository implements AuthRepository {
         } catch (_) {}
       }
 
-      result.sort((a, b) => a.fullName.compareTo(b.fullName));
-      return result;
+          result.sort((a, b) => a.fullName.compareTo(b.fullName));
+          try {
+            final cacheable = result.map((u) => u.toJson()).toList();
+            CacheService().save(cacheKey, cacheable);
+          } catch (_) {}
+          return result;
+        },
+      );
     } catch (e) {
       debugPrint('Error in getAllUsersForSchool: $e');
-      return [];
+      return await loadFromCache();
     }
   }
 
@@ -1204,20 +1232,43 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<List<Map<String, dynamic>>> getPendingExitRequests(
     String schoolId,
   ) async {
-    try {
-      final res = await _supabase
-          .from('user_schools')
-          .select('*, users(full_name, email, photo_url)')
-          .eq('school_id', schoolId)
-          .eq('status', 'requested_exit')
-          .timeout(const Duration(seconds: 12));
+    final cleanSchoolId =
+        AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim();
+    if (cleanSchoolId.isEmpty) return [];
 
-      return (res as List)
-          .map((row) => Map<String, dynamic>.from(row))
-          .toList();
+    final cacheKey = 'exit_requests_$cleanSchoolId';
+    Future<List<Map<String, dynamic>>> loadFromCache() async {
+      try {
+        final cached = await CacheService().loadList(cacheKey);
+        if (cached != null) return cached;
+      } catch (_) {}
+      return [];
+    }
+
+    try {
+      return await NetworkResilience.execute<List<Map<String, dynamic>>>(
+        operationName: 'getPendingExitRequests',
+        timeout: const Duration(seconds: 4),
+        fallback: loadFromCache,
+        networkTask: () async {
+          final res = await _supabase
+              .from('user_schools')
+              .select('*, users(full_name, email, photo_url)')
+              .eq('school_id', cleanSchoolId)
+              .eq('status', 'requested_exit');
+
+          final mapped = (res as List)
+              .map((row) => Map<String, dynamic>.from(row))
+              .toList();
+          try {
+            CacheService().save(cacheKey, mapped);
+          } catch (_) {}
+          return mapped;
+        },
+      );
     } catch (e) {
       debugPrint('Error getting pending exit requests: $e');
-      return [];
+      return await loadFromCache();
     }
   }
 

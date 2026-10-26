@@ -403,12 +403,14 @@ class _MasterUserScreenState extends State<MasterUserScreen>
   }
 
 
-  Future<void> _fetchUsers() async {
+  Future<void> _fetchUsers({bool isBackground = false}) async {
     if (!mounted) return;
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    if (!isBackground || (_allUsers.isEmpty && _exitRequests.isEmpty)) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -426,7 +428,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
       if (!mounted) return;
       setState(() {
         _allUsers = users;
-        _filteredUsers = users;
+        _onSearchChanged();
         _exitRequests = exitReqs;
         _isLoading = false;
       });
@@ -692,8 +694,13 @@ class _MasterUserScreenState extends State<MasterUserScreen>
     );
 
     if (confirmed == true) {
+      final oldUsers = List<UserModel>.from(_allUsers);
+      final oldFiltered = List<UserModel>.from(_filteredUsers);
+
+      // Optimistic update: instantly remove from pending list so UI responds in 0ms
       setState(() {
-        _isLoading = true;
+        _allUsers.removeWhere((u) => u.id == user.id && u.isPending);
+        _filteredUsers.removeWhere((u) => u.id == user.id && u.isPending);
       });
 
       final success = await authProvider.updateUserRole(user.id, targetRole, authProvider.activeSchoolId);
@@ -701,22 +708,22 @@ class _MasterUserScreenState extends State<MasterUserScreen>
       if (!mounted) return;
 
       if (success) {
-        try {
-          final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-          await masterProvider.loadAllData(authProvider.activeSchoolId);
-        } catch (_) {}
-        if (!mounted) return;
         AppHelper.showSnackBar(context, 'Akun ${user.fullName} berhasil disetujui sebagai ${targetRoleLabel.toUpperCase()}!');
-        _fetchUsers();
+        final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+        // Refresh master data and users in background
+        masterProvider.loadAllData(authProvider.activeSchoolId);
+        _fetchUsers(isBackground: true);
       } else {
+        // Rollback on failure
+        setState(() {
+          _allUsers = oldUsers;
+          _filteredUsers = oldFiltered;
+        });
         AppHelper.showSnackBar(
           context, 
           authProvider.errorMessage ?? 'Gagal menyetujui pendaftaran.', 
           isError: true
         );
-        setState(() {
-          _isLoading = false;
-        });
       }
     }
   }
@@ -740,8 +747,13 @@ class _MasterUserScreenState extends State<MasterUserScreen>
     );
 
     if (confirmed == true) {
+      final oldUsers = List<UserModel>.from(_allUsers);
+      final oldFiltered = List<UserModel>.from(_filteredUsers);
+
+      // Optimistic update: instantly remove from pending list so UI responds in 0ms
       setState(() {
-        _isLoading = true;
+        _allUsers.removeWhere((u) => u.id == user.id && u.isPending);
+        _filteredUsers.removeWhere((u) => u.id == user.id && u.isPending);
       });
 
       final success = await authProvider.rejectJoinRequest(user.id, authProvider.activeSchoolId);
@@ -750,16 +762,18 @@ class _MasterUserScreenState extends State<MasterUserScreen>
 
       if (success) {
         AppHelper.showSnackBar(context, 'Permintaan bergabung ${user.fullName} berhasil ditolak.');
-        _fetchUsers();
+        _fetchUsers(isBackground: true);
       } else {
+        // Rollback on failure
+        setState(() {
+          _allUsers = oldUsers;
+          _filteredUsers = oldFiltered;
+        });
         AppHelper.showSnackBar(
           context, 
           authProvider.errorMessage ?? 'Gagal menolak permintaan.', 
           isError: true
         );
-        setState(() {
-          _isLoading = false;
-        });
       }
     }
   }
@@ -1406,31 +1420,29 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                                       ),
                                     );
                                     if (confirmed == true) {
+                                      final oldExitRequests = List<Map<String, dynamic>>.from(_exitRequests);
                                       setState(() {
-                                        _isLoading = true;
+                                        _exitRequests.removeWhere((req) => req['id'] == membershipId);
                                       });
                                       final success = await authProvider.approveExitRequest(membershipId);
                                       if (!context.mounted) return;
                                       if (success) {
-                                        try {
-                                          final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-                                          await masterProvider.loadAllData(authProvider.activeSchoolId);
-                                        } catch (_) {}
-                                        if (!context.mounted) return;
+                                        final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+                                        masterProvider.loadAllData(authProvider.activeSchoolId);
                                         AppHelper.showSnackBar(context, 'Berhasil menyetujui pengajuan keluar peran $role untuk $name');
-                                        _fetchUsers();
+                                        _fetchUsers(isBackground: true);
                                       } else {
-                            AppHelper.showSnackBar(
-                              context,
-                              authProvider.errorMessage ?? 'Gagal memproses pengajuan',
-                              isError: true,
-                            );
-                            setState(() {
-                              _isLoading = false;
-                            });
-                          }
-                        }
-                      },
+                                        setState(() {
+                                          _exitRequests = oldExitRequests;
+                                        });
+                                        AppHelper.showSnackBar(
+                                          context,
+                                          authProvider.errorMessage ?? 'Gagal memproses pengajuan',
+                                          isError: true,
+                                        );
+                                      }
+                                    }
+                                  },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
@@ -1464,28 +1476,26 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                           ),
                         );
                         if (confirmed == true) {
+                          final oldExitRequests = List<Map<String, dynamic>>.from(_exitRequests);
                           setState(() {
-                            _isLoading = true;
+                            _exitRequests.removeWhere((req) => req['id'] == membershipId);
                           });
                           final success = await authProvider.rejectExitRequest(membershipId);
                           if (!context.mounted) return;
                           if (success) {
-                            try {
-                              final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
-                              await masterProvider.loadAllData(authProvider.activeSchoolId);
-                            } catch (_) {}
-                            if (!context.mounted) return;
+                            final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+                            masterProvider.loadAllData(authProvider.activeSchoolId);
                             AppHelper.showSnackBar(context, 'Berhasil menolak pengajuan keluar untuk $name');
-                            _fetchUsers();
+                            _fetchUsers(isBackground: true);
                           } else {
+                            setState(() {
+                              _exitRequests = oldExitRequests;
+                            });
                             AppHelper.showSnackBar(
                               context,
                               authProvider.errorMessage ?? 'Gagal memproses pengajuan',
                               isError: true,
                             );
-                            setState(() {
-                              _isLoading = false;
-                            });
                           }
                         }
                       },
