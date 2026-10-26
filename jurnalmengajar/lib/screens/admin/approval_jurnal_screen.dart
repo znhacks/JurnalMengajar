@@ -811,6 +811,7 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                         style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w700),
                       ),
                       style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 38),
                         foregroundColor: const Color(0xFFE11D48),
                         side: const BorderSide(color: Color(0xFFE11D48), width: 1.2),
                         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
@@ -834,6 +835,7 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
                         style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w800),
                       ),
                       style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(0, 38),
                         backgroundColor: const Color(0xFF2563EB),
                         foregroundColor: Colors.white,
                         elevation: 0,
