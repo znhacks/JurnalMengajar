@@ -10,6 +10,13 @@ import '../providers/theme_provider.dart';
 import 'role_badge.dart';
 import 'school_switcher_modal.dart';
 
+import '../providers/journal_provider.dart';
+import '../providers/warning_letter_provider.dart';
+import '../providers/teacher_leave_provider.dart';
+import '../models/user_model.dart';
+import '../core/services/cache_service.dart';
+import '../core/utils/helper.dart';
+
 class AdminDrawer extends StatelessWidget {
   final String currentRoute;
   const AdminDrawer({super.key, required this.currentRoute});
@@ -33,7 +40,7 @@ class AdminDrawer extends StatelessWidget {
 
 /// Isi menu sidebar yang dipakai bersama oleh [AdminDrawer] (menu geser pada
 /// layar sempit) dan sidebar permanen pada web desktop.
-class AdminDrawerPanel extends StatelessWidget {
+class AdminDrawerPanel extends StatefulWidget {
   final String currentRoute;
 
   /// True saat panel ini dirender sebagai sidebar permanen, bukan drawer.
@@ -45,6 +52,113 @@ class AdminDrawerPanel extends StatelessWidget {
     required this.currentRoute,
     this.isPermanentSidebar = false,
   });
+
+  @override
+  State<AdminDrawerPanel> createState() => _AdminDrawerPanelState();
+}
+
+class _AdminDrawerPanelState extends State<AdminDrawerPanel> {
+  bool _hasPendingUsers = false;
+  String? _lastCheckedSchoolId;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkPendingUsers();
+      _ensureDataLoaded();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final schoolId = authProvider.activeSchoolId;
+    if (_lastCheckedSchoolId != schoolId) {
+      _lastCheckedSchoolId = schoolId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkPendingUsers();
+        _ensureDataLoaded();
+      });
+    }
+  }
+
+  void _ensureDataLoaded() {
+    if (!mounted) return;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final schoolId = authProvider.activeSchoolId;
+    if (schoolId == null || schoolId.isEmpty) return;
+
+    try {
+      final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+      if (journalProvider.journals.isEmpty && !journalProvider.isLoading) {
+        journalProvider.loadAllJournals(schoolId);
+      }
+    } catch (_) {}
+
+    try {
+      final warningProvider = Provider.of<WarningLetterProvider>(context, listen: false);
+      if (warningProvider.warningLetters.isEmpty && !warningProvider.isLoading) {
+        warningProvider.loadAllWarningLetters(schoolId);
+      }
+    } catch (_) {}
+  }
+
+  T? _safeWatch<T>(BuildContext context) {
+    try {
+      return Provider.of<T>(context, listen: true);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _checkPendingUsers() async {
+    if (!mounted) return;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final schoolId = authProvider.activeSchoolId;
+    if (schoolId == null || schoolId.isEmpty) return;
+
+    // 1. Cek dari local cache dulu untuk respon instan
+    try {
+      final cachedUsers = await CacheService().loadList('school_users_$schoolId');
+      if (cachedUsers != null) {
+        final hasPending = cachedUsers.any((u) {
+          final status = (u['status'] ?? '').toString().toLowerCase();
+          final role = (u['role'] ?? '').toString().toLowerCase();
+          return status == 'pending' || role == 'pending_guru' || u['is_pending'] == true;
+        });
+        if (mounted && hasPending != _hasPendingUsers) {
+          setState(() => _hasPendingUsers = hasPending);
+        }
+      }
+      final cachedExit = await CacheService().loadList('exit_requests_$schoolId');
+      if (cachedExit != null && cachedExit.isNotEmpty) {
+        if (mounted && !_hasPendingUsers) {
+          setState(() => _hasPendingUsers = true);
+        }
+      }
+    } catch (_) {}
+
+    // 2. Fetch data terbaru di background
+    try {
+      final exitReqsFuture = authProvider.getPendingExitRequests(schoolId);
+      final usersFuture = authProvider.getAllUsers(schoolId);
+      final results = await Future.wait([exitReqsFuture, usersFuture]);
+      final exitReqs = results[0] as List<Map<String, dynamic>>;
+      final users = results[1] as List<UserModel>;
+
+      final hasPending = exitReqs.isNotEmpty || users.any((u) {
+        final st = u.status?.toLowerCase() ?? '';
+        final rl = u.role.toLowerCase();
+        return u.isPending || st == 'pending' || rl == 'pending_guru';
+      });
+
+      if (mounted && hasPending != _hasPendingUsers) {
+        setState(() => _hasPendingUsers = hasPending);
+      }
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +222,7 @@ class AdminDrawerPanel extends StatelessWidget {
   /// permanen). Pada sidebar permanen tidak ada drawer yang perlu ditutup,
   /// memanggil `Navigator.pop` justru akan mengeluarkan route yang aktif.
   void _closeDrawer(BuildContext context) {
-    if (isPermanentSidebar) return;
+    if (widget.isPermanentSidebar) return;
     Navigator.pop(context);
   }
 
@@ -198,6 +312,43 @@ class AdminDrawerPanel extends StatelessWidget {
 
   // ── Menu List Items ────────────────────────────────────────────────────────
   List<Widget> _buildMenuItems(BuildContext context, Color dividerColor) {
+    final authProvider = context.watch<AuthProvider>();
+    final journalProvider = _safeWatch<JournalProvider>(context);
+    final warningProvider = _safeWatch<WarningLetterProvider>(context);
+    final leaveProvider = _safeWatch<TeacherLeaveProvider>(context);
+
+    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(
+      authProvider.activeSchoolId,
+    );
+
+    // 1. Jurnal Mengajar: ada jurnal menunggu persetujuan/verifikasi admin
+    final hasPendingJournals = journalProvider?.journals.any((j) {
+      if (j.status != 'pending') return false;
+      if (cleanActiveSchoolId == null || cleanActiveSchoolId.isEmpty) return true;
+      final wSchoolId = AppHelper.parseSingleCleanSchoolId(j.schoolId);
+      return wSchoolId == null || wSchoolId.isEmpty || wSchoolId == cleanActiveSchoolId;
+    }) ?? false;
+
+    // 2. User & Akses: ada guru menunggu persetujuan bergabung atau keluar
+    final hasPendingUsers = _hasPendingUsers;
+
+    // 3. Pengingat: ada surat peringatan unread untuk sekolah ini
+    final hasPendingWarnings = warningProvider?.warningLetters.any((w) {
+      if (w.status != 'unread') return false;
+      if (cleanActiveSchoolId == null || cleanActiveSchoolId.isEmpty) return true;
+      final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
+      return wSchoolId == null || wSchoolId.isEmpty || wSchoolId == cleanActiveSchoolId;
+    }) ?? false;
+
+    // 4. Cuti Guru: ada cuti guru dengan status pending/menunggu
+    final hasPendingLeaves = leaveProvider?.leaves.any((l) {
+      final st = l.status.toLowerCase();
+      if (st != 'pending' && st != 'menunggu') return false;
+      if (cleanActiveSchoolId == null || cleanActiveSchoolId.isEmpty) return true;
+      final wSchoolId = AppHelper.parseSingleCleanSchoolId(l.schoolId);
+      return wSchoolId == null || wSchoolId.isEmpty || wSchoolId == cleanActiveSchoolId;
+    }) ?? false;
+
     return [
       _buildMenuItem(
         context,
@@ -210,6 +361,7 @@ class AdminDrawerPanel extends StatelessWidget {
         Icons.check_circle_rounded,
         'Jurnal Mengajar',
         '/admin/journals',
+        hasAction: hasPendingJournals,
       ),
       _buildMenuItem(
         context,
@@ -282,12 +434,14 @@ class AdminDrawerPanel extends StatelessWidget {
         Icons.manage_accounts_rounded,
         'User & Akses',
         '/admin/master-data/users',
+        hasAction: hasPendingUsers,
       ),
       _buildMenuItem(
         context,
         Icons.mail_rounded,
         'Pengingat',
         '/admin/warning-letters',
+        hasAction: hasPendingWarnings,
       ),
       _buildMenuItem(
         context,
@@ -300,6 +454,7 @@ class AdminDrawerPanel extends StatelessWidget {
         Icons.person_off_rounded,
         'Cuti Guru',
         '/admin/teacher-leaves',
+        hasAction: hasPendingLeaves,
       ),
     ];
   }
@@ -457,10 +612,11 @@ class AdminDrawerPanel extends StatelessWidget {
     BuildContext context,
     IconData icon,
     String title,
-    String route,
-  ) {
+    String route, {
+    bool hasAction = false,
+  }) {
     // Query string (mis. ?teacherId=..) tidak boleh mengganggu penanda menu.
-    final isSelected = currentRoute.split('?').first == route;
+    final isSelected = widget.currentRoute.split('?').first == route;
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 1.h),
       child: ListTile(
@@ -477,15 +633,36 @@ class AdminDrawerPanel extends StatelessWidget {
               : Theme.of(context).colorScheme.onSurfaceVariant,
           size: 20,
         ),
-        title: Text(
-          title,
-          style: GoogleFonts.hankenGrotesk(
-            color: isSelected
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.onSurface,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            fontSize: 13.sp,
+        title: Text.rich(
+          TextSpan(
+            text: title,
+            style: GoogleFonts.hankenGrotesk(
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurface,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              fontSize: 13.sp,
+            ),
+            children: [
+              if (hasAction)
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.top,
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 3.5.w, top: 1.5.h),
+                    child: Container(
+                      width: 6.r,
+                      height: 6.r,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEF4444),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         selected: isSelected,
         selectedTileColor: AppTheme.primaryColor.withValues(alpha: 0.08),
