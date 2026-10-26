@@ -90,4 +90,17 @@ class MockJournalRepository implements JournalRepository {
       throw Exception('Jurnal tidak ditemukan!');
     }
   }
+
+  Future<void> verifyMultiple(List<String> journalIds, String status, {String? rejectionNote}) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final idSet = journalIds.toSet();
+    for (int i = 0; i < _db.journals.length; i++) {
+      if (idSet.contains(_db.journals[i].id)) {
+        _db.journals[i] = _db.journals[i].copyWith(
+          status: status,
+          rejectionNote: status == 'rejected' ? rejectionNote : null,
+        );
+      }
+    }
+  }
 }

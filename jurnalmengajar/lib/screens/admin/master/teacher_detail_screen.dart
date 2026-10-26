@@ -200,14 +200,14 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
           width: 1.5,
         );
       } else {
-        // Memiliki jadwal tetapi belum semua mengisi jurnal: berwarna hijau
-        bgColor = const Color(0xFF10B981).withValues(alpha: isDark ? 0.22 : 0.15);
+        // Memiliki jadwal tetapi belum semua mengisi jurnal: berwarna amber
+        bgColor = const Color(0xFFD97706).withValues(alpha: isDark ? 0.22 : 0.15);
         textColor = isOutside
             ? (isDark ? const Color(0xFF64748B) : AppTheme.outline)
-            : (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF047857));
+            : (isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309));
         fontWeight = FontWeight.w700;
         border = Border.all(
-          color: const Color(0xFF10B981),
+          color: const Color(0xFFD97706),
           width: 1.5,
         );
       }
@@ -373,77 +373,104 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
                     color: isDark ? const Color(0xFF334155) : AppTheme.outlineVariant,
                   ),
                 ),
-                padding: EdgeInsets.symmetric(vertical: 8.h),
-                child: TableCalendar(
-                  locale: 'id_ID',
-                  headerStyle: HeaderStyle(
-                    titleCentered: true,
-                    formatButtonVisible: false,
-                    leftChevronIcon: Icon(
-                      Icons.chevron_left,
-                      color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
-                    ),
-                    rightChevronIcon: Icon(
-                      Icons.chevron_right,
-                      color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
-                    ),
-                    titleTextStyle: GoogleFonts.hankenGrotesk(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w800,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  daysOfWeekHeight: 30.h,
-                  rowHeight: 46.h,
-                  firstDay: DateTime.now().subtract(const Duration(days: 365)),
-                  lastDay: DateTime.now().add(const Duration(days: 365)),
-                  focusedDay: _focusedDay,
-                  calendarFormat: CalendarFormat.week,
-                  startingDayOfWeek: StartingDayOfWeek.monday,
-                  selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                  onDaySelected: (selectedDay, focusedDay) {
-                    setState(() {
-                      _selectedDay = selectedDay;
-                      _focusedDay = focusedDay;
-                    });
-                  },
-                  onPageChanged: (focusedDay) {
-                    setState(() {
-                      _focusedDay = focusedDay;
-                    });
-                  },
-                  calendarBuilders: CalendarBuilders(
-                    dowBuilder: (context, day) {
-                      final dayName = DateFormat.E('id_ID').format(day);
-                      final isSunday = day.weekday == DateTime.sunday;
-                      return Container(
-                        alignment: Alignment.center,
-                        child: Text(
-                          dayName,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.hankenGrotesk(
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.w700,
-                            color: isSunday
-                                ? const Color(0xFFEF4444)
-                                : Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 4.w),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TableCalendar(
+                      locale: 'id_ID',
+                      headerStyle: HeaderStyle(
+                        headerPadding: EdgeInsets.symmetric(vertical: 4.h),
+                        titleCentered: true,
+                        formatButtonVisible: false,
+                        leftChevronIcon: Icon(
+                          Icons.chevron_left,
+                          color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
                         ),
-                      );
-                    },
-                    defaultBuilder: (context, day, focusedDay) {
-                      return _buildScheduledDayCell(day, false, false, false, scheduleProvider.schedules, journalProvider.journals);
-                    },
-                    outsideBuilder: (context, day, focusedDay) {
-                      return _buildScheduledDayCell(day, false, false, true, scheduleProvider.schedules, journalProvider.journals);
-                    },
-                    todayBuilder: (context, day, focusedDay) {
-                      return _buildScheduledDayCell(day, false, true, false, scheduleProvider.schedules, journalProvider.journals);
-                    },
-                    selectedBuilder: (context, day, focusedDay) {
-                      return _buildScheduledDayCell(day, true, false, false, scheduleProvider.schedules, journalProvider.journals);
-                    },
-                  ),
+                        rightChevronIcon: Icon(
+                          Icons.chevron_right,
+                          color: isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor,
+                        ),
+                        titleTextStyle: GoogleFonts.hankenGrotesk(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w800,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      daysOfWeekHeight: 22.h,
+                      rowHeight: 38.h,
+                      firstDay: DateTime.now().subtract(const Duration(days: 365)),
+                      lastDay: DateTime.now().add(const Duration(days: 365)),
+                      focusedDay: _focusedDay,
+                      calendarFormat: CalendarFormat.week,
+                      startingDayOfWeek: StartingDayOfWeek.monday,
+                      selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                      onDaySelected: (selectedDay, focusedDay) {
+                        setState(() {
+                          _selectedDay = selectedDay;
+                          _focusedDay = focusedDay;
+                        });
+                      },
+                      onPageChanged: (focusedDay) {
+                        setState(() {
+                          _focusedDay = focusedDay;
+                        });
+                      },
+                      calendarBuilders: CalendarBuilders(
+                        dowBuilder: (context, day) {
+                          final dayName = DateFormat.E('id_ID').format(day);
+                          final isSunday = day.weekday == DateTime.sunday;
+                          return Container(
+                            alignment: Alignment.center,
+                            child: Text(
+                              dayName,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w700,
+                                color: isSunday
+                                    ? const Color(0xFFEF4444)
+                                    : Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          );
+                        },
+                        defaultBuilder: (context, day, focusedDay) {
+                          return _buildScheduledDayCell(day, false, false, false, scheduleProvider.schedules, journalProvider.journals);
+                        },
+                        outsideBuilder: (context, day, focusedDay) {
+                          return _buildScheduledDayCell(day, false, false, true, scheduleProvider.schedules, journalProvider.journals);
+                        },
+                        todayBuilder: (context, day, focusedDay) {
+                          return _buildScheduledDayCell(day, false, true, false, scheduleProvider.schedules, journalProvider.journals);
+                        },
+                        selectedBuilder: (context, day, focusedDay) {
+                          return _buildScheduledDayCell(day, true, false, false, scheduleProvider.schedules, journalProvider.journals);
+                        },
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+                      child: Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(10.w, 3.h, 10.w, 4.h),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildCalendarLegendDot(const Color(0xFF3B82F6), 'Lengkap', isDark),
+                          SizedBox(width: 14.w),
+                          _buildCalendarLegendDot(const Color(0xFFD97706), 'Belum Lengkap', isDark),
+                          SizedBox(width: 14.w),
+                          _buildCalendarLegendDot(const Color(0xFFEF4444), 'Libur / Cuti', isDark),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
               SizedBox(height: 12.h),
@@ -727,5 +754,30 @@ class _TeacherDetailScreenState extends State<TeacherDetailScreen> {
         ],
       );
     });
+  }
+
+  Widget _buildCalendarLegendDot(Color color, String label, bool isDark) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7.r,
+          height: 7.r,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        SizedBox(width: 5.w),
+        Text(
+          label,
+          style: GoogleFonts.hankenGrotesk(
+            fontSize: 10.5.sp,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
   }
 }

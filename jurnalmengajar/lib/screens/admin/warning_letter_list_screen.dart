@@ -105,7 +105,7 @@ class _AdminWarningLetterListScreenState extends State<AdminWarningLetterListScr
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          'Pengingat',
+          'Surat Peringatan',
           style: GoogleFonts.hankenGrotesk(
             fontWeight: FontWeight.bold,
           ),

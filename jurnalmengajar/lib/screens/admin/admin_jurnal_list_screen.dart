@@ -93,6 +93,126 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     });
   }
 
+  Future<void> _handleBatchApprove() async {
+    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+    final pendingSelected = _selectedIds.where((id) {
+      final matches = journalProvider.journals.where((item) => item.id == id);
+      return matches.isNotEmpty && matches.first.status == 'pending';
+    }).toList();
+    if (pendingSelected.isEmpty) return;
+
+    final count = pendingSelected.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Setujui $count Jurnal',
+          style: const TextStyle(color: Color(0xFF2563EB)),
+        ),
+        content: Text('Apakah Anda yakin ingin menyetujui $count data jurnal yang dipilih?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Setujui Semua'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final success = await journalProvider.verifyMultipleJournals(pendingSelected, 'verified');
+      if (!mounted) return;
+      if (success) {
+        AppHelper.showSnackBar(context, '$count jurnal berhasil disetujui.');
+        setState(() {
+          _selectedIds.clear();
+          _isSelectionMode = false;
+        });
+      } else {
+        AppHelper.showSnackBar(context, 'Gagal menyetujui jurnal.', isError: true);
+      }
+    }
+  }
+
+  Future<void> _handleBatchReject() async {
+    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
+    final pendingSelected = _selectedIds.where((id) {
+      final matches = journalProvider.journals.where((item) => item.id == id);
+      return matches.isNotEmpty && matches.first.status == 'pending';
+    }).toList();
+    if (pendingSelected.isEmpty) return;
+
+    final count = pendingSelected.length;
+    final noteController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          'Tolak $count Jurnal',
+          style: const TextStyle(color: Color(0xFFE11D48)),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Apakah Anda yakin ingin menolak $count jurnal terpilih?'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: noteController,
+              decoration: const InputDecoration(
+                labelText: 'Alasan Penolakan (Opsional)',
+                hintText: 'Misal: Materi belum lengkap',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE11D48),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Tolak Jurnal'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final note = noteController.text.trim().isEmpty ? null : noteController.text.trim();
+      final success = await journalProvider.verifyMultipleJournals(
+        pendingSelected,
+        'rejected',
+        rejectionNote: note,
+      );
+      if (!mounted) return;
+      if (success) {
+        AppHelper.showSnackBar(context, '$count jurnal telah ditolak.');
+        setState(() {
+          _selectedIds.clear();
+          _isSelectionMode = false;
+        });
+      } else {
+        AppHelper.showSnackBar(context, 'Gagal menolak jurnal.', isError: true);
+      }
+    }
+  }
+
   Future<void> _handleBatchDelete() async {
     if (_selectedIds.isEmpty) return;
     final count = _selectedIds.length;
@@ -423,6 +543,29 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                         : 'Pilih Semua',
                     onPressed: () => _selectAll(allJournals),
                   ),
+                  Builder(
+                    builder: (context) {
+                      final selectedPendingCount = allJournals
+                          .where((j) => _selectedIds.contains(j.id) && j.status == 'pending')
+                          .length;
+                      if (selectedPendingCount == 0) return const SizedBox.shrink();
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.check_circle_rounded, color: Color(0xFF60A5FA)),
+                            tooltip: 'Setujui ($selectedPendingCount)',
+                            onPressed: _handleBatchApprove,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.cancel_rounded, color: Color(0xFFFB7185)),
+                            tooltip: 'Tolak ($selectedPendingCount)',
+                            onPressed: _handleBatchReject,
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.redAccent),
                     tooltip: 'Hapus Massal',
@@ -641,14 +784,80 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                                 : const Color(0xFF2563EB),
                           ),
                           _buildUnfilledList(unfilledGroups, masterProvider),
-                          _buildJournalList(
-                            pendingJournals,
-                            masterProvider,
-                            badgeColor:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFFFBBF24)
-                                : const Color(0xFFD97706),
-                          ),
+                          pendingJournals.isEmpty
+                              ? _buildJournalList(
+                                  pendingJournals,
+                                  masterProvider,
+                                  badgeColor:
+                                      Theme.of(context).brightness == Brightness.dark
+                                      ? const Color(0xFFFBBF24)
+                                      : const Color(0xFFD97706),
+                                )
+                              : Column(
+                                  children: [
+                                    Container(
+                                      margin: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 4.h),
+                                      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).brightness == Brightness.dark
+                                            ? const Color(0xFF78350F).withValues(alpha: 0.25)
+                                            : const Color(0xFFFEF3C7),
+                                        borderRadius: BorderRadius.circular(12.r),
+                                        border: Border.all(
+                                          color: Theme.of(context).brightness == Brightness.dark
+                                              ? const Color(0xFFD97706).withValues(alpha: 0.5)
+                                              : const Color(0xFFFDE68A),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.rule_folder_rounded, color: Color(0xFFD97706)),
+                                          SizedBox(width: 10.w),
+                                          Expanded(
+                                            child: Text(
+                                              'Terdapat ${pendingJournals.length} jurnal yang perlu disetujui.',
+                                              style: GoogleFonts.hankenGrotesk(
+                                                fontSize: 12.sp,
+                                                fontWeight: FontWeight.w600,
+                                                color: Theme.of(context).brightness == Brightness.dark
+                                                    ? const Color(0xFFFDE68A)
+                                                    : const Color(0xFF92400E),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 8.w),
+                                          ElevatedButton(
+                                            onPressed: () => context.push('/admin/approvals'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFFD97706),
+                                              foregroundColor: Colors.white,
+                                              elevation: 0,
+                                              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                                            ),
+                                            child: Text(
+                                              'Buka Persetujuan',
+                                              style: GoogleFonts.hankenGrotesk(
+                                                fontSize: 11.5.sp,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: _buildJournalList(
+                                        pendingJournals,
+                                        masterProvider,
+                                        badgeColor:
+                                            Theme.of(context).brightness == Brightness.dark
+                                            ? const Color(0xFFFBBF24)
+                                            : const Color(0xFFD97706),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                           _buildJournalList(
                             verifiedJournals,
                             masterProvider,

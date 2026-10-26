@@ -492,6 +492,32 @@ class SupabaseJournalRepository implements JournalRepository {
     }
   }
 
+  Future<void> verifyMultiple(
+    List<String> journalIds,
+    String status, {
+    String? rejectionNote,
+  }) async {
+    if (journalIds.isEmpty) return;
+    try {
+      await _guardJournalWrite();
+      final Map<String, dynamic> payload = {
+        SupabaseConstants.fieldStatus: status,
+      };
+      if (status == 'rejected' && rejectionNote != null) {
+        payload['rejection_note'] = rejectionNote;
+      } else if (status == 'approved' || status == 'verified') {
+        payload['rejection_note'] = null;
+      }
+      await _supabase
+          .from(SupabaseConstants.tableJournals)
+          .update(payload)
+          .inFilter(SupabaseConstants.fieldId, journalIds);
+    } catch (e) {
+      if (e is JournalWriteBlockedException) rethrow;
+      throw Exception('Gagal memverifikasi beberapa jurnal: $e');
+    }
+  }
+
   /// Upload attachment file (as bytes) and return public URL
   Future<String> uploadAttachment(
     List<int> fileBytes,

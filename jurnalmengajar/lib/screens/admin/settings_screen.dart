@@ -373,7 +373,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             if (mounted) {
               AppHelper.showSnackBar(
                 context,
-                'Kolom kode gabung belum tersedia. Jalankan migration_teacher_join_code.sql di SQL Editor Supabase.',
+                'Fitur kode gabung belum aktif. Silakan hubungi administrator sistem.',
                 isError: true,
               );
             }
@@ -392,7 +392,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           if (mounted) {
             AppHelper.showSnackBar(
               context,
-              'Kolom kode gabung belum tersedia. Jalankan migration_teacher_join_code.sql di SQL Editor Supabase.',
+              'Fitur kode gabung belum aktif. Silakan hubungi administrator sistem.',
               isError: true,
             );
           }
@@ -611,7 +611,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Anda akan mengaktifkan dan menerapkan paket berikut untuk sekolah Anda:',
+              'Detail paket yang akan diterapkan untuk sekolah ini:',
               style: TextStyle(
                 fontSize: 13.sp,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -1015,25 +1015,124 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     }
 
     final noboxConfig = settingsProvider.noboxConfig;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return AppScaffold(
-      appBar: AppBar(
-        title: Text(
-          'Pengaturan Sekolah',
-          style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+    return DefaultTabController(
+      length: 3,
+      child: AppScaffold(
+        appBar: AppBar(
+          title: Text(
+            'Pengaturan Sekolah',
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 17.sp,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          bottom: TabBar(
+            labelColor: const Color(0xFF2563EB),
+            unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+            indicatorColor: const Color(0xFF2563EB),
+            indicatorWeight: 3,
+            labelStyle: GoogleFonts.hankenGrotesk(
+              fontSize: 12.5.sp,
+              fontWeight: FontWeight.w700,
+            ),
+            unselectedLabelStyle: GoogleFonts.hankenGrotesk(
+              fontSize: 12.5.sp,
+              fontWeight: FontWeight.w600,
+            ),
+            tabs: const [
+              Tab(
+                icon: Icon(Icons.tune_rounded, size: 20),
+                text: 'Aturan Jurnal',
+              ),
+              Tab(
+                icon: Icon(Icons.notifications_active_outlined, size: 20),
+                text: 'Notifikasi',
+              ),
+              Tab(
+                icon: Icon(Icons.school_outlined, size: 20),
+                text: 'Sekolah & Paket',
+              ),
+            ],
+          ),
+        ),
+        drawer: const AdminDrawer(currentRoute: '/admin/settings'),
+        body: SafeArea(
+          child: isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : TabBarView(
+                  children: [
+                    // TAB 1: Aturan Jurnal & Supervisor
+                    SingleChildScrollView(
+                      padding: EdgeInsets.all(18.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildJournalInputCard(isLoading),
+                          SizedBox(height: 18.h),
+                          _buildSupervisorCard(isLoading),
+                        ],
+                      ),
+                    ),
+                    // TAB 2: Notifikasi (NoBox.ai)
+                    SingleChildScrollView(
+                      padding: EdgeInsets.all(18.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildNotificationCard(
+                            noboxConfig,
+                            activeSchoolId,
+                            settingsProvider,
+                          ),
+                        ],
+                      ),
+                    ),
+                    // TAB 3: Sekolah & Paket
+                    SingleChildScrollView(
+                      padding: EdgeInsets.all(18.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildSubscriptionAndPerksCard(
+                            school,
+                            isUltra,
+                            isEnterprise,
+                            isPro,
+                            isFree,
+                            currentTeacherCount,
+                            maxTeachers,
+                            usagePercent,
+                            isDark,
+                            isLoading,
+                            activeSchoolId,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
-      drawer: const AdminDrawer(currentRoute: '/admin/settings'),
-      body: SafeArea(
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: EdgeInsets.all(18.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // ─── 1. KARTU PAKET BERLANGGANAN & PERKS ────────────────────────
-                    Card(
+    );
+  }
+
+  // ─── 1. KARTU PAKET BERLANGGANAN & PERKS ────────────────────────
+  Widget _buildSubscriptionAndPerksCard(
+    SchoolModel? school,
+    bool isUltra,
+    bool isEnterprise,
+    bool isPro,
+    bool isFree,
+    int currentTeacherCount,
+    int maxTeachers,
+    double usagePercent,
+    bool isDark,
+    bool isLoading,
+    String? activeSchoolId,
+  ) {
+    return Card(
                       margin: EdgeInsets.zero,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -1499,11 +1598,12 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                           ],
                         ),
                       ),
-                    ),
-                    SizedBox(height: 20.h),
+                    );
+  }
 
-                    // ─── 2. PENGATURAN INPUT JURNAL SECTION ─────────────────────────
-                    Form(
+  // ─── 2. PENGATURAN INPUT JURNAL SECTION ─────────────────────────
+  Widget _buildJournalInputCard(bool isLoading) {
+    return Form(
                       key: _formKey,
                       child: Card(
                         margin: EdgeInsets.zero,
@@ -1617,11 +1717,12 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: 20.h),
+    );
+  }
 
-                    // ─── 3. PENGATURAN SUPERVISOR / KEPALA SEKOLAH ───────────────────
-                    Form(
+  // ─── 3. PENGATURAN SUPERVISOR / KEPALA SEKOLAH ───────────────────
+  Widget _buildSupervisorCard(bool isLoading) {
+    return Form(
                       key: _supervisorFormKey,
                       child: Card(
                         margin: EdgeInsets.zero,
@@ -1765,11 +1866,16 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: 20.h),
+    );
+  }
 
-                    // ─── 4. INTEGRASI NOTIFIKASI ORANG TUA (NOBOX.AI) ───────────────
-                    Card(
+  // ─── 4. INTEGRASI NOTIFIKASI ORANG TUA (NOBOX.AI) ───────────────
+  Widget _buildNotificationCard(
+    dynamic noboxConfig,
+    String? activeSchoolId,
+    SettingsProvider settingsProvider,
+  ) {
+    return Card(
                       margin: EdgeInsets.zero,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -2165,18 +2271,13 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                         ),
                                       ),
                                     ),
-                                  ),
                                 ),
+                              ),
                               ],
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-      ),
     );
   }
 }

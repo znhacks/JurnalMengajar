@@ -300,10 +300,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         scheduleProvider.errorMessage ??
         journalProvider.errorMessage;
 
-    final primaryColor = isDark
-        ? const Color(0xFF60A5FA)
-        : const Color.fromARGB(255, 37, 99, 235);
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -478,9 +474,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   accentColor: const Color(0xFFD97706),
                                   bgColor: const Color(0xFFFEF3C7),
                                   borderColor: const Color(0xFFFDE68A),
-                                  onTap: () => context.push(
-                                    '/admin/journals?${_statQuery(tab: 2)}',
-                                  ),
+                                  onTap: () => context.push('/admin/approvals'),
                                 ),
                               ),
                               SizedBox(width: 8.w),
@@ -501,138 +495,724 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           ),
                           SizedBox(height: 16.h),
 
-                          // Shortcut ke halaman statistik kedisiplinan guru
-                          InkWell(
-                            onTap: () =>
-                                context.push('/admin/teacher-statistics'),
-                            borderRadius: BorderRadius.circular(14.r),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 14.w,
-                                vertical: 12.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF1E293B)
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(14.r),
-                                border: Border.all(
-                                  color: isDark
-                                      ? const Color(0xFF334155)
-                                      : const Color(0xFFBFDBFE),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                          // Baris tautan cepat ke Laporan & Statistik
+                          Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () =>
+                                      context.push('/admin/teacher-statistics'),
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 10.w,
+                                      vertical: 10.h,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? const Color(0xFF1E293B)
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(12.r),
+                                      border: Border.all(
+                                        color: isDark
+                                            ? const Color(0xFF334155)
+                                            : const Color(0xFFE2E8F0),
+                                      ),
+                                    ),
+                                    child: Row(
                                       children: [
-                                        Text(
-                                          'Statistik & Kedisiplinan Guru',
-                                          style: GoogleFonts.hankenGrotesk(
-                                            fontSize: 13.5.sp,
-                                            fontWeight: FontWeight.bold,
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.onSurface,
+                                        Container(
+                                          padding: EdgeInsets.all(7.w),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(8.r),
+                                          ),
+                                          child: Icon(
+                                            Icons.analytics_rounded,
+                                            size: 18.r,
+                                            color: const Color(0xFF2563EB),
                                           ),
                                         ),
-                                        SizedBox(height: 2.h),
-                                        Text(
-                                          'Pantau ketepatan waktu guru mengisi jurnal.',
-                                          style: TextStyle(
-                                            fontSize: 11.sp,
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.onSurfaceVariant,
+                                        SizedBox(width: 8.w),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                'Statistik Guru',
+                                                style: GoogleFonts.hankenGrotesk(
+                                                  fontSize: 12.5.sp,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).colorScheme.onSurface,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              Text(
+                                                'Kedisiplinan input',
+                                                style: TextStyle(
+                                                  fontSize: 10.5.sp,
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).colorScheme.onSurfaceVariant,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                  SizedBox(width: 10.w),
-                                  Icon(
-                                    Icons.arrow_forward_rounded,
-                                    size: 20.r,
-                                    color: primaryColor,
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () =>
+                                      context.push('/admin/class-attendance-recap'),
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 10.w,
+                                      vertical: 10.h,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? const Color(0xFF1E293B)
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(12.r),
+                                      border: Border.all(
+                                        color: isDark
+                                            ? const Color(0xFF334155)
+                                            : const Color(0xFFE2E8F0),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.all(7.w),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(8.r),
+                                          ),
+                                          child: Icon(
+                                            Icons.fact_check_rounded,
+                                            size: 18.r,
+                                            color: const Color(0xFF0D9488),
+                                          ),
+                                        ),
+                                        SizedBox(width: 8.w),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                'Rekap Kehadiran',
+                                                style: GoogleFonts.hankenGrotesk(
+                                                  fontSize: 12.5.sp,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).colorScheme.onSurface,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              Text(
+                                                'Absensi per kelas',
+                                                style: TextStyle(
+                                                  fontSize: 10.5.sp,
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).colorScheme.onSurfaceVariant,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 18.h),
+
+                          // 4. Banner Hari Libur / Minggu / Cuti Guru (Jika Tanggal Terpilih Libur atau Izin)
+                          Builder(
+                            builder: (context) {
+                              final holidayProvider = Provider.of<HolidayProvider>(
+                                context,
+                                listen: false,
+                              );
+                              final holiday = holidayProvider.getHolidayForDate(_selectedDay);
+                              final isSunday = _selectedDay.weekday == DateTime.sunday;
+                              final absenceJournal = _selectedTeacherId != null
+                                  ? schoolJournals.cast<JournalModel?>().firstWhere(
+                                      (j) =>
+                                          j != null &&
+                                          j.teacherId == _selectedTeacherId &&
+                                          j.date.year == _selectedDay.year &&
+                                          j.date.month == _selectedDay.month &&
+                                          j.date.day == _selectedDay.day &&
+                                          j.isTeacherAbsence &&
+                                          j.status != 'rejected',
+                                      orElse: () => null,
+                                    )
+                                  : null;
+
+                              if (holiday != null) {
+                                return Container(
+                                  width: double.infinity,
+                                  margin: EdgeInsets.only(bottom: 14.h),
+                                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.2 : 0.08),
+                                    borderRadius: BorderRadius.circular(12.r),
+                                    border: Border.all(
+                                      color: const Color(0xFFEF4444).withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.all(6.w),
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFEF4444),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          Icons.event_busy_rounded,
+                                          size: 14.r,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      SizedBox(width: 10.w),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Hari Libur: ${holiday.title}',
+                                              style: GoogleFonts.hankenGrotesk(
+                                                fontSize: 13.sp,
+                                                fontWeight: FontWeight.w700,
+                                                color: isDark
+                                                    ? const Color(0xFFFCA5A5)
+                                                    : const Color(0xFFB91C1C),
+                                              ),
+                                            ),
+                                            if (holiday.description != null &&
+                                                holiday.description!.isNotEmpty &&
+                                                holiday.description != holiday.title)
+                                              Text(
+                                                holiday.description!,
+                                                style: TextStyle(
+                                                  fontSize: 11.5.sp,
+                                                  color: isDark
+                                                      ? const Color(0xFFFCA5A5)
+                                                      : const Color(0xFFB91C1C),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              } else if (absenceJournal != null) {
+                                return Container(
+                                  width: double.infinity,
+                                  margin: EdgeInsets.only(bottom: 14.h),
+                                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.2 : 0.08),
+                                    borderRadius: BorderRadius.circular(12.r),
+                                    border: Border.all(
+                                      color: const Color(0xFFEF4444).withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.all(6.w),
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFEF4444),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          Icons.person_off_rounded,
+                                          size: 14.r,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      SizedBox(width: 10.w),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Guru Sedang Izin / Cuti',
+                                              style: GoogleFonts.hankenGrotesk(
+                                                fontSize: 13.sp,
+                                                fontWeight: FontWeight.w700,
+                                                color: isDark
+                                                    ? const Color(0xFFFCA5A5)
+                                                    : const Color(0xFFB91C1C),
+                                              ),
+                                            ),
+                                            if (absenceJournal.note != null &&
+                                                absenceJournal.note!.isNotEmpty)
+                                              Text(
+                                                absenceJournal.note!,
+                                                style: TextStyle(
+                                                  fontSize: 11.5.sp,
+                                                  color: isDark
+                                                      ? const Color(0xFFFCA5A5)
+                                                      : const Color(0xFFB91C1C),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              } else if (isSunday) {
+                                return Container(
+                                  width: double.infinity,
+                                  margin: EdgeInsets.only(bottom: 14.h),
+                                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.15 : 0.06),
+                                    borderRadius: BorderRadius.circular(12.r),
+                                    border: Border.all(
+                                      color: const Color(0xFFEF4444).withValues(alpha: 0.25),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.weekend_rounded,
+                                        size: 18.r,
+                                        color: const Color(0xFFEF4444),
+                                      ),
+                                      SizedBox(width: 8.w),
+                                      Text(
+                                        'Hari Minggu (Akhir Pekan)',
+                                        style: GoogleFonts.hankenGrotesk(
+                                          fontSize: 12.5.sp,
+                                          fontWeight: FontWeight.w700,
+                                          color: isDark
+                                              ? const Color(0xFFFCA5A5)
+                                              : const Color(0xFFB91C1C),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            },
+                          ),
+
+                          // 5. Agenda & Jadwal Kelas Hari Ini
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    'Agenda Mengajar',
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontSize: 15.sp,
+                                      fontWeight: FontWeight.w800,
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8.w,
+                                      vertical: 2.h,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(10.r),
+                                    ),
+                                    child: Text(
+                                      '${groupedSchedulesForDay.length} Kelas',
+                                      style: GoogleFonts.hankenGrotesk(
+                                        fontSize: 11.sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF2563EB),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
+                              if (groupedSchedulesForDay.isNotEmpty)
+                                TextButton(
+                                  onPressed: () => context.push(
+                                    '/admin/schedules?${_statQuery()}',
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    visualDensity: VisualDensity.compact,
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Lihat Jadwal',
+                                        style: GoogleFonts.hankenGrotesk(
+                                          fontSize: 12.sp,
+                                          fontWeight: FontWeight.w700,
+                                          color: const Color(0xFF2563EB),
+                                        ),
+                                      ),
+                                      SizedBox(width: 2.w),
+                                      Icon(
+                                        Icons.chevron_right_rounded,
+                                        size: 16.r,
+                                        color: const Color(0xFF2563EB),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
                           ),
                           SizedBox(height: 10.h),
 
-                          // Shortcut ke halaman rekap kehadiran siswa per kelas
-                          InkWell(
-                            onTap: () =>
-                                context.push('/admin/class-attendance-recap'),
-                            borderRadius: BorderRadius.circular(14.r),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 14.w,
-                                vertical: 12.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF132E27)
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(14.r),
-                                border: Border.all(
-                                  color: isDark
-                                      ? const Color(0xFF065F46)
-                                      : const Color(0xFFA7F3D0),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Rekap Kehadiran Siswa',
-                                          style: GoogleFonts.hankenGrotesk(
-                                            fontSize: 13.5.sp,
-                                            fontWeight: FontWeight.bold,
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.onSurface,
-                                          ),
-                                        ),
-                                        SizedBox(height: 2.h),
-                                        Text(
-                                          'Pantau kehadiran, sakit, izin, dan alpa per kelas.',
-                                          style: TextStyle(
-                                            fontSize: 11.sp,
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.onSurfaceVariant,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(width: 10.w),
-                                  Icon(
-                                    Icons.arrow_forward_rounded,
-                                    size: 20.r,
-                                    color: isDark
-                                        ? const Color(0xFF34D399)
-                                        : const Color(0xFF059669),
-                                  ),
-                                ],
-                              ),
+                          if (groupedSchedulesForDay.isEmpty)
+                            _buildEmptyAgenda(context, isDark, schoolJournals)
+                          else
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: groupedSchedulesForDay.length,
+                              separatorBuilder: (_, index) => SizedBox(height: 10.h),
+                              itemBuilder: (context, index) {
+                                final group = groupedSchedulesForDay[index];
+                                return _buildAgendaCard(
+                                  context: context,
+                                  group: group,
+                                  masterProvider: masterProvider,
+                                  journalProvider: journalProvider,
+                                  isDark: isDark,
+                                );
+                              },
                             ),
-                          ),
                         ],
                       ),
                     ),
                   ),
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyAgenda(
+    BuildContext context,
+    bool isDark,
+    List<JournalModel> journals,
+  ) {
+    final holidayProvider = Provider.of<HolidayProvider>(context, listen: false);
+    final holiday = holidayProvider.getHolidayForDate(_selectedDay);
+    final isSunday = _selectedDay.weekday == DateTime.sunday;
+    final absenceJournal = _selectedTeacherId != null
+        ? journals.cast<JournalModel?>().firstWhere(
+            (j) =>
+                j != null &&
+                j.teacherId == _selectedTeacherId &&
+                j.date.year == _selectedDay.year &&
+                j.date.month == _selectedDay.month &&
+                j.date.day == _selectedDay.day &&
+                j.isTeacherAbsence &&
+                j.status != 'rejected',
+            orElse: () => null,
+          )
+        : null;
+
+    final String title;
+    final String subtitle;
+    final IconData icon;
+
+    if (holiday != null) {
+      title = 'Hari Libur: ${holiday.title}';
+      subtitle = holiday.description != null &&
+              holiday.description!.isNotEmpty &&
+              holiday.description != holiday.title
+          ? holiday.description!
+          : 'Sekolah libur, tidak ada kegiatan belajar mengajar.';
+      icon = Icons.event_busy_rounded;
+    } else if (absenceJournal != null) {
+      title = 'Guru Sedang Izin / Cuti';
+      subtitle = absenceJournal.note != null && absenceJournal.note!.isNotEmpty
+          ? absenceJournal.note!
+          : 'Guru berhalangan hadir pada tanggal ini.';
+      icon = Icons.person_off_rounded;
+    } else if (isSunday) {
+      title = 'Hari Minggu (Akhir Pekan)';
+      subtitle = 'Tidak ada jadwal kegiatan kelas hari ini.';
+      icon = Icons.weekend_rounded;
+    } else {
+      title = 'Tidak ada jadwal mengajar pada tanggal ini.';
+      subtitle = 'Pilih tanggal lain di kalender atau buat jadwal baru.';
+      icon = Icons.event_available_rounded;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: 28.h, horizontal: 16.w),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF334155).withValues(alpha: 0.5)
+                  : const Color(0xFFF1F5F9),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              size: 28.r,
+              color: (holiday != null || isSunday)
+                  ? const Color(0xFFEF4444)
+                  : const Color(0xFF94A3B8),
+            ),
+          ),
+          SizedBox(height: 10.h),
+          Text(
+            title,
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 13.5.sp,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 11.5.sp,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAgendaCard({
+    required BuildContext context,
+    required GroupedDailySchedule group,
+    required MasterDataProvider masterProvider,
+    required JournalProvider journalProvider,
+    required bool isDark,
+  }) {
+    final teacher = masterProvider.teachers
+        .where((t) => t.id == group.teacherId)
+        .firstOrNull;
+    final classModel = masterProvider.classes
+        .where((c) => c.id == group.classId)
+        .firstOrNull;
+    final subject = masterProvider.subjects
+        .where((s) => s.id == group.subjectId)
+        .firstOrNull;
+
+    final teacherName = teacher?.name ?? 'Guru Tidak Dikenal';
+    final className = classModel?.name ?? 'Kelas -';
+    final subjectName = subject?.name ?? 'Mata Pelajaran -';
+
+    // Cari jurnal terkait
+    final journal = journalProvider.journals.where((j) {
+      final sameDate = j.date.year == _selectedDay.year &&
+          j.date.month == _selectedDay.month &&
+          j.date.day == _selectedDay.day;
+      return sameDate &&
+          (group.scheduleIds.contains(j.scheduleId) ||
+              (j.classId == group.classId &&
+                  j.subjectId == group.subjectId &&
+                  j.teacherId == group.teacherId));
+    }).firstOrNull;
+
+    final bool isVerified = journal != null && journal.status == 'verified';
+    final bool isPending = journal != null && journal.status == 'pending';
+    final bool isRejected = journal != null && journal.status == 'rejected';
+    final bool isAbsence = journal != null && journal.isTeacherAbsence;
+
+    final Color statusColor;
+    final String statusLabel;
+    final IconData statusIcon;
+
+    if (isVerified) {
+      statusColor = const Color(0xFF16A34A);
+      statusLabel = 'Terverifikasi';
+      statusIcon = Icons.check_circle_rounded;
+    } else if (isPending) {
+      statusColor = const Color(0xFFD97706);
+      statusLabel = 'Menunggu';
+      statusIcon = Icons.pending_rounded;
+    } else if (isAbsence) {
+      statusColor = const Color(0xFFE11D48);
+      statusLabel = 'Guru Izin';
+      statusIcon = Icons.event_busy_rounded;
+    } else if (isRejected) {
+      statusColor = const Color(0xFFE11D48);
+      statusLabel = 'Ditolak';
+      statusIcon = Icons.cancel_rounded;
+    } else {
+      statusColor = const Color(0xFF64748B);
+      statusLabel = 'Belum Input';
+      statusIcon = Icons.schedule_rounded;
+    }
+
+    final hoursText = group.teachingHours.isEmpty
+        ? 'Jam -'
+        : group.teachingHours.length == 1
+            ? 'Jam Ke-${group.teachingHours.first}'
+            : 'Jam ${group.teachingHours.first} - ${group.teachingHours.last}';
+
+    return InkWell(
+      onTap: () {
+        if (journal != null) {
+          context.push('/admin/journals?${_statQuery()}');
+        } else {
+          context.push('/admin/schedules?${_statQuery()}');
+        }
+      },
+      borderRadius: BorderRadius.circular(14.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: BorderRadius.circular(14.r),
+          border: Border.all(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Text(
+                    hoursText,
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF2563EB),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF334155).withValues(alpha: 0.5)
+                        : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Text(
+                    className,
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(statusIcon, size: 12.r, color: statusColor),
+                      SizedBox(width: 4.w),
+                      Text(
+                        statusLabel,
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 10.5.sp,
+                          fontWeight: FontWeight.w700,
+                          color: statusColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              subjectName,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w800,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: 4.h),
+            Row(
+              children: [
+                Icon(
+                  Icons.person_outline_rounded,
+                  size: 14.r,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                SizedBox(width: 4.w),
+                Expanded(
+                  child: Text(
+                    teacherName,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -974,7 +1554,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
       ),
       padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 4.w),
-      child: TableCalendar(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TableCalendar(
         locale: 'id_ID',
         headerStyle: HeaderStyle(
           headerPadding: EdgeInsets.symmetric(vertical: 4.h),
@@ -1075,6 +1658,29 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             );
           },
         ),
+      ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(10.w, 3.h, 10.w, 4.h),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildCalendarLegendDot(const Color(0xFF3B82F6), 'Lengkap', isDark),
+                SizedBox(width: 14.w),
+                _buildCalendarLegendDot(const Color(0xFFD97706), 'Belum Lengkap', isDark),
+                SizedBox(width: 14.w),
+                _buildCalendarLegendDot(const Color(0xFFEF4444), 'Libur / Cuti', isDark),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1273,6 +1879,38 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ),
                       ),
                     ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.h),
+                      child: Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildCalendarLegendDot(
+                          const Color(0xFF3B82F6),
+                          'Lengkap',
+                          isDark,
+                        ),
+                        SizedBox(width: 14.w),
+                        _buildCalendarLegendDot(
+                          const Color(0xFFD97706),
+                          'Belum Lengkap',
+                          isDark,
+                        ),
+                        SizedBox(width: 14.w),
+                        _buildCalendarLegendDot(
+                          const Color(0xFFEF4444),
+                          'Libur / Cuti',
+                          isDark,
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -1280,6 +1918,31 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildCalendarLegendDot(Color color, String label, bool isDark) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7.r,
+          height: 7.r,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        SizedBox(width: 5.w),
+        Text(
+          label,
+          style: GoogleFonts.hankenGrotesk(
+            fontSize: 10.5.sp,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }

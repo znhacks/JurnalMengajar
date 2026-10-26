@@ -1379,6 +1379,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         DateTime selected = _selectedDay;
         return StatefulBuilder(
           builder: (dialogCtx, setDialogState) {
+            final isDark = Theme.of(dialogCtx).brightness == Brightness.dark;
             return Dialog(
               insetPadding: EdgeInsets.symmetric(
                 horizontal: 16.w,
@@ -1501,6 +1502,35 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         },
                       ),
                     ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.h),
+                      child: Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildCalendarLegendDot(
+                          const Color(0xFF3B82F6),
+                          'Lengkap',
+                        ),
+                        SizedBox(width: 14.w),
+                        _buildCalendarLegendDot(
+                          const Color(0xFFD97706),
+                          'Belum Lengkap',
+                        ),
+                        SizedBox(width: 14.w),
+                        _buildCalendarLegendDot(
+                          const Color(0xFFEF4444),
+                          'Libur / Cuti',
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -1575,13 +1605,13 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         border = Border.all(color: const Color(0xFF3B82F6), width: 1.5);
       } else {
         bgColor = const Color(
-          0xFF10B981,
+          0xFFD97706,
         ).withValues(alpha: isDark ? 0.22 : 0.15);
         textColor = isOutside
             ? (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
-            : (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF047857));
+            : (isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309));
         fontWeight = FontWeight.w700;
-        border = Border.all(color: const Color(0xFF10B981), width: 1.5);
+        border = Border.all(color: const Color(0xFFD97706), width: 1.5);
       }
     } else if (isToday) {
       bgColor = AppTheme.primaryColor.withValues(alpha: isDark ? 0.25 : 0.15);
@@ -1605,6 +1635,31 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           color: textColor,
         ),
       ),
+    );
+  }
+
+  Widget _buildCalendarLegendDot(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7.r,
+          height: 7.r,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        SizedBox(width: 5.w),
+        Text(
+          label,
+          style: GoogleFonts.hankenGrotesk(
+            fontSize: 10.5.sp,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 

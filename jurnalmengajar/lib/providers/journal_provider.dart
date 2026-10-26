@@ -508,4 +508,60 @@ class JournalProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<bool> verifyMultipleJournals(
+    List<String> journalIds,
+    String status, {
+    String? rejectionNote,
+  }) async {
+    if (journalIds.isEmpty) return true;
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final repo = journalRepository;
+      if (repo is SupabaseJournalRepository) {
+        await repo.verifyMultiple(
+          journalIds,
+          status,
+          rejectionNote: rejectionNote,
+        );
+      } else {
+        for (final id in journalIds) {
+          await repo.verifyJournal(id, status, rejectionNote: rejectionNote);
+        }
+      }
+
+      final idSet = journalIds.toSet();
+      for (int i = 0; i < _journals.length; i++) {
+        if (idSet.contains(_journals[i].id)) {
+          _journals[i] = _journals[i].copyWith(
+            status: status,
+            rejectionNote: status == 'rejected' ? rejectionNote : null,
+          );
+        }
+      }
+      for (int i = 0; i < _teacherJournals.length; i++) {
+        if (idSet.contains(_teacherJournals[i].id)) {
+          _teacherJournals[i] = _teacherJournals[i].copyWith(
+            status: status,
+            rejectionNote: status == 'rejected' ? rejectionNote : null,
+          );
+        }
+      }
+
+      final sId = _currentSchoolId;
+      if (sId != null && sId.isNotEmpty) {
+        loadAllJournals(sId);
+      }
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

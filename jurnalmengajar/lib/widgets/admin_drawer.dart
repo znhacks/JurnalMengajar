@@ -9,6 +9,7 @@ import '../core/theme/app_theme.dart';
 import '../providers/theme_provider.dart';
 import 'role_badge.dart';
 import 'school_switcher_modal.dart';
+import '../providers/journal_provider.dart';
 
 class AdminDrawer extends StatelessWidget {
   final String currentRoute;
@@ -196,9 +197,31 @@ class AdminDrawerPanel extends StatelessWidget {
     );
   }
 
+  // ── Section Header ────────────────────────────────────────────────────────
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 4.h),
+      child: Text(
+        title,
+        style: GoogleFonts.hankenGrotesk(
+          fontSize: 10.5.sp,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
+        ),
+      ),
+    );
+  }
+
   // ── Menu List Items ────────────────────────────────────────────────────────
   List<Widget> _buildMenuItems(BuildContext context, Color dividerColor) {
+    final journalProvider = context.watch<JournalProvider>();
+    final pendingCount = journalProvider.journals
+        .where((j) => j.status == 'pending')
+        .length;
+
     return [
+      _buildSectionHeader(context, 'OPERASIONAL'),
       _buildMenuItem(
         context,
         Icons.space_dashboard_rounded,
@@ -207,8 +230,31 @@ class AdminDrawerPanel extends StatelessWidget {
       ),
       _buildMenuItem(
         context,
+        Icons.rule_folder_rounded,
+        'Persetujuan Jurnal',
+        '/admin/approvals',
+        trailing: pendingCount > 0
+            ? Container(
+                padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD97706),
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: Text(
+                  '$pendingCount',
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 10.5.sp,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              )
+            : null,
+      ),
+      _buildMenuItem(
+        context,
         Icons.check_circle_rounded,
-        'Jurnal Mengajar',
+        'Semua Jurnal',
         '/admin/journals',
       ),
       _buildMenuItem(
@@ -216,6 +262,15 @@ class AdminDrawerPanel extends StatelessWidget {
         Icons.calendar_month_rounded,
         'Jadwal Mengajar',
         '/admin/schedules',
+      ),
+
+      SizedBox(height: 6.h),
+      _buildSectionHeader(context, 'LAPORAN & EVALUASI'),
+      _buildMenuItem(
+        context,
+        Icons.fact_check_rounded,
+        'Rekap Kehadiran',
+        '/admin/class-attendance-recap',
       ),
       _buildMenuItem(
         context,
@@ -225,39 +280,18 @@ class AdminDrawerPanel extends StatelessWidget {
       ),
       _buildMenuItem(
         context,
-        Icons.fact_check_rounded,
-        'Rekap Kehadiran',
-        '/admin/class-attendance-recap',
+        Icons.mail_rounded,
+        'Surat Peringatan',
+        '/admin/warning-letters',
       ),
-      _buildMenuItem(
-        context,
-        Icons.settings_rounded,
-        'Pengaturan',
-        '/admin/settings',
-      ),
-      _buildMenuItem(context, Icons.info_rounded, 'Tentang Aplikasi', '/about'),
 
-      SizedBox(height: 8.h),
-      Divider(height: 1, color: dividerColor, thickness: 1),
-      SizedBox(height: 8.h),
-
+      SizedBox(height: 6.h),
+      _buildSectionHeader(context, 'DATA MASTER'),
       _buildMenuItem(
         context,
         Icons.local_offer_rounded,
-        'Periode',
+        'Periode Akademik',
         '/admin/master-data/periods',
-      ),
-      _buildMenuItem(
-        context,
-        Icons.assignment_rounded,
-        'Pelajaran',
-        '/admin/master-data/subjects',
-      ),
-      _buildMenuItem(
-        context,
-        Icons.access_time_filled_rounded,
-        'Jam Pelajaran',
-        '/admin/master-data/hours',
       ),
       _buildMenuItem(
         context,
@@ -274,20 +308,35 @@ class AdminDrawerPanel extends StatelessWidget {
       _buildMenuItem(
         context,
         Icons.school_rounded,
-        'Guru',
+        'Data Guru',
         '/admin/master-data/teachers',
       ),
       _buildMenuItem(
         context,
-        Icons.manage_accounts_rounded,
-        'User & Akses',
-        '/admin/master-data/users',
+        Icons.assignment_rounded,
+        'Mata Pelajaran',
+        '/admin/master-data/subjects',
       ),
       _buildMenuItem(
         context,
-        Icons.mail_rounded,
-        'Pengingat',
-        '/admin/warning-letters',
+        Icons.access_time_filled_rounded,
+        'Jam Pelajaran',
+        '/admin/master-data/hours',
+      ),
+      _buildMenuItem(
+        context,
+        Icons.manage_accounts_rounded,
+        'User & Hak Akses',
+        '/admin/master-data/users',
+      ),
+
+      SizedBox(height: 6.h),
+      _buildSectionHeader(context, 'PENGATURAN'),
+      _buildMenuItem(
+        context,
+        Icons.settings_rounded,
+        'Pengaturan Sekolah',
+        '/admin/settings',
       ),
       _buildMenuItem(
         context,
@@ -301,6 +350,8 @@ class AdminDrawerPanel extends StatelessWidget {
         'Cuti Guru',
         '/admin/teacher-leaves',
       ),
+      _buildMenuItem(context, Icons.info_rounded, 'Tentang Aplikasi', '/about'),
+      SizedBox(height: 8.h),
     ];
   }
 
@@ -457,8 +508,9 @@ class AdminDrawerPanel extends StatelessWidget {
     BuildContext context,
     IconData icon,
     String title,
-    String route,
-  ) {
+    String route, {
+    Widget? trailing,
+  }) {
     // Query string (mis. ?teacherId=..) tidak boleh mengganggu penanda menu.
     final isSelected = currentRoute.split('?').first == route;
     return Padding(
@@ -487,6 +539,7 @@ class AdminDrawerPanel extends StatelessWidget {
             fontSize: 13.sp,
           ),
         ),
+        trailing: trailing,
         selected: isSelected,
         selectedTileColor: AppTheme.primaryColor.withValues(alpha: 0.08),
         onTap: () {
