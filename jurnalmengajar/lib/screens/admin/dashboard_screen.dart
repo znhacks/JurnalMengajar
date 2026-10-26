@@ -472,7 +472,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               SizedBox(width: 8.w),
                               Expanded(
                                 child: _buildStatCard(
-                                  'Menunggu',
+                                  'Persetujuan',
                                   '$totalPending',
                                   Icons.rate_review_rounded,
                                   accentColor: const Color(0xFFD97706),
