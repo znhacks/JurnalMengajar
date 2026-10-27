@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+enum JournalTimeScope { month, week, all }
+
 class AppHelper {
   static String formatDate(DateTime date) {
     try {

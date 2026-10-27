@@ -315,8 +315,8 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         barColor = _colorPastelRed;
       }
 
-      // "untuk pelajarannya tidak tampil jadi hanya menampilkan x jadwalnya"
-      final label = '${dayGroups.length} Jadwal';
+      // Tampilkan hanya angka jumlah jadwal agar ringkas dan efisien
+      final label = '${dayGroups.length}';
 
       _calendarEvents.add(
         CalendarEventModel(
@@ -460,21 +460,52 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
   }
 
   Widget _buildEventBar(EventProperties drawer, bool isDark) {
+    final isHoliday = drawer.name.startsWith('Libur:');
     // Check if event is transparent gray
     final isTransparentGray = drawer.backgroundColor.a < 0.8;
     final textColor = isTransparentGray
         ? (isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155))
         : Colors.white;
 
+    if (isHoliday) {
+      return IgnorePointer(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: Container(
+            height: 18.h,
+            margin: EdgeInsets.symmetric(horizontal: 2.w),
+            padding: EdgeInsets.symmetric(horizontal: 3.w),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(4.r),
+              color: drawer.backgroundColor,
+            ),
+            alignment: Alignment.center,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                drawer.name,
+                maxLines: 1,
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 9.sp,
+                  fontWeight: FontWeight.w700,
+                  color: textColor,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Badge jumlah jadwal: berbentuk kotak/pill mungil kompak di tengah sel
     return IgnorePointer(
       child: Align(
         alignment: Alignment.topCenter,
         child: Container(
+          width: 24.w,
           height: 18.h,
-          margin: EdgeInsets.symmetric(horizontal: 2.w),
-          padding: EdgeInsets.symmetric(horizontal: 2.w),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4.r),
+            borderRadius: BorderRadius.circular(6.r),
             color: drawer.backgroundColor,
             boxShadow: isTransparentGray
                 ? null
@@ -487,18 +518,15 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                   ],
           ),
           alignment: Alignment.center,
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              drawer.name,
-              maxLines: 1,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.hankenGrotesk(
-                fontSize: 9.sp,
-                fontWeight: FontWeight.w700,
-                color: textColor,
-                height: 1.0,
-              ),
+          child: Text(
+            drawer.name,
+            maxLines: 1,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 10.5.sp,
+              fontWeight: FontWeight.w800,
+              color: textColor,
+              height: 1.0,
             ),
           ),
         ),

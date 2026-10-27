@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/journal_provider.dart';
@@ -60,6 +61,8 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
   String? _lastSchoolId;
   DateTime? _filterDate;
   String? _filterTeacherId;
+  JournalTimeScope _timeScope = JournalTimeScope.month;
+  DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
 
   void _toggleSelectionMode({String? initialId}) {
     setState(() {
@@ -514,6 +517,11 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
       for (final s in scheduleProvider.schedules) s.id: s.teacherId,
     };
 
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final currentWeekMonday = today.subtract(Duration(days: today.weekday - 1));
+    final currentWeekSunday = currentWeekMonday.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+
     final allJournals = providerJournals.where((j) {
       if (filterDate != null) {
         final sameDate =
@@ -521,6 +529,22 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
             j.date.month == filterDate.month &&
             j.date.day == filterDate.day;
         if (!sameDate) return false;
+      } else {
+        switch (_timeScope) {
+          case JournalTimeScope.month:
+            if (j.date.year != _selectedMonth.year || j.date.month != _selectedMonth.month) {
+              return false;
+            }
+            break;
+          case JournalTimeScope.week:
+            final d = DateTime(j.date.year, j.date.month, j.date.day);
+            if (d.isBefore(currentWeekMonday) || d.isAfter(currentWeekSunday)) {
+              return false;
+            }
+            break;
+          case JournalTimeScope.all:
+            break;
+        }
       }
       if (filterTeacherId != null &&
           filterTeacherId.isNotEmpty &&
@@ -546,9 +570,6 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
         .where((s) => s.isActive)
         .toList();
     final groupedDailySchedules = groupDailySchedules(activeSchedules);
-
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
 
     final List<GroupedDailySchedule> unfilledGroups;
     if (filterDate != null) {
@@ -580,6 +601,21 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     } else {
       unfilledGroups = groupedDailySchedules.where((group) {
         if (!group.date.isBefore(today)) return false;
+        switch (_timeScope) {
+          case JournalTimeScope.month:
+            if (group.date.year != _selectedMonth.year || group.date.month != _selectedMonth.month) {
+              return false;
+            }
+            break;
+          case JournalTimeScope.week:
+            final d = DateTime(group.date.year, group.date.month, group.date.day);
+            if (d.isBefore(currentWeekMonday) || d.isAfter(currentWeekSunday)) {
+              return false;
+            }
+            break;
+          case JournalTimeScope.all:
+            break;
+        }
         final hasJournal = allJournals.any(
           (j) => group.scheduleIds.contains(j.scheduleId),
         );
@@ -948,7 +984,9 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                       onPeriodChanged: _onPeriodChanged,
                     ),
                     if (_filterDate != null)
-                      _buildDateFilterBanner(masterProvider),
+                      _buildDateFilterBanner(masterProvider)
+                    else
+                      _buildTimeFilterBar(context),
                     AdminSearchFilterBar(
                       hintText: 'Cari guru, kelas, atau mapel...',
                       searchController: _searchController,
@@ -1181,6 +1219,278 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
     );
   }
 
+  String _getEmptySubtitle() {
+    if (_filterDate != null) {
+      return 'Tidak ada riwayat jurnal pada tanggal ${AppHelper.formatDate(_filterDate!)}.';
+    }
+    switch (_timeScope) {
+      case JournalTimeScope.month:
+        final monthStr = DateFormat('MMMM yyyy', 'id_ID').format(_selectedMonth);
+        return 'Tidak ada riwayat jurnal pada bulan $monthStr.';
+      case JournalTimeScope.week:
+        return 'Tidak ada riwayat jurnal pada minggu ini.';
+      case JournalTimeScope.all:
+        return 'Tidak ada data jurnal dalam kategori ini.';
+    }
+  }
+
+  Widget _buildTimeFilterBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final now = DateTime.now();
+    final isCurrentMonth = _selectedMonth.year == now.year && _selectedMonth.month == now.month;
+    final monthTitle = DateFormat('MMMM yyyy', 'id_ID').format(_selectedMonth);
+
+    return Container(
+      color: theme.colorScheme.surface,
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              _buildScopeChip('Bulan', JournalTimeScope.month, Icons.calendar_month_rounded),
+              SizedBox(width: 8.w),
+              _buildScopeChip('Minggu Ini', JournalTimeScope.week, Icons.date_range_rounded),
+              SizedBox(width: 8.w),
+              _buildScopeChip('Semua', JournalTimeScope.all, Icons.all_inclusive_rounded),
+            ],
+          ),
+          if (_timeScope == JournalTimeScope.month) ...[
+            SizedBox(height: 8.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(10.r),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left_rounded),
+                    tooltip: 'Bulan Sebelumnya',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      setState(() {
+                        _selectedMonth = DateTime(
+                          _selectedMonth.year,
+                          _selectedMonth.month - 1,
+                          1,
+                        );
+                      });
+                    },
+                  ),
+                  InkWell(
+                    onTap: _showMonthPickerModal,
+                    borderRadius: BorderRadius.circular(6.r),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            monthTitle,
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 13.5.sp,
+                              fontWeight: FontWeight.w800,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                          SizedBox(width: 4.w),
+                          Icon(
+                            Icons.arrow_drop_down_rounded,
+                            size: 18.sp,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!isCurrentMonth)
+                        IconButton(
+                          icon: const Icon(Icons.today_rounded, size: 18),
+                          tooltip: 'Kembali ke Bulan Ini',
+                          visualDensity: VisualDensity.compact,
+                          color: const Color(0xFF2563EB),
+                          onPressed: () {
+                            setState(() {
+                              _selectedMonth = DateTime(now.year, now.month, 1);
+                            });
+                          },
+                        ),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right_rounded),
+                        tooltip: 'Bulan Berikutnya',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () {
+                          setState(() {
+                            _selectedMonth = DateTime(
+                              _selectedMonth.year,
+                              _selectedMonth.month + 1,
+                              1,
+                            );
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScopeChip(String label, JournalTimeScope scope, IconData icon) {
+    final isSelected = _timeScope == scope;
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _timeScope = scope;
+        });
+      },
+      borderRadius: BorderRadius.circular(20.r),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF2563EB)
+              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF2563EB)
+                : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 13.sp,
+              color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant,
+            ),
+            SizedBox(width: 4.w),
+            Text(
+              label,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 11.5.sp,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                color: isSelected ? Colors.white : theme.colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMonthPickerModal() {
+    int pickerYear = _selectedMonth.year;
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final months = [
+              'Januari', 'Februari', 'Maret', 'April',
+              'Mei', 'Juni', 'Juli', 'Agustus',
+              'September', 'Oktober', 'November', 'Desember'
+            ];
+            return Padding(
+              padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 24.h),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left_rounded),
+                        onPressed: () {
+                          setModalState(() => pickerYear--);
+                        },
+                      ),
+                      Text(
+                        '$pickerYear',
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right_rounded),
+                        onPressed: () {
+                          setModalState(() => pickerYear++);
+                        },
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 12.h),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      childAspectRatio: 2.4,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
+                    ),
+                    itemCount: 12,
+                    itemBuilder: (context, i) {
+                      final isSelected = pickerYear == _selectedMonth.year && i + 1 == _selectedMonth.month;
+                      return InkWell(
+                        onTap: () {
+                          setState(() {
+                            _selectedMonth = DateTime(pickerYear, i + 1, 1);
+                          });
+                          Navigator.pop(ctx);
+                        },
+                        borderRadius: BorderRadius.circular(8.r),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? const Color(0xFF2563EB)
+                                : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            months[i],
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 12.sp,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                              color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Tab _buildTab(String label, int count, {Color? badgeColor}) {
     final color = badgeColor ?? const Color(0xFF2563EB);
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1263,7 +1573,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
         title: _searchQuery.isNotEmpty ? 'Tidak Ditemukan' : 'Jurnal Kosong',
         subtitle: _searchQuery.isNotEmpty
             ? 'Tidak ada hasil pencarian yang cocok.'
-            : 'Tidak ada data jurnal dalam kategori ini.',
+            : _getEmptySubtitle(),
       );
     }
 
