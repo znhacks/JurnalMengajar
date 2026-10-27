@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'theme_extensions.dart';
 
 class AppTheme {
   // ─── Modern Clean Academic Design System ───────────────────────────────
@@ -299,6 +300,9 @@ class AppTheme {
           TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
         },
       ),
+      extensions: const [
+        AppStatusColors.light,
+      ],
     );
   }
 
@@ -590,6 +594,9 @@ class AppTheme {
           TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
         },
       ),
+      extensions: const [
+        AppStatusColors.dark,
+      ],
     );
   }
 }

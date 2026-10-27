@@ -474,12 +474,12 @@ class SupabaseSchoolRepository implements SchoolRepository {
         ? 999
         : (isTenantUltra ? 150 : (isTenantPro ? 50 : 30));
 
-    final String canonicalCode =
-        tenantRes?['school_code'] as String? ??
-        activationCode.trim().replaceAll(RegExp(r'\s+'), '');
+    // Gunakan langsung kode spesifik yang diinputkan oleh admin (misal: PRO-5761),
+    // bukan daftar seluruh kode dari tenant seperti PRO-5761,FREE-4843.
+    final String chosenCode = activationCode.trim().replaceAll(RegExp(r'\s+'), '');
 
     final updateData = <String, dynamic>{
-      'code': canonicalCode,
+      'code': chosenCode,
       'subscription_plan': plan,
       'max_teachers': maxTeachers,
       'status': 'active',
@@ -498,13 +498,13 @@ class SupabaseSchoolRepository implements SchoolRepository {
       }
     } catch (_) {}
 
-    // 2. Fallback: check if school exists by canonicalCode or cleanCode
+    // 2. Fallback: check if school exists by chosenCode or cleanCode
     if (existingSchool == null) {
       try {
         final sByCode = await _supabase
             .from('schools')
             .select()
-            .or('code.ilike.$canonicalCode,code.ilike.$cleanCode');
+            .or('code.ilike.$chosenCode,code.ilike.$cleanCode');
         if ((sByCode as List).isNotEmpty) {
           existingSchool = (sByCode as List).first as Map<String, dynamic>;
         }

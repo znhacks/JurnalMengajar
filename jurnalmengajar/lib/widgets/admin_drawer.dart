@@ -357,13 +357,6 @@ class _AdminDrawerPanelState extends State<AdminDrawerPanel> {
       ),
       _buildMenuItem(
         context,
-        Icons.rule_folder_rounded,
-        'Persetujuan Jurnal',
-        '/admin/approvals',
-        hasAction: hasPendingJournals,
-      ),
-      _buildMenuItem(
-        context,
         Icons.check_circle_rounded,
         'Jurnal Mengajar',
         '/admin/journals',
@@ -384,7 +377,7 @@ class _AdminDrawerPanelState extends State<AdminDrawerPanel> {
       _buildMenuItem(
         context,
         Icons.fact_check_rounded,
-        'Rekap Kehadiran',
+        'Kehadiran',
         '/admin/class-attendance-recap',
       ),
       _buildMenuItem(

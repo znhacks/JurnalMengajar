@@ -810,7 +810,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                           value: '$pendingCount',
                           icon: Icons.pending_actions_outlined,
                           color: const Color(0xFFF59E0B),
-                          onTap: () => context.push('/admin/approvals'),
+                          onTap: () => context.push('/admin/journals?tab=2'),
                         ),
                       ),
                     ],

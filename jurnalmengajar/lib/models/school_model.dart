@@ -67,6 +67,34 @@ class SchoolModel {
   /// True jika sekolah memiliki fitur minimal Pro (Pro, Ultra, Enterprise)
   bool get hasProFeatures => isPro || isUltra || isEnterprise;
 
+  /// Mengambil satu kode paket yang sedang aktif / digunakan (misal: 'PRO-5761'),
+  /// bukan daftar gabungan multi-kode seperti 'PRO-5761,FREE-4843'.
+  String get activePlanCode {
+    final raw = (code ?? activationCode ?? '').trim();
+    if (raw.isEmpty) return '-';
+    if (!raw.contains(',')) return raw;
+
+    final parts = raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    if (parts.isEmpty) return raw;
+
+    // Prioritaskan kode yang sesuai dengan plan aktif sekolah saat ini
+    final currentPlan = plan.toLowerCase().trim();
+    if (currentPlan.isNotEmpty && currentPlan != 'free') {
+      final matched = parts.firstWhere(
+        (p) => p.toLowerCase().startsWith(currentPlan),
+        orElse: () => '',
+      );
+      if (matched.isNotEmpty) return matched;
+    }
+
+    // Jika tidak ada awalan plan yang cocok, ambil kode berbayar non-free pertama atau elemen pertama
+    final nonFree = parts.firstWhere(
+      (p) => !p.toLowerCase().startsWith('free'),
+      orElse: () => parts.first,
+    );
+    return nonFree;
+  }
+
   factory SchoolModel.fromJson(Map<String, dynamic> json) {
     final rawPlan = json['subscription_plan'] as String? ?? json['plan'] as String? ?? 'free';
     final parsedPlan = rawPlan.toLowerCase().trim();

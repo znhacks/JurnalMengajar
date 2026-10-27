@@ -1844,8 +1844,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                     context,
                                   ).copyWith(dividerColor: Colors.transparent),
                                   child: ExpansionTile(
-                                    initiallyExpanded:
-                                        teacherSchedules.isNotEmpty,
+                                    initiallyExpanded: false,
                                     tilePadding: EdgeInsets.symmetric(
                                       horizontal: 14.w,
                                       vertical: 6.h,
@@ -2423,7 +2422,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                       ),
                                                       SizedBox(height: 2.h),
                                                       Text(
-                                                        'Mata Pelajaran: ${subject.name}',
+                                                        subject.name,
                                                         style: GoogleFonts.hankenGrotesk(
                                                           fontSize: 11.5.sp,
                                                           color: Theme.of(context)

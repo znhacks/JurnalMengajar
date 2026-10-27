@@ -1221,15 +1221,15 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       items: const [
                         DropdownMenuItem(
                           value: 'all',
-                          child: Text('Semua Status (Terverifikasi & Pending)'),
+                          child: Text('Semua Status'),
                         ),
                         DropdownMenuItem(
                           value: 'verified',
-                          child: Text('Hanya Terverifikasi / Disetujui'),
+                          child: Text('Hanya Diterima'),
                         ),
                         DropdownMenuItem(
                           value: 'pending',
-                          child: Text('Hanya Menunggu Approval'),
+                          child: Text('Hanya Pending'),
                         ),
                       ],
                       onChanged: (val) {
@@ -1368,12 +1368,12 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         _buildBadgeInfo(
-                          'Terverifikasi',
+                          'Diterima',
                           '$verifiedCount',
                           const Color(0xFF10B981),
                         ),
                         _buildBadgeInfo(
-                          'Menunggu',
+                          'Pending',
                           '$pendingCount',
                           const Color(0xFFF59E0B),
                         ),

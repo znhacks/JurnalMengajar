@@ -10,6 +10,7 @@ import '../models/student_model.dart';
 import '../models/user_model.dart';
 import '../models/class_attendance_recap_model.dart';
 import '../providers/master_data_provider.dart';
+import '../core/utils/helper.dart';
 import 'excel_saver.dart';
 
 class ExcelExportService {
@@ -135,12 +136,7 @@ class ExcelExportService {
         orElse: () => SubjectModel(id: j.subjectId, name: '-', isActive: false),
       );
 
-      String statusLabel = 'Menunggu';
-      if (j.status == 'verified' || j.status == 'approved') {
-        statusLabel = 'Terverifikasi';
-      } else if (j.status == 'rejected') {
-        statusLabel = 'Ditolak';
-      }
+      final statusLabel = AppHelper.getStatusLabel(j.status);
 
       final studentCount = cls.studentCount;
       final presentCount = studentCount > 0

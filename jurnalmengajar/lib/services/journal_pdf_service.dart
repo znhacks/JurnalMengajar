@@ -466,7 +466,7 @@ class JournalPdfService {
         ),
         pw.SizedBox(width: 8),
         _buildStatCard(
-          'Terverifikasi',
+          'Diterima',
           '$verifiedCount',
           PdfColors.green800,
           ttfBold,
@@ -474,7 +474,7 @@ class JournalPdfService {
         ),
         pw.SizedBox(width: 8),
         _buildStatCard(
-          'Menunggu',
+          'Pending',
           '$pendingCount',
           PdfColors.orange800,
           ttfBold,

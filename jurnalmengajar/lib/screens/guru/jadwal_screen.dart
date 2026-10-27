@@ -939,27 +939,27 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
           statusTextColor = Colors.red;
         } else {
           statusText = matchingJournal.isTeacherSick
-              ? 'Sakit (Menunggu)'
-              : 'Izin (Menunggu)';
+              ? 'Sakit (Pending)'
+              : 'Izin (Pending)';
           statusBg = const Color(
             0xFFF59E0B,
           ).withValues(alpha: isDark ? 0.22 : 0.12);
           statusTextColor = const Color(0xFFF59E0B);
         }
-      } else if (matchingJournal.status == 'verified') {
-        statusText = 'Terverifikasi';
+      } else if (matchingJournal.status == 'verified' || matchingJournal.status == 'approved') {
+        statusText = 'Diterima';
         statusBg = const Color(
           0xFF10B981,
         ).withValues(alpha: isDark ? 0.22 : 0.12);
         statusTextColor = const Color(0xFF10B981);
       } else if (matchingJournal.status == 'pending') {
-        statusText = 'Menunggu Verifikasi';
+        statusText = 'Pending';
         statusBg = const Color(
           0xFFF59E0B,
         ).withValues(alpha: isDark ? 0.22 : 0.12);
         statusTextColor = const Color(0xFFF59E0B);
       } else if (matchingJournal.status == 'rejected') {
-        statusText = 'Perlu Revisi';
+        statusText = 'Ditolak';
         statusBg = Colors.red.withValues(alpha: isDark ? 0.22 : 0.12);
         statusTextColor = Colors.red;
       }

@@ -37,12 +37,13 @@ class AppHelper {
   static String getStatusLabel(String status) {
     switch (status.toLowerCase()) {
       case 'verified':
-        return 'Terverifikasi';
+      case 'approved':
+        return 'Diterima';
       case 'rejected':
         return 'Ditolak';
       case 'pending':
       default:
-        return 'Menunggu Verifikasi';
+        return 'Pending';
     }
   }
 

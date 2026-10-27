@@ -162,8 +162,8 @@ class _GuruDaftarJurnalScreenState extends State<GuruDaftarJurnalScreen>
               dividerHeight: 1,
               tabs: [
                 _buildTab('Semua', allItems.length),
-                _buildTab('Menunggu', pendingJournals.length),
-                _buildTab('Terverifikasi', verifiedJournals.length),
+                _buildTab('Pending', pendingJournals.length),
+                _buildTab('Diterima', verifiedJournals.length),
               ],
             ),
           ),

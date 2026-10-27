@@ -981,7 +981,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                               borderRadius: BorderRadius.circular(8.r),
                             ),
                           ),
-                          child: Text('Setujui', style: TextStyle(fontSize: 12.sp)),
+                          child: Text('Terima', style: TextStyle(fontSize: 12.sp)),
                         ),
                         SizedBox(height: 6.h),
                         OutlinedButton(
@@ -1175,15 +1175,15 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                       : const Color(0xFFE2E8F0),
                   dividerHeight: 1,
                   tabs: [
-                    _buildTab('Pengguna Aktif', activeUsers.length, icon: Icons.people_outline),
+                    _buildTab('Aktif', activeUsers.length, icon: Icons.people_outline),
                     _buildTab(
-                      'Menunggu Persetujuan',
+                      'Pending',
                       pendingUsers.length,
                       icon: Icons.person_add_outlined,
                       badgeColor: Colors.red,
                     ),
                     _buildTab(
-                      'Menunggu Keluar',
+                      'Keluar',
                       _exitRequests.length,
                       icon: Icons.exit_to_app_rounded,
                       badgeColor: Colors.orange,
@@ -1277,8 +1277,8 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                                         children: [
                                           SizedBox(height: 80.h),
                                           const AppEmptyWidget(
-                                            title: 'Tidak Ada Pendaftaran',
-                                            subtitle: 'Tidak ada guru yang sedang menunggu persetujuan.',
+                                            title: 'Tidak Ada Permintaan',
+                                            subtitle: 'Tidak ada guru dalam status pending.',
                                           ),
                                         ],
                                       )
@@ -1303,8 +1303,8 @@ class _MasterUserScreenState extends State<MasterUserScreen>
   Widget _buildExitRequestsList(AuthProvider authProvider) {
     if (_exitRequests.isEmpty) {
       return const AppEmptyWidget(
-        title: 'Tidak Ada Pengajuan Keluar',
-        subtitle: 'Tidak ada guru yang mengajukan keluar dari sekolah.',
+        title: 'Tidak Ada Permintaan Keluar',
+        subtitle: 'Tidak ada permintaan keluar dari guru.',
       );
     }
 
@@ -1453,7 +1453,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                       ),
-                      child: Text('Setujui', style: TextStyle(fontSize: 12.sp)),
+                      child: Text('Terima', style: TextStyle(fontSize: 12.sp)),
                     ),
                     SizedBox(height: 6.h),
                     OutlinedButton(

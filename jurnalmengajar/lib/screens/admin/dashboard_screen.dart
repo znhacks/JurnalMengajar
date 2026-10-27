@@ -454,7 +454,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               SizedBox(width: 8.w),
                               Expanded(
                                 child: _buildStatCard(
-                                  'Belum Input',
+                                  'Belum Diisi',
                                   '$unsubmittedCount',
                                   Icons.pending_actions_rounded,
                                   accentColor: const Color(0xFFE11D48),
@@ -468,13 +468,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               SizedBox(width: 8.w),
                               Expanded(
                                 child: _buildStatCard(
-                                  'Persetujuan',
+                                  'Pending',
                                   '$totalPending',
                                   Icons.rate_review_rounded,
                                   accentColor: const Color(0xFFD97706),
                                   bgColor: const Color(0xFFFEF3C7),
                                   borderColor: const Color(0xFFFDE68A),
-                                  onTap: () => context.push('/admin/approvals'),
+                                  onTap: () => context.push('/admin/journals?tab=2'),
                                 ),
                               ),
                               SizedBox(width: 8.w),
@@ -535,35 +535,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                         ),
                                         SizedBox(width: 8.w),
                                         Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                'Statistik Guru',
-                                                style: GoogleFonts.hankenGrotesk(
-                                                  fontSize: 12.5.sp,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Theme.of(
-                                                    context,
-                                                  ).colorScheme.onSurface,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              Text(
-                                                'Kedisiplinan input',
-                                                style: TextStyle(
-                                                  fontSize: 10.5.sp,
-                                                  color: Theme.of(
-                                                    context,
-                                                  ).colorScheme.onSurfaceVariant,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ],
+                                          child: Text(
+                                            'Statistik Guru',
+                                            style: GoogleFonts.hankenGrotesk(
+                                              fontSize: 12.5.sp,
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ],
@@ -609,35 +591,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                         ),
                                         SizedBox(width: 8.w),
                                         Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                'Rekap Kehadiran',
-                                                style: GoogleFonts.hankenGrotesk(
-                                                  fontSize: 12.5.sp,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Theme.of(
-                                                    context,
-                                                  ).colorScheme.onSurface,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              Text(
-                                                'Absensi per kelas',
-                                                style: TextStyle(
-                                                  fontSize: 10.5.sp,
-                                                  color: Theme.of(
-                                                    context,
-                                                  ).colorScheme.onSurfaceVariant,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ],
+                                          child: Text(
+                                            'Kehadiran',
+                                            style: GoogleFonts.hankenGrotesk(
+                                              fontSize: 12.5.sp,
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ],
@@ -763,7 +727,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              'Guru Sedang Izin / Cuti',
+                                              'Izin / Cuti',
                                               style: GoogleFonts.hankenGrotesk(
                                                 fontSize: 13.sp,
                                                 fontWeight: FontWeight.w700,
@@ -810,7 +774,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                       ),
                                       SizedBox(width: 8.w),
                                       Text(
-                                        'Hari Minggu (Akhir Pekan)',
+                                        'Hari Minggu',
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 12.5.sp,
                                           fontWeight: FontWeight.w700,
@@ -1070,15 +1034,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     if (isVerified) {
       statusColor = const Color(0xFF16A34A);
-      statusLabel = 'Terverifikasi';
+      statusLabel = 'Diterima';
       statusIcon = Icons.check_circle_rounded;
     } else if (isPending) {
       statusColor = const Color(0xFFD97706);
-      statusLabel = 'Menunggu';
+      statusLabel = 'Pending';
       statusIcon = Icons.pending_rounded;
     } else if (isAbsence) {
       statusColor = const Color(0xFFE11D48);
-      statusLabel = 'Guru Izin';
+      statusLabel = 'Izin';
       statusIcon = Icons.event_busy_rounded;
     } else if (isRejected) {
       statusColor = const Color(0xFFE11D48);
@@ -1086,7 +1050,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       statusIcon = Icons.cancel_rounded;
     } else {
       statusColor = const Color(0xFF64748B);
-      statusLabel = 'Belum Input';
+      statusLabel = 'Belum Diisi';
       statusIcon = Icons.schedule_rounded;
     }
 
