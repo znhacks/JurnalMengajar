@@ -1919,7 +1919,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                     trailing: Container(
                                       padding: EdgeInsets.symmetric(
                                         horizontal: 10.w,
-                                        vertical: 4.h,
+                                        vertical: 3.h,
                                       ),
                                       decoration: BoxDecoration(
                                         color: teacherSchedules.isNotEmpty
@@ -1947,9 +1947,9 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                         ),
                                       ),
                                       child: Text(
-                                        '${teacherSchedules.length} Jadwal',
+                                        '${teacherSchedules.length}',
                                         style: GoogleFonts.hankenGrotesk(
-                                          fontSize: 10.5.sp,
+                                          fontSize: 11.5.sp,
                                           fontWeight: FontWeight.w700,
                                           color: teacherSchedules.isNotEmpty
                                               ? (isDark

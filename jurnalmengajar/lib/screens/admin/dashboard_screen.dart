@@ -197,9 +197,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final masterProvider = context.watch<MasterDataProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
     final journalProvider = context.watch<JournalProvider>();
-    context.watch<HolidayProvider>();
+    final holidayProvider = context.watch<HolidayProvider>();
     final schoolSchedules = scheduleProvider.schedules;
     final schoolJournals = journalProvider.journals;
+
+    final cleanActiveSchoolId =
+        AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
+        authProvider.activeSchoolId?.trim();
+
+    final calendarLookup = _AdminCalendarLookup.build(
+      schedules: schoolSchedules,
+      journals: schoolJournals,
+      selectedTeacherId: _selectedTeacherId,
+      cleanActiveSchoolId: cleanActiveSchoolId,
+      holidayProvider: holidayProvider,
+    );
 
     debugPrint(
       '[RUNTIME_DEBUG:ADMIN_DASHBOARD] build() triggered. SelectedTeacherId: $_selectedTeacherId, TotalSchedules: ${schoolSchedules.length}, TotalTeachers: ${masterProvider.teachers.length}',
@@ -428,8 +440,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         children: [
                           // 1. Calendar Card (Top Section)
                           _buildCalendarCard(
-                            schoolSchedules,
-                            schoolJournals,
+                            calendarLookup,
                             hasHighlightBefore,
                             hasHighlightAfter,
                           ),
@@ -1286,141 +1297,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // ─── Calendar Card ─────────────────────────────────────────────────────────
 
-  bool _hasTeacherScheduleOnDay(List<ScheduleModel> schedules, DateTime day) {
-    final activeSchoolId = Provider.of<AuthProvider>(
-      context,
-      listen: false,
-    ).activeSchoolId;
-    final cleanActiveSchoolId =
-        AppHelper.parseSingleCleanSchoolId(activeSchoolId) ??
-        activeSchoolId?.trim();
-    if (_selectedTeacherId == null) {
-      return schedules.any((s) {
-        if (!s.isActive) return false;
-        if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
-          final sSchoolId =
-              AppHelper.parseSingleCleanSchoolId(s.schoolId) ??
-              s.schoolId?.trim();
-          if (sSchoolId != null &&
-              sSchoolId.isNotEmpty &&
-              sSchoolId != cleanActiveSchoolId) {
-            return false;
-          }
-        }
-        return s.date.year == day.year &&
-            s.date.month == day.month &&
-            s.date.day == day.day;
-      });
-    }
-    return schedules.any((s) {
-      if (!s.isActive || s.teacherId != _selectedTeacherId) return false;
-      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
-        final sSchoolId =
-            AppHelper.parseSingleCleanSchoolId(s.schoolId) ??
-            s.schoolId?.trim();
-        if (sSchoolId != null &&
-            sSchoolId.isNotEmpty &&
-            sSchoolId != cleanActiveSchoolId) {
-          return false;
-        }
-      }
-      return s.date.year == day.year &&
-          s.date.month == day.month &&
-          s.date.day == day.day;
-    });
-  }
-
-  bool _areAllSchedulesFilledOnDay(
-    List<ScheduleModel> schedules,
-    List<JournalModel> journals,
-    DateTime day,
-  ) {
-    final activeSchoolId = Provider.of<AuthProvider>(
-      context,
-      listen: false,
-    ).activeSchoolId;
-    final cleanActiveSchoolId =
-        AppHelper.parseSingleCleanSchoolId(activeSchoolId) ??
-        activeSchoolId?.trim();
-
-    final daySchedules = schedules.where((s) {
-      if (!s.isActive) return false;
-      if (_selectedTeacherId != null && s.teacherId != _selectedTeacherId) {
-        return false;
-      }
-      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
-        final sSchoolId =
-            AppHelper.parseSingleCleanSchoolId(s.schoolId) ??
-            s.schoolId?.trim();
-        if (sSchoolId != null &&
-            sSchoolId.isNotEmpty &&
-            sSchoolId != cleanActiveSchoolId) {
-          return false;
-        }
-      }
-      return s.date.year == day.year &&
-          s.date.month == day.month &&
-          s.date.day == day.day;
-    }).toList();
-
-    if (daySchedules.isEmpty) return false;
-
-    final grouped = groupDailySchedules(daySchedules);
-    if (grouped.isEmpty) return false;
-
-    return grouped.every((group) {
-      final s = group.primarySchedule;
-      return journals.any((j) {
-        final sameDate =
-            j.date.year == day.year &&
-            j.date.month == day.month &&
-            j.date.day == day.day;
-        final sameSchedule =
-            j.scheduleId == s.id ||
-            group.scheduleIds.contains(j.scheduleId) ||
-            (j.classId == s.classId &&
-                j.subjectId == s.subjectId &&
-                j.teacherId == s.teacherId);
-        return sameDate &&
-            sameSchedule &&
-            j.status != 'rejected' &&
-            (j.status == 'pending' ||
-                j.status == 'verified' ||
-                j.isTeacherAbsence);
-      });
-    });
-  }
-
   Widget _buildScheduledDayCell(
     DateTime day,
     bool isSelected,
     bool isToday,
     bool isOutside,
-    List<ScheduleModel> schedules,
-    List<JournalModel> journals,
+    _AdminCalendarLookup lookup,
   ) {
-    final hasSchedule = _hasTeacherScheduleOnDay(schedules, day);
-    final isAllFilled =
-        hasSchedule && _areAllSchedulesFilledOnDay(schedules, journals, day);
-
-    final holidayProvider = Provider.of<HolidayProvider>(
-      context,
-      listen: false,
-    );
-    final holiday = holidayProvider.getHolidayForDate(day);
-    final isHoliday =
-        holiday != null ||
-        (_selectedTeacherId != null
-            ? journals.any(
-                (j) =>
-                    j.teacherId == _selectedTeacherId &&
-                    j.date.year == day.year &&
-                    j.date.month == day.month &&
-                    j.date.day == day.day &&
-                    j.isTeacherAbsence &&
-                    j.status != 'rejected',
-              )
-            : false);
+    final key =
+        '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+    final hasSchedule = lookup.hasSchedule(key);
+    final isAllFilled = hasSchedule && lookup.isAllFilled(key);
+    final isHoliday = lookup.isHoliday(key, day);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSunday = day.weekday == DateTime.sunday;
 
@@ -1500,8 +1388,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildCalendarCard(
-    List<ScheduleModel> schedules,
-    List<JournalModel> journals,
+    _AdminCalendarLookup lookup,
     bool hasHighlightBefore,
     bool hasHighlightAfter,
   ) {
@@ -1560,8 +1447,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             _focusedDay = focusedDay;
           });
         },
-        onHeaderTapped: (_) =>
-            _showFullCalendarDialog(context, schedules, journals),
+        onHeaderTapped: (_) => _showFullCalendarDialog(context, lookup),
         calendarBuilders: CalendarBuilders(
           dowBuilder: (context, day) {
             final dayName = DateFormat.E('id_ID').format(day);
@@ -1587,8 +1473,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               false,
               false,
               false,
-              schedules,
-              journals,
+              lookup,
             );
           },
           outsideBuilder: (context, day, focusedDay) {
@@ -1597,8 +1482,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               false,
               false,
               true,
-              schedules,
-              journals,
+              lookup,
             );
           },
           todayBuilder: (context, day, focusedDay) {
@@ -1607,8 +1491,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               false,
               true,
               false,
-              schedules,
-              journals,
+              lookup,
             );
           },
           selectedBuilder: (context, day, focusedDay) {
@@ -1617,8 +1500,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               true,
               false,
               false,
-              schedules,
-              journals,
+              lookup,
             );
           },
         ),
@@ -1651,8 +1533,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   void _showFullCalendarDialog(
     BuildContext context,
-    List<ScheduleModel> schedules,
-    List<JournalModel> journals,
+    _AdminCalendarLookup lookup,
   ) {
     showDialog(
       context: context,
@@ -1743,9 +1624,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         setDialogState(() {
                           focused = focDay;
                         });
-                        setState(() {
-                          _focusedDay = focDay;
-                        });
                       },
                       calendarBuilders: CalendarBuilders(
                         dowBuilder: (context, day) {
@@ -1774,8 +1652,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             false,
                             false,
                             false,
-                            schedules,
-                            journals,
+                            lookup,
                           );
                         },
                         outsideBuilder: (context, day, focusedDay) {
@@ -1784,8 +1661,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             false,
                             false,
                             true,
-                            schedules,
-                            journals,
+                            lookup,
                           );
                         },
                         todayBuilder: (context, day, focusedDay) {
@@ -1794,8 +1670,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             false,
                             true,
                             false,
-                            schedules,
-                            journals,
+                            lookup,
                           );
                         },
                         selectedBuilder: (context, day, focusedDay) {
@@ -1804,8 +1679,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             true,
                             false,
                             false,
-                            schedules,
-                            journals,
+                            lookup,
                           );
                         },
                       ),
@@ -1907,6 +1781,109 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Helper structure for caching and O(1) day-cell status lookup in Admin Calendar
+class _AdminCalendarLookup {
+  final Set<String> scheduledDateKeys;
+  final Set<String> allFilledDateKeys;
+  final Set<String> absenceDateKeys;
+  final HolidayProvider holidayProvider;
+
+  const _AdminCalendarLookup({
+    required this.scheduledDateKeys,
+    required this.allFilledDateKeys,
+    required this.absenceDateKeys,
+    required this.holidayProvider,
+  });
+
+  bool hasSchedule(String dateKey) => scheduledDateKeys.contains(dateKey);
+  bool isAllFilled(String dateKey) => allFilledDateKeys.contains(dateKey);
+  bool isHoliday(String dateKey, DateTime day) =>
+      absenceDateKeys.contains(dateKey) ||
+      holidayProvider.getHolidayForDate(day) != null;
+
+  factory _AdminCalendarLookup.build({
+    required List<ScheduleModel> schedules,
+    required List<JournalModel> journals,
+    required String? selectedTeacherId,
+    required String? cleanActiveSchoolId,
+    required HolidayProvider holidayProvider,
+  }) {
+    final Map<String, List<ScheduleModel>> schedulesByDate = {};
+    for (final s in schedules) {
+      if (!s.isActive) continue;
+      if (selectedTeacherId != null && s.teacherId != selectedTeacherId) continue;
+      if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
+        final sSchoolId =
+            AppHelper.parseSingleCleanSchoolId(s.schoolId) ??
+            s.schoolId?.trim();
+        if (sSchoolId != null &&
+            sSchoolId.isNotEmpty &&
+            sSchoolId != cleanActiveSchoolId) {
+          continue;
+        }
+      }
+      final key =
+          '${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}';
+      (schedulesByDate[key] ??= []).add(s);
+    }
+
+    final Map<String, List<JournalModel>> journalsByDate = {};
+    final Set<String> absenceDateKeys = {};
+    for (final j in journals) {
+      final key =
+          '${j.date.year}-${j.date.month.toString().padLeft(2, '0')}-${j.date.day.toString().padLeft(2, '0')}';
+      (journalsByDate[key] ??= []).add(j);
+      if (selectedTeacherId != null &&
+          j.teacherId == selectedTeacherId &&
+          j.isTeacherAbsence &&
+          j.status != 'rejected') {
+        absenceDateKeys.add(key);
+      }
+    }
+
+    final Set<String> scheduledDateKeys = schedulesByDate.keys.toSet();
+    final Set<String> allFilledDateKeys = {};
+
+    for (final entry in schedulesByDate.entries) {
+      final key = entry.key;
+      final daySchedules = entry.value;
+      if (daySchedules.isEmpty) continue;
+
+      final grouped = groupDailySchedules(daySchedules);
+      if (grouped.isEmpty) continue;
+
+      final dayJournals = journalsByDate[key] ?? const [];
+      final isAllFilled = grouped.every((group) {
+        final s = group.primarySchedule;
+        return dayJournals.any((j) {
+          final sameSchedule =
+              j.scheduleId == s.id ||
+              group.scheduleIds.contains(j.scheduleId) ||
+              (j.classId == s.classId &&
+                  j.subjectId == s.subjectId &&
+                  j.teacherId == s.teacherId);
+          return sameSchedule &&
+              j.status != 'rejected' &&
+              (j.status == 'pending' ||
+                  j.status == 'verified' ||
+                  j.isTeacherAbsence);
+        });
+      });
+
+      if (isAllFilled) {
+        allFilledDateKeys.add(key);
+      }
+    }
+
+    return _AdminCalendarLookup(
+      scheduledDateKeys: scheduledDateKeys,
+      allFilledDateKeys: allFilledDateKeys,
+      absenceDateKeys: absenceDateKeys,
+      holidayProvider: holidayProvider,
     );
   }
 }

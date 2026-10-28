@@ -472,24 +472,29 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
         child: Align(
           alignment: Alignment.topCenter,
           child: Container(
+            width: 24.w,
             height: 18.h,
-            margin: EdgeInsets.symmetric(horizontal: 2.w),
-            padding: EdgeInsets.symmetric(horizontal: 3.w),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4.r),
+              borderRadius: BorderRadius.circular(6.r),
               color: drawer.backgroundColor,
+              boxShadow: [
+                BoxShadow(
+                  color: drawer.backgroundColor.withValues(alpha: 0.25),
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
             alignment: Alignment.center,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                drawer.name,
-                maxLines: 1,
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 9.sp,
-                  fontWeight: FontWeight.w700,
-                  color: textColor,
-                ),
+            child: Text(
+              'L',
+              maxLines: 1,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 10.5.sp,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                height: 1.0,
               ),
             ),
           ),

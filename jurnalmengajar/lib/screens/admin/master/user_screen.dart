@@ -1175,17 +1175,15 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                       : const Color(0xFFE2E8F0),
                   dividerHeight: 1,
                   tabs: [
-                    _buildTab('Aktif', activeUsers.length, icon: Icons.people_outline),
+                    _buildTab('Aktif', 0),
                     _buildTab(
                       'Pending',
                       pendingUsers.length,
-                      icon: Icons.person_add_outlined,
                       badgeColor: Colors.red,
                     ),
                     _buildTab(
                       'Keluar',
                       _exitRequests.length,
-                      icon: Icons.exit_to_app_rounded,
                       badgeColor: Colors.orange,
                     ),
                   ],
@@ -1221,21 +1219,18 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                                   ),
                                   AdminFilterItem(
                                     id: 'guru',
-                                    label: 'Guru Aktif',
-                                    icon: Icons.school_rounded,
+                                    label: 'Guru',
                                     count: totalGuruCount,
                                   ),
                                   if (totalNonaktifCount > 0)
                                     AdminFilterItem(
                                       id: 'nonaktif',
                                       label: 'Nonaktif',
-                                      icon: Icons.person_off_rounded,
                                       count: totalNonaktifCount,
                                     ),
                                   AdminFilterItem(
                                     id: 'admin',
                                     label: 'Admin',
-                                    icon: Icons.admin_panel_settings_rounded,
                                     count: totalAdminCount,
                                   ),
                                 ]
@@ -1521,15 +1516,17 @@ class _MasterUserScreenState extends State<MasterUserScreen>
     );
   }
 
-  Tab _buildTab(String label, int count, {required IconData icon, Color? badgeColor}) {
+  Tab _buildTab(String label, int count, {IconData? icon, Color? badgeColor}) {
     final color = badgeColor ?? const Color(0xFF2563EB);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Tab(
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18.r),
-          SizedBox(width: 8.w),
+          if (icon != null) ...[
+            Icon(icon, size: 18.r),
+            SizedBox(width: 8.w),
+          ],
           Text(
             label,
             style: GoogleFonts.hankenGrotesk(
