@@ -1499,19 +1499,17 @@ class SupabaseAuthRepository implements AuthRepository {
           );
           final updates = <String, dynamic>{'school_ids': remainingSchoolIds};
 
-          if (currentAssignedSchoolId == cleanSchoolId) {
-            if (remainingActiveList.isNotEmpty) {
-              final next = remainingActiveList.first;
-              final nextId =
-                  AppHelper.parseSingleCleanSchoolId(next['school_id']) ??
-                  next['school_id'];
-              updates['school_id'] = nextId;
-              if (next['schools'] != null && next['schools'] is Map) {
-                updates['school_name'] = next['schools']['name'];
-              }
-            } else {
-              updates['school_id'] = null;
-              updates['school_name'] = null;
+          if (remainingActiveList.isEmpty) {
+            updates['school_id'] = null;
+            updates['school_name'] = null;
+          } else if (currentAssignedSchoolId == cleanSchoolId) {
+            final next = remainingActiveList.first;
+            final nextId =
+                AppHelper.parseSingleCleanSchoolId(next['school_id']) ??
+                next['school_id'];
+            updates['school_id'] = nextId;
+            if (next['schools'] != null && next['schools'] is Map) {
+              updates['school_name'] = next['schools']['name'];
             }
           }
 

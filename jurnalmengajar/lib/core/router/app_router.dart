@@ -36,6 +36,7 @@ import '../../screens/admin/master/teacher_detail_screen.dart';
 import '../../screens/admin/teacher_statistics_screen.dart';
 import '../../screens/admin/class_attendance_recap_screen.dart';
 import '../../screens/auth/school_expired_screen.dart';
+import '../../screens/auth/no_school_screen.dart';
 import '../../widgets/swipe_back_wrapper.dart';
 import '../../widgets/desktop_sidebar_shell.dart';
 import '../theme/app_theme.dart';
@@ -134,6 +135,19 @@ class AppRouter {
         final user = authProvider.currentUser;
         if (user == null) return '/login';
 
+        // Check if non-admin-asli user has no active school (jobless / empty account)
+        final hasActiveSchool = authProvider.hasActiveSchool;
+        if (!authProvider.isAdminAsli && !hasActiveSchool) {
+          if (state.matchedLocation != '/no-school') {
+            return '/no-school';
+          }
+          return null;
+        } else if (state.matchedLocation == '/no-school') {
+          return authProvider.isAdminAsli
+              ? '/admin/dashboard'
+              : '/guru/dashboard';
+        }
+
         final effectiveRole = authProvider.activeRole.isNotEmpty
             ? authProvider.activeRole
             : user.role;
@@ -212,6 +226,14 @@ class AppRouter {
             context,
             state,
             const SchoolExpiredScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/no-school',
+          pageBuilder: (context, state) => _buildCustomTransition(
+            context,
+            state,
+            const NoSchoolScreen(),
           ),
         ),
 

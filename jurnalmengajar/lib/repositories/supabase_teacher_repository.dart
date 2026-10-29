@@ -379,7 +379,11 @@ class SupabaseTeacherRepository
 
     final updated = await _supabase
         .from('user_schools')
-        .update({'role': TeacherRoles.softDeleted})
+        .update({
+          'role': TeacherRoles.softDeleted,
+          'status': 'inactive',
+          'updated_at': DateTime.now().toIso8601String(),
+        })
         .eq('school_id', cleanSchoolId)
         .inFilter('user_id', cleanIds)
         .inFilter('role', ['guru', 'teacher'])
@@ -397,59 +401,110 @@ class SupabaseTeacherRepository
     final missingIds = cleanIds
         .where((id) => !updatedIds.contains(id))
         .toList();
-    if (missingIds.isEmpty) return;
 
-    // Some older teachers only have users.school_id or schedules and no
-    // membership row. Do not create an active membership for someone who is
-    // already pending/inactive; otherwise deactivation could grant access.
-    final existingRows = await _supabase
-        .from('user_schools')
-        .select('user_id, role')
-        .eq('school_id', cleanSchoolId)
-        .inFilter('user_id', missingIds);
-
-    final usersWithTeacherMembership = <String>{};
-    for (final row in existingRows) {
-      final map = Map<String, dynamic>.from(row as Map);
-      final uid = map['user_id']?.toString();
-      final role = map['role']?.toString().toLowerCase();
-      if (uid == null || uid.isEmpty) continue;
-      if (role == 'guru' ||
-          role == 'teacher' ||
-          role == 'pending_guru' ||
-          TeacherRoles.isSoftDeleted(role)) {
-        usersWithTeacherMembership.add(uid);
-      }
-    }
-
-    final idsToInsert = missingIds
-        .where((id) => !usersWithTeacherMembership.contains(id))
-        .toList();
-
-    if (usersWithTeacherMembership.isNotEmpty) {
-      await _supabase
+    if (missingIds.isNotEmpty) {
+      // Some older teachers only have users.school_id or schedules and no
+      // membership row. Do not create an active membership for someone who is
+      // already pending/inactive; otherwise deactivation could grant access.
+      final existingRows = await _supabase
           .from('user_schools')
-          .update({'role': TeacherRoles.softDeleted})
+          .select('user_id, role')
           .eq('school_id', cleanSchoolId)
-          .inFilter('user_id', usersWithTeacherMembership.toList())
-          .inFilter('role', ['guru', 'teacher']);
-    }
+          .inFilter('user_id', missingIds);
 
-    Object? firstInsertError;
-    for (final id in idsToInsert) {
-      try {
-        await _supabase.from('user_schools').upsert({
-          'user_id': id,
-          'school_id': cleanSchoolId,
-          'role': TeacherRoles.softDeleted,
-          'status': 'active',
-        }, onConflict: 'user_id, school_id, role');
-      } catch (e) {
-        firstInsertError ??= e;
+      final usersWithTeacherMembership = <String>{};
+      for (final row in existingRows) {
+        final map = Map<String, dynamic>.from(row as Map);
+        final uid = map['user_id']?.toString();
+        final role = map['role']?.toString().toLowerCase();
+        if (uid == null || uid.isEmpty) continue;
+        if (role == 'guru' ||
+            role == 'teacher' ||
+            role == 'pending_guru' ||
+            TeacherRoles.isSoftDeleted(role)) {
+          usersWithTeacherMembership.add(uid);
+        }
+      }
+
+      final idsToInsert = missingIds
+          .where((id) => !usersWithTeacherMembership.contains(id))
+          .toList();
+
+      if (usersWithTeacherMembership.isNotEmpty) {
+        await _supabase
+            .from('user_schools')
+            .update({
+              'role': TeacherRoles.softDeleted,
+              'status': 'inactive',
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('school_id', cleanSchoolId)
+            .inFilter('user_id', usersWithTeacherMembership.toList())
+            .inFilter('role', ['guru', 'teacher']);
+      }
+
+      Object? firstInsertError;
+      for (final id in idsToInsert) {
+        try {
+          await _supabase.from('user_schools').upsert({
+            'user_id': id,
+            'school_id': cleanSchoolId,
+            'role': TeacherRoles.softDeleted,
+            'status': 'inactive',
+            'updated_at': DateTime.now().toIso8601String(),
+          }, onConflict: 'user_id, school_id, role');
+        } catch (e) {
+          firstInsertError ??= e;
+        }
+      }
+      if (firstInsertError != null) {
+        throw Exception(firstInsertError.toString());
       }
     }
-    if (firstInsertError != null) {
-      throw Exception(firstInsertError.toString());
+
+    // Synchronize users table: remove residual school references if user has no remaining active schools
+    for (final uid in cleanIds) {
+      try {
+        final activeMems = await _supabase
+            .from('user_schools')
+            .select('school_id, role, status, schools(name)')
+            .eq('user_id', uid)
+            .eq('status', 'active');
+
+        final validActive = (activeMems as List).where((row) {
+          final sId = AppHelper.parseSingleCleanSchoolId(row['school_id']);
+          final role = row['role']?.toString();
+          return sId != null &&
+              sId != cleanSchoolId &&
+              !TeacherRoles.isSoftDeleted(role);
+        }).toList();
+
+        if (validActive.isEmpty) {
+          await _supabase.from('users').update({
+            'school_id': null,
+            'school_name': null,
+            'school_ids': [],
+          }).eq('id', uid);
+        } else {
+          final next = validActive.first;
+          final nextId = AppHelper.parseSingleCleanSchoolId(next['school_id']) ?? next['school_id'];
+          final nextName = next['schools'] != null && next['schools'] is Map
+              ? next['schools']['name']
+              : null;
+          final remainingIds = validActive
+              .map((row) => AppHelper.parseSingleCleanSchoolId(row['school_id']))
+              .whereType<String>()
+              .toSet()
+              .toList();
+          await _supabase.from('users').update({
+            'school_id': nextId,
+            'school_name': nextName,
+            'school_ids': remainingIds,
+          }).eq('id', uid);
+        }
+      } catch (userSyncErr) {
+        debugPrint('Error syncing users table for teacher $uid: $userSyncErr');
+      }
     }
   }
 
@@ -465,9 +520,23 @@ class SupabaseTeacherRepository
 
     await _supabase
         .from('user_schools')
-        .update({'role': TeacherRoles.softDeleted})
+        .update({
+          'role': TeacherRoles.softDeleted,
+          'status': 'inactive',
+          'updated_at': DateTime.now().toIso8601String(),
+        })
         .inFilter('user_id', cleanIds)
         .inFilter('role', ['guru', 'teacher'])
         .inFilter('status', ['active', 'requested_exit']);
+
+    for (final uid in cleanIds) {
+      try {
+        await _supabase.from('users').update({
+          'school_id': null,
+          'school_name': null,
+          'school_ids': [],
+        }).eq('id', uid);
+      } catch (_) {}
+    }
   }
 }

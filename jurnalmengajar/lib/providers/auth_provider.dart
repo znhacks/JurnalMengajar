@@ -84,49 +84,55 @@ class AuthProvider with ChangeNotifier {
 
         if (initialUser != null) {
           initialRole ??= initialUser.role;
-          initialSchoolId ??= initialUser.schoolId;
-          initialSchoolName = initialUser.schoolName;
+          if (initialMemberships.isNotEmpty) {
+            initialSchoolId ??= initialUser.schoolId;
+            initialSchoolName = initialUser.schoolName;
+          }
         }
 
-        final selectedSchoolId = initialSchoolId;
-        final selectedRole = initialRole?.toLowerCase();
-        UserSchoolModel? activeMember;
-        if (selectedSchoolId != null && selectedSchoolId.isNotEmpty) {
-          activeMember = _findMembership(
-            initialMemberships,
-            (membership) =>
-                membership.schoolId == selectedSchoolId &&
-                (selectedRole == null ||
-                    membership.role.toLowerCase() == selectedRole),
-          );
+        if (initialMemberships.isNotEmpty) {
+          final selectedSchoolId = initialSchoolId;
+          final selectedRole = initialRole?.toLowerCase();
+          UserSchoolModel? activeMember;
+          if (selectedSchoolId != null && selectedSchoolId.isNotEmpty) {
+            activeMember = _findMembership(
+              initialMemberships,
+              (membership) =>
+                  membership.schoolId == selectedSchoolId &&
+                  (selectedRole == null ||
+                      membership.role.toLowerCase() == selectedRole),
+            );
+            activeMember ??= _findMembership(
+              initialMemberships,
+              (membership) => membership.schoolId == selectedSchoolId,
+            );
+          }
           activeMember ??= _findMembership(
             initialMemberships,
-            (membership) => membership.schoolId == selectedSchoolId,
+            (membership) =>
+                membership.status == null ||
+                membership.status!.toLowerCase() == 'active',
           );
-        }
-        activeMember ??= _findMembership(
-          initialMemberships,
-          (membership) =>
-              membership.status == null ||
-              membership.status!.toLowerCase() == 'active',
-        );
-        activeMember ??= initialMemberships.isNotEmpty
-            ? initialMemberships.first
-            : null;
+          activeMember ??= initialMemberships.first;
 
-        initialSchoolId ??= activeMember?.schoolId;
-        initialSchoolName ??= activeMember?.schoolName;
-        initialRole ??= activeMember?.role;
+          initialSchoolId = activeMember.schoolId;
+          initialSchoolName = activeMember.schoolName;
+          initialRole = activeMember.role;
 
-        if (initialSchoolId != null && initialSchoolId.isNotEmpty) {
-          final schoolId = initialSchoolId;
-          final cachedSchool = await CacheService().loadMap(
-            'active_school_$schoolId',
-          );
-          if (cachedSchool != null && cachedSchool.isNotEmpty) {
-            initialSchool = SchoolModel.fromJson(cachedSchool);
-            initialSchoolName = initialSchool.name;
+          if (initialSchoolId.isNotEmpty) {
+            final schoolId = initialSchoolId;
+            final cachedSchool = await CacheService().loadMap(
+              'active_school_$schoolId',
+            );
+            if (cachedSchool != null && cachedSchool.isNotEmpty) {
+              initialSchool = SchoolModel.fromJson(cachedSchool);
+              initialSchoolName = initialSchool.name;
+            }
           }
+        } else {
+          initialSchoolId = null;
+          initialSchoolName = '';
+          initialSchool = null;
         }
 
         initialRole = (initialRole ?? 'guru').toLowerCase();
@@ -283,6 +289,21 @@ class AuthProvider with ChangeNotifier {
   }
 
   bool get hasMultipleSchools => _userMemberships.length > 1;
+
+  /// True jika user memiliki sekolah aktif yang sah dan tidak nonaktif.
+  bool get hasActiveSchool =>
+      _activeSchoolId != null &&
+      _activeSchoolId!.isNotEmpty &&
+      _userMemberships.any((m) =>
+          (AppHelper.parseSingleCleanSchoolId(m.schoolId) ?? m.schoolId) ==
+              (AppHelper.parseSingleCleanSchoolId(_activeSchoolId) ??
+                  _activeSchoolId) &&
+          m.status != 'inactive' &&
+          m.status != 'deactivated' &&
+          !TeacherRoles.isSoftDeleted(m.role));
+
+  /// True jika user adalah non-admin asli yang tidak memiliki sekolah aktif (jobless / akun kosong).
+  bool get isJobless => !isAdminAsli && !hasActiveSchool;
 
   String _membershipRole(String? role) {
     final normalized = TeacherRoles.normalize(role);
@@ -996,6 +1017,15 @@ class AuthProvider with ChangeNotifier {
       _activeSchool = null;
       _activeSchoolId = null;
       _activeSchoolName = '';
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        if (_currentUser != null) {
+          await prefs.remove(_userSchoolKey(_currentUser!.id));
+          await prefs.remove(_userRoleKey(_currentUser!.id));
+        }
+        await prefs.remove(_kActiveSchoolIdKey);
+        await prefs.remove(_kActiveRoleKey);
+      } catch (_) {}
       return;
     }
 
@@ -1216,12 +1246,11 @@ class AuthProvider with ChangeNotifier {
           final m = Map<String, dynamic>.from(item as Map);
           final rawStatus = (m['status'] as String? ?? 'active').toLowerCase();
           final rawRole = (item['role'] ?? _currentUser!.role)?.toString();
-          final isDeactivatedMember = TeacherRoles.isActiveDeactivation(
-            role: rawRole,
-            status: rawStatus,
-          );
+          final isDeactivatedMember = TeacherRoles.isSoftDeleted(rawRole) ||
+              rawStatus == 'inactive' ||
+              rawStatus == 'deactivated';
           final status = isDeactivatedMember ? 'deactivated' : rawStatus;
-          m['role'] = _membershipRole(rawRole);
+          m['role'] = isDeactivatedMember ? TeacherRoles.softDeleted : _membershipRole(rawRole);
           if (status == 'deactivated') {
             m['status'] = 'deactivated';
           }
@@ -1277,11 +1306,9 @@ class AuthProvider with ChangeNotifier {
 
           if (status == 'pending') {
             pendingList.add(parsed);
-          } else if (status == 'inactive') {
+          } else if (status == 'inactive' || status == 'deactivated' || isDeactivatedMember) {
             inactiveList.add(parsed);
-          } else if (status == 'active' ||
-              status == 'requested_exit' ||
-              status == 'deactivated') {
+          } else if (status == 'active' || status == 'requested_exit') {
             final key = '${parsed.schoolId}_$mRole';
             membershipMap[key] = parsed;
           }
@@ -1395,76 +1422,6 @@ class AuthProvider with ChangeNotifier {
 
       _userMemberships = membershipMap.values.toList();
 
-      if (_userMemberships.isEmpty && _currentUser != null) {
-        // Self-heal: If user has schoolId or schoolName in profile, look up school and link
-        // Only if not inactive!
-        try {
-          Map<String, dynamic>? schoolData;
-          final cleanUserSchoolId = AppHelper.parseSingleCleanSchoolId(
-            _currentUser!.schoolId,
-          );
-          if (cleanUserSchoolId != null &&
-              cleanUserSchoolId.isNotEmpty &&
-              !inactiveSchoolIds.contains(cleanUserSchoolId) &&
-              !pendingSchoolIds.contains(cleanUserSchoolId)) {
-            schoolData = await supabase
-                .from('schools')
-                .select('id, name, code, logo_url')
-                .eq('id', cleanUserSchoolId)
-                .maybeSingle()
-                .timeout(NetworkResilience.defaultQueryTimeout);
-          }
-          if (schoolData == null &&
-              _currentUser!.schoolName != null &&
-              _currentUser!.schoolName!.isNotEmpty) {
-            schoolData = await supabase
-                .from('schools')
-                .select('id, name, code, logo_url')
-                .ilike('name', _currentUser!.schoolName!.trim())
-                .maybeSingle()
-                .timeout(NetworkResilience.defaultQueryTimeout);
-            if (schoolData != null) {
-              final foundId = AppHelper.parseSingleCleanSchoolId(
-                schoolData['id'],
-              );
-              if (foundId != null &&
-                  (inactiveSchoolIds.contains(foundId) ||
-                      pendingSchoolIds.contains(foundId))) {
-                schoolData = null;
-              }
-            }
-          }
-          if (schoolData != null) {
-            final sId = schoolData['id'] as String;
-            final sName = schoolData['name'] as String;
-            final sLogo = schoolData['logo_url'] as String?;
-            final sCode = schoolData['code'] as String?;
-
-            try {
-              await supabase.from('user_schools').insert({
-                'user_id': _currentUser!.id,
-                'school_id': sId,
-                'role': _membershipRole(_currentUser!.role),
-                'status': 'active',
-              });
-            } catch (_) {}
-
-            final healedMember = UserSchoolModel(
-              id: 'us_healed',
-              userId: _currentUser!.id,
-              schoolId: sId,
-              role: _membershipRole(_currentUser!.role),
-              schoolName: sName,
-              schoolCode: sCode,
-              logoUrl: sLogo,
-            );
-            _userMemberships = [healedMember];
-          }
-        } catch (healErr) {
-          debugPrint('Error self-healing user memberships: $healErr');
-        }
-      }
-
       _pendingMemberships = pendingList;
       _inactiveMemberships = inactiveList;
 
@@ -1477,6 +1434,14 @@ class AuthProvider with ChangeNotifier {
         await _applyActiveMembershipFromPreferences();
       } else {
         _activeSchool = null;
+        _activeSchoolId = null;
+        _activeSchoolName = '';
+        await CacheService().remove('user_memberships_${_currentUser!.id}');
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove(_userSchoolKey(_currentUser!.id));
+          await prefs.remove(_kActiveSchoolIdKey);
+        } catch (_) {}
       }
       notifyListeners();
     } catch (e) {
@@ -1531,9 +1496,7 @@ class AuthProvider with ChangeNotifier {
           final savedUserRole =
               prefs.getString(_userRoleKey(uid)) ??
               prefs.getString(_kActiveRoleKey);
-          final savedUserSchool =
-              prefs.getString(_userSchoolKey(uid)) ??
-              prefs.getString(_kActiveSchoolIdKey);
+          final savedUserSchool = prefs.getString(_userSchoolKey(uid));
 
           if (isAdminAsli) {
             _activeRole = 'admin';
@@ -1554,7 +1517,9 @@ class AuthProvider with ChangeNotifier {
             _activeRole = canRestoreAdmin ? 'admin' : 'guru';
           }
           final cachedSchoolName = user.schoolName?.trim();
-          if ((_activeSchoolName.trim().isEmpty ||
+          if (_activeSchoolId != null &&
+              _activeSchoolId!.isNotEmpty &&
+              (_activeSchoolName.trim().isEmpty ||
                   _activeSchoolName == 'Sekolah') &&
               cachedSchoolName != null &&
               cachedSchoolName.isNotEmpty) {
@@ -1627,8 +1592,13 @@ class AuthProvider with ChangeNotifier {
       }
 
       final loginSchoolName = loggedInUser.schoolName?.trim();
-      if (loginSchoolName != null && loginSchoolName.isNotEmpty) {
+      if (_activeSchoolId != null &&
+          _activeSchoolId!.isNotEmpty &&
+          loginSchoolName != null &&
+          loginSchoolName.isNotEmpty) {
         _activeSchoolName = loginSchoolName;
+      } else if (_activeSchoolId == null || _activeSchoolId!.isEmpty) {
+        _activeSchoolName = '';
       }
 
       // Immediately write safe initial preferences for this user
