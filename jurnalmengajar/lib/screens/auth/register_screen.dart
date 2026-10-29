@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../models/school_model.dart';
 import '../../repositories/supabase_auth_repository.dart';
@@ -501,6 +502,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           Positioned(
                             top: 8.h,
+                            right: 8.w,
+                            child: Consumer<ThemeProvider>(
+                              builder: (context, themeProvider, _) {
+                                return IconButton(
+                                  icon: Icon(
+                                    themeProvider.isDarkMode
+                                        ? Icons.dark_mode_rounded
+                                        : Icons.light_mode_rounded,
+                                    color: Colors.white,
+                                    size: 22.sp,
+                                  ),
+                                  tooltip: themeProvider.isDarkMode
+                                      ? 'Mode Gelap'
+                                      : 'Mode Terang',
+                                  onPressed: () {
+                                    themeProvider.toggleTheme(
+                                      !themeProvider.isDarkMode,
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                          Positioned(
+                            top: 8.h,
                             left: 8.w,
                             child: IconButton(
                               icon: Icon(
@@ -691,7 +717,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                 SizedBox(width: 6.w),
                                                 Flexible(
                                                   child: Text(
-                                                    'Pendaftaran Guru',
+                                                    'Guru',
                                                     maxLines: 1,
                                                     overflow:
                                                         TextOverflow.ellipsis,
@@ -762,7 +788,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                 SizedBox(width: 6.w),
                                                 Flexible(
                                                   child: Text(
-                                                    'Admin Sekolah',
+                                                    'Admin',
                                                     maxLines: 1,
                                                     overflow:
                                                         TextOverflow.ellipsis,

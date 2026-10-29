@@ -714,7 +714,7 @@ class _SimpleRegisterScreenState extends State<SimpleRegisterScreen> {
                                                   ),
                                                   SizedBox(width: 6.w),
                                                   Text(
-                                                    'Pendaftaran Guru',
+                                                    'Guru',
                                                     style: TextStyle(
                                                       fontSize: kIsWeb
                                                           ? 13
@@ -774,7 +774,7 @@ class _SimpleRegisterScreenState extends State<SimpleRegisterScreen> {
                                                   ),
                                                   SizedBox(width: 6.w),
                                                   Text(
-                                                    'Admin Sekolah',
+                                                    'Admin',
                                                     style: TextStyle(
                                                       fontSize: kIsWeb
                                                           ? 13
