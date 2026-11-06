@@ -162,17 +162,17 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     final now = DateTime.now();
     setState(() {
       _presetRange = preset;
-      if (preset == 'Bulan Ini') {
-        _startDate = DateTime(now.year, now.month, 1);
-        _endDate = now;
-      } else if (preset == '30 Hari Terakhir') {
+      if (preset == '30 Hari Terakhir') {
         _startDate = now.subtract(const Duration(days: 30));
         _endDate = now;
+      } else if (preset == 'Bulan Ini') {
+        _startDate = DateTime(now.year, now.month, 1);
+        _endDate = now;
       } else if (preset == 'Bulan Lalu') {
-        final lastMonth = DateTime(now.year, now.month - 1, 1);
-        final lastDayOfLastMonth = DateTime(now.year, now.month, 0);
-        _startDate = lastMonth;
-        _endDate = lastDayOfLastMonth;
+        final lastMonthYear = now.month == 1 ? now.year - 1 : now.year;
+        final lastMonth = now.month == 1 ? 12 : now.month - 1;
+        _startDate = DateTime(lastMonthYear, lastMonth, 1);
+        _endDate = DateTime(now.year, now.month, 0);
       } else if (preset == 'Semester Ini') {
         // Semester Ganjil: Jul-Des, Semester Genap: Jan-Jun
         final month = now.month;
@@ -181,6 +181,24 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
         } else {
           _startDate = DateTime(now.year, 1, 1);
         }
+        _endDate = now;
+      } else if (preset == 'Semester Lalu') {
+        final isGanjil = now.month >= 7 && now.month <= 12;
+        if (isGanjil) {
+          _startDate = DateTime(now.year, 1, 1);
+          _endDate = DateTime(now.year, 6, 30);
+        } else {
+          _startDate = DateTime(now.year - 1, 7, 1);
+          _endDate = DateTime(now.year - 1, 12, 31);
+        }
+      } else if (preset == 'Tahun Ini') {
+        _startDate = DateTime(now.year, 1, 1);
+        _endDate = now;
+      } else if (preset == 'Tahun Lalu') {
+        _startDate = DateTime(now.year - 1, 1, 1);
+        _endDate = DateTime(now.year - 1, 12, 31);
+      } else if (preset == 'Semua') {
+        _startDate = DateTime(2020, 1, 1);
         _endDate = now;
       }
     });
@@ -906,10 +924,14 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                       runSpacing: 8.h,
                       children:
                           [
-                            'Bulan Ini',
                             '30 Hari Terakhir',
+                            'Bulan Ini',
                             'Bulan Lalu',
                             'Semester Ini',
+                            'Semester Lalu',
+                            'Tahun Ini',
+                            'Tahun Lalu',
+                            'Semua',
                           ].map((preset) {
                             final isSelected = _presetRange == preset;
                             final isDark =

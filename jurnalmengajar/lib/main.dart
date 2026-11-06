@@ -54,8 +54,8 @@ void main() async {
   await initializeDateFormatting('id_ID', null);
 
   await Supabase.initialize(
-    url: 'https://egcxjuudphnbjwqhhbra.supabase.co',
-    publishableKey: 'sb_publishable_8VGYplCO-QO1kTLhhEfJKw_On4QCQ4u',
+    url: 'https://supabase-jurnal.ubigdev.com',
+    publishableKey: 'sb_publishable_zkT8Drvu9-q7ZKMOSm1flF_JKtqwXwG',
   );
 
   final supabaseClient = Supabase.instance.client;

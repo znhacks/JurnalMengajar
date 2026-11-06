@@ -24,6 +24,25 @@ class AppHelper {
     return time;
   }
 
+  static const List<String> supportedTimezones = ['WIB', 'WITA', 'WIT'];
+
+  static int getTimezoneOffset(String? timezone) {
+    switch (timezone?.toUpperCase()) {
+      case 'WITA':
+        return 8;
+      case 'WIT':
+        return 9;
+      case 'WIB':
+      default:
+        return 7;
+    }
+  }
+
+  static DateTime nowInTimezone(String? timezone) {
+    final offset = getTimezoneOffset(timezone);
+    return DateTime.now().toUtc().add(Duration(hours: offset));
+  }
+
   static Color getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'verified':

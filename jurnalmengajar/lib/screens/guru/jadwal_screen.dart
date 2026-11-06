@@ -910,8 +910,9 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '';
     final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '';
     final hoursStr = AppHelper.formatTeachingHours(scheduleGroup.teachingHours);
+    final tz = Provider.of<AuthProvider>(context, listen: false).activeSchool?.timezone ?? 'WIB';
     final timeRange = hrStart.isNotEmpty
-        ? (hrEnd.isNotEmpty ? '$hrStart - $hrEnd WIB' : '$hrStart WIB')
+        ? (hrEnd.isNotEmpty ? '$hrStart - $hrEnd $tz' : '$hrStart $tz')
         : '';
 
     JournalModel? matchingJournal;

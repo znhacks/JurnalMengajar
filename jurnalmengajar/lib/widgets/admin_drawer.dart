@@ -386,7 +386,6 @@ class _AdminDrawerPanelState extends State<AdminDrawerPanel> {
         'Pengaturan',
         '/admin/settings',
       ),
-      _buildMenuItem(context, Icons.info_rounded, 'Tentang Aplikasi', '/about'),
 
       SizedBox(height: 8.h),
       Divider(height: 1, color: dividerColor, thickness: 1),
@@ -526,6 +525,15 @@ class _AdminDrawerPanelState extends State<AdminDrawerPanel> {
                 ),
               );
             },
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 1.h),
+            child: _buildMenuItem(
+              context,
+              Icons.info_outline_rounded,
+              'Tentang Aplikasi',
+              '/about',
+            ),
           ),
           Padding(
             padding: EdgeInsets.only(

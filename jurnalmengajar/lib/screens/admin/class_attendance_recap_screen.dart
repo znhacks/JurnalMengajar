@@ -1297,10 +1297,7 @@ class _AdminClassAttendanceRecapScreenState
               // 2. Ringkasan kehadiran
               _buildTopMetricsBanner(classSummaries),
 
-              // 3. Pemilih mode tampilan
-              _buildModeSwitcher(),
-
-              // 4. Content by Mode
+              // 3. Content by Mode
               if (_viewModeIndex == 0)
                 _buildAllClassesOverview(
                   filteredClassSummaries,
@@ -1382,7 +1379,7 @@ class _AdminClassAttendanceRecapScreenState
               children: [
                 Expanded(
                   child: Text(
-                    'Kehadiran keseluruhan',
+                    'Tingkat Kehadiran',
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w600,
@@ -1490,98 +1487,6 @@ class _AdminClassAttendanceRecapScreenState
           ),
         ),
       ],
-    );
-  }
-
-  // ── Pemilih mode tampilan ──────────────────────────────────────────────────
-  Widget _buildModeSwitcher() {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 0),
-      child: Container(
-        padding: EdgeInsets.all(3.w),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(10.r),
-          border: Border.all(color: colorScheme.outlineVariant),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: _buildModeTab(
-                title: 'Ringkasan Kelas',
-                icon: Icons.grid_view_rounded,
-                isSelected: _viewModeIndex == 0,
-                onTap: () => setState(() => _viewModeIndex = 0),
-              ),
-            ),
-            Expanded(
-              child: _buildModeTab(
-                title: 'Detail Kelas',
-                icon: Icons.view_agenda_rounded,
-                isSelected: _viewModeIndex == 1,
-                enabled: _hasViewedClass,
-                onTap: _hasViewedClass
-                    ? () {
-                        setState(() => _viewModeIndex = 1);
-                        _loadStudentsForClass(_selectedClassId!);
-                      }
-                    : null,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModeTab({
-    required String title,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback? onTap,
-    bool enabled = true,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final activeTextColor = colorScheme.primary;
-    final inactiveTextColor = colorScheme.onSurfaceVariant;
-
-    return Opacity(
-      opacity: enabled ? 1.0 : 0.45,
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(8.r),
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 9.h),
-          decoration: BoxDecoration(
-            color: isSelected ? colorScheme.surface : Colors.transparent,
-            borderRadius: BorderRadius.circular(8.r),
-          ),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: 15.sp,
-                  color: isSelected ? activeTextColor : inactiveTextColor,
-                ),
-                SizedBox(width: 6.w),
-                Text(
-                  title,
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 12.5.sp,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                    color: isSelected ? activeTextColor : inactiveTextColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 

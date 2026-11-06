@@ -2,9 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/utils/helper.dart';
 import '../../models/journal_model.dart';
 import '../../models/teacher_model.dart';
 import '../../providers/auth_provider.dart';
@@ -15,9 +15,17 @@ import '../../widgets/admin_drawer.dart';
 import '../../widgets/app_scaffold.dart';
 import '../../widgets/state_widgets.dart';
 
-enum StatTimeFilter { all, thisMonth, thisSemester }
-
-enum TeacherFilterCategory { all, onTime, lateOnly, unsubmittedOnly }
+enum StatTimeFilter {
+  last30Days,
+  thisMonth,
+  lastMonth,
+  thisSemester,
+  lastSemester,
+  thisYear,
+  lastYear,
+  custom,
+  all,
+}
 
 class TeacherPunctualityStat {
   final TeacherModel teacher;
@@ -55,23 +63,12 @@ class AdminTeacherStatisticsScreen extends StatefulWidget {
 
 class _AdminTeacherStatisticsScreenState
     extends State<AdminTeacherStatisticsScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  StatTimeFilter _timeFilter = StatTimeFilter.all;
-  final Set<TeacherFilterCategory> _selectedCategories = {
-    TeacherFilterCategory.all,
-  };
-  String _searchQuery = '';
-  final Set<String> _expandedTeacherIds = {};
+  StatTimeFilter _timeFilter = StatTimeFilter.last30Days;
+  DateTimeRange? _customDateRange;
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.trim().toLowerCase();
-      });
-    });
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshData();
     });
@@ -79,7 +76,6 @@ class _AdminTeacherStatisticsScreenState
 
   @override
   void dispose() {
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -106,9 +102,21 @@ class _AdminTeacherStatisticsScreenState
 
   bool _matchesTimeFilter(DateTime date) {
     final now = DateTime.now();
+    final checkDate = DateTime(date.year, date.month, date.day);
+
     switch (_timeFilter) {
+      case StatTimeFilter.last30Days:
+        final thirtyDaysAgo = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 30));
+        return !checkDate.isBefore(thirtyDaysAgo) && !checkDate.isAfter(DateTime(now.year, now.month, now.day));
+
       case StatTimeFilter.thisMonth:
         return date.year == now.year && date.month == now.month;
+
+      case StatTimeFilter.lastMonth:
+        final lastMonthYear = now.month == 1 ? now.year - 1 : now.year;
+        final lastMonth = now.month == 1 ? 12 : now.month - 1;
+        return date.year == lastMonthYear && date.month == lastMonth;
+
       case StatTimeFilter.thisSemester:
         // Semester Ganjil: Jul - Des, Semester Genap: Jan - Jun
         final isGanjil = now.month >= 7 && now.month <= 12;
@@ -117,6 +125,27 @@ class _AdminTeacherStatisticsScreenState
         } else {
           return date.year == now.year && date.month >= 1 && date.month <= 6;
         }
+
+      case StatTimeFilter.lastSemester:
+        final isGanjil = now.month >= 7 && now.month <= 12;
+        if (isGanjil) {
+          return date.year == now.year && date.month >= 1 && date.month <= 6;
+        } else {
+          return date.year == now.year - 1 && date.month >= 7 && date.month <= 12;
+        }
+
+      case StatTimeFilter.thisYear:
+        return date.year == now.year;
+
+      case StatTimeFilter.lastYear:
+        return date.year == now.year - 1;
+
+      case StatTimeFilter.custom:
+        if (_customDateRange == null) return true;
+        final start = DateTime(_customDateRange!.start.year, _customDateRange!.start.month, _customDateRange!.start.day);
+        final end = DateTime(_customDateRange!.end.year, _customDateRange!.end.month, _customDateRange!.end.day);
+        return !checkDate.isBefore(start) && !checkDate.isAfter(end);
+
       case StatTimeFilter.all:
         return true;
     }
@@ -269,41 +298,6 @@ class _AdminTeacherStatisticsScreenState
       scheduleProvider: scheduleProvider,
     );
 
-    // Filter berdasarkan kategori
-    List<TeacherPunctualityStat> filteredStats = allStats.where((s) {
-      if (_searchQuery.isNotEmpty) {
-        final matchesName = s.teacher.name.toLowerCase().contains(_searchQuery);
-        final matchesPos = s.teacher.position.toLowerCase().contains(
-          _searchQuery,
-        );
-        if (!matchesName && !matchesPos) return false;
-      }
-
-      if (_selectedCategories.contains(TeacherFilterCategory.all)) {
-        return true;
-      }
-
-      bool matchesCategory = false;
-      if (_selectedCategories.contains(TeacherFilterCategory.onTime)) {
-        if (s.onTimeRate >= 80.0 && s.totalJournals > 0) matchesCategory = true;
-      }
-      if (_selectedCategories.contains(TeacherFilterCategory.lateOnly)) {
-        if (s.lateCount > 0) matchesCategory = true;
-      }
-      if (_selectedCategories.contains(TeacherFilterCategory.unsubmittedOnly)) {
-        if (s.unsubmittedCount > 0) matchesCategory = true;
-      }
-      return matchesCategory;
-    }).toList();
-
-    // Urutkan default: Guru yang memiliki aktivitas jurnal & jadwal di atas
-    filteredStats.sort((a, b) {
-      if (a.totalSessions != b.totalSessions) {
-        return b.totalSessions.compareTo(a.totalSessions);
-      }
-      return a.teacher.name.compareTo(b.teacher.name);
-    });
-
     // Peringkat Guru Paling Tepat Waktu (Leaderboard)
     final topOnTimeTeachers =
         allStats.where((s) => s.totalJournals > 0).toList()..sort((a, b) {
@@ -368,7 +362,7 @@ class _AdminTeacherStatisticsScreenState
           ),
         ),
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
       ),
       drawer: const AdminDrawer(currentRoute: '/admin/teacher-statistics'),
       body: isLoading && teachers.isEmpty
@@ -409,31 +403,49 @@ class _AdminTeacherStatisticsScreenState
                     ),
                     SizedBox(height: 20.h),
 
-                    // Papan peringkat tepat waktu dan perlu perhatian
+                    // Papan peringkat Top 10 tepat waktu dan perlu perhatian
                     _buildHighlightsSection(
                       context,
                       isDark,
-                      topOnTimeTeachers: topOnTimeTeachers.take(3).toList(),
-                      topLateTeachers: topLateTeachers.take(3).toList(),
+                      topOnTimeTeachers: topOnTimeTeachers.take(10).toList(),
+                      topLateTeachers: topLateTeachers.take(10).toList(),
                     ),
-                    SizedBox(height: 24.h),
-
-                    // Daftar dan pencarian seluruh guru
-                    _buildTeacherListSection(
-                      context,
-                      isDark,
-                      primaryColor,
-                      surfaceColor,
-                      borderColor,
-                      stats: filteredStats,
-                      totalCount: allStats.length,
-                    ),
-                    SizedBox(height: 40.h),
+                    SizedBox(height: 36.h),
                   ],
                 ),
               ),
             ),
     );
+  }
+
+  Future<void> _pickCustomDateRange() async {
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(now.year + 2),
+      initialDateRange: _customDateRange ??
+          DateTimeRange(
+            start: now.subtract(const Duration(days: 30)),
+            end: now,
+          ),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+                  primary: const Color(0xFF2563EB),
+                ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _customDateRange = picked;
+        _timeFilter = StatTimeFilter.custom;
+      });
+    }
   }
 
   // Header dan filter rentang waktu
@@ -479,50 +491,136 @@ class _AdminTeacherStatisticsScreenState
             ),
           ),
           SizedBox(height: 8.h),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return Container(
-                padding: EdgeInsets.all(4.r),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(12.r),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: [
+                _buildTimeFilterChip(
+                  '30 Hari Terakhir',
+                  StatTimeFilter.last30Days,
+                  isDark,
+                  primaryColor,
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildTimeFilterChip(
-                        'Semua',
-                        StatTimeFilter.all,
-                        isDark,
-                        primaryColor,
-                      ),
-                    ),
-                    SizedBox(width: 4.w),
-                    Expanded(
-                      child: _buildTimeFilterChip(
-                        'Bulan Ini',
-                        StatTimeFilter.thisMonth,
-                        isDark,
-                        primaryColor,
-                      ),
-                    ),
-                    SizedBox(width: 4.w),
-                    Expanded(
-                      child: _buildTimeFilterChip(
-                        'Semester',
-                        StatTimeFilter.thisSemester,
-                        isDark,
-                        primaryColor,
-                      ),
-                    ),
-                  ],
+                SizedBox(width: 6.w),
+                _buildTimeFilterChip(
+                  'Bulan Ini',
+                  StatTimeFilter.thisMonth,
+                  isDark,
+                  primaryColor,
                 ),
-              );
-            },
+                SizedBox(width: 6.w),
+                _buildTimeFilterChip(
+                  'Bulan Lalu',
+                  StatTimeFilter.lastMonth,
+                  isDark,
+                  primaryColor,
+                ),
+                SizedBox(width: 6.w),
+                _buildTimeFilterChip(
+                  'Semester Ini',
+                  StatTimeFilter.thisSemester,
+                  isDark,
+                  primaryColor,
+                ),
+                SizedBox(width: 6.w),
+                _buildTimeFilterChip(
+                  'Semester Lalu',
+                  StatTimeFilter.lastSemester,
+                  isDark,
+                  primaryColor,
+                ),
+                SizedBox(width: 6.w),
+                _buildTimeFilterChip(
+                  'Tahun Ini',
+                  StatTimeFilter.thisYear,
+                  isDark,
+                  primaryColor,
+                ),
+                SizedBox(width: 6.w),
+                _buildTimeFilterChip(
+                  'Tahun Lalu',
+                  StatTimeFilter.lastYear,
+                  isDark,
+                  primaryColor,
+                ),
+                SizedBox(width: 6.w),
+                _buildCustomDateFilterChip(isDark, primaryColor),
+                SizedBox(width: 6.w),
+                _buildTimeFilterChip(
+                  'Semua',
+                  StatTimeFilter.all,
+                  isDark,
+                  primaryColor,
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCustomDateFilterChip(bool isDark, Color primaryColor) {
+    final isSelected = _timeFilter == StatTimeFilter.custom;
+    final label = isSelected && _customDateRange != null
+        ? '${DateFormat("dd/MM").format(_customDateRange!.start)} - ${DateFormat("dd/MM").format(_customDateRange!.end)}'
+        : 'Pilih Tanggal';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _pickCustomDateRange,
+        borderRadius: BorderRadius.circular(9.r),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+          constraints: BoxConstraints(minHeight: 36.h),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: isSelected ? primaryColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(9.r),
+            border: Border.all(
+              color: isSelected
+                  ? primaryColor
+                  : (isDark
+                      ? Colors.white.withValues(alpha: 0.15)
+                      : const Color(0xFFCBD5E1)),
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: primaryColor.withValues(alpha: 0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.calendar_month_rounded,
+                size: 14.r,
+                color: isSelected
+                    ? Colors.white
+                    : (isDark ? Colors.grey[300] : const Color(0xFF475569)),
+              ),
+              SizedBox(width: 5.w),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark ? Colors.grey[300] : const Color(0xFF475569)),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -531,9 +629,8 @@ class _AdminTeacherStatisticsScreenState
     String label,
     StatTimeFilter filter,
     bool isDark,
-    Color primaryColor, {
-    bool narrow = false,
-  }) {
+    Color primaryColor,
+  ) {
     final isSelected = _timeFilter == filter;
     return Material(
       color: Colors.transparent,
@@ -542,13 +639,20 @@ class _AdminTeacherStatisticsScreenState
         borderRadius: BorderRadius.circular(9.r),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 9.h),
-          constraints: BoxConstraints(minHeight: 38.h),
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+          constraints: BoxConstraints(minHeight: 36.h),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isSelected ? primaryColor : Colors.transparent,
             borderRadius: BorderRadius.circular(9.r),
-            boxShadow: isSelected && !narrow
+            border: Border.all(
+              color: isSelected
+                  ? primaryColor
+                  : (isDark
+                      ? Colors.white.withValues(alpha: 0.15)
+                      : const Color(0xFFCBD5E1)),
+            ),
+            boxShadow: isSelected
                 ? [
                     BoxShadow(
                       color: primaryColor.withValues(alpha: 0.3),
@@ -696,47 +800,63 @@ class _AdminTeacherStatisticsScreenState
           ),
         ),
         SizedBox(height: 12.h),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final gap = 8.w;
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _buildKpiCard(
-                    title: 'Tepat',
-                    value: '$totalOnTime',
-                    subtitle: 'Hari H',
-                    icon: Icons.check_circle_rounded,
-                    color: const Color(0xFF2563EB),
-                    isDark: isDark,
-                  ),
+        // Tiga indikator tepat/telat/kosong digabung dalam 1 card ringkas
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 12.h),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF15202B) : Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : const Color(0xFFE2E8F0),
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildKpiItem(
+                  title: 'Tepat',
+                  value: '$totalOnTime',
+                  icon: Icons.check_circle_rounded,
+                  color: const Color(0xFF2563EB),
+                  isDark: isDark,
                 ),
-                SizedBox(width: gap),
-                Expanded(
-                  child: _buildKpiCard(
-                    title: 'Telat',
-                    value: '$totalLate',
-                    subtitle: '> Hari H',
-                    icon: Icons.history_toggle_off_rounded,
-                    color: const Color(0xFFD97706),
-                    isDark: isDark,
-                  ),
+              ),
+              Container(
+                height: 40.h,
+                width: 1,
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : const Color(0xFFE2E8F0),
+              ),
+              Expanded(
+                child: _buildKpiItem(
+                  title: 'Telat',
+                  value: '$totalLate',
+                  icon: Icons.history_toggle_off_rounded,
+                  color: const Color(0xFFD97706),
+                  isDark: isDark,
                 ),
-                SizedBox(width: gap),
-                Expanded(
-                  child: _buildKpiCard(
-                    title: 'Kosong',
-                    value: '$totalUnsubmitted',
-                    subtitle: 'Belum isi',
-                    icon: Icons.warning_amber_rounded,
-                    color: const Color(0xFFE11D48),
-                    isDark: isDark,
-                  ),
+              ),
+              Container(
+                height: 40.h,
+                width: 1,
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : const Color(0xFFE2E8F0),
+              ),
+              Expanded(
+                child: _buildKpiItem(
+                  title: 'Kosong',
+                  value: '$totalUnsubmitted',
+                  icon: Icons.warning_amber_rounded,
+                  color: const Color(0xFFE11D48),
+                  isDark: isDark,
                 ),
-              ],
-            );
-          },
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -749,73 +869,63 @@ class _AdminTeacherStatisticsScreenState
     return color;
   }
 
-  Widget _buildKpiCard({
+  Widget _buildKpiItem({
     required String title,
     required String value,
-    required String subtitle,
     required IconData icon,
     required Color color,
     required bool isDark,
   }) {
-    return Container(
-      padding: EdgeInsets.all(10.w),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF15202B) : Colors.white,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : const Color(0xFFE2E8F0),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 1. Icon card badge
+        Container(
+          padding: EdgeInsets.all(6.r),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: isDark ? 0.2 : 0.12),
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(
+              color: color.withValues(alpha: isDark ? 0.35 : 0.25),
+              width: 1,
+            ),
+          ),
+          child: Icon(icon, color: color, size: 16.r),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: EdgeInsets.all(7.r),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: isDark ? 0.18 : 0.12),
-              borderRadius: BorderRadius.circular(9.r),
-            ),
-            child: Icon(icon, color: color, size: 17.r),
+        SizedBox(height: 6.h),
+
+        // 2. Teks judul singkat
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.hankenGrotesk(
+            fontSize: 11.5.sp,
+            fontWeight: FontWeight.w700,
+            color: _accessibleTextColor(color),
           ),
-          SizedBox(height: 10.h),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: GoogleFonts.hankenGrotesk(
-                fontSize: 21.sp,
-                fontWeight: FontWeight.w800,
-                height: 1.0,
-                color: isDark ? Colors.white : const Color(0xFF0F172A),
-              ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        SizedBox(height: 4.h),
+
+        // 3. Baru angkanya
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.center,
+          child: Text(
+            value,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w800,
+              height: 1.0,
+              color: isDark ? Colors.white : const Color(0xFF0F172A),
             ),
           ),
-          SizedBox(height: 3.h),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 11.sp,
-              fontWeight: FontWeight.w700,
-              color: _accessibleTextColor(color),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 10.sp,
-              color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -896,7 +1006,7 @@ class _AdminTeacherStatisticsScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Paling Tepat Waktu',
+                      'Top 10 Paling Tepat Waktu',
                       style: GoogleFonts.hankenGrotesk(
                         fontSize: 14.5.sp,
                         fontWeight: FontWeight.bold,
@@ -990,7 +1100,7 @@ class _AdminTeacherStatisticsScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Paling Terlambat',
+                      'Top 10 Perlu Perhatian',
                       style: GoogleFonts.hankenGrotesk(
                         fontSize: 14.5.sp,
                         fontWeight: FontWeight.bold,
@@ -1138,758 +1248,6 @@ class _AdminTeacherStatisticsScreenState
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
-            ),
-          ),
-          SizedBox(width: 8.w),
-          if (isPositive)
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2563EB).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(9.r),
-                border: Border.all(
-                  color: const Color(0xFF2563EB).withValues(alpha: 0.3),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${stat.onTimeRate.toStringAsFixed(0)}% tepat',
-                    style: TextStyle(
-                      fontSize: 11.5.sp,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF1E40AF),
-                    ),
-                  ),
-                  Text(
-                    '${stat.onTimeCount} jurnal',
-                    style: TextStyle(
-                      fontSize: 10.sp,
-                      color: const Color(0xFF1E40AF),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE11D48).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(9.r),
-                border: Border.all(
-                  color: const Color(0xFFE11D48).withValues(alpha: 0.28),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${stat.lateCount} telat',
-                    style: TextStyle(
-                      fontSize: 11.5.sp,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFFBE123C),
-                    ),
-                  ),
-                  if (stat.averageLateDays > 0)
-                    Text(
-                      'Rerata ${stat.averageLateDays.toStringAsFixed(1)} hari',
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        color: const Color(0xFFB91C1C),
-                      ),
-                    )
-                  else if (stat.unsubmittedCount > 0)
-                    Text(
-                      '${stat.unsubmittedCount} belum isi',
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        color: const Color(0xFFB91C1C),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // Daftar seluruh guru beserta pencarian dan filter
-  Widget _buildTeacherListSection(
-    BuildContext context,
-    bool isDark,
-    Color primaryColor,
-    Color surfaceColor,
-    Color borderColor, {
-    required List<TeacherPunctualityStat> stats,
-    required int totalCount,
-  }) {
-    return Container(
-      padding: EdgeInsets.all(kIsWeb ? 16.w : 14.w),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: borderColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Daftar Statistik Guru',
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 15.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 4.h),
-                decoration: BoxDecoration(
-                  color: primaryColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(99.r),
-                ),
-                child: Text(
-                  '$totalCount guru',
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w700,
-                    color: primaryColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-
-          // Search Field
-          TextField(
-            controller: _searchController,
-            style: TextStyle(
-              fontSize: 13.5.sp,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-            decoration: InputDecoration(
-              hintText: 'Cari guru berdasarkan nama atau mapel...',
-              hintStyle: TextStyle(
-                fontSize: 13.sp,
-                color: isDark ? const Color(0xFF64748B) : Colors.grey[400],
-              ),
-              prefixIcon: Icon(Icons.search, color: primaryColor, size: 20.r),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, size: 18),
-                      onPressed: () => _searchController.clear(),
-                    )
-                  : null,
-              filled: true,
-              fillColor: isDark
-                  ? Theme.of(context).colorScheme.surfaceContainerHighest
-                  : const Color(0xFFF1F5F9),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.r),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 14.w,
-                vertical: 10.h,
-              ),
-            ),
-          ),
-          SizedBox(height: 10.h),
-
-          // Category Filter Chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              children: [
-                _buildCategoryChip(
-                  'Semua ($totalCount)',
-                  TeacherFilterCategory.all,
-                  isDark,
-                  primaryColor,
-                ),
-                SizedBox(width: 8.w),
-                _buildCategoryChip(
-                  'Tepat Waktu (≥80%)',
-                  TeacherFilterCategory.onTime,
-                  isDark,
-                  const Color(0xFF2563EB),
-                ),
-                SizedBox(width: 8.w),
-                _buildCategoryChip(
-                  'Ada Keterlambatan',
-                  TeacherFilterCategory.lateOnly,
-                  isDark,
-                  const Color(0xFFD97706),
-                ),
-                SizedBox(width: 8.w),
-                _buildCategoryChip(
-                  'Ada Tunggakan',
-                  TeacherFilterCategory.unsubmittedOnly,
-                  isDark,
-                  const Color(0xFFE11D48),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 16.h),
-
-          // List of Teachers
-          if (stats.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 36.h),
-              child: Center(
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.search_off_rounded,
-                      size: 40.r,
-                      color: isDark ? Colors.grey[600] : Colors.grey[400],
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      'Tidak ada data guru yang cocok dengan filter',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: stats.length,
-              separatorBuilder: (context, index) => SizedBox(height: 12.h),
-              itemBuilder: (context, index) {
-                final stat = stats[index];
-                return _buildTeacherCard(context, stat, isDark, primaryColor);
-              },
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryChip(
-    String label,
-    TeacherFilterCategory category,
-    bool isDark,
-    Color activeColor,
-  ) {
-    final isSelected = _selectedCategories.contains(category);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            if (category == TeacherFilterCategory.all) {
-              _selectedCategories
-                ..clear()
-                ..add(TeacherFilterCategory.all);
-            } else {
-              _selectedCategories.remove(TeacherFilterCategory.all);
-              if (_selectedCategories.contains(category)) {
-                _selectedCategories.remove(category);
-                if (_selectedCategories.isEmpty) {
-                  _selectedCategories.add(TeacherFilterCategory.all);
-                }
-              } else {
-                _selectedCategories.add(category);
-              }
-            }
-          });
-        },
-        borderRadius: BorderRadius.circular(99.r),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 9.h),
-          constraints: BoxConstraints(minHeight: 38.h),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? activeColor.withValues(alpha: 0.16)
-                : (isDark
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : const Color(0xFFF1F5F9)),
-            borderRadius: BorderRadius.circular(99.r),
-            border: Border.all(
-              color: isSelected
-                  ? activeColor.withValues(alpha: 0.6)
-                  : Colors.transparent,
-              width: 1.2,
-            ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12.sp,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-              color: isSelected
-                  ? _accessibleTextColor(activeColor)
-                  : (isDark ? Colors.grey[300] : const Color(0xFF475569)),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTeacherCard(
-    BuildContext context,
-    TeacherPunctualityStat stat,
-    bool isDark,
-    Color primaryColor,
-  ) {
-    final isExpanded = _expandedTeacherIds.contains(stat.teacher.id);
-
-    String? statusLabel;
-    Color? statusColor;
-    if (stat.totalSessions == 0 && stat.totalJournals == 0) {
-      statusLabel = 'Belum ada jadwal';
-      statusColor = const Color(0xFF64748B);
-    } else if (stat.onTimeRate >= 85.0 && stat.unsubmittedCount == 0) {
-      statusLabel = 'Sangat disiplin';
-      statusColor = const Color(0xFF2563EB);
-    } else if (stat.onTimeRate >= 65.0) {
-      statusLabel = 'Cukup disiplin';
-      statusColor = const Color(0xFFD97706);
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(
-          color: stat.lateCount > 0 && stat.onTimeRate < 60
-              ? const Color(0xFFE11D48).withValues(alpha: 0.35)
-              : (isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : const Color(0xFFE2E8F0)),
-        ),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: kIsWeb ? 14.w : 12.w,
-              vertical: 12.h,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Row: Avatar, Info & Status Badge
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    CircleAvatar(
-                      radius: 20.r,
-                      backgroundColor: primaryColor.withValues(alpha: 0.15),
-                      backgroundImage:
-                          (stat.teacher.photoUrl != null &&
-                              stat.teacher.photoUrl!.isNotEmpty)
-                          ? NetworkImage(stat.teacher.photoUrl!)
-                          : null,
-                      child:
-                          (stat.teacher.photoUrl == null ||
-                              stat.teacher.photoUrl!.isEmpty)
-                          ? Text(
-                              stat.teacher.name.isNotEmpty
-                                  ? stat.teacher.name[0].toUpperCase()
-                                  : 'G',
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.bold,
-                                color: primaryColor,
-                              ),
-                            )
-                          : null,
-                    ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            stat.teacher.name,
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w700,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                          SizedBox(height: 2.h),
-                          Text(
-                            stat.teacher.position,
-                            style: TextStyle(
-                              fontSize: 11.5.sp,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (statusLabel != null && statusColor != null) ...[
-                      SizedBox(width: 8.w),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 9.w,
-                          vertical: 5.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.13),
-                          borderRadius: BorderRadius.circular(99.r),
-                          border: Border.all(
-                            color: statusColor.withValues(alpha: 0.35),
-                          ),
-                        ),
-                        child: Text(
-                          statusLabel,
-                          maxLines: 1,
-                          style: TextStyle(
-                            fontSize: 10.5.sp,
-                            fontWeight: FontWeight.w700,
-                            color: _accessibleTextColor(statusColor),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                SizedBox(height: 12.h),
-
-                if (stat.totalSessions > 0) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(99.r),
-                    child: Container(
-                      height: 7.h,
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.08)
-                          : const Color(0xFFE8EEF4),
-                      child: Row(
-                        children: [
-                          if (stat.onTimeCount > 0)
-                            Expanded(
-                              flex: stat.onTimeCount,
-                              child: Container(color: const Color(0xFF2563EB)),
-                            ),
-                          if (stat.lateCount > 0)
-                            Expanded(
-                              flex: stat.lateCount,
-                              child: Container(color: const Color(0xFFD97706)),
-                            ),
-                          if (stat.unsubmittedCount > 0)
-                            Expanded(
-                              flex: stat.unsubmittedCount,
-                              child: Container(color: const Color(0xFFE11D48)),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 6.h),
-                  Text(
-                    '${stat.onTimeRate.toStringAsFixed(0)}% tepat waktu dari ${stat.totalSessions} sesi',
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  SizedBox(height: 10.h),
-                ],
-
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isWide = constraints.maxWidth >= 520;
-
-                    if (isWide) {
-                      return Row(
-                        children: [
-                          _buildStatPill(
-                            'Tepat',
-                            '${stat.onTimeCount}',
-                            const Color(0xFF2563EB),
-                            isDark,
-                          ),
-                          SizedBox(width: 8.w),
-                          _buildStatPill(
-                            'Telat',
-                            '${stat.lateCount}',
-                            const Color(0xFFD97706),
-                            isDark,
-                          ),
-                          SizedBox(width: 8.w),
-                          _buildStatPill(
-                            'Kosong',
-                            '${stat.unsubmittedCount}',
-                            const Color(0xFFE11D48),
-                            isDark,
-                          ),
-                          const Spacer(),
-                          if (stat.lateCount > 0)
-                            _buildExpandButton(stat, isExpanded, primaryColor),
-                        ],
-                      );
-                    }
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Wrap(
-                          spacing: 6.w,
-                          runSpacing: 6.h,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            _buildStatPill(
-                              'Tepat',
-                              '${stat.onTimeCount}',
-                              const Color(0xFF2563EB),
-                              isDark,
-                            ),
-                            _buildStatPill(
-                              'Telat',
-                              '${stat.lateCount}',
-                              const Color(0xFFD97706),
-                              isDark,
-                            ),
-                            _buildStatPill(
-                              'Kosong',
-                              '${stat.unsubmittedCount}',
-                              const Color(0xFFE11D48),
-                              isDark,
-                            ),
-                          ],
-                        ),
-                        if (stat.lateCount > 0) ...[
-                          SizedBox(height: 8.h),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: _buildExpandButton(
-                              stat,
-                              isExpanded,
-                              primaryColor,
-                            ),
-                          ),
-                        ],
-                      ],
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          if (isExpanded && stat.lateJournals.isNotEmpty) ...[
-            const Divider(height: 1),
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: kIsWeb ? 14.w : 12.w,
-                vertical: 10.h,
-              ),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.03)
-                    : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(14.r),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Riwayat keterlambatan (${stat.lateJournals.length})',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Column(
-                    children: stat.lateJournals.map((j) {
-                      final diff = _getDaysDifference(j.date, j.createdAt);
-                      final teachDateStr = AppHelper.formatDateShort(j.date);
-                      final submitDateStr = j.createdAt != null
-                          ? AppHelper.formatDateShort(j.createdAt!)
-                          : 'Tidak tercatat';
-
-                      return Container(
-                        margin: EdgeInsets.only(bottom: 6.h),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10.w,
-                          vertical: 8.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? Colors.black.withValues(alpha: 0.2)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(10.r),
-                          border: Border.all(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.07)
-                                : const Color(0xFFE2E8F0),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(6.r),
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFFD97706,
-                                ).withValues(alpha: 0.14),
-                                borderRadius: BorderRadius.circular(8.r),
-                              ),
-                              child: const Icon(
-                                Icons.schedule_rounded,
-                                size: 14,
-                                color: Color(0xFFD97706),
-                              ),
-                            ),
-                            SizedBox(width: 8.w),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Mengajar $teachDateStr',
-                                    style: TextStyle(
-                                      fontSize: 11.5.sp,
-                                      fontWeight: FontWeight.w700,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Diisi $submitDateStr',
-                                    style: TextStyle(
-                                      fontSize: 11.sp,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(width: 6.w),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8.w,
-                                vertical: 4.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFFD97706,
-                                ).withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(99.r),
-                              ),
-                              child: Text(
-                                'Telat $diff hari',
-                                style: TextStyle(
-                                  fontSize: 10.5.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFFB45309),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExpandButton(
-    TeacherPunctualityStat stat,
-    bool isExpanded,
-    Color primaryColor,
-  ) {
-    return InkWell(
-      onTap: () {
-        setState(() {
-          if (isExpanded) {
-            _expandedTeacherIds.remove(stat.teacher.id);
-          } else {
-            _expandedTeacherIds.add(stat.teacher.id);
-          }
-        });
-      },
-      borderRadius: BorderRadius.circular(6.r),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              isExpanded
-                  ? 'Tutup Rincian'
-                  : 'Rincian Telat (${stat.lateCount})',
-              style: TextStyle(
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w600,
-                color: primaryColor,
-              ),
-            ),
-            SizedBox(width: 2.w),
-            Icon(
-              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-              size: 16.r,
-              color: primaryColor,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatPill(String label, String value, Color color, bool isDark) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(99.r),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6.r,
-            height: 6.r,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          SizedBox(width: 6.w),
-          Text(
-            '$label $value',
-            style: TextStyle(
-              fontSize: 11.sp,
-              fontWeight: FontWeight.w700,
-              color: _accessibleTextColor(color),
             ),
           ),
         ],

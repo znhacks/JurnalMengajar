@@ -375,8 +375,8 @@ void main() {
     );
   }
 
-  group('AdminTeacherStatisticsScreen - Multi-Select Category Filters', () {
-    testWidgets('allows multi-selecting Ada Keterlambatan and Ada Tunggakan simultaneously', (tester) async {
+  group('AdminTeacherStatisticsScreen - Top 10 Leaderboard & Time Filters', () {
+    testWidgets('displays Top 10 leaderboards and handles time filter presets correctly', (tester) async {
       tester.view.physicalSize = const Size(1200, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
@@ -384,48 +384,32 @@ void main() {
       await tester.pumpWidget(buildTestApp());
       await tester.pumpAndSettle();
 
-      final listFinder = find.byType(ListView);
+      // Verify Top 10 Leaderboard Headers are present
+      expect(find.text('Top 10 Paling Tepat Waktu'), findsOneWidget);
+      expect(find.text('Top 10 Perlu Perhatian'), findsOneWidget);
 
-      // Initially, Semua is active and all 3 teachers are visible in the list
-      expect(find.descendant(of: listFinder, matching: find.text('Guru Tepat Waktu')), findsOneWidget);
-      expect(find.descendant(of: listFinder, matching: find.text('Guru Ada Telat')), findsOneWidget);
-      expect(find.descendant(of: listFinder, matching: find.text('Guru Ada Tunggakan')), findsOneWidget);
+      // Verify Guru Tepat Waktu is displayed in the on-time leaderboard
+      expect(find.text('Guru Tepat Waktu'), findsOneWidget);
 
-      // Tap "Ada Keterlambatan"
-      final lateChipFinder = find.text('Ada Keterlambatan');
-      expect(lateChipFinder, findsOneWidget);
-      await tester.ensureVisible(lateChipFinder);
+      // Verify Guru Ada Telat is displayed in the attention/late leaderboard
+      expect(find.text('Guru Ada Telat'), findsAtLeastNWidgets(1));
+
+      // Verify Time Filter Chips are available
+      expect(find.text('30 Hari Terakhir'), findsOneWidget);
+      expect(find.text('Bulan Ini'), findsOneWidget);
+      expect(find.text('Semua'), findsOneWidget);
+      expect(find.text('Pilih Tanggal'), findsOneWidget);
+
+      // Tap "Semua" time filter chip
+      final semuaChipFinder = find.text('Semua');
+      await tester.ensureVisible(semuaChipFinder);
       await tester.pumpAndSettle();
-      await tester.tap(lateChipFinder);
-      await tester.pumpAndSettle();
-
-      // Only Guru Ada Telat should be shown in the list
-      expect(find.descendant(of: listFinder, matching: find.text('Guru Ada Telat')), findsOneWidget);
-      expect(find.descendant(of: listFinder, matching: find.text('Guru Tepat Waktu')), findsNothing);
-      expect(find.descendant(of: listFinder, matching: find.text('Guru Ada Tunggakan')), findsNothing);
-
-      // Now MULTI-SELECT: Tap "Ada Tunggakan" as well
-      final unsubmittedChipFinder = find.text('Ada Tunggakan');
-      expect(unsubmittedChipFinder, findsOneWidget);
-      await tester.ensureVisible(unsubmittedChipFinder);
-      await tester.pumpAndSettle();
-      await tester.tap(unsubmittedChipFinder);
-      await tester.pumpAndSettle();
-
-      // BOTH Guru Ada Telat AND Guru Ada Tunggakan should now be displayed in the list!
-      expect(find.descendant(of: listFinder, matching: find.text('Guru Ada Telat')), findsOneWidget);
-      expect(find.descendant(of: listFinder, matching: find.text('Guru Ada Tunggakan')), findsOneWidget);
-      expect(find.descendant(of: listFinder, matching: find.text('Guru Tepat Waktu')), findsNothing);
-
-      // Tapping "Semua" resets back to all teachers
-      final semuaChipFinder = find.text('Semua (3)');
-      expect(semuaChipFinder, findsOneWidget);
       await tester.tap(semuaChipFinder);
       await tester.pumpAndSettle();
 
-      expect(find.descendant(of: listFinder, matching: find.text('Guru Tepat Waktu')), findsOneWidget);
-      expect(find.descendant(of: listFinder, matching: find.text('Guru Ada Telat')), findsOneWidget);
-      expect(find.descendant(of: listFinder, matching: find.text('Guru Ada Tunggakan')), findsOneWidget);
+      // State is preserved and Top 10 leaderboards remain active
+      expect(find.text('Top 10 Paling Tepat Waktu'), findsOneWidget);
+      expect(find.text('Top 10 Perlu Perhatian'), findsOneWidget);
     });
   });
 }

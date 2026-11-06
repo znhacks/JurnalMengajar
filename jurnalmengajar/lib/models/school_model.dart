@@ -22,6 +22,7 @@ class SchoolModel {
   final DateTime? subscriptionUntil;
   final String? supervisorName;
   final String? supervisorNip;
+  final String timezone; // 'WIB', 'WITA', 'WIT'
 
   String? get headmasterName => supervisorName;
   String? get headmasterNip => supervisorNip;
@@ -48,6 +49,7 @@ class SchoolModel {
     this.subscriptionUntil,
     this.supervisorName,
     this.supervisorNip,
+    this.timezone = 'WIB',
   });
 
   bool get isActive => status.toLowerCase() == 'active';
@@ -144,6 +146,7 @@ class SchoolModel {
       subscriptionUntil: effectiveSubscriptionUntil,
       supervisorName: json['supervisor_name'] as String? ?? json['headmaster_name'] as String? ?? json['supervisorName'] as String?,
       supervisorNip: json['supervisor_nip'] as String? ?? json['headmaster_nip'] as String? ?? json['supervisorNip'] as String?,
+      timezone: json['timezone'] as String? ?? json['time_zone'] as String? ?? 'WIB',
     );
   }
 
@@ -171,6 +174,7 @@ class SchoolModel {
       'supervisor_nip': supervisorNip,
       'headmaster_name': supervisorName,
       'headmaster_nip': supervisorNip,
+      'timezone': timezone,
     };
   }
 
@@ -198,6 +202,7 @@ class SchoolModel {
     String? supervisorName,
     String? supervisorNip,
     bool clearSupervisor = false,
+    String? timezone,
   }) {
     return SchoolModel(
       id: id ?? this.id,
@@ -221,6 +226,7 @@ class SchoolModel {
       subscriptionUntil: subscriptionUntil ?? this.subscriptionUntil,
       supervisorName: clearSupervisor ? null : (supervisorName ?? this.supervisorName),
       supervisorNip: clearSupervisor ? null : (supervisorNip ?? this.supervisorNip),
+      timezone: timezone ?? this.timezone,
     );
   }
 }

@@ -231,8 +231,7 @@ class _NoSchoolScreenState extends State<NoSchoolScreen> {
         backgroundColor: cardColor,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        centerTitle: false,
-        titleSpacing: 16.w,
+        centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(color: borderColor, height: 1),

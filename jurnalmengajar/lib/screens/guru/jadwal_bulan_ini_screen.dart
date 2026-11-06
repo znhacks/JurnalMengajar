@@ -254,7 +254,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
         ),
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         actions: [
           if (!isCurrentMonth)
             TextButton.icon(

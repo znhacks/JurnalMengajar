@@ -539,6 +539,14 @@ class AuthProvider with ChangeNotifier {
           schoolModel = schoolModel.copyWith(logoUrl: resolvedLogo);
         }
 
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final localTz = prefs.getString('school_timezone_$_activeSchoolId');
+          if (localTz != null && localTz.isNotEmpty) {
+            schoolModel = schoolModel.copyWith(timezone: localTz);
+          }
+        } catch (_) {}
+
         _activeSchool = schoolModel;
         _activeSchoolName = _activeSchool!.name;
         // Persist to local cache for instant 0ms offline display

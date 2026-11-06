@@ -802,14 +802,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             },
                           ),
 
-                          // 5. Agenda & Jadwal Kelas Hari Ini
+                          // 5. Jurnal & Jadwal Kelas Hari Ini
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Row(
                                 children: [
                                   Text(
-                                    'Agenda Mengajar',
+                                    'Jurnal Mengajar',
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 15.sp,
                                       fontWeight: FontWeight.w800,
@@ -850,7 +850,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        'Lihat Jadwal',
+                                        'Jadwal',
                                         style: GoogleFonts.hankenGrotesk(
                                           fontSize: 12.sp,
                                           fontWeight: FontWeight.w700,

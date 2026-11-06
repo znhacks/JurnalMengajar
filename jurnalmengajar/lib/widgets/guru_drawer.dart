@@ -96,23 +96,24 @@ class GuruDrawerPanel extends StatelessWidget {
                     : Theme.of(context).colorScheme.onSurfaceVariant));
 
       return Container(
-        margin: EdgeInsets.only(bottom: 4.h),
+        margin: EdgeInsets.symmetric(vertical: 1.h),
         decoration: BoxDecoration(
           color: isSelected
               ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(10.r),
         ),
         child: ListTile(
           onTap: onTap,
           dense: true,
-          contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.h),
-          leading: Icon(icon, color: resolvedIconColor, size: 22),
+          visualDensity: const VisualDensity(horizontal: -3, vertical: -3),
+          contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 0),
+          leading: Icon(icon, color: resolvedIconColor, size: 20),
           title: Text(
             label,
             style: GoogleFonts.hankenGrotesk(
               fontSize: 13.sp,
-              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               color: resolvedTextColor,
             ),
           ),
@@ -491,15 +492,17 @@ class GuruDrawerPanel extends StatelessWidget {
         Consumer<ThemeProvider>(
           builder: (context, themeProvider, child) {
             return Container(
-              margin: EdgeInsets.only(bottom: 4.h),
+              margin: EdgeInsets.symmetric(vertical: 1.h),
               decoration: BoxDecoration(
                 color: Colors.transparent,
-                borderRadius: BorderRadius.circular(12.r),
+                borderRadius: BorderRadius.circular(10.r),
               ),
               child: ListTile(
                 dense: true,
+                visualDensity: const VisualDensity(horizontal: -3, vertical: -4),
+                minVerticalPadding: 0,
                 contentPadding: EdgeInsets.symmetric(
-                  horizontal: 14.w,
+                  horizontal: 12.w,
                   vertical: 0,
                 ),
                 onTap: () {
@@ -510,7 +513,7 @@ class GuruDrawerPanel extends StatelessWidget {
                       ? Icons.dark_mode_rounded
                       : Icons.light_mode_rounded,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  size: 22,
+                  size: 20,
                 ),
                 title: Text(
                   themeProvider.isDarkMode ? 'Mode Gelap' : 'Mode Terang',
@@ -521,9 +524,10 @@ class GuruDrawerPanel extends StatelessWidget {
                   ),
                 ),
                 trailing: Transform.scale(
-                  scale: 0.8,
+                  scale: 0.75,
                   child: Switch(
                     value: themeProvider.isDarkMode,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     onChanged: (val) {
                       themeProvider.toggleTheme(val);
                     },

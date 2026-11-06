@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/school_model.dart';
@@ -45,6 +46,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   String? _teachingPlaceSchoolId;
   bool _isSavingTeachingPlace = false;
 
+  String _selectedTimezone = 'WIB';
+  bool _isSavingTimezone = false;
+
   @override
   void initState() {
     super.initState();
@@ -78,6 +82,11 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     }
     final activeSchool = authProvider.activeSchool;
     if (activeSchool != null) {
+      if (mounted) {
+        setState(() {
+          _selectedTimezone = activeSchool.timezone;
+        });
+      }
       if (activeSchool.supervisorName != null &&
           activeSchool.supervisorName!.isNotEmpty) {
         _supervisorNameController.text = activeSchool.supervisorName!;
@@ -311,6 +320,57 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       if (mounted) {
         setState(() {
           _isSavingSupervisor = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleSaveTimezone(String? schoolId) async {
+    if (schoolId == null || schoolId.isEmpty || _isSavingTimezone) return;
+
+    setState(() {
+      _isSavingTimezone = true;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      // 1. Simpan ke local preferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('school_timezone_$schoolId', _selectedTimezone);
+
+      // 2. Simpan ke database Supabase schools jika kolom tersedia
+      try {
+        await Supabase.instance.client
+            .from('schools')
+            .update({'timezone': _selectedTimezone})
+            .eq('id', schoolId);
+      } catch (e) {
+        debugPrint('Catatan: update timezone di tabel schools: $e');
+      }
+
+      // 3. Invalidate cache dan reload active school
+      await CacheService().remove('active_school_$schoolId');
+      await authProvider.fetchActiveSchoolDetails();
+
+      if (mounted) {
+        AppHelper.showSnackBar(
+          context,
+          'Zona waktu sekolah berhasil diatur ke $_selectedTimezone!',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AppHelper.showSnackBar(
+          context,
+          'Gagal menyimpan zona waktu: $e',
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingTimezone = false;
         });
       }
     }
@@ -1049,6 +1109,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                           SizedBox(height: 18.h),
                           _buildJournalInputCard(isLoading),
                           SizedBox(height: 18.h),
+                          _buildTimezoneCard(isLoading, activeSchoolId),
+                          SizedBox(height: 18.h),
                           _buildSupervisorCard(isLoading),
                         ],
                       ),
@@ -1650,7 +1712,190 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     );
   }
 
-  // ─── 3. PENGATURAN SUPERVISOR / KEPALA SEKOLAH ───────────────────
+  // ─── 3. PENGATURAN ZONA WAKTU SEKOLAH ─────────────────────────
+  Widget _buildTimezoneCard(bool isLoading, String? activeSchoolId) {
+    final timezones = [
+      {
+        'code': 'WIB',
+        'label': 'WIB (UTC+7)',
+        'desc': 'Waktu Indonesia Barat (Sumatera, Jawa, Kalbar, Kalteng)',
+      },
+      {
+        'code': 'WITA',
+        'label': 'WITA (UTC+8)',
+        'desc': 'Waktu Indonesia Tengah (Sulawesi, Bali, NTB, NTT, Kalsel, Kaltim, Kaltara)',
+      },
+      {
+        'code': 'WIT',
+        'label': 'WIT (UTC+9)',
+        'desc': 'Waktu Indonesia Timur (Maluku, Papua)',
+      },
+    ];
+
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18.r),
+        side: BorderSide(
+          color: Colors.grey.withValues(alpha: 0.25),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(18.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: const Icon(
+                    Icons.access_time_rounded,
+                    color: Color(0xFF2563EB),
+                    size: 20,
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Text(
+                    'Zona Waktu Sekolah',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 15.5.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 10.h),
+            Text(
+              'Pilih zona waktu operasional sekolah untuk jadwal dan pencatatan jurnal.',
+              style: TextStyle(
+                fontSize: 12.5.sp,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+            const Divider(height: 24),
+            Column(
+              children: timezones.map((tz) {
+                final code = tz['code']!;
+                final label = tz['label']!;
+                final desc = tz['desc']!;
+                final isSelected = _selectedTimezone == code;
+
+                return Padding(
+                  padding: EdgeInsets.only(bottom: 10.h),
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        _selectedTimezone = code;
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(12.r),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? const Color(0xFF2563EB).withValues(alpha: 0.08)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(
+                          color: isSelected
+                              ? const Color(0xFF2563EB)
+                              : Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                          width: isSelected ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isSelected
+                                ? Icons.radio_button_checked_rounded
+                                : Icons.radio_button_off_rounded,
+                            color: isSelected
+                                ? const Color(0xFF2563EB)
+                                : Theme.of(context).colorScheme.onSurfaceVariant,
+                            size: 20.r,
+                          ),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  label,
+                                  style: GoogleFonts.hankenGrotesk(
+                                    fontSize: 13.5.sp,
+                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                                    color: isSelected
+                                        ? const Color(0xFF2563EB)
+                                        : Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                                SizedBox(height: 2.h),
+                                Text(
+                                  desc,
+                                  style: TextStyle(
+                                    fontSize: 11.sp,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            SizedBox(height: 8.h),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: (_isSavingTimezone || isLoading)
+                    ? null
+                    : () => _handleSaveTimezone(activeSchoolId),
+                icon: _isSavingTimezone
+                    ? SizedBox(
+                        width: 18.w,
+                        height: 18.w,
+                        child: const CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.check_circle_outline_rounded),
+                label: Text(
+                  _isSavingTimezone ? 'Menyimpan...' : 'Simpan Zona Waktu',
+                  style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── 4. PENGATURAN SUPERVISOR / KEPALA SEKOLAH ───────────────────
   Widget _buildSupervisorCard(bool isLoading) {
     return Form(
       key: _supervisorFormKey,
