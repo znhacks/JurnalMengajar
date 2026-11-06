@@ -643,7 +643,7 @@ class _NoSchoolScreenState extends State<NoSchoolScreen> {
                                     ),
                                   ),
                                   Text(
-                                    'Masukkan kode sekolah untuk menghubungkan akun',
+                                    'Masukkan Kode Gabung Guru untuk menghubungkan akun',
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 12.5.sp,
                                       fontWeight: FontWeight.w500,
@@ -657,7 +657,7 @@ class _NoSchoolScreenState extends State<NoSchoolScreen> {
                         ),
                         SizedBox(height: 18.h),
                         Text(
-                          'Kode Sekolah',
+                          'Kode Gabung Sekolah (Guru)',
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 13.sp,
                             fontWeight: FontWeight.w700,
@@ -675,7 +675,10 @@ class _NoSchoolScreenState extends State<NoSchoolScreen> {
                             ),
                           ],
                           decoration: InputDecoration(
-                            hintText: 'Contoh: SMKN11 atau SCH-8910',
+                            hintText: 'Contoh: SMKN11-Malang',
+                            helperText: 'Minta Kode Gabung Guru ke Admin Sekolah Anda (di menu Pengaturan).',
+                            helperMaxLines: 2,
+                            helperStyle: GoogleFonts.hankenGrotesk(fontSize: 12.sp, color: textMuted),
                             hintStyle: GoogleFonts.hankenGrotesk(
                               fontSize: 13.5.sp,
                               color: textMuted,

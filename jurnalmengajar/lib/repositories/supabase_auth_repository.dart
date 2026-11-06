@@ -889,12 +889,12 @@ class SupabaseAuthRepository implements AuthRepository {
     String? schoolId,
   ]) async {
     try {
+      final normalizedRole = role.toLowerCase();
       final cleanSchoolId = (schoolId != null && schoolId.isNotEmpty)
           ? (AppHelper.parseSingleCleanSchoolId(schoolId) ?? schoolId.trim())
           : null;
 
       if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
-        final normalizedRole = role.toLowerCase();
         if (normalizedRole == 'admin') {
           // Promoting or activating as Admin Cadangan in this school
           final existingAdminList = await _supabase
@@ -925,11 +925,14 @@ class SupabaseAuthRepository implements AuthRepository {
           // Keep user_schools membership so teacher retains read-only view, but role is set to softDeleted
           final existingRows = await _supabase
               .from('user_schools')
-              .select('id')
+              .select('id, role')
               .eq('user_id', userId)
               .eq('school_id', cleanSchoolId);
 
-          if ((existingRows as List).isNotEmpty) {
+          final rows = (existingRows as List).cast<Map<String, dynamic>>();
+          final teacherRows = rows.where((r) => r['role'] != 'admin').toList();
+
+          if (teacherRows.isNotEmpty) {
             await _supabase
                 .from('user_schools')
                 .update({
@@ -937,8 +940,17 @@ class SupabaseAuthRepository implements AuthRepository {
                   'status': 'active',
                   'updated_at': DateTime.now().toIso8601String(),
                 })
-                .eq('user_id', userId)
-                .eq('school_id', cleanSchoolId);
+                .eq('id', teacherRows.first['id']);
+
+            // If there were multiple teacher rows, clean up duplicates
+            if (teacherRows.length > 1) {
+              for (int i = 1; i < teacherRows.length; i++) {
+                final dupId = teacherRows[i]['id'];
+                if (dupId != null) {
+                  await _supabase.from('user_schools').delete().eq('id', dupId);
+                }
+              }
+            }
           } else {
             await _supabase.from('user_schools').insert({
               'user_id': userId,
@@ -955,7 +967,12 @@ class SupabaseAuthRepository implements AuthRepository {
               .eq('user_id', userId)
               .eq('school_id', cleanSchoolId);
 
-          if ((existingList as List).isNotEmpty) {
+          final rows = (existingList as List).cast<Map<String, dynamic>>();
+          final teacherRows = rows.where((r) => r['role'] != 'admin').toList();
+
+          if (teacherRows.isNotEmpty) {
+            // Target the specific row by ID instead of updating all rows for this user/school
+            final primaryId = teacherRows.first['id'];
             await _supabase
                 .from('user_schools')
                 .update({
@@ -963,8 +980,17 @@ class SupabaseAuthRepository implements AuthRepository {
                   'status': 'active',
                   'updated_at': DateTime.now().toIso8601String(),
                 })
-                .eq('user_id', userId)
-                .eq('school_id', cleanSchoolId);
+                .eq('id', primaryId);
+
+            // Clean up any extraneous duplicate teacher rows if any exist
+            if (teacherRows.length > 1) {
+              for (int i = 1; i < teacherRows.length; i++) {
+                final dupId = teacherRows[i]['id'];
+                if (dupId != null) {
+                  await _supabase.from('user_schools').delete().eq('id', dupId);
+                }
+              }
+            }
           } else {
             await _supabase.from('user_schools').insert({
               'user_id': userId,
@@ -987,22 +1013,43 @@ class SupabaseAuthRepository implements AuthRepository {
         }
       }
 
-      // Also update base user if user was pending
+      // Also update base user if user was pending or previously had no active school
       final userRes = await _supabase
           .from('users')
-          .select('role, school_id')
+          .select('role, school_id, school_ids')
           .eq('id', userId)
           .maybeSingle();
 
-      if (userRes != null) {
+      if (userRes != null && cleanSchoolId != null) {
+        final userUpdate = <String, dynamic>{};
         final currentRole = userRes['role']?.toString().toLowerCase();
-        if (currentRole == 'pending_guru') {
-          final userUpdate = <String, dynamic>{'role': 'guru'};
-          if (cleanSchoolId != null &&
-              (userRes['school_id'] == null ||
-                  (userRes['school_id'] as String).isEmpty)) {
-            userUpdate['school_id'] = cleanSchoolId;
+        if (currentRole == 'pending_guru' || currentRole == null || currentRole.isEmpty) {
+          userUpdate['role'] = normalizedRole == 'admin' ? 'admin' : 'guru';
+        }
+
+        // If user currently has no active school_id, assign this school!
+        final currentSchoolId = userRes['school_id']?.toString().trim();
+        if (currentSchoolId == null || currentSchoolId.isEmpty) {
+          userUpdate['school_id'] = cleanSchoolId;
+          final schoolData = await _supabase
+              .from('schools')
+              .select('name')
+              .eq('id', cleanSchoolId)
+              .maybeSingle();
+          if (schoolData != null && schoolData['name'] != null) {
+            userUpdate['school_name'] = schoolData['name'];
           }
+        }
+
+        // Ensure school_ids list contains cleanSchoolId
+        final existingSchoolIds =
+            AppHelper.parseAndCleanSchoolIds(userRes['school_ids']);
+        if (!existingSchoolIds.contains(cleanSchoolId)) {
+          existingSchoolIds.add(cleanSchoolId);
+          userUpdate['school_ids'] = existingSchoolIds;
+        }
+
+        if (userUpdate.isNotEmpty) {
           await _supabase.from('users').update(userUpdate).eq('id', userId);
         }
       }

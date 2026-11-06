@@ -728,146 +728,212 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     try {
       final supabase = Supabase.instance.client;
-      final cleanCode = code.trim().toLowerCase().replaceAll(
+      final rawTrimmed = code.trim();
+      final cleanCode = rawTrimmed.toLowerCase().replaceAll(
         RegExp(r'\s+'),
         '',
       );
-
-      // 1. Direct query: SELECT * FROM schools WHERE code = :cleanCode AND status = 'active'
-      final schoolList = await supabase
-          .from('schools')
-          .select()
-          .ilike('code', cleanCode)
-          .eq('status', 'active');
-
+      final effectiveRole = role.toLowerCase();
       Map<String, dynamic>? res;
-      if ((schoolList as List).isNotEmpty) {
-        res = (schoolList as List).first as Map<String, dynamic>;
-      }
 
-      // 2. If not found, check if exists with inactive status
-      if (res == null) {
-        final inactiveRes = await supabase
+      if (effectiveRole == 'guru') {
+        // -------------------------------------------------------------
+        // GURU JOIN FLOW: Harus menggunakan join_code dari tabel schools!
+        // Kode plan/lisensi (seperti PRO-5761) DILARANG untuk guru.
+        // -------------------------------------------------------------
+        // 1. Direct query: cari join_code persis pada sekolah aktif yang memiliki nama valid
+        final joinRes = await supabase
             .from('schools')
             .select()
-            .ilike('code', cleanCode);
+            .ilike('join_code', rawTrimmed)
+            .eq('status', 'active');
 
-        if ((inactiveRes as List).isNotEmpty) {
-          final s = SchoolModel.fromJson(
-            (inactiveRes as List).first as Map<String, dynamic>,
-          );
-          if (s.isInactive) {
-            throw Exception(
-              'Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).',
-            );
+        for (final row in (joinRes as List)) {
+          final m = row as Map<String, dynamic>;
+          final name = (m['name'] as String? ?? '').trim();
+          if (name.isNotEmpty) {
+            res = m;
+            break;
           }
         }
 
-        // 3. Fallback check by npsn or id (only query id if cleanCode is a valid UUID!)
-        final isCleanCodeUuid = RegExp(
-          r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
-        ).hasMatch(cleanCode);
-        if (isCleanCodeUuid) {
-          final uuidList = await supabase
-              .from('schools')
-              .select()
-              .or('npsn.ilike.$cleanCode,id.eq.$cleanCode')
-              .eq('status', 'active');
-          if ((uuidList as List).isNotEmpty) {
-            res = (uuidList as List).first as Map<String, dynamic>;
-          }
-        } else {
-          final npsnList = await supabase
-              .from('schools')
-              .select()
-              .ilike('npsn', cleanCode)
-              .eq('status', 'active');
-          if ((npsnList as List).isNotEmpty) {
-            res = (npsnList as List).first as Map<String, dynamic>;
-          }
-        }
-
-        // 4. Fallback check by tenant
+        // 2. Normalized matching (abaikan tanda hubung, spasi, dan kapital: misal SMKN11MALANG cocok dengan SMKN11-Malang)
         if (res == null) {
-          final tenantList = await supabase
-              .from('tenants')
-              .select('id, name, school_code, status')
-              .ilike('school_code', '%$cleanCode%');
+          final allActiveWithJoin = await supabase
+              .from('schools')
+              .select()
+              .not('join_code', 'is', null)
+              .eq('status', 'active');
 
-          Map<String, dynamic>? tenantRes;
-          if ((tenantList as List).isNotEmpty) {
-            tenantRes = (tenantList as List).first as Map<String, dynamic>;
-          } else if (isCleanCodeUuid) {
-            final tenantUuidList = await supabase
-                .from('tenants')
-                .select('id, name, school_code, status')
-                .eq('id', cleanCode);
-            if ((tenantUuidList as List).isNotEmpty) {
-              tenantRes =
-                  (tenantUuidList as List).first as Map<String, dynamic>;
+          final inputNorm = rawTrimmed.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+          for (final row in (allActiveWithJoin as List)) {
+            final m = row as Map<String, dynamic>;
+            final name = (m['name'] as String? ?? '').trim();
+            final j = (m['join_code'] as String? ?? '').toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+            if (name.isNotEmpty && j.isNotEmpty && j == inputNorm) {
+              res = m;
+              break;
             }
           }
+        }
 
-          if (tenantRes != null) {
-            final tenantId = tenantRes['id'] as String;
-            final tenantName = tenantRes['name'] as String? ?? 'Sekolah';
-            final tenantStatus = (tenantRes['status'] as String? ?? 'active')
-                .toLowerCase();
-            final tenantCode = tenantRes['school_code'] as String? ?? cleanCode;
+        // 3. Jika tidak ditemukan, cek apakah guru salah memasukkan kode plan/lisensi sekolah (seperti PRO-5761 / FREE-xxxx)
+        if (res == null) {
+          final upperCode = rawTrimmed.toUpperCase();
+          final isPlanLike = upperCode.startsWith('PRO-') ||
+              upperCode.startsWith('FREE-') ||
+              upperCode.startsWith('ENTERPRISE-') ||
+              upperCode.startsWith('ULTRA-');
 
-            if (tenantStatus == 'inactive') {
+          if (isPlanLike) {
+            throw Exception(
+              'Kode "$rawTrimmed" adalah kode plan/lisensi sekolah, bukan Kode Gabung Guru. '
+              'Silakan minta Kode Gabung Guru ke Admin Sekolah Anda (tersedia di menu Pengaturan Sekolah).',
+            );
+          }
+
+          throw Exception(
+            'Kode gabung sekolah tidak valid atau belum terdaftar. '
+            'Pastikan Anda memasukkan Kode Gabung Guru yang benar dari pihak sekolah.',
+          );
+        }
+      } else {
+        // -------------------------------------------------------------
+        // ADMIN ACTIVATION FLOW (Klaim peran admin atau aktivasi sekolah menggunakan lisensi/plan)
+        // -------------------------------------------------------------
+        // 1. Direct query: SELECT * FROM schools WHERE code = :cleanCode AND status = 'active'
+        final schoolList = await supabase
+            .from('schools')
+            .select()
+            .ilike('code', cleanCode)
+            .eq('status', 'active');
+
+        if ((schoolList as List).isNotEmpty) {
+          res = (schoolList as List).first as Map<String, dynamic>;
+        }
+
+        // 2. If not found, check if exists with inactive status
+        if (res == null) {
+          final inactiveRes = await supabase
+              .from('schools')
+              .select()
+              .ilike('code', cleanCode);
+
+          if ((inactiveRes as List).isNotEmpty) {
+            final s = SchoolModel.fromJson(
+              (inactiveRes as List).first as Map<String, dynamic>,
+            );
+            if (s.isInactive) {
               throw Exception(
                 'Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).',
               );
             }
+          }
 
-            // CRITICAL: Check if a school already exists with tenantCode or cleanCode!
-            final existingSchoolList = await supabase
+          // 3. Fallback check by npsn or id (only query id if cleanCode is a valid UUID!)
+          final isCleanCodeUuid = RegExp(
+            r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+          ).hasMatch(cleanCode);
+          if (isCleanCodeUuid) {
+            final uuidList = await supabase
                 .from('schools')
                 .select()
-                .or('code.ilike.$tenantCode,code.ilike.$cleanCode')
+                .or('npsn.ilike.$cleanCode,id.eq.$cleanCode')
                 .eq('status', 'active');
+            if ((uuidList as List).isNotEmpty) {
+              res = (uuidList as List).first as Map<String, dynamic>;
+            }
+          } else {
+            final npsnList = await supabase
+                .from('schools')
+                .select()
+                .ilike('npsn', cleanCode)
+                .eq('status', 'active');
+            if ((npsnList as List).isNotEmpty) {
+              res = (npsnList as List).first as Map<String, dynamic>;
+            }
+          }
 
-            if ((existingSchoolList as List).isNotEmpty) {
-              res = (existingSchoolList as List).first as Map<String, dynamic>;
-            } else {
-              final tenantLogo =
-                  tenantRes['logo']?.toString() ??
-                  tenantRes['logo_url']?.toString();
-              try {
-                await supabase.from('schools').upsert({
+          // 4. Fallback check by tenant
+          if (res == null) {
+            final tenantList = await supabase
+                .from('tenants')
+                .select('id, name, school_code, status')
+                .ilike('school_code', '%$cleanCode%');
+
+            Map<String, dynamic>? tenantRes;
+            if ((tenantList as List).isNotEmpty) {
+              tenantRes = (tenantList as List).first as Map<String, dynamic>;
+            } else if (isCleanCodeUuid) {
+              final tenantUuidList = await supabase
+                  .from('tenants')
+                  .select('id, name, school_code, status')
+                  .eq('id', cleanCode);
+              if ((tenantUuidList as List).isNotEmpty) {
+                tenantRes =
+                    (tenantUuidList as List).first as Map<String, dynamic>;
+              }
+            }
+
+            if (tenantRes != null) {
+              final tenantId = tenantRes['id'] as String;
+              final tenantName = tenantRes['name'] as String? ?? 'Sekolah';
+              final tenantStatus = (tenantRes['status'] as String? ?? 'active')
+                  .toLowerCase();
+              final tenantCode = tenantRes['school_code'] as String? ?? cleanCode;
+
+              if (tenantStatus == 'inactive') {
+                throw Exception(
+                  'Aktivasi sekolah sedang dinonaktifkan oleh administrator (status inactive).',
+                );
+              }
+
+              // CRITICAL: Check if a school already exists with tenantCode or cleanCode!
+              final existingSchoolList = await supabase
+                  .from('schools')
+                  .select()
+                  .or('code.ilike.$tenantCode,code.ilike.$cleanCode')
+                  .eq('status', 'active');
+
+              if ((existingSchoolList as List).isNotEmpty) {
+                res = (existingSchoolList as List).first as Map<String, dynamic>;
+              } else {
+                final tenantLogo =
+                    tenantRes['logo']?.toString() ??
+                    tenantRes['logo_url']?.toString();
+                try {
+                  await supabase.from('schools').upsert({
+                    'id': tenantId,
+                    'name': tenantName,
+                    'code': tenantCode,
+                    'status': tenantStatus,
+                    if (tenantLogo != null && tenantLogo.isNotEmpty)
+                      'logo_url': tenantLogo,
+                  }, onConflict: 'id');
+                } catch (_) {}
+
+                res = {
                   'id': tenantId,
                   'name': tenantName,
                   'code': tenantCode,
                   'status': tenantStatus,
                   if (tenantLogo != null && tenantLogo.isNotEmpty)
                     'logo_url': tenantLogo,
-                }, onConflict: 'id');
-              } catch (_) {}
-
-              res = {
-                'id': tenantId,
-                'name': tenantName,
-                'code': tenantCode,
-                'status': tenantStatus,
-                if (tenantLogo != null && tenantLogo.isNotEmpty)
-                  'logo_url': tenantLogo,
-              };
+                };
+              }
             }
           }
         }
-      }
 
-      if (res == null) {
-        throw Exception('Kode aktivasi tidak valid');
+        if (res == null) {
+          throw Exception('Kode aktivasi tidak valid');
+        }
       }
 
       final matchedSchool = SchoolModel.fromJson(res);
       final schoolId =
           AppHelper.parseSingleCleanSchoolId(matchedSchool.id) ??
           matchedSchool.id.trim();
-
-      final effectiveRole = role.toLowerCase();
 
       // Check existing memberships for this user at this school across all roles
       final existingMemberRoleList = await supabase
@@ -1005,6 +1071,20 @@ class AuthProvider with ChangeNotifier {
           debugPrint('FCM Notification to admin log: $fcmErr');
         }
       }
+
+      // Clean up any stale/ghost pending requests for this user at other schools
+      try {
+        await supabase
+            .from('user_schools')
+            .delete()
+            .eq('user_id', _currentUser!.id)
+            .eq('status', 'pending')
+            .neq('school_id', schoolId);
+      } catch (_) {}
+
+      try {
+        await CacheService().purgePrefix('school_users_$schoolId');
+      } catch (_) {}
 
       // For guru join request: user stays in their current school until approved!
       await loadUserMemberships();
