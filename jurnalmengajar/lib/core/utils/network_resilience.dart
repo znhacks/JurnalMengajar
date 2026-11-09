@@ -43,6 +43,10 @@ class NetworkResilience {
           errStr.contains('connection closed') ||
           errStr.contains('timeoutexception') ||
           errStr.contains('timed out') ||
+          errStr.contains('502') ||
+          errStr.contains('503') ||
+          errStr.contains('bad gateway') ||
+          errStr.contains('service unavailable') ||
           errStr.contains('koneksi internet sangat lambat');
 
       if (isNetworkIssue) {

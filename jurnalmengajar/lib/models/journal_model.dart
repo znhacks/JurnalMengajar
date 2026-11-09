@@ -56,7 +56,8 @@ class JournalModel {
   });
 
   factory JournalModel.fromJson(Map<String, dynamic> json) {
-    final attachmentUrl = json['attachment_url']?.toString() ?? json['attachmentUrl']?.toString();
+    final rawAttachmentUrl = json['attachment_url']?.toString() ?? json['attachmentUrl']?.toString();
+    final attachmentUrl = AppHelper.normalizeStorageUrl(rawAttachmentUrl);
     
     JournalAttachmentModel? attachment;
     if (json['attachment'] != null && json['attachment'] is Map) {

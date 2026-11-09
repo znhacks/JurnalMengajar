@@ -1,4 +1,5 @@
 import '../core/constants/teacher_roles.dart';
+import '../core/utils/helper.dart';
 
 class TeacherModel {
   final String id;
@@ -59,7 +60,9 @@ class TeacherModel {
           json['phone_number']?.toString() ??
           '',
       email: json['email']?.toString() ?? '',
-      photoUrl: json['photoUrl']?.toString() ?? json['photo_url']?.toString(),
+      photoUrl: AppHelper.normalizeStorageUrl(
+        json['photoUrl']?.toString() ?? json['photo_url']?.toString(),
+      ),
       nip: json['nip']?.toString(),
       isDeleted: isDeleted,
     );

@@ -206,6 +206,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                             )
                                           : null)
                                       as ImageProvider?,
+                            onBackgroundImageError: (exception, stackTrace) {
+                              debugPrint('Error loading admin edit avatar: $exception');
+                            },
                             child:
                                 tempImageBytes == null &&
                                     (user.photoUrl == null ||
@@ -655,6 +658,15 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                       ? CachedNetworkImageProvider(
                                           currentUser.photoUrl!,
                                         )
+                                      : null,
+                                  onBackgroundImageError:
+                                      currentUser.photoUrl != null &&
+                                          currentUser.photoUrl!.startsWith(
+                                            'http',
+                                          )
+                                      ? (exception, stackTrace) {
+                                          debugPrint('Error loading admin avatar: $exception');
+                                        }
                                       : null,
                                   child:
                                       (currentUser.photoUrl == null ||

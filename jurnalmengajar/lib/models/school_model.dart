@@ -1,3 +1,5 @@
+import '../core/utils/helper.dart';
+
 class SchoolModel {
   final String id;
   final String name;
@@ -138,7 +140,9 @@ class SchoolModel {
       nss: json['nss'] as String?,
       npsn: json['npsn'] as String?,
       postalCode: json['postal_code'] as String? ?? json['postalCode'] as String?,
-      logoUrl: json['logo_url'] as String? ?? json['logoUrl'] as String?,
+      logoUrl: AppHelper.normalizeStorageUrl(
+        json['logo_url'] as String? ?? json['logoUrl'] as String?,
+      ),
       plan: parsedPlan,
       activationCode: json['code'] as String? ?? json['activation_code'] as String? ?? json['activationCode'] as String?,
       joinCode: json['join_code'] as String? ?? json['joinCode'] as String?,

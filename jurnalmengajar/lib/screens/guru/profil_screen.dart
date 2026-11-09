@@ -344,6 +344,9 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                             )
                                           : null)
                                       as ImageProvider?,
+                            onBackgroundImageError: (exception, stackTrace) {
+                              debugPrint('Error loading profile avatar: $exception');
+                            },
                             child:
                                 tempImageBytes == null &&
                                         (user.photoUrl == null ||
@@ -1216,6 +1219,11 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                       ),
                                       backgroundImage: displayUrl != null
                                           ? CachedNetworkImageProvider(displayUrl)
+                                          : null,
+                                      onBackgroundImageError: displayUrl != null
+                                          ? (exception, stackTrace) {
+                                              debugPrint('Error loading guru avatar: $exception');
+                                            }
                                           : null,
                                       child: displayUrl == null
                                           ? const Icon(

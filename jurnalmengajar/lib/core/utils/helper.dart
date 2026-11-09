@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../config/supabase_config.dart';
 
 enum JournalTimeScope { month, week, all }
 
@@ -165,6 +166,35 @@ class AppHelper {
       ...parseAndCleanSchoolIds(userSchoolIdsInput),
     };
     return allIds.contains(cleanTarget);
+  }
+
+  /// Normalizes a Supabase storage URL to ensure it points to the active Supabase host.
+  /// Handles both old Supabase cloud domain and UBIG domain gracefully, including comma-separated lists.
+  static String? normalizeStorageUrl(String? url) {
+    if (url == null) return null;
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) return null;
+
+    // Handle comma-separated multiple URLs (e.g., multiple attachments in journals)
+    if (trimmed.contains(',')) {
+      return trimmed
+          .split(',')
+          .map((u) => normalizeStorageUrl(u.trim()))
+          .where((u) => u != null && u.isNotEmpty)
+          .join(',');
+    }
+
+    // Replace known legacy/alternate domains with the active Supabase URL
+    final activeUrl = SupabaseConfig.url.replaceAll(RegExp(r'/+$'), '');
+
+    if (trimmed.contains('/storage/v1/object/public/')) {
+      final marker = '/storage/v1/object/public/';
+      final pathIndex = trimmed.indexOf(marker);
+      final storagePath = trimmed.substring(pathIndex + marker.length);
+      return '$activeUrl/storage/v1/object/public/$storagePath';
+    }
+
+    return trimmed;
   }
 }
 

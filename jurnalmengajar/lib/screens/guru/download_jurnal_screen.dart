@@ -204,6 +204,197 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
     });
   }
 
+  String _getPresetSubtitle(String preset) {
+    final now = DateTime.now();
+    final fmt = DateFormat('d MMM yyyy', 'id_ID');
+    switch (preset) {
+      case '30 Hari Terakhir':
+        final start = now.subtract(const Duration(days: 30));
+        return '${fmt.format(start)} – ${fmt.format(now)}';
+      case 'Bulan Ini':
+        final start = DateTime(now.year, now.month, 1);
+        return '${fmt.format(start)} – ${fmt.format(now)}';
+      case 'Bulan Lalu':
+        final lastMonthYear = now.month == 1 ? now.year - 1 : now.year;
+        final lastMonth = now.month == 1 ? 12 : now.month - 1;
+        final start = DateTime(lastMonthYear, lastMonth, 1);
+        final end = DateTime(now.year, now.month, 0);
+        return '${fmt.format(start)} – ${fmt.format(end)}';
+      case 'Semester Ini':
+        final isGanjil = now.month >= 7;
+        final start = isGanjil ? DateTime(now.year, 7, 1) : DateTime(now.year, 1, 1);
+        return '${fmt.format(start)} – ${fmt.format(now)} (${isGanjil ? 'Semester Ganjil' : 'Semester Genap'})';
+      case 'Semester Lalu':
+        final isGanjil = now.month >= 7;
+        final start = isGanjil ? DateTime(now.year, 1, 1) : DateTime(now.year - 1, 7, 1);
+        final end = isGanjil ? DateTime(now.year, 6, 30) : DateTime(now.year - 1, 12, 31);
+        return '${fmt.format(start)} – ${fmt.format(end)}';
+      case 'Tahun Ini':
+        final start = DateTime(now.year, 1, 1);
+        return '${fmt.format(start)} – ${fmt.format(now)} (Tahun ${now.year})';
+      case 'Tahun Lalu':
+        final start = DateTime(now.year - 1, 1, 1);
+        final end = DateTime(now.year - 1, 12, 31);
+        return '${fmt.format(start)} – ${fmt.format(end)} (Tahun ${now.year - 1})';
+      case 'Semua':
+        return 'Semua catatan jurnal hingga saat ini';
+      case 'Kustom':
+      default:
+        return '${fmt.format(_startDate)} – ${fmt.format(_endDate)}';
+    }
+  }
+
+  void _showPresetRangeBottomSheet(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final presets = const [
+      '30 Hari Terakhir',
+      'Bulan Ini',
+      'Bulan Lalu',
+      'Semester Ini',
+      'Semester Lalu',
+      'Tahun Ini',
+      'Tahun Lalu',
+      'Semua',
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+          ),
+          padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(2.r),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Pilih Rentang Laporan',
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  'Pilih preset otomatis atau tentukan tanggal khusus di bawahnya',
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 12.sp,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: presets.map((preset) {
+                        final isSelected = _presetRange == preset;
+                        return InkWell(
+                          onTap: () {
+                            _applyPresetRange(preset);
+                            Navigator.pop(ctx);
+                          },
+                          borderRadius: BorderRadius.circular(12.r),
+                          child: Container(
+                            margin: EdgeInsets.symmetric(vertical: 4.h),
+                            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 11.h),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? (isDark
+                                      ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
+                                      : AppTheme.primaryColor.withValues(alpha: 0.08))
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(
+                                color: isSelected
+                                    ? (isDark ? const Color(0xFF60A5FA) : AppTheme.primaryColor)
+                                    : (isDark ? const Color(0xFF334155).withValues(alpha: 0.5) : const Color(0xFFE2E8F0)),
+                                width: isSelected ? 1.5 : 1.0,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
+                                  size: 18.r,
+                                  color: isSelected
+                                      ? (isDark ? const Color(0xFF60A5FA) : AppTheme.primaryColor)
+                                      : const Color(0xFF94A3B8),
+                                ),
+                                SizedBox(width: 12.w),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        preset,
+                                        style: GoogleFonts.hankenGrotesk(
+                                          fontSize: 13.5.sp,
+                                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                          color: isSelected
+                                              ? (isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor)
+                                              : Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      SizedBox(height: 2.h),
+                                      Text(
+                                        _getPresetSubtitle(preset),
+                                        style: GoogleFonts.hankenGrotesk(
+                                          fontSize: 11.sp,
+                                          color: isSelected
+                                              ? (isDark ? const Color(0xFF93C5FD).withValues(alpha: 0.8) : AppTheme.primaryColor.withValues(alpha: 0.8))
+                                              : const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _selectDate(BuildContext context, bool isStart) async {
     final initialDate = isStart ? _startDate : _endDate;
     final picked = await showDatePicker(
@@ -918,68 +1109,125 @@ class _GuruDownloadJurnalScreenState extends State<GuruDownloadJurnalScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Quick Preset Chips
-                    Wrap(
-                      spacing: 8.w,
-                      runSpacing: 8.h,
-                      children:
-                          [
-                            '30 Hari Terakhir',
-                            'Bulan Ini',
-                            'Bulan Lalu',
-                            'Semester Ini',
-                            'Semester Lalu',
-                            'Tahun Ini',
-                            'Tahun Lalu',
-                            'Semua',
-                          ].map((preset) {
-                            final isSelected = _presetRange == preset;
-                            final isDark =
-                                Theme.of(context).brightness == Brightness.dark;
-                            return ChoiceChip(
-                              label: Text(preset),
-                              selected: isSelected,
-                              selectedColor: isDark
-                                  ? const Color(
-                                      0xFF1E3A8A,
-                                    ).withValues(alpha: 0.5)
-                                  : AppTheme.primaryColor.withValues(
-                                      alpha: 0.15,
-                                    ),
-                              backgroundColor: isDark
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.surfaceContainerHighest
-                                  : const Color(0xFFF1F5F9),
-                              side: BorderSide(
-                                color: isSelected
-                                    ? (isDark
-                                          ? const Color(0xFF60A5FA)
-                                          : AppTheme.primaryColor)
-                                    : (isDark
-                                          ? const Color(0xFF334155)
-                                          : const Color(0xFFE2E8F0)),
-                                width: isSelected ? 1.5 : 1.0,
+                    // Preset Selector Tile (Option 1: Selector Tile + Bottom Sheet)
+                    Builder(
+                      builder: (tileCtx) {
+                        final isDark =
+                            Theme.of(tileCtx).brightness == Brightness.dark;
+                        return InkWell(
+                          onTap: () => _showPresetRangeBottomSheet(tileCtx),
+                          borderRadius: BorderRadius.circular(12.r),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 14.w,
+                              vertical: 11.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF1E293B)
+                                  : const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(
+                                color: isDark
+                                    ? const Color(0xFF334155)
+                                    : const Color(0xFFCBD5E1),
+                                width: 1.0,
                               ),
-                              labelStyle: GoogleFonts.hankenGrotesk(
-                                fontSize: 11.5.sp,
-                                fontWeight: isSelected
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                                color: isSelected
-                                    ? (isDark
-                                          ? const Color(0xFF93C5FD)
-                                          : AppTheme.primaryColor)
-                                    : (isDark
-                                          ? const Color(0xFFCBD5E1)
-                                          : const Color(0xFF475569)),
-                              ),
-                              onSelected: (_) => _applyPresetRange(preset),
-                            );
-                          }).toList(),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(7.w),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? const Color(0xFF1E3A8A).withValues(
+                                            alpha: 0.4,
+                                          )
+                                        : AppTheme.primaryColor.withValues(
+                                            alpha: 0.1,
+                                          ),
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                  child: const Icon(
+                                    Icons.tune_rounded,
+                                    size: 16,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                ),
+                                SizedBox(width: 12.w),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            _presetRange,
+                                            style: GoogleFonts.hankenGrotesk(
+                                              fontSize: 13.5.sp,
+                                              fontWeight: FontWeight.w700,
+                                              color: Theme.of(
+                                                tileCtx,
+                                              ).colorScheme.onSurface,
+                                            ),
+                                          ),
+                                          if (_presetRange != 'Kustom') ...[
+                                            SizedBox(width: 6.w),
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 6.w,
+                                                vertical: 2.h,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: isDark
+                                                    ? const Color(
+                                                        0xFF1E3A8A,
+                                                      ).withValues(alpha: 0.5)
+                                                    : const Color(0xFFEFF6FF),
+                                                borderRadius:
+                                                    BorderRadius.circular(6.r),
+                                              ),
+                                              child: Text(
+                                                'Preset',
+                                                style: GoogleFonts.hankenGrotesk(
+                                                  fontSize: 9.5.sp,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: isDark
+                                                      ? const Color(0xFF93C5FD)
+                                                      : AppTheme.primaryColor,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                      SizedBox(height: 2.h),
+                                      Text(
+                                        _getPresetSubtitle(_presetRange),
+                                        style: GoogleFonts.hankenGrotesk(
+                                          fontSize: 11.sp,
+                                          color: const Color(0xFF64748B),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  size: 20.r,
+                                  color: const Color(0xFF94A3B8),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
 
-                    SizedBox(height: 14.h),
+                    SizedBox(height: 12.h),
 
                     // Date Selectors
                     Row(

@@ -87,7 +87,9 @@ class UserModel {
       email: json['email']?.toString() ?? '',
       fullName: fullName,
       role: json['role']?.toString() ?? 'guru',
-      photoUrl: json['photo_url']?.toString() ?? json['photoUrl']?.toString(),
+      photoUrl: AppHelper.normalizeStorageUrl(
+        json['photo_url']?.toString() ?? json['photoUrl']?.toString(),
+      ),
       phoneNumber:
           json['phone']?.toString() ??
           json['phoneNumber']?.toString() ??

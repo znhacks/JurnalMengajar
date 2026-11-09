@@ -46,8 +46,9 @@ class UserSchoolModel {
       schoolName: name,
       schoolCode: code,
       status: json['status']?.toString() ?? 'active',
-      logoUrl:
-          logo ?? json['logo_url']?.toString() ?? json['logoUrl']?.toString(),
+      logoUrl: AppHelper.normalizeStorageUrl(
+        logo ?? json['logo_url']?.toString() ?? json['logoUrl']?.toString(),
+      ),
     );
   }
 

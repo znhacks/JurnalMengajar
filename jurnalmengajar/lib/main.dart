@@ -33,6 +33,7 @@ import 'providers/theme_provider.dart';
 import 'providers/teacher_leave_provider.dart';
 
 // Router & Theme
+import 'core/config/supabase_config.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'widgets/web_navigation_shortcut_wrapper.dart';
@@ -54,9 +55,10 @@ void main() async {
   await initializeDateFormatting('id_ID', null);
 
   await Supabase.initialize(
-    url: 'https://supabase-jurnal.ubigdev.com',
-    publishableKey: 'sb_publishable_zkT8Drvu9-q7ZKMOSm1flF_JKtqwXwG',
+    url: SupabaseConfig.url,
+    publishableKey: SupabaseConfig.publishableKey,
   );
+  debugPrint('[Supabase] Active Environment: ${SupabaseConfig.activeEnvironmentName}');
 
   final supabaseClient = Supabase.instance.client;
 
