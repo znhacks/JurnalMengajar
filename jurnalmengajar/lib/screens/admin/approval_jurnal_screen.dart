@@ -14,6 +14,7 @@ import '../../widgets/admin_search_filter_bar.dart';
 import '../../widgets/state_widgets.dart';
 import '../../core/utils/helper.dart';
 import '../../widgets/app_scaffold.dart';
+import '../../widgets/app_dialog_actions.dart';
 
 class ApprovalJurnalScreen extends StatefulWidget {
   const ApprovalJurnalScreen({super.key});
@@ -97,19 +98,13 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
           'Setujui ${ids.length} jurnal yang dipilih sekaligus?\nSemua jurnal ini akan berstatus diverifikasi.',
           style: GoogleFonts.hankenGrotesk(fontSize: 13.sp),
         ),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2563EB),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-            ),
-            child: Text('Ya, Setujui (${ids.length})'),
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Ya, Setujui (${ids.length})',
+            onCancel: () => Navigator.pop(ctx, false),
+            onConfirm: () => Navigator.pop(ctx, true),
           ),
         ],
       ),
@@ -179,19 +174,14 @@ class _ApprovalJurnalScreenState extends State<ApprovalJurnalScreen> {
             ),
           ],
         ),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE11D48),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-            ),
-            child: Text('Tolak (${ids.length})'),
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Tolak (${ids.length})',
+            isDestructive: true,
+            onCancel: () => Navigator.pop(ctx, false),
+            onConfirm: () => Navigator.pop(ctx, true),
           ),
         ],
       ),

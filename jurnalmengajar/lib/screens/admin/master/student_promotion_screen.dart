@@ -11,6 +11,7 @@ import '../../../core/utils/helper.dart';
 import '../../../widgets/state_widgets.dart';
 import '../../../widgets/admin_drawer.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_dialog_actions.dart';
 
 class StudentPromotionScreen extends StatefulWidget {
   final String? initialClassId;
@@ -246,18 +247,13 @@ class _StudentPromotionScreenState extends State<StudentPromotionScreen> {
         content: Text(
           'Yakin ingin memproses ${_selectedStudentIds.length} data siswa ini?',
         ),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Proses'),
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Proses',
+            onCancel: () => Navigator.pop(context, false),
+            onConfirm: () => Navigator.pop(context, true),
           ),
         ],
       ),

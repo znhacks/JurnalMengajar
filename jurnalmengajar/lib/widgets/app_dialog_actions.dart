@@ -14,6 +14,7 @@ class AppDialogActions extends StatelessWidget {
   final Color? confirmColor;
   final Color? confirmTextColor;
   final bool isDestructive;
+  final EdgeInsetsGeometry? padding;
 
   const AppDialogActions({
     super.key,
@@ -21,11 +22,15 @@ class AppDialogActions extends StatelessWidget {
     this.onCancel,
     required this.confirmText,
     required this.onConfirm,
-    this.isConfirmLoading = false,
-    this.confirmColor,
+    bool isConfirmLoading = false,
+    bool? isLoading,
+    Color? confirmColor,
+    Color? confirmButtonColor,
     this.confirmTextColor,
     this.isDestructive = false,
-  });
+    this.padding,
+  })  : isConfirmLoading = isLoading ?? isConfirmLoading,
+        confirmColor = confirmButtonColor ?? confirmColor;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +48,7 @@ class AppDialogActions extends StatelessWidget {
         : const Color(0xFFCBD5E1);
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: padding ?? EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       child: Row(
         children: [
           Expanded(

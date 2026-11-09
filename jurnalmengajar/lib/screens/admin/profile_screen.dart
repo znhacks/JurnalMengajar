@@ -16,6 +16,7 @@ import '../../core/utils/image_crop_helper.dart';
 import '../../repositories/supabase_auth_repository.dart';
 import '../../widgets/image_viewer.dart';
 import '../../widgets/app_scaffold.dart';
+import '../../widgets/app_dialog_actions.dart';
 
 class AdminProfileScreen extends StatefulWidget {
   const AdminProfileScreen({super.key});
@@ -568,20 +569,17 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   content: const Text(
                     'Apakah Anda yakin ingin keluar dari halaman Administrator?',
                   ),
+                  actionsPadding: EdgeInsets.zero,
                   actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Batal'),
-                    ),
-                    TextButton(
-                      onPressed: () {
+                    AppDialogActions(
+                      cancelText: 'Batal',
+                      confirmText: 'Keluar',
+                      isDestructive: true,
+                      onCancel: () => Navigator.pop(context),
+                      onConfirm: () {
                         Navigator.pop(context);
                         _handleLogout();
                       },
-                      child: const Text(
-                        'Keluar',
-                        style: TextStyle(color: Colors.red),
-                      ),
                     ),
                   ],
                 ),

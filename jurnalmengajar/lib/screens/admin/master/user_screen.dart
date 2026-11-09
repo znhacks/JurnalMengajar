@@ -16,6 +16,7 @@ import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../core/constants/teacher_roles.dart';
 import '../../../services/excel_export_service.dart';
+import '../../../widgets/app_dialog_actions.dart';
 import '../../../widgets/app_scaffold.dart';
 
 class MasterUserScreen extends StatefulWidget {
@@ -133,11 +134,15 @@ class _MasterUserScreenState extends State<MasterUserScreen>
           'Apakah Anda yakin ingin menonaktifkan $count guru yang dipilih dari sekolah ini?\n\n'
           'Guru yang dinonaktifkan tetap dapat melihat seluruh jadwal, riwayat jurnal, dan data sekolah, namun tidak dapat mengisi atau mengubah jurnal.',
         ),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Nonaktifkan Massal', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Nonaktifkan Massal',
+            isDestructive: true,
+            confirmButtonColor: Colors.orange,
+            onCancel: () => Navigator.pop(context, false),
+            onConfirm: () => Navigator.pop(context, true),
           ),
         ],
       ),
@@ -483,17 +488,15 @@ class _MasterUserScreenState extends State<MasterUserScreen>
             ? 'Apakah Anda yakin ingin mempromosikan ${user.fullName} menjadi Administrator? Akun ini akan memiliki akses penuh ke panel admin.' 
             : 'Apakah Anda yakin ingin mengubah peran ${user.fullName} menjadi Guru? Akses administratif akan dicabut.'
         ),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false), 
-            child: const Text('Batal')
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              makeAdmin ? 'Promosikan' : 'Turunkan', 
-              style: TextStyle(color: makeAdmin ? Colors.indigo : Colors.red)
-            )
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: makeAdmin ? 'Promosikan' : 'Turunkan',
+            isDestructive: !makeAdmin,
+            confirmButtonColor: makeAdmin ? Colors.indigo : null,
+            onCancel: () => Navigator.pop(context, false),
+            onConfirm: () => Navigator.pop(context, true),
           ),
         ],
       ),
@@ -564,11 +567,15 @@ class _MasterUserScreenState extends State<MasterUserScreen>
           'Apakah Anda yakin ingin menonaktifkan guru ${user.fullName} di sekolah ini?\n\n'
           'Guru yang dinonaktifkan tetap dapat melihat jadwal, riwayat jurnal, dan data sekolah, namun tidak dapat mengisi atau mengubah jurnal di sekolah ini.',
         ),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Nonaktifkan', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Nonaktifkan',
+            isDestructive: true,
+            confirmButtonColor: Colors.orange,
+            onCancel: () => Navigator.pop(context, false),
+            onConfirm: () => Navigator.pop(context, true),
           ),
         ],
       ),
@@ -626,11 +633,14 @@ class _MasterUserScreenState extends State<MasterUserScreen>
           'Apakah Anda yakin ingin mengaktifkan kembali guru ${user.fullName}?\n\n'
           'Akun ini akan dapat kembali mengisi dan mengubah jurnal di sekolah ini.',
         ),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Aktifkan', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Aktifkan',
+            confirmButtonColor: Colors.green,
+            onCancel: () => Navigator.pop(context, false),
+            onConfirm: () => Navigator.pop(context, true),
           ),
         ],
       ),
@@ -680,14 +690,14 @@ class _MasterUserScreenState extends State<MasterUserScreen>
       builder: (context) => AlertDialog(
         title: Text('Setujui Pendaftaran $targetRoleLabel'),
         content: Text('Apakah Anda yakin ingin menyetujui pendaftaran ${user.fullName} sebagai $targetRoleLabel?'),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false), 
-            child: const Text('Batal')
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Setujui', style: TextStyle(color: Colors.green))
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Setujui',
+            confirmButtonColor: Colors.green,
+            onCancel: () => Navigator.pop(context, false),
+            onConfirm: () => Navigator.pop(context, true),
           ),
         ],
       ),
@@ -736,11 +746,14 @@ class _MasterUserScreenState extends State<MasterUserScreen>
       builder: (context) => AlertDialog(
         title: const Text('Tolak Permintaan', style: TextStyle(color: Colors.red)),
         content: Text('Apakah Anda yakin ingin menolak permintaan bergabung ${user.fullName}?'),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Tolak Permintaan', style: TextStyle(color: Colors.red)),
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Tolak Permintaan',
+            isDestructive: true,
+            onCancel: () => Navigator.pop(context, false),
+            onConfirm: () => Navigator.pop(context, true),
           ),
         ],
       ),
@@ -1402,14 +1415,14 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                                       builder: (context) => AlertDialog(
                                         title: const Text('Setujui Pengajuan Keluar'),
                                         content: Text('Apakah Anda yakin ingin menyetujui pengajuan keluar untuk $name sebagai peran $role? Peran $role tidak akan lagi aktif untuk akun ini di sekolah ini.'),
+                                        actionsPadding: EdgeInsets.zero,
                                         actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(context, false),
-                                            child: const Text('Batal'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(context, true),
-                                            child: const Text('Setujui', style: TextStyle(color: Colors.green)),
+                                          AppDialogActions(
+                                            cancelText: 'Batal',
+                                            confirmText: 'Setujui',
+                                            confirmButtonColor: Colors.green,
+                                            onCancel: () => Navigator.pop(context, false),
+                                            onConfirm: () => Navigator.pop(context, true),
                                           ),
                                         ],
                                       ),
@@ -1458,14 +1471,14 @@ class _MasterUserScreenState extends State<MasterUserScreen>
                           builder: (context) => AlertDialog(
                             title: const Text('Tolak Pengajuan Keluar'),
                             content: Text('Apakah Anda yakin ingin menolak pengajuan keluar untuk $name? Status keanggotaan akan dikembalikan ke Aktif.'),
+                            actionsPadding: EdgeInsets.zero,
                             actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Batal'),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Tolak', style: TextStyle(color: Colors.red)),
+                              AppDialogActions(
+                                cancelText: 'Batal',
+                                confirmText: 'Tolak',
+                                isDestructive: true,
+                                onCancel: () => Navigator.pop(context, false),
+                                onConfirm: () => Navigator.pop(context, true),
                               ),
                             ],
                           ),

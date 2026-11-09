@@ -12,6 +12,7 @@ import '../screens/guru/dashboard_screen.dart';
 import 'profile_photo_view.dart';
 import 'role_badge.dart';
 import 'school_switcher_modal.dart';
+import 'app_dialog_actions.dart';
 
 class GuruDrawer extends StatelessWidget {
   final String? currentRoute;
@@ -620,19 +621,14 @@ class GuruDrawerPanel extends StatelessWidget {
           'Apakah Anda yakin ingin keluar dari aplikasi?',
           style: GoogleFonts.hankenGrotesk(color: const Color(0xFF475569)),
         ),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: Text(
-              'Batal',
-              style: GoogleFonts.hankenGrotesk(
-                color: const Color(0xFF64748B),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Keluar',
+            isDestructive: true,
+            onCancel: () => Navigator.pop(dialogCtx),
+            onConfirm: () async {
               Navigator.pop(dialogCtx); // Close Dialog
               _closeDrawer(context); // Close Drawer
               GuruDashboardScreen.resetReminderFlag();
@@ -641,13 +637,6 @@ class GuruDrawerPanel extends StatelessWidget {
                 context.go('/login');
               }
             },
-            child: Text(
-              'Keluar',
-              style: GoogleFonts.hankenGrotesk(
-                color: const Color(0xFFEF4444),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
           ),
         ],
       ),

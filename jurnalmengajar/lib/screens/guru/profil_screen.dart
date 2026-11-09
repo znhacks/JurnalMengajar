@@ -19,6 +19,7 @@ import '../../widgets/image_viewer.dart';
 import '../../widgets/school_avatar.dart';
 import '../../providers/warning_letter_provider.dart';
 import '../../widgets/app_scaffold.dart';
+import '../../widgets/app_dialog_actions.dart';
 
 class GuruProfilScreen extends StatefulWidget {
   const GuruProfilScreen({super.key});
@@ -101,17 +102,14 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
           'Apakah Anda yakin ingin menghapus akun guru Anda secara permanen? '
           'Seluruh data Anda (termasuk jadwal dan jurnal mengajar) akan terhapus dan Anda akan langsung dikeluarkan dari aplikasi.',
         ),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Lanjutkan',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Lanjutkan',
+            isDestructive: true,
+            onCancel: () => Navigator.pop(context, false),
+            onConfirm: () => Navigator.pop(context, true),
           ),
         ],
       ),
@@ -131,20 +129,14 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
           content: const Text(
             'TINDAKAN INI TIDAK BISA DIBATALKAN. Apakah Anda benar-benar yakin ingin menghapus akun Anda sekarang?',
           ),
+          actionsPadding: EdgeInsets.zero,
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Kembali'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text(
-                'HAPUS AKUN SAYA',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            AppDialogActions(
+              cancelText: 'Kembali',
+              confirmText: 'HAPUS AKUN',
+              isDestructive: true,
+              onCancel: () => Navigator.pop(context, false),
+              onConfirm: () => Navigator.pop(context, true),
             ),
           ],
         ),
@@ -1751,18 +1743,14 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                                       builder: (context) => AlertDialog(
                                                         title: const Text('Ajukan Keluar dari Sekolah?'),
                                                         content: const Text('Permintaan keluar harus disetujui oleh Admin sekolah.'),
+                                                        actionsPadding: EdgeInsets.zero,
                                                         actions: [
-                                                          TextButton(
-                                                            onPressed: () => Navigator.pop(context, false),
-                                                            child: const Text('Batal'),
-                                                          ),
-                                                          ElevatedButton(
-                                                            style: ElevatedButton.styleFrom(
-                                                              backgroundColor: Colors.red,
-                                                              foregroundColor: Colors.white,
-                                                            ),
-                                                            onPressed: () => Navigator.pop(context, true),
-                                                            child: const Text('Ajukan Permintaan'),
+                                                          AppDialogActions(
+                                                            cancelText: 'Batal',
+                                                            confirmText: 'Ajukan Keluar',
+                                                            isDestructive: true,
+                                                            onCancel: () => Navigator.pop(context, false),
+                                                            onConfirm: () => Navigator.pop(context, true),
                                                           ),
                                                         ],
                                                       ),

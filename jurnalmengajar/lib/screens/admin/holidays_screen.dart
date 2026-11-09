@@ -11,6 +11,7 @@ import '../../widgets/admin_search_filter_bar.dart';
 import '../../widgets/state_widgets.dart';
 import '../../core/utils/helper.dart';
 import '../../widgets/app_scaffold.dart';
+import '../../widgets/app_dialog_actions.dart';
 
 class AdminHolidaysScreen extends StatefulWidget {
   const AdminHolidaysScreen({super.key});
@@ -276,114 +277,97 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                 ],
               ),
             ),
+            actionsPadding: EdgeInsets.zero,
             actions: [
-              TextButton(
-                onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
-                child: const Text('Batal'),
-              ),
-              ElevatedButton(
-                onPressed: isSubmitting
-                    ? null
-                    : () async {
-                        final title = titleController.text.trim();
-                        if (title.isEmpty) {
-                          AppHelper.showSnackBar(
-                            context,
-                            'Judul libur tidak boleh kosong',
-                            isError: true,
-                          );
-                          return;
-                        }
+              AppDialogActions(
+                cancelText: 'Batal',
+                confirmText: 'Simpan',
+                isConfirmLoading: isSubmitting,
+                confirmColor: const Color(0xFF2563EB),
+                onCancel: isSubmitting ? null : () => Navigator.pop(dialogCtx),
+                onConfirm: () async {
+                  final title = titleController.text.trim();
+                  if (title.isEmpty) {
+                    AppHelper.showSnackBar(
+                      context,
+                      'Judul libur tidak boleh kosong',
+                      isError: true,
+                    );
+                    return;
+                  }
 
-                        final chosenCategory = selectedCategory == 'Lainnya'
-                            ? (customCategoryController.text.trim().isNotEmpty
-                                  ? customCategoryController.text.trim()
-                                  : 'Libur Lainnya')
-                            : selectedCategory;
+                  final chosenCategory = selectedCategory == 'Lainnya'
+                      ? (customCategoryController.text.trim().isNotEmpty
+                            ? customCategoryController.text.trim()
+                            : 'Libur Lainnya')
+                      : selectedCategory;
 
-                        final authProvider = Provider.of<AuthProvider>(
-                          context,
-                          listen: false,
+                  final authProvider = Provider.of<AuthProvider>(
+                    context,
+                    listen: false,
+                  );
+                  final holidayProvider = Provider.of<HolidayProvider>(
+                    context,
+                    listen: false,
+                  );
+                  final schoolId =
+                      authProvider.activeSchoolId ??
+                      'a1111111-1111-1111-1111-111111111111';
+
+                  final messenger = ScaffoldMessenger.of(context);
+                  final navigator = Navigator.of(dialogCtx);
+                  setDialogState(() => isSubmitting = true);
+
+                  final success = isEdit
+                      ? await holidayProvider.updateHoliday(
+                          holidayId: holiday.id,
+                          schoolId: schoolId,
+                          title: title,
+                          startDate: startDate,
+                          endDate: endDate,
+                          oldStartDate: holiday.startDate,
+                          oldEndDate: holiday.endDate,
+                          category: chosenCategory,
+                          description: chosenCategory,
+                        )
+                      : await holidayProvider.addHoliday(
+                          schoolId: schoolId,
+                          title: title,
+                          startDate: startDate,
+                          endDate: endDate,
+                          category: chosenCategory,
+                          description: chosenCategory,
+                          createdBy: authProvider.currentUser?.id,
                         );
-                        final holidayProvider = Provider.of<HolidayProvider>(
-                          context,
-                          listen: false,
-                        );
-                        final schoolId =
-                            authProvider.activeSchoolId ??
-                            'a1111111-1111-1111-1111-111111111111';
 
-                        final messenger = ScaffoldMessenger.of(context);
-                        final navigator = Navigator.of(dialogCtx);
-                        setDialogState(() => isSubmitting = true);
-
-                        final success = isEdit
-                            ? await holidayProvider.updateHoliday(
-                                holidayId: holiday.id,
-                                schoolId: schoolId,
-                                title: title,
-                                startDate: startDate,
-                                endDate: endDate,
-                                oldStartDate: holiday.startDate,
-                                oldEndDate: holiday.endDate,
-                                category: chosenCategory,
-                                description: chosenCategory,
-                              )
-                            : await holidayProvider.addHoliday(
-                                schoolId: schoolId,
-                                title: title,
-                                startDate: startDate,
-                                endDate: endDate,
-                                category: chosenCategory,
-                                description: chosenCategory,
-                                createdBy: authProvider.currentUser?.id,
-                              );
-
-                        if (mounted) {
-                          if (success) {
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  isEdit
-                                      ? 'Hari libur berhasil diperbarui!'
-                                      : 'Hari libur berhasil ditambahkan!',
-                                ),
-                              ),
-                            );
-                            navigator.pop();
-                          } else {
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  holidayProvider.errorMessage ??
-                                      (isEdit
-                                          ? 'Gagal memperbarui hari libur.'
-                                          : 'Gagal menambahkan hari libur.'),
-                                ),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            setDialogState(() => isSubmitting = false);
-                          }
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFDC2626),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                ),
-                child: isSubmitting
-                    ? SizedBox(
-                        width: 18.w,
-                        height: 18.h,
-                        child: const CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
+                  if (mounted) {
+                    if (success) {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            isEdit
+                                ? 'Hari libur berhasil diperbarui!'
+                                : 'Hari libur berhasil ditambahkan!',
+                          ),
                         ),
-                      )
-                    : const Text('Simpan'),
+                      );
+                      navigator.pop();
+                    } else {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            holidayProvider.errorMessage ??
+                                (isEdit
+                                    ? 'Gagal memperbarui hari libur.'
+                                    : 'Gagal menambahkan hari libur.'),
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      setDialogState(() => isSubmitting = false);
+                    }
+                  }
+                },
               ),
             ],
           );
@@ -685,27 +669,14 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                                                 content: Text(
                                                   'Menghapus hari libur "${item.title}" akan mengaktifkan kembali tanggal ini dan merestore jurnal yang di-soft-delete.',
                                                 ),
+                                                actionsPadding: EdgeInsets.zero,
                                                 actions: [
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(
-                                                          ctx,
-                                                          false,
-                                                        ),
-                                                    child: const Text('Batal'),
-                                                  ),
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(
-                                                          ctx,
-                                                          true,
-                                                        ),
-                                                    child: const Text(
-                                                      'Hapus',
-                                                      style: TextStyle(
-                                                        color: Colors.red,
-                                                      ),
-                                                    ),
+                                                  AppDialogActions(
+                                                    cancelText: 'Batal',
+                                                    confirmText: 'Hapus',
+                                                    isDestructive: true,
+                                                    onCancel: () => Navigator.pop(ctx, false),
+                                                    onConfirm: () => Navigator.pop(ctx, true),
                                                   ),
                                                 ],
                                               ),

@@ -12,6 +12,7 @@ import '../../widgets/admin_drawer.dart';
 import '../../widgets/admin_search_filter_bar.dart';
 import '../../core/utils/helper.dart';
 import '../../widgets/app_scaffold.dart';
+import '../../widgets/app_dialog_actions.dart';
 
 class AdminTeacherLeavesScreen extends StatefulWidget {
   const AdminTeacherLeavesScreen({super.key});
@@ -603,131 +604,113 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                 ),
               ),
             ),
+            actionsPadding: EdgeInsets.zero,
             actions: [
-              TextButton(
-                onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
-                child: const Text('Batal'),
-              ),
-              ElevatedButton(
-                onPressed: isSubmitting
-                    ? null
-                    : () async {
-                        if (selectedTeacherId == null ||
-                            selectedTeacherId!.isEmpty) {
-                          AppHelper.showSnackBar(
-                            context,
-                            'Pilih guru yang cuti',
-                            isError: true,
-                          );
-                          return;
-                        }
+              AppDialogActions(
+                cancelText: 'Batal',
+                confirmText: 'Simpan',
+                isConfirmLoading: isSubmitting,
+                onCancel: isSubmitting ? null : () => Navigator.pop(dialogCtx),
+                onConfirm: () async {
+                  if (selectedTeacherId == null ||
+                      selectedTeacherId!.isEmpty) {
+                    AppHelper.showSnackBar(
+                      context,
+                      'Pilih guru yang cuti',
+                      isError: true,
+                    );
+                    return;
+                  }
 
-                        final finalReason = selectedReason == 'Lainnya'
-                            ? (customReasonController.text.trim().isNotEmpty
-                                  ? customReasonController.text.trim()
-                                  : 'Cuti Lainnya')
-                            : selectedReason;
+                  final finalReason = selectedReason == 'Lainnya'
+                      ? (customReasonController.text.trim().isNotEmpty
+                            ? customReasonController.text.trim()
+                            : 'Cuti Lainnya')
+                      : selectedReason;
 
-                        final leaveProvider = Provider.of<TeacherLeaveProvider>(
-                          context,
-                          listen: false,
-                        );
-                        final schoolId =
-                            authProvider.activeSchoolId ??
-                            'a1111111-1111-1111-1111-111111111111';
+                  final leaveProvider = Provider.of<TeacherLeaveProvider>(
+                    context,
+                    listen: false,
+                  );
+                  final schoolId =
+                      authProvider.activeSchoolId ??
+                      'a1111111-1111-1111-1111-111111111111';
 
-                        setDialogState(() => isSubmitting = true);
+                  setDialogState(() => isSubmitting = true);
 
-                        // Build substitute items for all teacherSchedules using bulkSubstituteTeacherId
-                        final List<LeaveSubstituteItem> substituteList = [];
-                        if (bulkSubstituteTeacherId != null &&
-                            bulkSubstituteTeacherId!.isNotEmpty) {
-                          final subTeacher = teachers.firstWhere(
-                            (t) => t.id == bulkSubstituteTeacherId,
-                            orElse: () => TeacherModel(
-                              id: '',
-                              name: 'Guru Pengganti',
-                              position: '',
-                              address: '',
-                              phoneNumber: '',
-                              email: '',
-                            ),
-                          );
-                          for (final s in teacherSchedules) {
-                            substituteList.add(
-                              LeaveSubstituteItem(
-                                scheduleId: s.id,
-                                date: s.date,
-                                teachingHour: s.teachingHour,
-                                classId: s.classId,
-                                subjectId: s.subjectId,
-                                substituteTeacherId: bulkSubstituteTeacherId!,
-                                substituteTeacherName: subTeacher.name,
-                              ),
-                            );
-                          }
-                        }
-
-                        final messenger = ScaffoldMessenger.of(context);
-                        final navigator = Navigator.of(dialogCtx);
-
-                        final ok = await leaveProvider.addLeave(
-                          schoolId: schoolId,
-                          teacherId: selectedTeacherId!,
-                          startDate: startDate,
-                          endDate: endDate,
-                          reason: finalReason,
-                          substitutes: substituteList,
-                          createdBy: authProvider.currentUser?.id,
-                        );
-
-                        if (mounted) {
-                          if (ok) {
-                            // Tunggu reload jadwal selesai dulu agar data pengganti benar-benar tampil,
-                            // baru tampilkan notifikasi berhasil dan tutup dialog.
-                            try {
-                              await scheduleProvider.loadAllSchedules(schoolId);
-                            } catch (_) {}
-                            if (!mounted) return;
-                            messenger.showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Data cuti dan guru pengganti berhasil disimpan!',
-                                ),
-                              ),
-                            );
-                            navigator.pop();
-                          } else {
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  leaveProvider.errorMessage ??
-                                      'Gagal menyimpan data cuti.',
-                                ),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            setDialogState(() => isSubmitting = false);
-                          }
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2563EB),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                ),
-                child: isSubmitting
-                    ? SizedBox(
-                        width: 18.w,
-                        height: 18.h,
-                        child: const CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
+                  // Build substitute items for all teacherSchedules using bulkSubstituteTeacherId
+                  final List<LeaveSubstituteItem> substituteList = [];
+                  if (bulkSubstituteTeacherId != null &&
+                      bulkSubstituteTeacherId!.isNotEmpty) {
+                    final subTeacher = teachers.firstWhere(
+                      (t) => t.id == bulkSubstituteTeacherId,
+                      orElse: () => TeacherModel(
+                        id: '',
+                        name: 'Guru Pengganti',
+                        position: '',
+                        address: '',
+                        phoneNumber: '',
+                        email: '',
+                      ),
+                    );
+                    for (final s in teacherSchedules) {
+                      substituteList.add(
+                        LeaveSubstituteItem(
+                          scheduleId: s.id,
+                          date: s.date,
+                          teachingHour: s.teachingHour,
+                          classId: s.classId,
+                          subjectId: s.subjectId,
+                          substituteTeacherId: bulkSubstituteTeacherId!,
+                          substituteTeacherName: subTeacher.name,
                         ),
-                      )
-                    : const Text('Simpan'),
+                      );
+                    }
+                  }
+
+                  final messenger = ScaffoldMessenger.of(context);
+                  final navigator = Navigator.of(dialogCtx);
+
+                  final ok = await leaveProvider.addLeave(
+                    schoolId: schoolId,
+                    teacherId: selectedTeacherId!,
+                    startDate: startDate,
+                    endDate: endDate,
+                    reason: finalReason,
+                    substitutes: substituteList,
+                    createdBy: authProvider.currentUser?.id,
+                  );
+
+                  if (mounted) {
+                    if (ok) {
+                      // Tunggu reload jadwal selesai dulu agar data pengganti benar-benar tampil,
+                      // baru tampilkan notifikasi berhasil dan tutup dialog.
+                      try {
+                        await scheduleProvider.loadAllSchedules(schoolId);
+                      } catch (_) {}
+                      if (!mounted) return;
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Data cuti dan guru pengganti berhasil disimpan!',
+                          ),
+                        ),
+                      );
+                      navigator.pop();
+                    } else {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            leaveProvider.errorMessage ??
+                                'Gagal menyimpan data cuti.',
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      setDialogState(() => isSubmitting = false);
+                    }
+                  }
+                },
               ),
             ],
           );
@@ -1300,27 +1283,14 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                                                 content: Text(
                                                   'Menghapus cuti "${teacher.name}" akan membatalkan penugasan guru pengganti dan mengembalikan jadwal semula.',
                                                 ),
+                                                actionsPadding: EdgeInsets.zero,
                                                 actions: [
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(
-                                                          ctx,
-                                                          false,
-                                                        ),
-                                                    child: const Text('Batal'),
-                                                  ),
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(
-                                                          ctx,
-                                                          true,
-                                                        ),
-                                                    child: const Text(
-                                                      'Hapus',
-                                                      style: TextStyle(
-                                                        color: Colors.red,
-                                                      ),
-                                                    ),
+                                                  AppDialogActions(
+                                                    cancelText: 'Batal',
+                                                    confirmText: 'Hapus',
+                                                    isDestructive: true,
+                                                    onCancel: () => Navigator.pop(ctx, false),
+                                                    onConfirm: () => Navigator.pop(ctx, true),
                                                   ),
                                                 ],
                                               ),

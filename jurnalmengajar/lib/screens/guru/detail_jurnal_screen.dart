@@ -15,6 +15,7 @@ import '../../models/period_model.dart';
 import '../../core/utils/helper.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_dialog_actions.dart';
 
 class DetailJurnalScreen extends StatelessWidget {
   final String journalId;
@@ -533,10 +534,14 @@ class DetailJurnalScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Setujui Jurnal'),
         content: const Text('Apakah Anda yakin ingin menyetujui jurnal mengajar ini?'),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
-          TextButton(
-            onPressed: () async {
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Setujui',
+            confirmButtonColor: const Color(0xFF10B981),
+            onCancel: () => Navigator.pop(ctx),
+            onConfirm: () async {
               Navigator.pop(ctx);
               final success = await journalProvider.verifyJournal(
                 journal.id,
@@ -550,7 +555,6 @@ class DetailJurnalScreen extends StatelessWidget {
                 AppHelper.showSnackBar(context, 'Gagal memverifikasi jurnal', isError: true);
               }
             },
-            child: const Text('Setujui', style: TextStyle(color: Color(0xFF10B981))),
           ),
         ],
       ),
@@ -591,13 +595,14 @@ class DetailJurnalScreen extends StatelessWidget {
                 ),
               ],
             ),
+            actionsPadding: EdgeInsets.zero,
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Batal'),
-              ),
-              TextButton(
-                onPressed: isButtonEnabled
+              AppDialogActions(
+                cancelText: 'Batal',
+                confirmText: 'Tolak Jurnal',
+                isDestructive: true,
+                onCancel: () => Navigator.pop(ctx),
+                onConfirm: isButtonEnabled
                     ? () async {
                         Navigator.pop(ctx);
                         final success = await journalProvider.verifyJournal(
@@ -614,7 +619,6 @@ class DetailJurnalScreen extends StatelessWidget {
                         }
                       }
                     : null,
-                child: const Text('Tolak Jurnal', style: TextStyle(color: Colors.red)),
               ),
             ],
           );

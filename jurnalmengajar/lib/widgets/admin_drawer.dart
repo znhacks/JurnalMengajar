@@ -13,6 +13,7 @@ import '../providers/journal_provider.dart';
 import '../providers/warning_letter_provider.dart';
 import '../providers/teacher_leave_provider.dart';
 import '../models/user_model.dart';
+import 'app_dialog_actions.dart';
 import '../core/services/cache_service.dart';
 import '../core/utils/helper.dart';
 
@@ -593,16 +594,14 @@ class _AdminDrawerPanelState extends State<AdminDrawerPanel> {
           'Apakah Anda yakin ingin keluar dari halaman Administrator?',
           style: GoogleFonts.hankenGrotesk(color: AppTheme.onSurfaceVariant),
         ),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: Text(
-              'Batal',
-              style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w600),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Keluar',
+            isDestructive: true,
+            onCancel: () => Navigator.pop(dialogCtx),
+            onConfirm: () async {
               Navigator.pop(dialogCtx);
               _closeDrawer(context);
               await authProvider.logout();
@@ -610,13 +609,6 @@ class _AdminDrawerPanelState extends State<AdminDrawerPanel> {
                 context.go('/login');
               }
             },
-            child: Text(
-              'Keluar',
-              style: GoogleFonts.hankenGrotesk(
-                color: AppTheme.errorColor,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
           ),
         ],
       ),

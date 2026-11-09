@@ -20,6 +20,7 @@ import '../../core/utils/helper.dart';
 import '../../core/utils/schedule_grouper.dart';
 import '../../widgets/guru_drawer.dart';
 import '../../widgets/app_scaffold.dart';
+import '../../widgets/app_dialog_actions.dart';
 
 class GuruWarningLetterListScreen extends StatefulWidget {
   const GuruWarningLetterListScreen({super.key});
@@ -34,6 +35,31 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
   int _displayedCount = _pageSize;
   int _currentTotalCount = 0;
   bool _isLoadingMore = false;
+
+  String _selectedStatus = 'pending'; // 'pending' | 'completed' | 'all'
+  DateTime? _selectedMonth; // null = Semua Bulan
+
+  void _setStatusFilter(String status) {
+    if (_selectedStatus == status) return;
+    setState(() {
+      _selectedStatus = status;
+      _displayedCount = _pageSize;
+    });
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+    }
+  }
+
+  void _setMonthFilter(DateTime? month) {
+    if (_selectedMonth == month) return;
+    setState(() {
+      _selectedMonth = month;
+      _displayedCount = _pageSize;
+    });
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+    }
+  }
 
   @override
   void initState() {
@@ -626,6 +652,404 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
     );
   }
 
+  void _showMonthPickerBottomSheet(
+    BuildContext context,
+    List<DateTime> months,
+    Map<String, DateTime> dateMap,
+    List<MapEntry<String, List<WarningLetterModel>>> allGroups,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+          ),
+          padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(2.r),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Pilih Bulan Pengingat',
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12.h),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        // Option: Semua Bulan
+                        _buildMonthOptionTile(
+                          context: ctx,
+                          title: 'Semua Bulan',
+                          count: allGroups.length,
+                          isSelected: _selectedMonth == null,
+                          isDark: isDark,
+                          onTap: () {
+                            _setMonthFilter(null);
+                            Navigator.pop(ctx);
+                          },
+                        ),
+                        // Month Options
+                        ...months.map((m) {
+                          final count = allGroups.where((g) {
+                            final d = dateMap[g.key]!;
+                            return d.year == m.year && d.month == m.month;
+                          }).length;
+                          final isSelected = _selectedMonth != null &&
+                              _selectedMonth!.year == m.year &&
+                              _selectedMonth!.month == m.month;
+                          final monthLabel = DateFormat('MMMM yyyy', 'id_ID').format(m);
+
+                          return _buildMonthOptionTile(
+                            context: ctx,
+                            title: monthLabel,
+                            count: count,
+                            isSelected: isSelected,
+                            isDark: isDark,
+                            onTap: () {
+                              _setMonthFilter(m);
+                              Navigator.pop(ctx);
+                            },
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMonthOptionTile({
+    required BuildContext context,
+    required String title,
+    required int count,
+    required bool isSelected,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12.r),
+      child: Container(
+        margin: EdgeInsets.symmetric(vertical: 4.h),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark
+                  ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
+                  : AppTheme.primaryColor.withValues(alpha: 0.08))
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: isSelected
+                ? (isDark ? const Color(0xFF60A5FA) : AppTheme.primaryColor)
+                : (isDark ? const Color(0xFF334155).withValues(alpha: 0.5) : const Color(0xFFE2E8F0)),
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
+              size: 18.r,
+              color: isSelected
+                  ? (isDark ? const Color(0xFF60A5FA) : AppTheme.primaryColor)
+                  : const Color(0xFF94A3B8),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Text(
+                title,
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 13.5.sp,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected
+                      ? (isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor)
+                      : Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.5) : const Color(0xFFEFF6FF))
+                    : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Text(
+                '$count',
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected
+                      ? (isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor)
+                      : const Color(0xFF64748B),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusSegmentedBar({
+    required BuildContext context,
+    required bool isDark,
+    required int pendingCount,
+    required int completedCount,
+    required int allCount,
+  }) {
+    return Container(
+      margin: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 4.h),
+      padding: EdgeInsets.all(4.w),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Row(
+        children: [
+          _buildSegmentTab(
+            context: context,
+            title: 'Perlu Diisi',
+            count: pendingCount,
+            isSelected: _selectedStatus == 'pending',
+            isDark: isDark,
+            badgeColor: pendingCount > 0 ? const Color(0xFFEF4444) : null,
+            onTap: () => _setStatusFilter('pending'),
+          ),
+          _buildSegmentTab(
+            context: context,
+            title: 'Selesai',
+            count: completedCount,
+            isSelected: _selectedStatus == 'completed',
+            isDark: isDark,
+            badgeColor: const Color(0xFF10B981),
+            onTap: () => _setStatusFilter('completed'),
+          ),
+          _buildSegmentTab(
+            context: context,
+            title: 'Semua',
+            count: allCount,
+            isSelected: _selectedStatus == 'all',
+            isDark: isDark,
+            onTap: () => _setStatusFilter('all'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSegmentTab({
+    required BuildContext context,
+    required String title,
+    required int count,
+    required bool isSelected,
+    required bool isDark,
+    Color? badgeColor,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10.r),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: EdgeInsets.symmetric(vertical: 8.h),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? (isDark ? const Color(0xFF334155) : Colors.white)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(10.r),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 12.sp,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  color: isSelected
+                      ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                      : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                ),
+              ),
+              SizedBox(width: 5.w),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 5.5.w, vertical: 1.5.h),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? (badgeColor != null
+                          ? badgeColor.withValues(alpha: isDark ? 0.25 : 0.15)
+                          : (isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)))
+                      : (badgeColor != null && isSelected
+                          ? badgeColor.withValues(alpha: 0.15)
+                          : Colors.transparent),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Text(
+                  '$count',
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 10.5.sp,
+                    fontWeight: FontWeight.w700,
+                    color: isSelected
+                        ? (badgeColor ?? (isDark ? Colors.white : const Color(0xFF0F172A)))
+                        : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyFilteredState({
+    required BuildContext context,
+    required bool isDark,
+    required int completedCount,
+  }) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 48.h),
+      children: [
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(18.w),
+                decoration: BoxDecoration(
+                  color: _selectedStatus == 'pending'
+                      ? const Color(0xFFDCFCE7)
+                      : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _selectedStatus == 'pending'
+                      ? Icons.check_circle_outline_rounded
+                      : Icons.filter_list_off_rounded,
+                  size: 48.r,
+                  color: _selectedStatus == 'pending'
+                      ? const Color(0xFF16A34A)
+                      : const Color(0xFF64748B),
+                ),
+              ),
+              SizedBox(height: 16.h),
+              Text(
+                _selectedStatus == 'pending'
+                    ? 'Semua Pengingat Selesai! 🎉'
+                    : (_selectedStatus == 'completed'
+                        ? 'Belum Ada Pengingat Selesai'
+                        : 'Pengingat Tidak Ditemukan'),
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                _selectedStatus == 'pending'
+                    ? 'Luar biasa! Tidak ada jurnal yang tertunda pada filter ini.'
+                    : (_selectedStatus == 'completed'
+                        ? 'Pengingat yang sudah diisi dan dikonfirmasi akan tersimpan di sini.'
+                        : 'Tidak ada pengingat yang cocok dengan filter yang dipilih.'),
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 12.5.sp,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 20.h),
+              if (_selectedStatus == 'pending' && completedCount > 0)
+                OutlinedButton.icon(
+                  onPressed: () => _setStatusFilter('completed'),
+                  icon: const Icon(Icons.history_rounded, size: 16),
+                  label: Text('Lihat Riwayat Selesai ($completedCount)'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.primaryColor,
+                    side: const BorderSide(color: AppTheme.primaryColor),
+                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                  ),
+                )
+              else if (_selectedMonth != null)
+                OutlinedButton.icon(
+                  onPressed: () => _setMonthFilter(null),
+                  icon: const Icon(Icons.refresh_rounded, size: 16),
+                  label: const Text('Tampilkan Semua Bulan'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.primaryColor,
+                    side: const BorderSide(color: AppTheme.primaryColor),
+                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final warningProvider = context.watch<WarningLetterProvider>();
@@ -672,6 +1096,58 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
         final dateB = dateMap[b.key]!;
         return dateB.compareTo(dateA);
       });
+
+    final journals = journalProvider.teacherJournals;
+    final allSchedules = scheduleProvider.cachedTeacherSchedules;
+
+    int pendingCount = 0;
+    int completedCount = 0;
+    final Map<String, bool> groupStatusMap = {};
+
+    for (final entry in groupedMap.entries) {
+      final gDate = dateMap[entry.key]!;
+      final gWarnings = entry.value;
+      final hasUnread = gWarnings.any((w) => w.status == 'unread');
+      final isJournalFilled = _isGroupJournalFilled(
+        groupDate: gDate,
+        groupWarnings: gWarnings,
+        schedules: allSchedules,
+        journals: journals,
+      );
+      final isPending = hasUnread || !isJournalFilled;
+      groupStatusMap[entry.key] = isPending;
+      if (isPending) {
+        pendingCount++;
+      } else {
+        completedCount++;
+      }
+    }
+
+    final Set<DateTime> availableMonths = {};
+    for (final date in dateMap.values) {
+      availableMonths.add(DateTime(date.year, date.month));
+    }
+    final sortedMonths = availableMonths.toList()..sort((a, b) => b.compareTo(a));
+
+    final filteredGroups = sortedGroups.where((group) {
+      final gDate = dateMap[group.key]!;
+      final isPending = groupStatusMap[group.key] ?? false;
+
+      // Status filter
+      if (_selectedStatus == 'pending' && !isPending) return false;
+      if (_selectedStatus == 'completed' && isPending) return false;
+
+      // Month filter
+      if (_selectedMonth != null) {
+        if (gDate.year != _selectedMonth!.year || gDate.month != _selectedMonth!.month) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AppScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -819,14 +1295,14 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                         '${blockedConfirmed > 0 ? ' $blockedConfirmed pengingat dikonfirmasi lainnya dilewati karena jurnalnya belum terisi lengkap.' : ''}'
                         '${unreadCount > 0 ? ' Pengingat yang belum dikonfirmasi tidak akan dihapus.' : ''}',
                       ),
+                      actionsPadding: EdgeInsets.zero,
                       actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Batal'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                        AppDialogActions(
+                          cancelText: 'Batal',
+                          confirmText: 'Hapus',
+                          isDestructive: true,
+                          onCancel: () => Navigator.pop(context, false),
+                          onConfirm: () => Navigator.pop(context, true),
                         ),
                       ],
                     ),
@@ -875,16 +1351,16 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  setState(() {
-                    _displayedCount = _pageSize;
-                  });
-                  await _loadData();
-                },
-                color: AppTheme.primaryColor,
-                child: schoolWarnings.isEmpty
-                    ? ListView(
+              child: schoolWarnings.isEmpty
+                  ? RefreshIndicator(
+                      onRefresh: () async {
+                        setState(() {
+                          _displayedCount = _pageSize;
+                        });
+                        await _loadData();
+                      },
+                      color: AppTheme.primaryColor,
+                      child: ListView(
                         children: [
                           SizedBox(height: 120.h),
                           Center(
@@ -930,21 +1406,137 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                             ),
                           ),
                         ],
-                      )
-                    : Builder(
-                        builder: (context) {
-                          _currentTotalCount = sortedGroups.length;
-                          final visibleGroups = sortedGroups.take(_displayedCount).toList();
-                          final hasMore = _displayedCount < sortedGroups.length;
-                          final journals = journalProvider.teacherJournals;
-                          final allSchedules = scheduleProvider.cachedTeacherSchedules;
+                      ),
+                    )
+                  : Column(
+                      children: [
+                        // Pinned Status Segmented Tabs
+                        _buildStatusSegmentedBar(
+                          context: context,
+                          isDark: isDark,
+                          pendingCount: pendingCount,
+                          completedCount: completedCount,
+                          allCount: sortedGroups.length,
+                        ),
 
-                          return ListView.separated(
-                            controller: _scrollController,
-                            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                            padding: EdgeInsets.all(16.w),
-                            itemCount: visibleGroups.length + (_isLoadingMore || hasMore ? 1 : 0),
-                            separatorBuilder: (context, index) {
+                        // Pinned Month Filter Bar
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+                          child: Row(
+                            children: [
+                              InkWell(
+                                onTap: () => _showMonthPickerBottomSheet(
+                                  context,
+                                  sortedMonths,
+                                  dateMap,
+                                  sortedGroups,
+                                ),
+                                borderRadius: BorderRadius.circular(8.r),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(8.r),
+                                    border: Border.all(
+                                      color: _selectedMonth != null
+                                          ? AppTheme.primaryColor
+                                          : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                                      width: _selectedMonth != null ? 1.5 : 1.0,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_month_rounded,
+                                        size: 14.sp,
+                                        color: _selectedMonth != null
+                                            ? AppTheme.primaryColor
+                                            : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                                      ),
+                                      SizedBox(width: 6.w),
+                                      Text(
+                                        _selectedMonth == null
+                                            ? 'Semua Bulan'
+                                            : DateFormat('MMMM yyyy', 'id_ID').format(_selectedMonth!),
+                                        style: GoogleFonts.hankenGrotesk(
+                                          fontSize: 12.sp,
+                                          fontWeight: _selectedMonth != null ? FontWeight.w700 : FontWeight.w600,
+                                          color: _selectedMonth != null
+                                              ? (isDark ? const Color(0xFF93C5FD) : AppTheme.primaryColor)
+                                              : Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      SizedBox(width: 4.w),
+                                      Icon(
+                                        Icons.keyboard_arrow_down_rounded,
+                                        size: 16.sp,
+                                        color: const Color(0xFF94A3B8),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              if (_selectedMonth != null) ...[
+                                SizedBox(width: 6.w),
+                                InkWell(
+                                  onTap: () => _setMonthFilter(null),
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  child: Padding(
+                                    padding: EdgeInsets.all(4.w),
+                                    child: Icon(
+                                      Icons.cancel_rounded,
+                                      size: 18.sp,
+                                      color: const Color(0xFF94A3B8),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              const Spacer(),
+                              Text(
+                                '${filteredGroups.length} pengingat',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 11.5.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        SizedBox(height: 4.h),
+
+                        // List / Filtered Empty
+                        Expanded(
+                          child: RefreshIndicator(
+                            onRefresh: () async {
+                              setState(() {
+                                _displayedCount = _pageSize;
+                              });
+                              await _loadData();
+                            },
+                            color: AppTheme.primaryColor,
+                            child: filteredGroups.isEmpty
+                                ? _buildEmptyFilteredState(
+                                    context: context,
+                                    isDark: isDark,
+                                    completedCount: completedCount,
+                                  )
+                                : Builder(
+                                    builder: (context) {
+                                      _currentTotalCount = filteredGroups.length;
+                                      final visibleGroups = filteredGroups.take(_displayedCount).toList();
+                                      final hasMore = _displayedCount < filteredGroups.length;
+                                      final journals = journalProvider.teacherJournals;
+                                      final allSchedules = scheduleProvider.cachedTeacherSchedules;
+
+                                      return ListView.separated(
+                                        controller: _scrollController,
+                                        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                                        padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 16.h),
+                                        itemCount: visibleGroups.length + (_isLoadingMore || hasMore ? 1 : 0),
+                                        separatorBuilder: (context, index) {
                               if (index >= visibleGroups.length - 1) return const SizedBox.shrink();
                               return SizedBox(height: 16.h);
                             },
@@ -1170,6 +1762,9 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                           );
                         },
                       ),
+                    ),
+                  ),
+                ],
               ),
             ),
     );

@@ -11,6 +11,7 @@ import '../../../widgets/state_widgets.dart';
 import '../../../core/utils/helper.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_dialog_actions.dart';
 
 class MasterPeriodScreen extends StatefulWidget {
   const MasterPeriodScreen({super.key});
@@ -81,11 +82,14 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
       builder: (context) => AlertDialog(
         title: Text('Hapus $count Periode Akademik', style: const TextStyle(color: Colors.red)),
         content: Text('Apakah Anda yakin ingin menghapus $count periode akademik yang dipilih?'),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hapus Massal', style: TextStyle(color: Colors.red)),
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Hapus Massal',
+            isDestructive: true,
+            onCancel: () => Navigator.pop(context, false),
+            onConfirm: () => Navigator.pop(context, true),
           ),
         ],
       ),
@@ -233,9 +237,12 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                         ),
                         SizedBox(height: 16.h),
                       ],
-                      SizedBox(height: 16.h),
-                      ElevatedButton(
-                        onPressed: () async {
+                      AppDialogActions(
+                        padding: EdgeInsets.only(top: 24.h, bottom: 20.h),
+                        cancelText: 'Batal',
+                        confirmText: 'Simpan',
+                        onCancel: () => Navigator.pop(context),
+                        onConfirm: () async {
                           if (nameController.text.trim().isEmpty) {
                             AppHelper.showSnackBar(context, 'Nama periode tidak boleh kosong', isError: true);
                             return;
@@ -268,7 +275,6 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                             AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menyimpan periode.', isError: true);
                           }
                         },
-                        child: const Text('Simpan'),
                       ),
                       SizedBox(height: 20.h),
                     ],
@@ -499,11 +505,14 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                                           builder: (context) => AlertDialog(
                                             title: const Text('Hapus Periode'),
                                             content: const Text('Apakah Anda yakin ingin menghapus periode akademik ini?'),
+                                            actionsPadding: EdgeInsets.zero,
                                             actions: [
-                                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(context, true),
-                                                child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                                              AppDialogActions(
+                                                cancelText: 'Batal',
+                                                confirmText: 'Hapus',
+                                                isDestructive: true,
+                                                onCancel: () => Navigator.pop(context, false),
+                                                onConfirm: () => Navigator.pop(context, true),
                                               ),
                                             ],
                                           ),

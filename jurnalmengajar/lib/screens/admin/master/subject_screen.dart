@@ -12,6 +12,7 @@ import '../../../core/utils/helper.dart';
 
 import '../../../providers/auth_provider.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_dialog_actions.dart';
 
 class MasterSubjectScreen extends StatefulWidget {
   const MasterSubjectScreen({super.key});
@@ -82,11 +83,14 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
       builder: (context) => AlertDialog(
         title: Text('Hapus $count Mata Pelajaran', style: const TextStyle(color: Colors.red)),
         content: Text('Apakah Anda yakin ingin menghapus $count mata pelajaran yang dipilih?'),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hapus Massal', style: TextStyle(color: Colors.red)),
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Hapus Massal',
+            isDestructive: true,
+            onCancel: () => Navigator.pop(context, false),
+            onConfirm: () => Navigator.pop(context, true),
           ),
         ],
       ),
@@ -163,9 +167,12 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                       });
                     },
                   ),
-                  SizedBox(height: 24.h),
-                  ElevatedButton(
-                    onPressed: () async {
+                  AppDialogActions(
+                    padding: EdgeInsets.only(top: 24.h, bottom: 20.h),
+                    cancelText: 'Batal',
+                    confirmText: 'Simpan',
+                    onCancel: () => Navigator.pop(context),
+                    onConfirm: () async {
                       if (nameController.text.trim().isEmpty) {
                         AppHelper.showSnackBar(context, 'Nama pelajaran tidak boleh kosong', isError: true);
                         return;
@@ -198,7 +205,6 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                         AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menyimpan mata pelajaran.', isError: true);
                       }
                     },
-                    child: const Text('Simpan'),
                   ),
                   SizedBox(height: 20.h),
                 ],
@@ -425,11 +431,14 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                                           builder: (context) => AlertDialog(
                                             title: const Text('Hapus Pelajaran'),
                                             content: const Text('Apakah Anda yakin ingin menghapus mata pelajaran ini?'),
+                                            actionsPadding: EdgeInsets.zero,
                                             actions: [
-                                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(context, true),
-                                                child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                                              AppDialogActions(
+                                                cancelText: 'Batal',
+                                                confirmText: 'Hapus',
+                                                isDestructive: true,
+                                                onCancel: () => Navigator.pop(context, false),
+                                                onConfirm: () => Navigator.pop(context, true),
                                               ),
                                             ],
                                           ),

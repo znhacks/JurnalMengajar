@@ -394,20 +394,27 @@ void main() {
       // Verify Guru Ada Telat is displayed in the attention/late leaderboard
       expect(find.text('Guru Ada Telat'), findsAtLeastNWidgets(1));
 
-      // Verify Time Filter Chips are available
+      // Verify Time Filter Selector Tile is present showing initial preset
+      final selectorFinder = find.byKey(const Key('stat_time_filter_selector'));
+      expect(selectorFinder, findsOneWidget);
       expect(find.text('30 Hari Terakhir'), findsOneWidget);
+
+      // Tap selector tile to open bottom sheet
+      await tester.tap(selectorFinder);
+      await tester.pumpAndSettle();
+
+      // Verify Bottom Sheet options are visible
+      expect(find.text('Pilih Rentang Waktu'), findsOneWidget);
       expect(find.text('Bulan Ini'), findsOneWidget);
-      expect(find.text('Semua'), findsOneWidget);
-      expect(find.text('Pilih Tanggal'), findsOneWidget);
+      expect(find.text('Semua Periode'), findsOneWidget);
 
-      // Tap "Semua" time filter chip
-      final semuaChipFinder = find.text('Semua');
-      await tester.ensureVisible(semuaChipFinder);
-      await tester.pumpAndSettle();
-      await tester.tap(semuaChipFinder);
+      // Tap "Semua Periode" preset
+      final semuaPresetFinder = find.text('Semua Periode');
+      await tester.tap(semuaPresetFinder);
       await tester.pumpAndSettle();
 
-      // State is preserved and Top 10 leaderboards remain active
+      // State is updated and selector tile now displays "Semua Periode"
+      expect(find.text('Semua Periode'), findsOneWidget);
       expect(find.text('Top 10 Paling Tepat Waktu'), findsOneWidget);
       expect(find.text('Top 10 Perlu Perhatian'), findsOneWidget);
     });

@@ -14,6 +14,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../services/excel_export_service.dart';
 import '../../../widgets/student_import_modal.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_dialog_actions.dart';
 
 class MasterClassScreen extends StatefulWidget {
   const MasterClassScreen({super.key});
@@ -84,11 +85,14 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
       builder: (context) => AlertDialog(
         title: Text('Hapus $count Kelas', style: const TextStyle(color: Colors.red)),
         content: Text('Apakah Anda yakin ingin menghapus $count kelas yang dipilih? Data siswa di dalamnya mungkin akan ikut terpengaruh.'),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hapus Massal', style: TextStyle(color: Colors.red)),
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Hapus Massal',
+            isDestructive: true,
+            onCancel: () => Navigator.pop(context, false),
+            onConfirm: () => Navigator.pop(context, true),
           ),
         ],
       ),
@@ -223,9 +227,12 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                       hintText: 'Contoh: Kelas X-A, XI-MIPA 1',
                     ),
                   ),
-                  SizedBox(height: 24.h),
-                  ElevatedButton(
-                    onPressed: () async {
+                  AppDialogActions(
+                    padding: EdgeInsets.only(top: 24.h, bottom: 20.h),
+                    cancelText: 'Batal',
+                    confirmText: 'Simpan',
+                    onCancel: () => Navigator.pop(context),
+                    onConfirm: () async {
                       if (selectedPeriodId == null) {
                         AppHelper.showSnackBar(
                           context,
@@ -283,9 +290,7 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                         );
                       }
                     },
-                    child: const Text('Simpan'),
                   ),
-                  SizedBox(height: 20.h),
                 ],
               ),
             ),
@@ -641,17 +646,14 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                                         content: const Text(
                                           'Apakah Anda yakin ingin menghapus kelas ini?',
                                         ),
+                                        actionsPadding: EdgeInsets.zero,
                                         actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(context, false),
-                                            child: const Text('Batal'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(context, true),
-                                            child: const Text(
-                                              'Hapus',
-                                              style: TextStyle(color: Colors.red),
-                                            ),
+                                          AppDialogActions(
+                                            cancelText: 'Batal',
+                                            confirmText: 'Hapus',
+                                            isDestructive: true,
+                                            onCancel: () => Navigator.pop(context, false),
+                                            onConfirm: () => Navigator.pop(context, true),
                                           ),
                                         ],
                                       ),

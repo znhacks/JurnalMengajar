@@ -19,6 +19,7 @@ import '../../../core/utils/helper.dart';
 import '../../../core/utils/schedule_grouper.dart';
 import '../../../services/excel_export_service.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_dialog_actions.dart';
 
 class MasterScheduleScreen extends StatefulWidget {
   /// When set, the list is scoped to this date (used by the dashboard stat card).
@@ -877,21 +878,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                     'Mata pelajaran yang dipilih adalah "${selectedSubject.name}".\n\n'
                                     'Apakah Anda yakin ingin menjadwalkan guru ini untuk pelajaran yang berbeda?',
                                   ),
+                                  actionsPadding: EdgeInsets.zero,
                                   actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(ctx, false),
-                                      child: const Text('Batal'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(ctx, true),
-                                      child: const Text(
-                                        'Lanjutkan',
-                                        style: TextStyle(
-                                          color: Color(0xFFD97706),
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
+                                    AppDialogActions(
+                                      cancelText: 'Batal',
+                                      confirmText: 'Lanjutkan',
+                                      confirmButtonColor: const Color(0xFFD97706),
+                                      onCancel: () => Navigator.pop(ctx, false),
+                                      onConfirm: () => Navigator.pop(ctx, true),
                                     ),
                                   ],
                                 ),
@@ -1047,22 +1041,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                       'Mengubah tanggal, hari, atau jam akan menghapus seluruh jurnal mengajar yang sudah diisi pada jadwal ini secara permanen.\n\n'
                                       'Apakah Anda yakin ingin melanjutkan?',
                                     ),
+                                    actionsPadding: EdgeInsets.zero,
                                     actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, false),
-                                        child: const Text('Batal'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, true),
-                                        child: const Text(
-                                          'Lanjutkan',
-                                          style: TextStyle(
-                                            color: Color(0xFFBA1A1A),
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
+                                      AppDialogActions(
+                                        cancelText: 'Batal',
+                                        confirmText: 'Lanjutkan',
+                                        isDestructive: true,
+                                        onCancel: () => Navigator.pop(ctx, false),
+                                        onConfirm: () => Navigator.pop(ctx, true),
                                       ),
                                     ],
                                   ),
@@ -1327,20 +1313,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
             'Menghapus jadwal ini juga akan menghapus seluruh jurnal mengajar terkait secara permanen.\n\n'
             'Apakah Anda yakin ingin menghapus?',
           ),
+          actionsPadding: EdgeInsets.zero,
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Batal'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text(
-                'Hapus Permanen',
-                style: TextStyle(
-                  color: Color(0xFFBA1A1A),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            AppDialogActions(
+              cancelText: 'Batal',
+              confirmText: 'Hapus Permanen',
+              isDestructive: true,
+              onCancel: () => Navigator.pop(ctx, false),
+              onConfirm: () => Navigator.pop(ctx, true),
             ),
           ],
         ),
@@ -2145,34 +2125,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                       content: const Text(
                                                         'Apakah Anda yakin ingin menghapus jadwal mengajar ini?',
                                                       ),
+                                                      actionsPadding: EdgeInsets.zero,
                                                       actions: [
-                                                        TextButton(
-                                                          onPressed: () =>
-                                                              Navigator.pop(
-                                                                context,
-                                                                false,
-                                                              ),
-                                                          child: const Text(
-                                                            'Batal',
-                                                          ),
-                                                        ),
-                                                        TextButton(
-                                                          onPressed: () =>
-                                                              Navigator.pop(
-                                                                context,
-                                                                true,
-                                                              ),
-                                                          child: const Text(
-                                                            'Hapus',
-                                                            style: TextStyle(
-                                                              color: Color(
-                                                                0xFFE11D48,
-                                                              ),
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                            ),
-                                                          ),
+                                                        AppDialogActions(
+                                                          cancelText: 'Batal',
+                                                          confirmText: 'Hapus',
+                                                          isDestructive: true,
+                                                          onCancel: () => Navigator.pop(context, false),
+                                                          onConfirm: () => Navigator.pop(context, true),
                                                         ),
                                                       ],
                                                     ),
@@ -2289,30 +2249,14 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
                                                                             const Text(
                                                                               'Apakah Anda yakin ingin menghapus jadwal mengajar ini?',
                                                                             ),
+                                                                        actionsPadding: EdgeInsets.zero,
                                                                         actions: [
-                                                                          TextButton(
-                                                                            onPressed: () => Navigator.pop(
-                                                                              context,
-                                                                              false,
-                                                                            ),
-                                                                            child: const Text(
-                                                                              'Batal',
-                                                                            ),
-                                                                          ),
-                                                                          TextButton(
-                                                                            onPressed: () => Navigator.pop(
-                                                                              context,
-                                                                              true,
-                                                                            ),
-                                                                            child: const Text(
-                                                                              'Hapus',
-                                                                              style: TextStyle(
-                                                                                color: Color(
-                                                                                  0xFFE11D48,
-                                                                                ),
-                                                                                fontWeight: FontWeight.bold,
-                                                                              ),
-                                                                            ),
+                                                                          AppDialogActions(
+                                                                            cancelText: 'Batal',
+                                                                            confirmText: 'Hapus',
+                                                                            isDestructive: true,
+                                                                            onCancel: () => Navigator.pop(context, false),
+                                                                            onConfirm: () => Navigator.pop(context, true),
                                                                           ),
                                                                         ],
                                                                       ),

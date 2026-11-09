@@ -13,6 +13,7 @@ import '../../../widgets/animated_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/excel_export_service.dart';
 import 'package:go_router/go_router.dart';
+import '../../../widgets/app_dialog_actions.dart';
 import '../../../widgets/student_import_modal.dart';
 import '../../../widgets/student_history_modal.dart';
 
@@ -85,17 +86,14 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
         content: Text(
           'Apakah Anda yakin ingin menghapus $count data siswa yang dipilih secara permanen?',
         ),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Hapus Massal',
-              style: TextStyle(color: Colors.red),
-            ),
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Hapus Massal',
+            isDestructive: true,
+            onCancel: () => Navigator.pop(context, false),
+            onConfirm: () => Navigator.pop(context, true),
           ),
         ],
       ),
@@ -441,8 +439,12 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                   ),
                   SizedBox(height: 28.h),
 
-                  ElevatedButton(
-                    onPressed: () async {
+                  AppDialogActions(
+                    padding: EdgeInsets.only(top: 8.h, bottom: 24.h),
+                    cancelText: 'Batal',
+                    confirmText: 'Simpan Data',
+                    onCancel: () => Navigator.pop(context),
+                    onConfirm: () async {
                       if (nameController.text.trim().isEmpty) {
                         AppHelper.showSnackBar(
                           context,
@@ -492,23 +494,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                         );
                       }
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 14.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      'Simpan Data',
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
                   ),
-                  SizedBox(height: 24.h),
                 ],
               ),
             ),
@@ -1169,30 +1155,14 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                                                           content: Text(
                                                             'Apakah Anda yakin ingin menghapus data ${student.name} secara permanen?',
                                                           ),
+                                                          actionsPadding: EdgeInsets.zero,
                                                           actions: [
-                                                            TextButton(
-                                                              onPressed: () =>
-                                                                  Navigator.pop(
-                                                                    context,
-                                                                    false,
-                                                                  ),
-                                                              child: const Text(
-                                                                'Batal',
-                                                              ),
-                                                            ),
-                                                            TextButton(
-                                                              onPressed: () =>
-                                                                  Navigator.pop(
-                                                                    context,
-                                                                    true,
-                                                                  ),
-                                                              child: const Text(
-                                                                'Hapus',
-                                                                style: TextStyle(
-                                                                  color: Colors
-                                                                      .red,
-                                                                ),
-                                                              ),
+                                                            AppDialogActions(
+                                                              cancelText: 'Batal',
+                                                              confirmText: 'Hapus',
+                                                              isDestructive: true,
+                                                              onCancel: () => Navigator.pop(context, false),
+                                                              onConfirm: () => Navigator.pop(context, true),
                                                             ),
                                                           ],
                                                         ),

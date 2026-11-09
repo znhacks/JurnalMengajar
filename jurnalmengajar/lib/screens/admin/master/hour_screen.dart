@@ -13,6 +13,7 @@ import '../../../core/utils/helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_dialog_actions.dart';
 
 class MasterHourScreen extends StatefulWidget {
   const MasterHourScreen({super.key});
@@ -83,11 +84,14 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
       builder: (context) => AlertDialog(
         title: Text('Hapus $count Jam Mengajar', style: const TextStyle(color: Colors.red)),
         content: Text('Apakah Anda yakin ingin menghapus $count jam mengajar yang dipilih?'),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hapus Massal', style: TextStyle(color: Colors.red)),
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Hapus Massal',
+            isDestructive: true,
+            onCancel: () => Navigator.pop(context, false),
+            onConfirm: () => Navigator.pop(context, true),
           ),
         ],
       ),
@@ -253,9 +257,12 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 24.h),
-                  ElevatedButton(
-                    onPressed: () async {
+                  AppDialogActions(
+                    padding: EdgeInsets.only(top: 24.h, bottom: 20.h),
+                    cancelText: 'Batal',
+                    confirmText: 'Simpan',
+                    onCancel: () => Navigator.pop(context),
+                    onConfirm: () async {
                       final hNum = int.tryParse(hourNumberController.text.trim());
                       if (hNum == null || hNum <= 0) {
                         AppHelper.showSnackBar(context, 'Nomor jam pelajaran harus angka positif', isError: true);
@@ -291,7 +298,6 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                         AppHelper.showSnackBar(context, masterProvider.errorMessage ?? 'Gagal menyimpan jam pelajaran.', isError: true);
                       }
                     },
-                    child: const Text('Simpan'),
                   ),
                   SizedBox(height: 20.h),
                 ],
@@ -527,11 +533,14 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                                            builder: (context) => AlertDialog(
                                              title: const Text('Hapus Jam Pelajaran'),
                                              content: const Text('Apakah Anda yakin ingin menghapus jam pelajaran ini?'),
+                                             actionsPadding: EdgeInsets.zero,
                                              actions: [
-                                               TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-                                               TextButton(
-                                                 onPressed: () => Navigator.pop(context, true),
-                                                 child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                                               AppDialogActions(
+                                                 cancelText: 'Batal',
+                                                 confirmText: 'Hapus',
+                                                 isDestructive: true,
+                                                 onCancel: () => Navigator.pop(context, false),
+                                                 onConfirm: () => Navigator.pop(context, true),
                                                ),
                                              ],
                                            ),

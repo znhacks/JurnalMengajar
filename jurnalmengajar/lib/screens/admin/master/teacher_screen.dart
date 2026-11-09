@@ -19,6 +19,7 @@ import '../../../core/utils/helper.dart';
 import '../../../core/utils/image_crop_helper.dart';
 import '../../../repositories/supabase_auth_repository.dart';
 import '../../../services/excel_export_service.dart';
+import '../../../widgets/app_dialog_actions.dart';
 import '../../../widgets/app_scaffold.dart';
 
 class MasterTeacherScreen extends StatefulWidget {
@@ -106,17 +107,15 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
           'di sekolah ini, tetapi akun, akses baca, dan seluruh riwayat datanya '
           'tetap tersimpan.',
         ),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              'Nonaktifkan',
-              style: TextStyle(color: Colors.orange.shade800),
-            ),
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Nonaktifkan',
+            isDestructive: true,
+            confirmButtonColor: Colors.orange.shade800,
+            onCancel: () => Navigator.pop(context, false),
+            onConfirm: () => Navigator.pop(context, true),
           ),
         ],
       ),
@@ -495,10 +494,13 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                       hintText: 'Alamat lengkap rumah',
                     ),
                   ),
-                  SizedBox(height: 24.h),
-
-                  ElevatedButton(
-                    onPressed: isSaving
+                  AppDialogActions(
+                    padding: EdgeInsets.only(top: 8.h, bottom: 20.h),
+                    cancelText: 'Batal',
+                    confirmText: 'Simpan',
+                    isLoading: isSaving,
+                    onCancel: isSaving ? null : () => Navigator.pop(context),
+                    onConfirm: isSaving
                         ? null
                         : () async {
                             if (nameController.text.trim().isEmpty) {
@@ -616,18 +618,7 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
                               isSaving = false;
                             });
                           },
-                    child: isSaving
-                        ? SizedBox(
-                            width: 20.w,
-                            height: 20.h,
-                            child: const CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text('Simpan'),
                   ),
-                  SizedBox(height: 20.h),
                 ],
               ),
             ),
@@ -752,17 +743,15 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
               'ini, tetapi akun, akses baca, dan seluruh riwayat datanya tetap '
               'tersimpan.',
             ),
+            actionsPadding: EdgeInsets.zero,
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Batal'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(
-                  'Nonaktifkan',
-                  style: TextStyle(color: Colors.orange.shade800),
-                ),
+              AppDialogActions(
+                cancelText: 'Batal',
+                confirmText: 'Nonaktifkan',
+                isDestructive: true,
+                confirmButtonColor: Colors.orange.shade800,
+                onCancel: () => Navigator.pop(context, false),
+                onConfirm: () => Navigator.pop(context, true),
               ),
             ],
           ),

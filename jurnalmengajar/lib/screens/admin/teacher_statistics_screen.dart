@@ -491,69 +491,106 @@ class _AdminTeacherStatisticsScreenState
             ),
           ),
           SizedBox(height: 8.h),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              children: [
-                _buildTimeFilterChip(
-                  '30 Hari Terakhir',
-                  StatTimeFilter.last30Days,
-                  isDark,
-                  primaryColor,
+          // Selector Tile (Option 1: Selector Tile + Bottom Sheet)
+          InkWell(
+            key: const Key('stat_time_filter_selector'),
+            onTap: () => _showPresetRangeBottomSheet(context),
+            borderRadius: BorderRadius.circular(12.r),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 11.h),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF1E293B)
+                    : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFCBD5E1),
+                  width: 1.0,
                 ),
-                SizedBox(width: 6.w),
-                _buildTimeFilterChip(
-                  'Bulan Ini',
-                  StatTimeFilter.thisMonth,
-                  isDark,
-                  primaryColor,
-                ),
-                SizedBox(width: 6.w),
-                _buildTimeFilterChip(
-                  'Bulan Lalu',
-                  StatTimeFilter.lastMonth,
-                  isDark,
-                  primaryColor,
-                ),
-                SizedBox(width: 6.w),
-                _buildTimeFilterChip(
-                  'Semester Ini',
-                  StatTimeFilter.thisSemester,
-                  isDark,
-                  primaryColor,
-                ),
-                SizedBox(width: 6.w),
-                _buildTimeFilterChip(
-                  'Semester Lalu',
-                  StatTimeFilter.lastSemester,
-                  isDark,
-                  primaryColor,
-                ),
-                SizedBox(width: 6.w),
-                _buildTimeFilterChip(
-                  'Tahun Ini',
-                  StatTimeFilter.thisYear,
-                  isDark,
-                  primaryColor,
-                ),
-                SizedBox(width: 6.w),
-                _buildTimeFilterChip(
-                  'Tahun Lalu',
-                  StatTimeFilter.lastYear,
-                  isDark,
-                  primaryColor,
-                ),
-                SizedBox(width: 6.w),
-                _buildCustomDateFilterChip(isDark, primaryColor),
-                SizedBox(width: 6.w),
-                _buildTimeFilterChip(
-                  'Semua',
-                  StatTimeFilter.all,
-                  isDark,
-                  primaryColor,
-                ),
-              ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(7.w),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF1E3A8A).withValues(alpha: 0.4)
+                          : primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Icon(
+                      Icons.tune_rounded,
+                      size: 16.r,
+                      color: primaryColor,
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              _getPresetTitle(_timeFilter),
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 13.5.sp,
+                                fontWeight: FontWeight.w700,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            SizedBox(width: 6.w),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 6.w,
+                                vertical: 2.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(0xFF1E3A8A).withValues(alpha: 0.5)
+                                    : const Color(0xFFEFF6FF),
+                                borderRadius: BorderRadius.circular(6.r),
+                              ),
+                              child: Text(
+                                _timeFilter == StatTimeFilter.custom
+                                    ? 'Kustom'
+                                    : 'Preset',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 9.5.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? const Color(0xFF93C5FD)
+                                      : const Color(0xFF2563EB),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 2.h),
+                        Text(
+                          _getPresetSubtitle(_timeFilter),
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w500,
+                            color: isDark
+                                ? const Color(0xFF94A3B8)
+                                : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 20.r,
+                    color: isDark
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF64748B),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -561,122 +598,257 @@ class _AdminTeacherStatisticsScreenState
     );
   }
 
-  Widget _buildCustomDateFilterChip(bool isDark, Color primaryColor) {
-    final isSelected = _timeFilter == StatTimeFilter.custom;
-    final label = isSelected && _customDateRange != null
-        ? '${DateFormat("dd/MM").format(_customDateRange!.start)} - ${DateFormat("dd/MM").format(_customDateRange!.end)}'
-        : 'Pilih Tanggal';
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _pickCustomDateRange,
-        borderRadius: BorderRadius.circular(9.r),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-          constraints: BoxConstraints(minHeight: 36.h),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: isSelected ? primaryColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(9.r),
-            border: Border.all(
-              color: isSelected
-                  ? primaryColor
-                  : (isDark
-                      ? Colors.white.withValues(alpha: 0.15)
-                      : const Color(0xFFCBD5E1)),
-            ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: primaryColor.withValues(alpha: 0.3),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.calendar_month_rounded,
-                size: 14.r,
-                color: isSelected
-                    ? Colors.white
-                    : (isDark ? Colors.grey[300] : const Color(0xFF475569)),
-              ),
-              SizedBox(width: 5.w),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                  color: isSelected
-                      ? Colors.white
-                      : (isDark ? Colors.grey[300] : const Color(0xFF475569)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  String _getPresetTitle(StatTimeFilter filter) {
+    switch (filter) {
+      case StatTimeFilter.last30Days:
+        return '30 Hari Terakhir';
+      case StatTimeFilter.thisMonth:
+        return 'Bulan Ini';
+      case StatTimeFilter.lastMonth:
+        return 'Bulan Lalu';
+      case StatTimeFilter.thisSemester:
+        return 'Semester Ini';
+      case StatTimeFilter.lastSemester:
+        return 'Semester Lalu';
+      case StatTimeFilter.thisYear:
+        return 'Tahun Ini';
+      case StatTimeFilter.lastYear:
+        return 'Tahun Lalu';
+      case StatTimeFilter.custom:
+        return 'Pilih Tanggal (Kustom)';
+      case StatTimeFilter.all:
+        return 'Semua Periode';
+    }
   }
 
-  Widget _buildTimeFilterChip(
-    String label,
-    StatTimeFilter filter,
-    bool isDark,
-    Color primaryColor,
-  ) {
-    final isSelected = _timeFilter == filter;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => setState(() => _timeFilter = filter),
-        borderRadius: BorderRadius.circular(9.r),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-          constraints: BoxConstraints(minHeight: 36.h),
-          alignment: Alignment.center,
+  String _safeFormatDate(DateTime date) {
+    try {
+      return DateFormat('d MMM yyyy', 'id_ID').format(date);
+    } catch (_) {
+      return DateFormat('dd/MM/yyyy').format(date);
+    }
+  }
+
+  String _getPresetSubtitle(StatTimeFilter filter) {
+    final now = DateTime.now();
+
+    switch (filter) {
+      case StatTimeFilter.last30Days:
+        final start = now.subtract(const Duration(days: 30));
+        return '${_safeFormatDate(start)} – ${_safeFormatDate(now)}';
+      case StatTimeFilter.thisMonth:
+        final start = DateTime(now.year, now.month, 1);
+        return '${_safeFormatDate(start)} – ${_safeFormatDate(now)}';
+      case StatTimeFilter.lastMonth:
+        final lastMonthYear = now.month == 1 ? now.year - 1 : now.year;
+        final lastMonth = now.month == 1 ? 12 : now.month - 1;
+        final start = DateTime(lastMonthYear, lastMonth, 1);
+        final end = DateTime(now.year, now.month, 0);
+        return '${_safeFormatDate(start)} – ${_safeFormatDate(end)}';
+      case StatTimeFilter.thisSemester:
+        final isGanjil = now.month >= 7 && now.month <= 12;
+        final start =
+            isGanjil ? DateTime(now.year, 7, 1) : DateTime(now.year, 1, 1);
+        return '${_safeFormatDate(start)} – ${_safeFormatDate(now)} (${isGanjil ? 'Semester Ganjil' : 'Semester Genap'})';
+      case StatTimeFilter.lastSemester:
+        final isGanjil = now.month >= 7 && now.month <= 12;
+        final start =
+            isGanjil ? DateTime(now.year, 1, 1) : DateTime(now.year - 1, 7, 1);
+        final end =
+            isGanjil ? DateTime(now.year, 6, 30) : DateTime(now.year - 1, 12, 31);
+        return '${_safeFormatDate(start)} – ${_safeFormatDate(end)}';
+      case StatTimeFilter.thisYear:
+        final start = DateTime(now.year, 1, 1);
+        return '${_safeFormatDate(start)} – ${_safeFormatDate(now)} (Tahun ${now.year})';
+      case StatTimeFilter.lastYear:
+        final start = DateTime(now.year - 1, 1, 1);
+        final end = DateTime(now.year - 1, 12, 31);
+        return '${_safeFormatDate(start)} – ${_safeFormatDate(end)} (Tahun ${now.year - 1})';
+      case StatTimeFilter.custom:
+        if (_customDateRange != null) {
+          return '${_safeFormatDate(_customDateRange!.start)} – ${_safeFormatDate(_customDateRange!.end)}';
+        }
+        return 'Tentukan rentang tanggal khusus';
+      case StatTimeFilter.all:
+        return 'Semua catatan statistik sejak awal';
+    }
+  }
+
+  void _showPresetRangeBottomSheet(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark
+        ? const Color(0xFF60A5FA)
+        : const Color(0xFF2563EB);
+
+    final options = const [
+      StatTimeFilter.last30Days,
+      StatTimeFilter.thisMonth,
+      StatTimeFilter.lastMonth,
+      StatTimeFilter.thisSemester,
+      StatTimeFilter.lastSemester,
+      StatTimeFilter.thisYear,
+      StatTimeFilter.lastYear,
+      StatTimeFilter.custom,
+      StatTimeFilter.all,
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
           decoration: BoxDecoration(
-            color: isSelected ? primaryColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(9.r),
-            border: Border.all(
-              color: isSelected
-                  ? primaryColor
-                  : (isDark
-                      ? Colors.white.withValues(alpha: 0.15)
-                      : const Color(0xFFCBD5E1)),
-            ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: primaryColor.withValues(alpha: 0.3),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+          ),
+          padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF475569)
+                          : const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(2.r),
                     ),
-                  ]
-                : null,
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 12.sp,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-              color: isSelected
-                  ? Colors.white
-                  : (isDark ? Colors.grey[300] : const Color(0xFF475569)),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Pilih Rentang Waktu',
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  'Pilih preset otomatis atau tentukan tanggal khusus',
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 12.sp,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: options.map((filter) {
+                        final isSelected = _timeFilter == filter;
+                        return InkWell(
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            if (filter == StatTimeFilter.custom) {
+                              _pickCustomDateRange();
+                            } else {
+                              setState(() => _timeFilter = filter);
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(12.r),
+                          child: Container(
+                            margin: EdgeInsets.symmetric(vertical: 4.h),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 14.w,
+                              vertical: 11.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? (isDark
+                                      ? const Color(0xFF1E3A8A)
+                                          .withValues(alpha: 0.35)
+                                      : primaryColor.withValues(alpha: 0.08))
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(
+                                color: isSelected
+                                    ? primaryColor
+                                    : (isDark
+                                        ? const Color(0xFF334155)
+                                            .withValues(alpha: 0.5)
+                                        : const Color(0xFFE2E8F0)),
+                                width: isSelected ? 1.5 : 1.0,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  isSelected
+                                      ? Icons.radio_button_checked_rounded
+                                      : Icons.radio_button_off_rounded,
+                                  size: 18.r,
+                                  color: isSelected
+                                      ? primaryColor
+                                      : const Color(0xFF94A3B8),
+                                ),
+                                SizedBox(width: 12.w),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _getPresetTitle(filter),
+                                        style: GoogleFonts.hankenGrotesk(
+                                          fontSize: 13.5.sp,
+                                          fontWeight: isSelected
+                                              ? FontWeight.w700
+                                              : FontWeight.w600,
+                                          color: isSelected
+                                              ? (isDark
+                                                  ? const Color(0xFF60A5FA)
+                                                  : primaryColor)
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface,
+                                        ),
+                                      ),
+                                      SizedBox(height: 2.h),
+                                      Text(
+                                        _getPresetSubtitle(filter),
+                                        style: GoogleFonts.hankenGrotesk(
+                                          fontSize: 11.sp,
+                                          color: isDark
+                                              ? const Color(0xFF94A3B8)
+                                              : const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

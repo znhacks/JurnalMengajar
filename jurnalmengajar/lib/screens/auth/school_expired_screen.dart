@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/utils/helper.dart';
 import '../../widgets/wave_clipper.dart';
+import '../../widgets/app_dialog_actions.dart';
 
 class SchoolExpiredScreen extends StatefulWidget {
   const SchoolExpiredScreen({super.key});
@@ -79,18 +80,14 @@ class _SchoolExpiredScreenState extends State<SchoolExpiredScreen> {
           'Apakah Anda yakin ingin menghapus akun Anda secara permanen? '
           'Semua data Anda akan dihapus dan tindakan ini tidak dapat dibatalkan.',
         ),
+        actionsPadding: EdgeInsets.zero,
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Hapus'),
+          AppDialogActions(
+            cancelText: 'Batal',
+            confirmText: 'Hapus',
+            isDestructive: true,
+            onCancel: () => Navigator.pop(dialogContext, false),
+            onConfirm: () => Navigator.pop(dialogContext, true),
           ),
         ],
       ),
