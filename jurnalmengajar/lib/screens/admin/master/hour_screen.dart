@@ -321,6 +321,7 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final masterProvider = context.watch<MasterDataProvider>();
     final hours = masterProvider.hours;
 
@@ -445,8 +446,7 @@ class _MasterHourScreenState extends State<MasterHourScreen> {
                                 separatorBuilder: (context, index) => SizedBox(height: 8.h),
                                 itemBuilder: (context, index) {
                                   final hour = filteredHours[index];
-                      final isSelected = _selectedIds.contains(hour.id);
-                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                                  final isSelected = _selectedIds.contains(hour.id);
 
                       return InkWell(
                         onTap: _isSelectionMode ? () => _toggleSelectItem(hour.id) : null,

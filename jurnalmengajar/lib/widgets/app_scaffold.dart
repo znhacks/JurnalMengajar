@@ -42,6 +42,16 @@ class AppScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasPermanentSidebar = AppShell.isDesktopWeb(context);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    Widget? effectiveBody = body;
+    if (effectiveBody != null) {
+      effectiveBody = KeyedSubtree(
+        key: ValueKey('app_scaffold_body_${isDark ? "dark" : "light"}'),
+        child: effectiveBody,
+      );
+    }
 
     return Scaffold(
       appBar: appBar,
@@ -57,7 +67,7 @@ class AppScaffold extends StatelessWidget {
       extendBody: extendBody,
       extendBodyBehindAppBar: extendBodyBehindAppBar,
       resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-      body: body,
+      body: effectiveBody,
     );
   }
 }

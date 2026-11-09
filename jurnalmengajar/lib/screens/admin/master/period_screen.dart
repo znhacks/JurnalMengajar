@@ -300,6 +300,7 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final masterProvider = context.watch<MasterDataProvider>();
     final periods = masterProvider.periods;
 
@@ -414,8 +415,7 @@ class _MasterPeriodScreenState extends State<MasterPeriodScreen> {
                                 separatorBuilder: (context, index) => SizedBox(height: 12.h),
                                 itemBuilder: (context, index) {
                                   final period = filteredPeriods[index];
-                      final isSelected = _selectedIds.contains(period.id);
-                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                                  final isSelected = _selectedIds.contains(period.id);
 
                       return InkWell(
                         onTap: _isSelectionMode ? () => _toggleSelectItem(period.id) : null,

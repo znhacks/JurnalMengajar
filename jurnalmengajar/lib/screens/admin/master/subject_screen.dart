@@ -228,6 +228,7 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final masterProvider = context.watch<MasterDataProvider>();
     final subjects = masterProvider.subjects;
 
@@ -341,8 +342,7 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                                 separatorBuilder: (context, index) => SizedBox(height: 12.h),
                                 itemBuilder: (context, index) {
                                   final subject = filteredSubjects[index];
-                      final isSelected = _selectedIds.contains(subject.id);
-                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                                  final isSelected = _selectedIds.contains(subject.id);
 
                       return InkWell(
                         onTap: _isSelectionMode ? () => _toggleSelectItem(subject.id) : null,
@@ -420,7 +420,10 @@ class _MasterSubjectScreenState extends State<MasterSubjectScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.edit_outlined, color: Colors.indigo),
+                                      icon: Icon(
+                                        Icons.edit_outlined,
+                                        color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF2563EB),
+                                      ),
                                       onPressed: () => _showFormDialog(subject: subject),
                                     ),
                                     IconButton(

@@ -967,6 +967,7 @@ class _MasterTeacherScreenState extends State<MasterTeacherScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final masterProvider = context.watch<MasterDataProvider>();
     final teachers = masterProvider.teachers
         .where((t) => !t.isDeleted)

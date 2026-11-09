@@ -319,6 +319,7 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final masterProvider = context.watch<MasterDataProvider>();
     final classes = masterProvider.classes;
 
@@ -530,7 +531,6 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                         PeriodModel(id: '', name: 'Periode--', isActive: false),
                   );
                   final isSelected = _selectedIds.contains(item.id);
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
 
                   return ScaleTap(
                     onTap: _isSelectionMode

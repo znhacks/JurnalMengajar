@@ -1071,6 +1071,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final authProvider = context.watch<AuthProvider>();
 
     final isSuperAdminUser = authProvider.currentUser?.role.toLowerCase() == 'superadmin';

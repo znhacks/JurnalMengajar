@@ -14,6 +14,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../services/excel_export_service.dart';
 import 'package:go_router/go_router.dart';
 import '../../../widgets/app_dialog_actions.dart';
+import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/student_import_modal.dart';
 import '../../../widgets/student_history_modal.dart';
 
@@ -565,6 +566,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final masterProvider = context.watch<MasterDataProvider>();
     final cls = masterProvider.classes.firstWhere(
       (c) => c.id == widget.classId,
@@ -589,7 +591,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
       return matchesSearch && matchesGender;
     }).toList();
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _isSelectionMode
           ? AppBar(
@@ -931,9 +933,6 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                               final isSelected = _selectedIds.contains(
                                 student.id,
                               );
-                              final isDark =
-                                  Theme.of(context).brightness ==
-                                  Brightness.dark;
 
                               return ScaleTap(
                                 onTap: _isSelectionMode
