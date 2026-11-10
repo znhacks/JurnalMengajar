@@ -280,14 +280,9 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Verify Step 1 header and badges
-        expect(find.text('Impor Kelas (Excel)'), findsOneWidget);
-        expect(find.text('Langkah 1 dari 2'), findsOneWidget);
-        expect(
-          find.text('Impor Kelas Dulu → Lalu Impor Siswa'),
-          findsOneWidget,
-        );
-        expect(find.text('Unduh Template Excel'), findsOneWidget);
+        // Verify clean header and action buttons
+        expect(find.text('Impor Kelas'), findsOneWidget);
+        expect(find.text('Unduh Template'), findsOneWidget);
         expect(find.text('Pilih File Excel'), findsOneWidget);
       },
     );
@@ -323,8 +318,8 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Must guide user to Step 1 (Impor Kelas) first
-        expect(find.text('Belum Ada Kelas Terdaftar'), findsOneWidget);
+        // Must guide user to Impor Kelas first
+        expect(find.text('Belum Ada Kelas'), findsOneWidget);
         expect(find.text('Impor Kelas'), findsOneWidget);
       },
     );

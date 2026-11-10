@@ -9,6 +9,7 @@ import '../models/student_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/master_data_provider.dart';
 import '../services/excel_import_service.dart';
+import 'app_dialog_actions.dart';
 import 'class_import_modal.dart';
 
 class StudentImportModal extends StatefulWidget {
@@ -280,54 +281,20 @@ class _StudentImportModalState extends State<StudentImportModal> {
 
             // Header title & close button
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
               child: Row(
                 children: [
-                  Container(
-                    padding: EdgeInsets.all(7.w),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0D9488).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    child: Icon(
-                      Icons.group_add_outlined,
-                      color: const Color(0xFF0D9488),
-                      size: 20.w,
-                    ),
-                  ),
-                  SizedBox(width: 10.w),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 8.w,
-                          children: [
-                            Text(
-                              'Impor Siswa dari Excel',
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.w800,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0D9488).withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(4.r),
-                              ),
-                              child: Text(
-                                'Langkah 2 dari 2',
-                                style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF0D9488),
-                                ),
-                              ),
-                            ),
-                          ],
+                        Text(
+                          'Impor Siswa',
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
                         if (_selectedClass != null) ...[
                           SizedBox(height: 2.h),
@@ -346,6 +313,7 @@ class _StudentImportModalState extends State<StudentImportModal> {
                     icon: const Icon(Icons.close_rounded, size: 20),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
+                    tooltip: 'Tutup',
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -383,7 +351,7 @@ class _StudentImportModalState extends State<StudentImportModal> {
           ),
           SizedBox(height: 16.h),
           Text(
-            'Belum Ada Kelas Terdaftar',
+            'Belum Ada Kelas',
             style: GoogleFonts.hankenGrotesk(
               fontSize: 16.sp,
               fontWeight: FontWeight.bold,
@@ -393,7 +361,7 @@ class _StudentImportModalState extends State<StudentImportModal> {
           ),
           SizedBox(height: 8.h),
           Text(
-            'Data siswa wajib dimasukkan ke dalam kelas. Silakan lakukan Langkah 1 (Impor Kelas) terlebih dahulu.',
+            'Tambahkan atau impor kelas terlebih dahulu sebelum mengimpor siswa.',
             style: GoogleFonts.hankenGrotesk(
               fontSize: 12.5.sp,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -411,7 +379,7 @@ class _StudentImportModalState extends State<StudentImportModal> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2563EB),
+              backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
               padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
               shape: RoundedRectangleBorder(
@@ -438,176 +406,110 @@ class _StudentImportModalState extends State<StudentImportModal> {
     }
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
+      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 20.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Target Class Selector (Dropdown or fixed card)
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(10.r),
-              border: Border.all(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-              ),
+          // Pilihan Kelas Tujuan
+          Text(
+            'Kelas Tujuan',
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 12.5.sp,
+              fontWeight: FontWeight.w700,
             ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.meeting_room_outlined,
-                  size: 18.w,
-                  color: const Color(0xFF0D9488),
-                ),
-                SizedBox(width: 8.w),
-                Text(
-                  'Kelas Tujuan: ',
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          SizedBox(height: 6.h),
+          effectiveClasses.length > 1
+              ? DropdownButtonFormField<ClassModel>(
+                  initialValue: _selectedClass,
+                  decoration: InputDecoration(
+                    contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
+                  ),
+                  items: effectiveClasses.map((c) {
+                    return DropdownMenuItem<ClassModel>(
+                      value: c,
+                      child: Text(
+                        '${c.name} (${c.studentCount} Siswa)',
+                        style: GoogleFonts.hankenGrotesk(fontSize: 13.sp),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    setState(() => _selectedClass = val);
+                  },
+                )
+              : Container(
+                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(10.r),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Text(
+                    '${_selectedClass?.name ?? ""} (${_selectedClass?.studentCount ?? 0} Siswa)',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                 ),
-                Expanded(
-                  child: effectiveClasses.length > 1
-                      ? DropdownButtonHideUnderline(
-                          child: DropdownButton<ClassModel>(
-                            value: _selectedClass,
-                            isDense: true,
-                            isExpanded: true,
-                            items: effectiveClasses.map((c) {
-                              return DropdownMenuItem<ClassModel>(
-                                value: c,
-                                child: Text(
-                                  '${c.name} (${c.studentCount} Siswa)',
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 13.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              setState(() {
-                                _selectedClass = val;
-                              });
-                            },
-                          ),
-                        )
-                      : Text(
-                          '${_selectedClass?.name ?? ""} (${_selectedClass?.studentCount ?? 0} Siswa)',
-                          style: GoogleFonts.hankenGrotesk(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 16.h),
 
-          // Compact Upload Drop area
-          InkWell(
-            onTap: _isPicking ? null : _handlePickFile,
-            borderRadius: BorderRadius.circular(14),
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: 22.h, horizontal: 16.w),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: const Color(0xFF0D9488).withValues(alpha: 0.35),
-                  width: 1.5,
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_isPicking) ...[
-                    SizedBox(
-                      width: 26.w,
-                      height: 26.w,
-                      child: const CircularProgressIndicator(strokeWidth: 2.5),
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      'Membaca file Excel...',
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ] else ...[
-                    Icon(
-                      Icons.cloud_upload_outlined,
-                      size: 32.w,
-                      color: const Color(0xFF0D9488),
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      'Pilih File Excel Siswa',
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    SizedBox(height: 3.h),
-                    Text(
-                      'Format .xlsx atau .xls',
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 11.5.sp,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          SizedBox(height: 12.h),
-
-          // Action row: Download template button & column guide
+          // Unduh Template & Pilih File Excel
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              TextButton.icon(
-                onPressed: _isDownloadingTemplate ? null : _handleDownloadTemplate,
-                icon: _isDownloadingTemplate
-                    ? SizedBox(
-                        width: 12.w,
-                        height: 12.w,
-                        child: const CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Icon(Icons.file_download_outlined, size: 16.w, color: const Color(0xFF10B981)),
-                label: Text(
-                  'Unduh Template',
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF10B981),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _isDownloadingTemplate ? null : _handleDownloadTemplate,
+                  icon: _isDownloadingTemplate
+                      ? SizedBox(
+                          width: 14.w,
+                          height: 14.w,
+                          child: const CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.download_rounded, size: 18),
+                  label: Text(
+                    'Unduh Template',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 12.5.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                  ),
                 ),
               ),
-              Flexible(
-                child: Text(
-                  'Kolom: Nama, NIS, L/P, No HP',
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 11.sp,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+              SizedBox(width: 10.w),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _isPicking ? null : _handlePickFile,
+                  icon: _isPicking
+                      ? SizedBox(
+                          width: 14.w,
+                          height: 14.w,
+                          child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.upload_file_rounded, size: 18),
+                  label: Text(
+                    'Pilih File Excel',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 12.5.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  textAlign: TextAlign.end,
-                  overflow: TextOverflow.ellipsis,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                  ),
                 ),
               ),
             ],
@@ -625,45 +527,35 @@ class _StudentImportModalState extends State<StudentImportModal> {
 
     return Column(
       children: [
-        // File summary & badge chips
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-            border: Border(
-              bottom: BorderSide(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-              ),
-            ),
-          ),
+        // Summary & Ganti file
+        Padding(
+          padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 8.h),
           child: Row(
             children: [
-              Icon(Icons.insert_drive_file_outlined, size: 16.w, color: const Color(0xFF2563EB)),
-              SizedBox(width: 6.w),
               Expanded(
                 child: Text(
-                  result.fileName,
+                  '${result.items.length} baris terdeteksi • ${result.validCount} siap disimpan${result.duplicateCount > 0 ? " • ${result.duplicateCount} duplikat" : ""}',
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 12.sp,
-                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              _statusBadge('${result.validCount} Siap', Colors.green),
-              if (result.duplicateCount > 0) ...[
-                SizedBox(width: 4.w),
-                _statusBadge('${result.duplicateCount} Duplikat', Colors.orange),
-              ],
-              SizedBox(width: 4.w),
               TextButton(
                 onPressed: () => setState(() => _parseResult = null),
                 style: TextButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: Text('Ganti', style: TextStyle(fontSize: 11.sp)),
+                child: Text(
+                  'Ganti File',
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
               ),
             ],
           ),
@@ -671,51 +563,47 @@ class _StudentImportModalState extends State<StudentImportModal> {
 
         // Controls bar: Duplicate toggle & Select All
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 4.h),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               if (result.duplicateCount > 0)
-                Expanded(
-                  child: InkWell(
-                    onTap: () {
-                      setState(() {
-                        _skipDuplicates = !_skipDuplicates;
-                        _applyDuplicateFilter();
-                      });
-                    },
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          height: 20.h,
-                          width: 20.w,
-                          child: Checkbox(
-                            value: _skipDuplicates,
-                            onChanged: (val) {
-                              setState(() {
-                                _skipDuplicates = val ?? true;
-                                _applyDuplicateFilter();
-                              });
-                            },
-                          ),
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _skipDuplicates = !_skipDuplicates;
+                      _applyDuplicateFilter();
+                    });
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        height: 20.h,
+                        width: 20.w,
+                        child: Checkbox(
+                          value: _skipDuplicates,
+                          onChanged: (val) {
+                            setState(() {
+                              _skipDuplicates = val ?? true;
+                              _applyDuplicateFilter();
+                            });
+                          },
                         ),
-                        SizedBox(width: 6.w),
-                        Flexible(
-                          child: Text(
-                            'Lewati Duplikat',
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 11.5.sp,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                      ),
+                      SizedBox(width: 6.w),
+                      Text(
+                        'Lewati Duplikat',
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 11.5.sp,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 )
               else
-                const Spacer(),
+                const SizedBox(),
               InkWell(
                 onTap: () => _toggleSelectAll(!allSelected),
                 child: Row(
@@ -747,7 +635,7 @@ class _StudentImportModalState extends State<StudentImportModal> {
         // Students list preview
         Expanded(
           child: ListView.separated(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 4.h),
             itemCount: result.items.length,
             separatorBuilder: (context, index) => SizedBox(height: 6.h),
             itemBuilder: (context, index) {
@@ -866,68 +754,18 @@ class _StudentImportModalState extends State<StudentImportModal> {
           ),
         ),
 
-        // Bottom action import button
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF0F172A) : Colors.white,
-            border: Border(
-              top: BorderSide(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-              ),
-            ),
-          ),
-          child: ElevatedButton.icon(
-            onPressed: (_isImporting || selectedCount == 0) ? null : _handleStartImport,
-            icon: _isImporting
-                ? SizedBox(
-                    width: 14.w,
-                    height: 14.w,
-                    child: const CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.check_circle_outline, size: 18),
-            label: Text(
-              _isImporting
-                  ? 'Mengimpor Data...'
-                  : 'Impor $selectedCount Siswa ke ${_selectedClass?.name ?? "Kelas"}',
-              style: GoogleFonts.hankenGrotesk(
-                fontWeight: FontWeight.bold,
-                fontSize: 13.sp,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 12.h),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
+        // Bottom action buttons
+        SafeArea(
+          child: AppDialogActions(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+            cancelText: 'Batal',
+            confirmText: 'Simpan ($selectedCount Siswa)',
+            isConfirmLoading: _isImporting,
+            onCancel: () => Navigator.pop(context),
+            onConfirm: (_isImporting || selectedCount == 0) ? null : _handleStartImport,
           ),
         ),
       ],
-    );
-  }
-
-  Widget _statusBadge(String label, Color color) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        label,
-        style: GoogleFonts.hankenGrotesk(
-          fontSize: 10.sp,
-          fontWeight: FontWeight.bold,
-          color: color,
-        ),
-      ),
     );
   }
 }

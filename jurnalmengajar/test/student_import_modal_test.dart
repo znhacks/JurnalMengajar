@@ -164,17 +164,11 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify header title
-    expect(find.text('Impor Siswa dari Excel'), findsOneWidget);
+    expect(find.text('Impor Siswa'), findsOneWidget);
     expect(find.text('Kelas: Kelas X-A'), findsOneWidget);
 
-    // Verify template download section
+    // Verify action buttons
     expect(find.text('Unduh Template'), findsOneWidget);
-
-    // Verify file picker drop area
-    expect(find.text('Pilih File Excel Siswa'), findsOneWidget);
-    expect(find.text('Format .xlsx atau .xls'), findsOneWidget);
-
-    // Verify column guidelines
-    expect(find.text('Kolom: Nama, NIS, L/P, No HP'), findsOneWidget);
+    expect(find.text('Pilih File Excel'), findsOneWidget);
   });
 }
