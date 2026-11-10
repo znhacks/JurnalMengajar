@@ -1028,31 +1028,14 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                                 : const Color(0xFF2563EB),
                           ),
                           _buildUnfilledList(unfilledGroups, masterProvider),
-                          pendingJournals.isEmpty
-                              ? _buildJournalList(
-                                  pendingJournals,
-                                  masterProvider,
-                                  badgeColor:
-                                      Theme.of(context).brightness == Brightness.dark
-                                      ? const Color(0xFFFBBF24)
-                                      : const Color(0xFFD97706),
-                                )
-                              : Column(
-                                  children: [
-                                    if (!_isSelectionMode)
-                                      _buildPendingNoticeBanner(context, pendingJournals),
-                                    Expanded(
-                                      child: _buildJournalList(
-                                        pendingJournals,
-                                        masterProvider,
-                                        badgeColor:
-                                            Theme.of(context).brightness == Brightness.dark
-                                            ? const Color(0xFFFBBF24)
-                                            : const Color(0xFFD97706),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                          _buildJournalList(
+                            pendingJournals,
+                            masterProvider,
+                            badgeColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFFFBBF24)
+                                : const Color(0xFFD97706),
+                          ),
                           _buildJournalList(
                             verifiedJournals,
                             masterProvider,
@@ -1067,89 +1050,6 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
                   ],
                 ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildPendingNoticeBanner(
-    BuildContext context,
-    List<JournalModel> pendingJournals,
-  ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      margin: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 4.h),
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        color: isDark
-            ? const Color(0xFF78350F).withValues(alpha: 0.25)
-            : const Color(0xFFFEF3C7),
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: isDark
-              ? const Color(0xFFD97706).withValues(alpha: 0.5)
-              : const Color(0xFFFDE68A),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.rule_folder_rounded,
-            size: 18.r,
-            color: const Color(0xFFD97706),
-          ),
-          SizedBox(width: 8.w),
-          Expanded(
-            child: Text(
-              'Terdapat ${pendingJournals.length} jurnal perlu disetujui',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.hankenGrotesk(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-                color: isDark
-                    ? const Color(0xFFFDE68A)
-                    : const Color(0xFF92400E),
-              ),
-            ),
-          ),
-          SizedBox(width: 8.w),
-          Material(
-            color: const Color(0xFFD97706),
-            borderRadius: BorderRadius.circular(8.r),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(8.r),
-              onTap: () {
-                setState(() {
-                  _isSelectionMode = true;
-                  _selectedIds.clear();
-                  _selectedIds.addAll(pendingJournals.map((j) => j.id));
-                });
-              },
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.checklist_rounded,
-                      size: 14.r,
-                      color: Colors.white,
-                    ),
-                    SizedBox(width: 4.w),
-                    Text(
-                      'Pilih Massal',
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
