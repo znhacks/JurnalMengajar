@@ -1381,6 +1381,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           builder: (dialogCtx, setDialogState) {
             final isDark = Theme.of(dialogCtx).brightness == Brightness.dark;
             return Dialog(
+              backgroundColor: Theme.of(dialogCtx).colorScheme.surface,
               insetPadding: EdgeInsets.symmetric(
                 horizontal: 16.w,
                 vertical: 24.h,
@@ -1405,18 +1406,39 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close_rounded),
+                          icon: Icon(
+                            Icons.close_rounded,
+                            color: Theme.of(dialogCtx).colorScheme.onSurface,
+                          ),
                           onPressed: () => Navigator.pop(dialogCtx),
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
                         ),
                       ],
                     ),
-                    const Divider(),
+                    Divider(
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0),
+                    ),
                     TableCalendar(
                       locale: 'id_ID',
                       daysOfWeekHeight: 30.h,
                       rowHeight: 44.h,
+                      daysOfWeekStyle: DaysOfWeekStyle(
+                        weekdayStyle: GoogleFonts.hankenGrotesk(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                          color: isDark
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFF64748B),
+                        ),
+                        weekendStyle: GoogleFonts.hankenGrotesk(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFFEF4444),
+                        ),
+                      ),
                       firstDay: DateTime.now().subtract(
                         const Duration(days: 365),
                       ),
@@ -1431,6 +1453,18 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w800,
                           color: Theme.of(dialogCtx).colorScheme.onSurface,
+                        ),
+                        leftChevronIcon: Icon(
+                          Icons.chevron_left_rounded,
+                          color: isDark
+                              ? const Color(0xFF93C5FD)
+                              : AppTheme.primaryColor,
+                        ),
+                        rightChevronIcon: Icon(
+                          Icons.chevron_right_rounded,
+                          color: isDark
+                              ? const Color(0xFF93C5FD)
+                              : AppTheme.primaryColor,
                         ),
                       ),
                       selectedDayPredicate: (day) => isSameDay(selected, day),

@@ -184,7 +184,7 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                                 },
                           child: InputDecorator(
                             decoration: InputDecoration(
-                              labelText: 'Tanggal Mulai',
+                              labelText: 'Tgl Mulai',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12.r),
                               ),
@@ -219,7 +219,7 @@ class _AdminHolidaysScreenState extends State<AdminHolidaysScreen> {
                                 },
                           child: InputDecorator(
                             decoration: InputDecoration(
-                              labelText: 'Tanggal Selesai',
+                              labelText: 'Tgl Selesai',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12.r),
                               ),

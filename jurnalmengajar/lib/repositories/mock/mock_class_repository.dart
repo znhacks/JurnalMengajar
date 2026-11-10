@@ -40,4 +40,10 @@ class MockClassRepository implements ClassRepository {
     await Future.delayed(const Duration(milliseconds: 100));
     _db.classes.removeWhere((c) => ids.contains(c.id));
   }
+
+  Future<void> createMultiple(List<ClassModel> models) async {
+    for (final m in models) {
+      await create(m);
+    }
+  }
 }

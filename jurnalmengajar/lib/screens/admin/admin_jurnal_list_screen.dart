@@ -259,7 +259,7 @@ class _AdminJurnalListScreenState extends State<AdminJurnalListScreen>
         actions: [
           AppDialogActions(
             cancelText: 'Batal',
-            confirmText: 'Tolak Jurnal',
+            confirmText: 'Tolak',
             isDestructive: true,
             onCancel: () => Navigator.pop(ctx, false),
             onConfirm: () => Navigator.pop(ctx, true),

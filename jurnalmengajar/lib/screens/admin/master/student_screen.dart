@@ -443,7 +443,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                   AppDialogActions(
                     padding: EdgeInsets.only(top: 8.h, bottom: 24.h),
                     cancelText: 'Batal',
-                    confirmText: 'Simpan Data',
+                    confirmText: 'Simpan',
                     onCancel: () => Navigator.pop(context),
                     onConfirm: () async {
                       if (nameController.text.trim().isEmpty) {
@@ -692,7 +692,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                             size: 20.r,
                           ),
                           SizedBox(width: 12.w),
-                          const Text('Impor Siswa Excel'),
+                          const Text('Impor Siswa'),
                         ],
                       ),
                     ),
@@ -709,7 +709,7 @@ class _MasterStudentScreenState extends State<MasterStudentScreen> {
                             size: 20.r,
                           ),
                           SizedBox(width: 12.w),
-                          const Text('Ekspor Excel'),
+                          const Text('Ekspor'),
                         ],
                       ),
                     ),

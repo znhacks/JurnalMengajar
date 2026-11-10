@@ -126,8 +126,8 @@ class _NoSchoolScreenState extends State<NoSchoolScreen> {
         actionsPadding: EdgeInsets.zero,
         actions: [
           AppDialogActions(
-            cancelText: 'Kembali',
-            confirmText: 'Ya, Batalkan',
+            cancelText: 'Batal',
+            confirmText: 'Batalkan',
             isDestructive: true,
             onConfirm: () => Navigator.of(dialogContext).pop(true),
           ),

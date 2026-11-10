@@ -9,6 +9,7 @@ import '../models/student_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/master_data_provider.dart';
 import '../services/excel_import_service.dart';
+import 'class_import_modal.dart';
 
 class StudentImportModal extends StatefulWidget {
   final ClassModel? initialClass;
@@ -56,10 +57,14 @@ class _StudentImportModalState extends State<StudentImportModal> {
   @override
   void initState() {
     super.initState();
-    _selectedClass = widget.initialClass ??
-        (widget.availableClasses != null && widget.availableClasses!.isNotEmpty
-            ? widget.availableClasses!.first
-            : null);
+    if (widget.initialClass != null) {
+      _selectedClass = widget.initialClass;
+    } else if (widget.availableClasses != null && widget.availableClasses!.isNotEmpty) {
+      _selectedClass = widget.availableClasses!.first;
+    } else {
+      final masterProvider = Provider.of<MasterDataProvider>(context, listen: false);
+      _selectedClass = masterProvider.classes.isNotEmpty ? masterProvider.classes.first : null;
+    }
   }
 
   List<StudentModel> _getExistingStudentsForSelectedClass() {
@@ -223,7 +228,23 @@ class _StudentImportModalState extends State<StudentImportModal> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final maxSheetHeight = MediaQuery.of(context).size.height * 0.85;
+    final maxSheetHeight = MediaQuery.of(context).size.height * 0.88;
+    final masterProvider = context.watch<MasterDataProvider>();
+    final List<ClassModel> effectiveClasses;
+    if (widget.availableClasses != null && widget.availableClasses!.isNotEmpty) {
+      effectiveClasses = widget.availableClasses!;
+    } else if (widget.initialClass != null) {
+      effectiveClasses = [
+        widget.initialClass!,
+        ...masterProvider.classes.where((c) => c.id != widget.initialClass!.id),
+      ];
+    } else {
+      effectiveClasses = masterProvider.classes;
+    }
+
+    if (_selectedClass == null && effectiveClasses.isNotEmpty) {
+      _selectedClass = widget.initialClass ?? effectiveClasses.first;
+    }
 
     return Container(
       constraints: BoxConstraints(maxHeight: maxSheetHeight),
@@ -259,18 +280,18 @@ class _StudentImportModalState extends State<StudentImportModal> {
 
             // Header title & close button
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
               child: Row(
                 children: [
                   Container(
-                    padding: EdgeInsets.all(6.w),
+                    padding: EdgeInsets.all(7.w),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2563EB).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      color: const Color(0xFF0D9488).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8.r),
                     ),
                     child: Icon(
-                      Icons.file_upload_outlined,
-                      color: const Color(0xFF2563EB),
+                      Icons.group_add_outlined,
+                      color: const Color(0xFF0D9488),
                       size: 20.w,
                     ),
                   ),
@@ -279,15 +300,37 @@ class _StudentImportModalState extends State<StudentImportModal> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Impor Siswa dari Excel',
-                          style: GoogleFonts.hankenGrotesk(
-                            fontSize: 15.sp,
-                            fontWeight: FontWeight.w800,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 8.w,
+                          children: [
+                            Text(
+                              'Impor Siswa dari Excel',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w800,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0D9488).withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(4.r),
+                              ),
+                              child: Text(
+                                'Langkah 2 dari 2',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF0D9488),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        if (_selectedClass != null)
+                        if (_selectedClass != null) ...[
+                          SizedBox(height: 2.h),
                           Text(
                             'Kelas: ${_selectedClass!.name}',
                             style: GoogleFonts.hankenGrotesk(
@@ -295,6 +338,7 @@ class _StudentImportModalState extends State<StudentImportModal> {
                               color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
+                        ],
                       ],
                     ),
                   ),
@@ -311,7 +355,7 @@ class _StudentImportModalState extends State<StudentImportModal> {
 
             // Content body
             _parseResult == null
-                ? _buildSimpleUploadStep(isDark)
+                ? Flexible(child: SingleChildScrollView(child: _buildSimpleUploadStep(context, isDark, effectiveClasses)))
                 : Flexible(child: _buildPreviewStep(isDark)),
           ],
         ),
@@ -319,66 +363,153 @@ class _StudentImportModalState extends State<StudentImportModal> {
     );
   }
 
-  Widget _buildSimpleUploadStep(bool isDark) {
+  Widget _buildNoClassesState(BuildContext context, bool isDark) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 28.h),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.domain_disabled_rounded,
+              size: 42.r,
+              color: const Color(0xFFF59E0B),
+            ),
+          ),
+          SizedBox(height: 16.h),
+          Text(
+            'Belum Ada Kelas Terdaftar',
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            'Data siswa wajib dimasukkan ke dalam kelas. Silakan lakukan Langkah 1 (Impor Kelas) terlebih dahulu.',
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 12.5.sp,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 20.h),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              ClassImportModal.show(
+                context,
+                onImportSuccess: widget.onImportSuccess,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+            ),
+            icon: const Icon(Icons.file_upload_outlined, size: 18),
+            label: Text(
+              'Impor Kelas',
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSimpleUploadStep(BuildContext context, bool isDark, List<ClassModel> effectiveClasses) {
+    if (effectiveClasses.isEmpty) {
+      return _buildNoClassesState(context, isDark);
+    }
+
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Class selector if multiple classes available
-          if (widget.availableClasses != null && widget.availableClasses!.length > 1) ...[
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 2.h),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    'Kelas: ',
-                    style: GoogleFonts.hankenGrotesk(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  Expanded(
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<ClassModel>(
-                        value: _selectedClass,
-                        isDense: true,
-                        isExpanded: true,
-                        items: widget.availableClasses!.map((c) {
-                          return DropdownMenuItem<ClassModel>(
-                            value: c,
-                            child: Text(
-                              '${c.name} (${c.studentCount} Siswa)',
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          setState(() {
-                            _selectedClass = val;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                ],
+          // Target Class Selector (Dropdown or fixed card)
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(10.r),
+              border: Border.all(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
               ),
             ),
-            SizedBox(height: 12.h),
-          ],
+            child: Row(
+              children: [
+                Icon(
+                  Icons.meeting_room_outlined,
+                  size: 18.w,
+                  color: const Color(0xFF0D9488),
+                ),
+                SizedBox(width: 8.w),
+                Text(
+                  'Kelas Tujuan: ',
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Expanded(
+                  child: effectiveClasses.length > 1
+                      ? DropdownButtonHideUnderline(
+                          child: DropdownButton<ClassModel>(
+                            value: _selectedClass,
+                            isDense: true,
+                            isExpanded: true,
+                            items: effectiveClasses.map((c) {
+                              return DropdownMenuItem<ClassModel>(
+                                value: c,
+                                child: Text(
+                                  '${c.name} (${c.studentCount} Siswa)',
+                                  style: GoogleFonts.hankenGrotesk(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedClass = val;
+                              });
+                            },
+                          ),
+                        )
+                      : Text(
+                          '${_selectedClass?.name ?? ""} (${_selectedClass?.studentCount ?? 0} Siswa)',
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 12.h),
 
           // Compact Upload Drop area
           InkWell(
@@ -390,7 +521,7 @@ class _StudentImportModalState extends State<StudentImportModal> {
                 color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                  color: const Color(0xFF0D9488).withValues(alpha: 0.35),
                   width: 1.5,
                 ),
               ),
@@ -415,7 +546,7 @@ class _StudentImportModalState extends State<StudentImportModal> {
                     Icon(
                       Icons.cloud_upload_outlined,
                       size: 32.w,
-                      color: const Color(0xFF2563EB),
+                      color: const Color(0xFF0D9488),
                     ),
                     SizedBox(height: 8.h),
                     Text(

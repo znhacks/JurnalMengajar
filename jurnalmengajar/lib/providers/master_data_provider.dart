@@ -10,6 +10,7 @@ import '../repositories/period_repository.dart';
 import '../repositories/subject_repository.dart';
 import '../repositories/hour_repository.dart';
 import '../repositories/class_repository.dart';
+import '../repositories/supabase_class_repository.dart';
 import '../repositories/teacher_repository.dart';
 import '../models/student_model.dart';
 import '../models/student_academic_history_model.dart';
@@ -566,6 +567,48 @@ class MasterDataProvider with ChangeNotifier {
       await classRepository.create(finalModel);
       _classes.removeWhere((c) => c.id == finalModel.id);
       _classes.add(finalModel);
+      _classes.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      _syncClassesCache();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> createMultipleClasses(List<ClassModel> models) async {
+    if (models.isEmpty) return true;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final effectiveSchoolId = _currentSchoolId;
+      final finalModels = models.map((model) {
+        final effectiveModelSchoolId =
+            (model.schoolId != null && model.schoolId!.isNotEmpty)
+                ? model.schoolId
+                : effectiveSchoolId;
+        return (effectiveModelSchoolId != null &&
+                effectiveModelSchoolId.isNotEmpty &&
+                (model.schoolId == null || model.schoolId!.isEmpty))
+            ? model.copyWith(schoolId: effectiveModelSchoolId)
+            : model;
+      }).toList();
+
+      if (classRepository is SupabaseClassRepository) {
+        await (classRepository as SupabaseClassRepository).createMultiple(finalModels);
+      } else {
+        for (final m in finalModels) {
+          await classRepository.create(m);
+        }
+      }
+
+      for (final m in finalModels) {
+        _classes.removeWhere((c) => c.name.toLowerCase() == m.name.toLowerCase());
+        _classes.add(m);
+      }
       _classes.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
       _syncClassesCache();
       return true;

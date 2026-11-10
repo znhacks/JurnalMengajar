@@ -132,8 +132,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
           actionsPadding: EdgeInsets.zero,
           actions: [
             AppDialogActions(
-              cancelText: 'Kembali',
-              confirmText: 'HAPUS AKUN',
+              cancelText: 'Batal',
+              confirmText: 'Hapus',
               isDestructive: true,
               onCancel: () => Navigator.pop(context, false),
               onConfirm: () => Navigator.pop(context, true),
@@ -630,7 +630,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               strokeWidth: 2.5,
                             ),
                           )
-                        : const Text('Simpan Perubahan'),
+                        : const Text('Simpan'),
                   ),
                   SizedBox(height: 24.h),
                 ],

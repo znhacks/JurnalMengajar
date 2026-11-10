@@ -1582,7 +1582,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 label: Text(
                   _isSavingTeachingPlace
                       ? 'Menyimpan...'
-                      : 'Simpan Kode Sekolah',
+                      : 'Simpan',
                   style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -1690,7 +1690,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                   onPressed: isLoading ? null : _handleSave,
                   icon: const Icon(Icons.save_rounded),
                   label: Text(
-                    'Simpan Pengaturan Jurnal',
+                    'Simpan',
                     style: GoogleFonts.hankenGrotesk(
                       fontWeight: FontWeight.bold,
                     ),
@@ -1876,7 +1876,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       )
                     : const Icon(Icons.check_circle_outline_rounded),
                 label: Text(
-                  _isSavingTimezone ? 'Menyimpan...' : 'Simpan Zona Waktu',
+                  _isSavingTimezone ? 'Menyimpan...' : 'Simpan',
                   style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -2012,7 +2012,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                   label: Text(
                     _isSavingSupervisor
                         ? 'Menyimpan...'
-                        : 'Simpan Data Supervisor',
+                        : 'Simpan',
                     style: GoogleFonts.hankenGrotesk(
                       fontWeight: FontWeight.bold,
                     ),
@@ -2359,7 +2359,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                           )
                         : const Icon(Icons.save_rounded, size: 18),
                     label: Text(
-                      'Simpan API Key',
+                      'Simpan',
                       style: GoogleFonts.hankenGrotesk(
                         fontWeight: FontWeight.bold,
                       ),

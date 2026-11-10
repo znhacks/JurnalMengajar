@@ -13,6 +13,7 @@ import '../../../widgets/animated_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/excel_export_service.dart';
 import '../../../widgets/student_import_modal.dart';
+import '../../../widgets/class_import_modal.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_dialog_actions.dart';
 
@@ -401,7 +402,13 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                     tooltip: 'Opsi Lainnya',
                     onSelected: (value) {
                       switch (value) {
-                        case 'import_excel':
+                        case 'import_class':
+                          ClassImportModal.show(
+                            context,
+                            onImportSuccess: _refreshData,
+                          );
+                          break;
+                        case 'import_students':
                           StudentImportModal.show(
                             context,
                             availableClasses: classes,
@@ -422,20 +429,35 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                     },
                     itemBuilder: (context) => [
                       PopupMenuItem(
-                        value: 'import_excel',
-                        enabled: classes.isNotEmpty,
+                        value: 'import_class',
                         child: Row(
                           children: [
                             Icon(
                               Icons.file_upload_outlined,
-                              color: classes.isNotEmpty ? const Color(0xFF2563EB) : Colors.grey,
+                              color: const Color(0xFF2563EB),
                               size: 20.r,
                             ),
                             SizedBox(width: 12.w),
-                            const Text('Impor Siswa Excel'),
+                            const Text('Impor Kelas'),
                           ],
                         ),
                       ),
+                      PopupMenuItem(
+                        value: 'import_students',
+                        enabled: classes.isNotEmpty,
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.group_add_outlined,
+                              color: classes.isNotEmpty ? const Color(0xFF0D9488) : Colors.grey,
+                              size: 20.r,
+                            ),
+                            SizedBox(width: 12.w),
+                            const Text('Impor Siswa'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
                       PopupMenuItem(
                         value: 'export_excel',
                         enabled: !_isExporting && classes.isNotEmpty,
@@ -447,7 +469,7 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
                               size: 20.r,
                             ),
                             SizedBox(width: 12.w),
-                            const Text('Ekspor Excel'),
+                            const Text('Ekspor'),
                           ],
                         ),
                       ),
@@ -489,10 +511,7 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
       body: masterProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : classes.isEmpty
-              ? const AppEmptyWidget(
-                  title: 'Kelas Kosong',
-                  subtitle: 'Tekan tombol + di bawah untuk menambah kelas.',
-                )
+              ? _buildEmptyState(context, isDark)
               : Column(
                   children: [
                     AdminSearchFilterBar(
@@ -738,4 +757,83 @@ class _MasterClassScreenState extends State<MasterClassScreen> {
     ),
   );
 }
+
+  Widget _buildEmptyState(BuildContext context, bool isDark) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(20.w),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.meeting_room_outlined,
+                size: 44.r,
+                color: const Color(0xFF2563EB),
+              ),
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'Belum Ada Kelas',
+              style: TextStyle(
+                fontSize: 17.sp,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              'Impor daftar kelas melalui template Excel (Langkah 1) atau buat kelas baru secara manual.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+            SizedBox(height: 24.h),
+            Wrap(
+              spacing: 12.w,
+              runSpacing: 12.h,
+              alignment: WrapAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () => ClassImportModal.show(
+                    context,
+                    onImportSuccess: _refreshData,
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 12.h),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                  ),
+                  icon: const Icon(Icons.file_upload_outlined, size: 18),
+                  label: const Text('Impor Kelas'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => _showFormDialog(),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.onSurface,
+                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                    side: BorderSide(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                  ),
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: const Text('Tambah Manual'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

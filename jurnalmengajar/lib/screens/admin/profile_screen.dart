@@ -456,7 +456,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                               strokeWidth: 2.5,
                             ),
                           )
-                        : const Text('Simpan Perubahan'),
+                        : const Text('Simpan'),
                   ),
                   SizedBox(height: 24.h),
                 ],

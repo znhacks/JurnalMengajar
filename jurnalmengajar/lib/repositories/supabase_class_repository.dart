@@ -73,6 +73,23 @@ class SupabaseClassRepository implements ClassRepository {
     }
   }
 
+  /// Batch insert untuk impor kelas dari Excel dalam 1 round-trip
+  Future<void> createMultiple(List<ClassModel> models) async {
+    if (models.isEmpty) return;
+    try {
+      final payloads = models.map((model) {
+        final payload = model.toJson();
+        if ((payload['id'] as String?)?.isEmpty ?? true) {
+          payload['id'] = _uuid.v4();
+        }
+        return payload;
+      }).toList();
+      await _supabase.from('classes').insert(payloads);
+    } catch (e) {
+      throw Exception('Gagal menambah kelas massal: $e');
+    }
+  }
+
   @override
   Future<void> update(ClassModel model) async {
     try {

@@ -236,7 +236,7 @@ class _BigstarterManageTenantSchoolsSheetState extends State<BigstarterManageTen
                 Navigator.pop(context);
               },
               child: Text(
-                'Simpan Perubahan',
+                'Simpan',
                 style: GoogleFonts.hankenGrotesk(
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w800,

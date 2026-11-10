@@ -130,6 +130,88 @@ class AppTheme {
         ),
       ),
 
+      // ─── Date Picker ──────────────────────────────────────────────────────
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: surfaceColor,
+        surfaceTintColor: Colors.transparent,
+        headerBackgroundColor: primaryColor,
+        headerForegroundColor: Colors.white,
+        headerHeadlineStyle: GoogleFonts.hankenGrotesk(
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        ),
+        headerHelpStyle: GoogleFonts.hankenGrotesk(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: Colors.white.withValues(alpha: 0.8),
+        ),
+        weekdayStyle: GoogleFonts.hankenGrotesk(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: onSurfaceVariant,
+        ),
+        dayStyle: GoogleFonts.hankenGrotesk(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.white;
+          }
+          if (states.contains(WidgetState.disabled)) {
+            return outline;
+          }
+          return onSurface;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return primaryColor;
+          }
+          return Colors.transparent;
+        }),
+        todayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.white;
+          }
+          return primaryColor;
+        }),
+        todayBorder: const BorderSide(color: primaryColor, width: 1.5),
+        yearStyle: GoogleFonts.hankenGrotesk(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+        yearForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.white;
+          }
+          return onSurface;
+        }),
+        yearBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return primaryColor;
+          }
+          return Colors.transparent;
+        }),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        cancelButtonStyle: TextButton.styleFrom(
+          foregroundColor: secondaryColor,
+          textStyle: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w600),
+        ),
+        confirmButtonStyle: TextButton.styleFrom(
+          foregroundColor: primaryColor,
+          textStyle: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w700),
+        ),
+        dividerColor: outlineVariant,
+        rangePickerBackgroundColor: surfaceColor,
+        rangePickerSurfaceTintColor: Colors.transparent,
+        rangePickerHeaderBackgroundColor: primaryColor,
+        rangePickerHeaderForegroundColor: Colors.white,
+        rangeSelectionBackgroundColor: primaryColor.withValues(alpha: 0.15),
+      ),
+
       // ─── Buttons ──────────────────────────────────────────────────────────
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -428,6 +510,89 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
+      ),
+
+      // ─── Date Picker ──────────────────────────────────────────────────────
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: darkSurface,
+        surfaceTintColor: Colors.transparent,
+        headerBackgroundColor: const Color(0xFF1E293B),
+        headerForegroundColor: darkOnBackground,
+        headerHeadlineStyle: GoogleFonts.hankenGrotesk(
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          color: darkOnBackground,
+        ),
+        headerHelpStyle: GoogleFonts.hankenGrotesk(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: darkOnSurfaceVariant,
+        ),
+        weekdayStyle: GoogleFonts.hankenGrotesk(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: darkOnSurfaceVariant,
+        ),
+        dayStyle: GoogleFonts.hankenGrotesk(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.white;
+          }
+          if (states.contains(WidgetState.disabled)) {
+            return darkOutline;
+          }
+          return darkOnSurface;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return primaryColor;
+          }
+          return Colors.transparent;
+        }),
+        todayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.white;
+          }
+          return const Color(0xFF60A5FA);
+        }),
+        todayBorder: const BorderSide(color: Color(0xFF60A5FA), width: 1.5),
+        yearStyle: GoogleFonts.hankenGrotesk(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+        yearForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.white;
+          }
+          return darkOnSurface;
+        }),
+        yearBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return primaryColor;
+          }
+          return Colors.transparent;
+        }),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: darkOutlineVariant, width: 1),
+        ),
+        cancelButtonStyle: TextButton.styleFrom(
+          foregroundColor: darkOnSurfaceVariant,
+          textStyle: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w600),
+        ),
+        confirmButtonStyle: TextButton.styleFrom(
+          foregroundColor: const Color(0xFF60A5FA),
+          textStyle: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w700),
+        ),
+        dividerColor: darkOutlineVariant,
+        rangePickerBackgroundColor: darkSurface,
+        rangePickerSurfaceTintColor: Colors.transparent,
+        rangePickerHeaderBackgroundColor: const Color(0xFF1E293B),
+        rangePickerHeaderForegroundColor: darkOnBackground,
+        rangeSelectionBackgroundColor: primaryColor.withValues(alpha: 0.3),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(

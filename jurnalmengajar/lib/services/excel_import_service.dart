@@ -1,9 +1,81 @@
 import 'package:flutter/foundation.dart';
 import 'package:excel/excel.dart';
 import '../models/student_model.dart';
+import '../models/class_model.dart';
 import 'excel_export_service.dart';
 import 'excel_saver.dart';
 import 'excel_picker.dart';
+
+class ClassImportItem {
+  final String name;
+  final String? description;
+  final String? error;
+  final bool isDuplicate;
+  final String? duplicateReason;
+  bool isSelected;
+
+  ClassImportItem({
+    required this.name,
+    this.description,
+    this.error,
+    this.isDuplicate = false,
+    this.duplicateReason,
+    this.isSelected = true,
+  });
+
+  bool get isValid => error == null && name.trim().isNotEmpty;
+
+  ClassModel toClassModel({
+    required String periodId,
+    String? schoolId,
+  }) {
+    return ClassModel(
+      id: '',
+      periodId: periodId,
+      name: name.trim(),
+      studentCount: 0,
+      schoolId: schoolId,
+    );
+  }
+
+  ClassImportItem copyWith({
+    String? name,
+    String? description,
+    String? error,
+    bool? isDuplicate,
+    String? duplicateReason,
+    bool? isSelected,
+  }) {
+    return ClassImportItem(
+      name: name ?? this.name,
+      description: description ?? this.description,
+      error: error ?? this.error,
+      isDuplicate: isDuplicate ?? this.isDuplicate,
+      duplicateReason: duplicateReason ?? this.duplicateReason,
+      isSelected: isSelected ?? this.isSelected,
+    );
+  }
+}
+
+class ClassImportParseResult {
+  final String fileName;
+  final int totalRows;
+  final List<ClassImportItem> items;
+  final List<String> warnings;
+
+  ClassImportParseResult({
+    required this.fileName,
+    required this.totalRows,
+    required this.items,
+    this.warnings = const [],
+  });
+
+  bool get hasValidItems => items.any((i) => i.isValid);
+  int get validCount => items.where((i) => i.isValid).length;
+  int get duplicateCount => items.where((i) => i.isDuplicate).length;
+  int get errorCount => items.where((i) => !i.isValid).length;
+  int get selectedCount => items.where((i) => i.isSelected && i.isValid).length;
+}
 
 class StudentImportItem {
   final String name;
@@ -93,7 +165,206 @@ class StudentImportParseResult {
 }
 
 class ExcelImportService {
-  /// Unduh atau bagikan template format Excel untuk impor siswa
+  /// Unduh template format Excel untuk impor kelas (Langkah 1)
+  static Future<void> downloadClassTemplate({
+    String schoolName = 'Sekolah',
+  }) async {
+    final excel = Excel.createExcel();
+    final defaultSheet = excel.getDefaultSheet() ?? 'Sheet1';
+    const sheetName = 'Format Impor Kelas';
+    excel.rename(defaultSheet, sheetName);
+    final sheet = excel[sheetName];
+
+    final headers = [
+      'No',
+      'Nama Kelas',
+      'Keterangan / Jurusan (Opsional)',
+    ];
+
+    // Mengatur lebar kolom agar lega dan teks tidak terpotong
+    sheet.setColumnWidth(0, 10.0);
+    sheet.setColumnWidth(1, 30.0);
+    sheet.setColumnWidth(2, 38.0);
+
+    sheet.appendRow(headers.map((h) => TextCellValue(h)).toList());
+    for (var col = 0; col < headers.length; col++) {
+      sheet.cell(CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 0)).cellStyle =
+          ExcelExportService.headerStyle();
+    }
+
+    final hStyle = ExcelExportService.bodyStyle();
+    final centerStyle = ExcelExportService.bodyStyle(align: HorizontalAlign.Center);
+
+    final sampleRows = [
+      [IntCellValue(1), TextCellValue('X RPL 1'), TextCellValue('Rekayasa Perangkat Lunak')],
+      [IntCellValue(2), TextCellValue('X RPL 2'), TextCellValue('Rekayasa Perangkat Lunak')],
+      [IntCellValue(3), TextCellValue('XI TKJ 1'), TextCellValue('Teknik Komputer dan Jaringan')],
+      [IntCellValue(4), TextCellValue('XI TKJ 2'), TextCellValue('Teknik Komputer dan Jaringan')],
+      [IntCellValue(5), TextCellValue('XII DKV 1'), TextCellValue('Desain Komunikasi Visual')],
+    ];
+
+    for (int i = 0; i < sampleRows.length; i++) {
+      sheet.appendRow(sampleRows[i]);
+      final rowIndex = i + 1;
+      sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex)).cellStyle = centerStyle;
+      sheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex)).cellStyle = hStyle;
+      sheet.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex)).cellStyle = hStyle;
+    }
+
+    final bytes = excel.save();
+    if (bytes != null) {
+      downloadOrShareExcel(bytes, 'Template_Impor_Kelas.xlsx');
+    }
+  }
+
+  /// Memilih file Excel dari penyimpanan dan mem-parsing hasil kelas
+  static Future<ClassImportParseResult?> pickAndParseClassExcel({
+    List<ClassModel>? existingClasses,
+  }) async {
+    final picked = await pickExcelFilePlatform();
+    if (picked == null) {
+      return null;
+    }
+
+    if (picked.bytes.isEmpty) {
+      throw Exception('File Excel kosong atau tidak dapat dibaca.');
+    }
+
+    return parseClassExcelBytes(
+      picked.bytes,
+      fileName: picked.name,
+      existingClasses: existingClasses,
+    );
+  }
+
+  /// Mem-parsing bytes Excel menjadi data kelas siap impor
+  static ClassImportParseResult parseClassExcelBytes(
+    List<int> bytes, {
+    String fileName = 'File Excel',
+    List<ClassModel>? existingClasses,
+  }) {
+    final uint8Bytes = bytes is Uint8List ? bytes : Uint8List.fromList(bytes);
+    final excel = Excel.decodeBytes(uint8Bytes);
+
+    if (excel.tables.isEmpty) {
+      throw Exception('File Excel tidak memiliki sheet yang dapat dibaca.');
+    }
+
+    Sheet? targetSheet;
+    for (final table in excel.tables.values) {
+      if (table.rows.isNotEmpty) {
+        targetSheet = table;
+        break;
+      }
+    }
+
+    if (targetSheet == null || targetSheet.rows.isEmpty) {
+      throw Exception('Lembar kerja Excel kosong.');
+    }
+
+    final rows = targetSheet.rows;
+    final List<String> warnings = [];
+
+    // Deteksi baris header
+    int headerRowIndex = 0;
+    int nameCol = -1;
+    int descCol = -1;
+
+    for (int r = 0; r < rows.length && r < 5; r++) {
+      final row = rows[r];
+      for (int c = 0; c < row.length; c++) {
+        final val = row[c]?.value?.toString().trim().toLowerCase() ?? '';
+        if (nameCol == -1 && (val.contains('nama kelas') || val == 'kelas' || val == 'nama')) {
+          nameCol = c;
+          headerRowIndex = r;
+        } else if (descCol == -1 && (val.contains('jurusan') || val.contains('keterangan') || val.contains('peminatan') || val.contains('tingkat'))) {
+          descCol = c;
+        }
+      }
+      if (nameCol != -1) break;
+    }
+
+    // Fallback jika tidak ada header
+    if (nameCol == -1) {
+      nameCol = rows[0].length > 1 ? 1 : 0;
+      headerRowIndex = -1;
+      warnings.add('Header tidak terdeteksi otomatis, menggunakan kolom ke-${nameCol + 1} sebagai nama kelas.');
+    }
+
+    final existingNames = (existingClasses ?? [])
+        .map((c) => c.name.trim().toLowerCase())
+        .toSet();
+
+    final List<ClassImportItem> items = [];
+    final seenInFile = <String>{};
+
+    final startRow = headerRowIndex + 1;
+    for (int r = startRow; r < rows.length; r++) {
+      final row = rows[r];
+      if (row.isEmpty) continue;
+
+      String rawName = '';
+      if (nameCol < row.length && row[nameCol]?.value != null) {
+        rawName = row[nameCol]!.value.toString().trim();
+      }
+
+      String? rawDesc;
+      if (descCol != -1 && descCol < row.length && row[descCol]?.value != null) {
+        rawDesc = row[descCol]!.value.toString().trim();
+        if (rawDesc.isEmpty) rawDesc = null;
+      }
+
+      // Lewati baris kosong
+      if (rawName.isEmpty && (rawDesc == null || rawDesc.isEmpty)) {
+        continue;
+      }
+
+      String? error;
+      if (rawName.isEmpty) {
+        error = 'Nama kelas tidak boleh kosong';
+      }
+
+      final normalizedName = rawName.toLowerCase();
+      bool isDuplicate = false;
+      String? duplicateReason;
+
+      if (existingNames.contains(normalizedName)) {
+        isDuplicate = true;
+        duplicateReason = 'Sudah terdaftar di sistem';
+      } else if (seenInFile.contains(normalizedName)) {
+        isDuplicate = true;
+        duplicateReason = 'Duplikat dalam file Excel ini';
+      }
+
+      if (rawName.isNotEmpty) {
+        seenInFile.add(normalizedName);
+      }
+
+      items.add(
+        ClassImportItem(
+          name: rawName,
+          description: rawDesc,
+          error: error,
+          isDuplicate: isDuplicate,
+          duplicateReason: duplicateReason,
+          isSelected: error == null && !isDuplicate,
+        ),
+      );
+    }
+
+    if (items.isEmpty) {
+      throw Exception('Tidak ditemukan data baris kelas pada file Excel.');
+    }
+
+    return ClassImportParseResult(
+      fileName: fileName,
+      totalRows: items.length,
+      items: items,
+      warnings: warnings,
+    );
+  }
+
+  /// Unduh atau bagikan template format Excel untuk impor siswa (Langkah 2)
   static Future<void> downloadStudentTemplate({
     String className = 'Kelas Contoh',
     String schoolName = 'Sekolah',
@@ -112,6 +383,14 @@ class ExcelImportService {
       'Nomor HP Orang Tua',
       'Kelas',
     ];
+
+    // Mengatur lebar kolom agar rapi, berjarak lega, dan teks tidak bertumpuk
+    sheet.setColumnWidth(0, 8.0);
+    sheet.setColumnWidth(1, 32.0);
+    sheet.setColumnWidth(2, 18.0);
+    sheet.setColumnWidth(3, 18.0);
+    sheet.setColumnWidth(4, 24.0);
+    sheet.setColumnWidth(5, 22.0);
 
     sheet.appendRow(headers.map((h) => TextCellValue(h)).toList());
     for (var col = 0; col < headers.length; col++) {

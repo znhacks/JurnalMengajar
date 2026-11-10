@@ -292,7 +292,7 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                                   },
                             child: InputDecorator(
                               decoration: InputDecoration(
-                                labelText: 'Tanggal Mulai',
+                                labelText: 'Tgl Mulai',
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12.r),
                                 ),
@@ -327,7 +327,7 @@ class _AdminTeacherLeavesScreenState extends State<AdminTeacherLeavesScreen> {
                                   },
                             child: InputDecorator(
                               decoration: InputDecoration(
-                                labelText: 'Tanggal Selesai',
+                                labelText: 'Tgl Selesai',
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12.r),
                                 ),

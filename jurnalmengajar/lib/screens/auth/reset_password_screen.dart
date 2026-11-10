@@ -435,7 +435,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                       )
                                     : Text(
                                         isRecoveryMode
-                                            ? 'Simpan Password'
+                                            ? 'Simpan'
                                             : 'Kirim Link Reset',
                                         style: TextStyle(
                                           fontSize: kIsWeb ? 15 : 16.sp,

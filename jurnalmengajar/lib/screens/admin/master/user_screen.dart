@@ -750,7 +750,7 @@ class _MasterUserScreenState extends State<MasterUserScreen>
         actions: [
           AppDialogActions(
             cancelText: 'Batal',
-            confirmText: 'Tolak Permintaan',
+            confirmText: 'Tolak',
             isDestructive: true,
             onCancel: () => Navigator.pop(context, false),
             onConfirm: () => Navigator.pop(context, true),

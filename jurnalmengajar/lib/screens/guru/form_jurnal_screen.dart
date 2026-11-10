@@ -2203,7 +2203,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                                     ? 'Kirim Surat Keterangan Sakit'
                                     : (_teacherAttendanceStatus == 'izin'
                                           ? 'Kirim Surat Izin'
-                                          : 'Simpan Jurnal')),
+                                          : 'Simpan')),
                         ),
                 ),
               ],

@@ -1317,7 +1317,7 @@ class _MasterScheduleScreenState extends State<MasterScheduleScreen> {
           actions: [
             AppDialogActions(
               cancelText: 'Batal',
-              confirmText: 'Hapus Permanen',
+              confirmText: 'Hapus',
               isDestructive: true,
               onCancel: () => Navigator.pop(ctx, false),
               onConfirm: () => Navigator.pop(ctx, true),

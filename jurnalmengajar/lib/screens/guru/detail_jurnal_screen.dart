@@ -599,7 +599,7 @@ class DetailJurnalScreen extends StatelessWidget {
             actions: [
               AppDialogActions(
                 cancelText: 'Batal',
-                confirmText: 'Tolak Jurnal',
+                confirmText: 'Tolak',
                 isDestructive: true,
                 onCancel: () => Navigator.pop(ctx),
                 onConfirm: isButtonEnabled
