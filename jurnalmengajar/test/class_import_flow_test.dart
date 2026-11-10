@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,12 +6,10 @@ import 'package:provider/provider.dart';
 import 'package:jurnalmengajar/models/class_model.dart';
 import 'package:jurnalmengajar/models/period_model.dart';
 import 'package:jurnalmengajar/models/hour_model.dart';
-import 'package:jurnalmengajar/models/school_model.dart';
 import 'package:jurnalmengajar/models/subject_model.dart';
 import 'package:jurnalmengajar/models/teacher_model.dart';
 import 'package:jurnalmengajar/models/student_model.dart';
 import 'package:jurnalmengajar/models/student_academic_history_model.dart';
-import 'package:jurnalmengajar/providers/auth_provider.dart';
 import 'package:jurnalmengajar/providers/master_data_provider.dart';
 import 'package:jurnalmengajar/repositories/class_repository.dart';
 import 'package:jurnalmengajar/repositories/hour_repository.dart';
@@ -42,8 +39,6 @@ class FakePeriodRepo implements PeriodRepository {
   Future<void> delete(String id) async {}
   @override
   Future<void> deleteMultiple(List<String> ids) async {}
-  @override
-  Future<void> setActivePeriod(String id) async {}
 }
 
 class FakeSubjectRepo implements SubjectRepository {
