@@ -52,6 +52,221 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
     return "${months[date.month - 1]} ${date.year}";
   }
 
+  void _showMonthPicker() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    int tempYear = _selectedMonth.year;
+    final List<String> monthNames = [
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final now = DateTime.now();
+            return Dialog(
+              backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              insetPadding: EdgeInsets.symmetric(
+                horizontal: 20.w,
+                vertical: 20.h,
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: 360,
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(18.w),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Header
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_month_rounded,
+                            color: AppTheme.primaryColor,
+                            size: 20.sp,
+                          ),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: Text(
+                              'Pilih Bulan & Tahun',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w800,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded, size: 20),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () => Navigator.pop(dialogCtx),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 20),
+
+                      // Year Selector
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF0F172A)
+                              : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.chevron_left_rounded),
+                              onPressed: () {
+                                setDialogState(() {
+                                  tempYear--;
+                                });
+                              },
+                              tooltip: 'Tahun Sebelumnya',
+                            ),
+                            Text(
+                              '$tempYear',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w800,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.chevron_right_rounded),
+                              onPressed: () {
+                                setDialogState(() {
+                                  tempYear++;
+                                });
+                              },
+                              tooltip: 'Tahun Berikutnya',
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 14.h),
+
+                      // 12 Months Grid
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          mainAxisSpacing: 8.h,
+                          crossAxisSpacing: 8.w,
+                          childAspectRatio: 2.2,
+                        ),
+                        itemCount: 12,
+                        itemBuilder: (context, index) {
+                          final mNum = index + 1;
+                          final isSelectedMonth =
+                              tempYear == _selectedMonth.year &&
+                              mNum == _selectedMonth.month;
+                          final isCurrentMonth =
+                              tempYear == now.year && mNum == now.month;
+
+                          return InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedMonth = DateTime(tempYear, mNum, 1);
+                              });
+                              Navigator.pop(dialogCtx);
+                            },
+                            borderRadius: BorderRadius.circular(8.r),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isSelectedMonth
+                                    ? AppTheme.primaryColor
+                                    : (isDark
+                                        ? const Color(0xFF334155).withValues(alpha: 0.5)
+                                        : const Color(0xFFF8FAFC)),
+                                borderRadius: BorderRadius.circular(8.r),
+                                border: Border.all(
+                                  color: isSelectedMonth
+                                      ? AppTheme.primaryColor
+                                      : (isCurrentMonth
+                                          ? AppTheme.primaryColor.withValues(alpha: 0.5)
+                                          : (isDark
+                                              ? const Color(0xFF475569)
+                                              : const Color(0xFFCBD5E1))),
+                                  width: isSelectedMonth || isCurrentMonth ? 1.5 : 1.0,
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                monthNames[index],
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 12.sp,
+                                  fontWeight: isSelectedMonth
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                  color: isSelectedMonth
+                                      ? Colors.white
+                                      : (isCurrentMonth
+                                          ? AppTheme.primaryColor
+                                          : Theme.of(context).colorScheme.onSurface),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      SizedBox(height: 14.h),
+
+                      // Shortcut: "Bulan Ini"
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _selectedMonth = DateTime(now.year, now.month, 1);
+                            });
+                            Navigator.pop(dialogCtx);
+                          },
+                          icon: const Icon(Icons.today_rounded, size: 16),
+                          label: Text(
+                            'Bulan Ini',
+                            style: GoogleFonts.hankenGrotesk(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12.sp,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
@@ -230,13 +445,35 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                       onPressed: _prevMonth,
                       constraints: const BoxConstraints(),
                       padding: EdgeInsets.symmetric(vertical: 8.h),
+                      tooltip: 'Bulan Sebelumnya',
                     ),
-                    Text(
-                      _getMonthName(_selectedMonth),
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w800,
-                        color: textPrimary,
+                    InkWell(
+                      onTap: _showMonthPicker,
+                      borderRadius: BorderRadius.circular(8.r),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10.w,
+                          vertical: 6.h,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _getMonthName(_selectedMonth),
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w800,
+                                color: textPrimary,
+                              ),
+                            ),
+                            SizedBox(width: 4.w),
+                            Icon(
+                              Icons.arrow_drop_down_rounded,
+                              size: 20.sp,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     IconButton(
@@ -247,6 +484,7 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                       onPressed: _nextMonth,
                       constraints: const BoxConstraints(),
                       padding: EdgeInsets.symmetric(vertical: 8.h),
+                      tooltip: 'Bulan Berikutnya',
                     ),
                   ],
                 ),

@@ -274,20 +274,6 @@ class WarningLetterProvider with ChangeNotifier {
                 await warningLetterRepository.create(newWarning);
               } catch (_) {}
             }
-          } else {
-            // All journals on this day are filled, delete warning if it exists
-            if (existingWarning != null) {
-              try {
-                await warningLetterRepository.delete(existingWarning.id);
-              } catch (_) {}
-            }
-          }
-        } else {
-          // Not late, delete warning if it exists
-          if (existingWarning != null) {
-            try {
-              await warningLetterRepository.delete(existingWarning.id);
-            } catch (_) {}
           }
         }
       }

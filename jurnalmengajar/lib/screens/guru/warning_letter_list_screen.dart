@@ -18,6 +18,7 @@ import '../../models/warning_letter_model.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/helper.dart';
 import '../../core/utils/schedule_grouper.dart';
+import '../../core/utils/warning_letter_grouper.dart';
 import '../../widgets/guru_drawer.dart';
 import '../../widgets/app_scaffold.dart';
 import '../../widgets/app_dialog_actions.dart';
@@ -180,7 +181,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
     required List<ScheduleModel> schedules,
     required List<JournalModel> journals,
   }) {
-    final daySchedules = schedules.where((s) => _isSameDay(s.date, groupDate)).toList();
+    final daySchedules = schedules.where((s) => s.isActive && _isSameDay(s.date, groupDate)).toList();
     if (daySchedules.isNotEmpty) {
       for (final s in daySchedules) {
         if (!_hasJournalForSchedule(schedule: s, journals: journals)) return false;
@@ -1057,71 +1058,19 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
     final journalProvider = context.watch<JournalProvider>();
     final isLoading = warningProvider.isLoading || scheduleProvider.isLoading;
     final activeSchoolId = AppHelper.parseSingleCleanSchoolId(context.watch<AuthProvider>().activeSchoolId);
-    final schoolWarnings = warningProvider.warningLetters.where((w) {
-      if (activeSchoolId != null && activeSchoolId.isNotEmpty) {
-        final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
-        if (wSchoolId != activeSchoolId) return false;
-      }
-      if (w.reason.contains('Kelas--')) return false;
-      return true;
-    }).toList();
+    final warningResult = WarningLetterGrouper.groupWarnings(
+      warnings: warningProvider.warningLetters,
+      activeSchoolId: activeSchoolId,
+      schedules: scheduleProvider.cachedTeacherSchedules,
+    );
 
-    // Group warnings by schedule date (fallback to issuedAt date)
-    final Map<String, List<WarningLetterModel>> groupedMap = {};
-    final Map<String, DateTime> dateMap = {};
-
-    for (final warning in schoolWarnings) {
-      final schedule = scheduleProvider.cachedTeacherSchedules.firstWhere(
-        (s) => s.id == warning.scheduleId,
-        orElse: () => ScheduleModel(
-          id: '',
-          teacherId: '',
-          classId: '',
-          subjectId: '',
-          periodId: '',
-          date: warning.issuedAt,
-          teachingHour: 0,
-          isActive: false,
-        ),
-      );
-
-      final dateKey = '${schedule.date.year}-${schedule.date.month}-${schedule.date.day}';
-      groupedMap.putIfAbsent(dateKey, () => []).add(warning);
-      dateMap.putIfAbsent(dateKey, () => DateTime(schedule.date.year, schedule.date.month, schedule.date.day));
-    }
-
-    final sortedGroups = groupedMap.entries.toList()
-      ..sort((a, b) {
-        final dateA = dateMap[a.key]!;
-        final dateB = dateMap[b.key]!;
-        return dateB.compareTo(dateA);
-      });
-
-    final journals = journalProvider.teacherJournals;
-    final allSchedules = scheduleProvider.cachedTeacherSchedules;
-
-    int pendingCount = 0;
-    int completedCount = 0;
-    final Map<String, bool> groupStatusMap = {};
-
-    for (final entry in groupedMap.entries) {
-      final gDate = dateMap[entry.key]!;
-      final gWarnings = entry.value;
-      final hasUnread = gWarnings.any((w) => w.status == 'unread');
-      final isJournalFilled = _isGroupJournalFilled(
-        groupDate: gDate,
-        groupWarnings: gWarnings,
-        schedules: allSchedules,
-        journals: journals,
-      );
-      final isPending = hasUnread || !isJournalFilled;
-      groupStatusMap[entry.key] = isPending;
-      if (isPending) {
-        pendingCount++;
-      } else {
-        completedCount++;
-      }
-    }
+    final schoolWarnings = warningResult.schoolWarnings;
+    final groupedMap = warningResult.groupedMap;
+    final dateMap = warningResult.dateMap;
+    final sortedGroups = warningResult.sortedGroups;
+    final pendingCount = warningResult.pendingCount;
+    final completedCount = warningResult.completedCount;
+    final groupStatusMap = warningResult.groupStatusMap;
 
     final Set<DateTime> availableMonths = {};
     for (final date in dateMap.values) {
@@ -1247,27 +1196,12 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                     );
                   }
                 } else if (value == 'delete_all') {
-                  final journalProvider = Provider.of<JournalProvider>(context, listen: false);
-                  final schedProvider = Provider.of<ScheduleProvider>(context, listen: false);
-                  final journals = journalProvider.teacherJournals;
-                  final schedules = schedProvider.cachedTeacherSchedules;
                   final List<String> deletableIds = [];
-                  int blockedConfirmed = 0;
                   for (final entry in groupedMap.entries) {
-                    final gDate = dateMap[entry.key]!;
                     final gWarnings = entry.value;
-                    final filled = _isGroupJournalFilled(
-                      groupDate: gDate,
-                      groupWarnings: gWarnings,
-                      schedules: schedules,
-                      journals: journals,
-                    );
                     for (final w in gWarnings) {
-                      if (w.status != 'read') continue;
-                      if (filled) {
+                      if (w.status == 'read') {
                         deletableIds.add(w.id);
-                      } else {
-                        blockedConfirmed++;
                       }
                     }
                   }
@@ -1277,10 +1211,8 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                       AppHelper.showSnackBar(
                         context,
                         unreadCount > 0
-                            ? 'Belum bisa dihapus. Pastikan jurnal sudah diisi dan pengingat sudah dikonfirmasi.'
-                            : (blockedConfirmed > 0
-                                ? 'Belum bisa dihapus. Jurnal pada pengingat yang dikonfirmasi belum terisi lengkap.'
-                                : 'Belum ada riwayat pengingat yang bisa dihapus.'),
+                            ? 'Belum bisa dihapus. Pastikan pengingat sudah dikonfirmasi terlebih dahulu.'
+                            : 'Belum ada riwayat pengingat yang bisa dihapus.',
                         isError: true,
                       );
                     }
@@ -1291,8 +1223,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                     builder: (context) => AlertDialog(
                       title: const Text('Hapus Riwayat Pengingat'),
                       content: Text(
-                        'Hanya ${deletableIds.length} pengingat yang jurnalnya sudah diisi & sudah dikonfirmasi yang akan dihapus.'
-                        '${blockedConfirmed > 0 ? ' $blockedConfirmed pengingat dikonfirmasi lainnya dilewati karena jurnalnya belum terisi lengkap.' : ''}'
+                        'Hanya ${deletableIds.length} pengingat yang sudah dikonfirmasi yang akan dihapus.'
                         '${unreadCount > 0 ? ' Pengingat yang belum dikonfirmasi tidak akan dihapus.' : ''}',
                       ),
                       actionsPadding: EdgeInsets.zero,
@@ -1492,15 +1423,6 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                   ),
                                 ),
                               ],
-                              const Spacer(),
-                              Text(
-                                '${filteredGroups.length} pengingat',
-                                style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 11.5.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
-                              ),
                             ],
                           ),
                         ),

@@ -5,8 +5,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../providers/warning_letter_provider.dart';
+import '../providers/schedule_provider.dart';
 import '../providers/theme_provider.dart';
-import '../core/utils/helper.dart';
+import '../core/utils/warning_letter_grouper.dart';
 import '../screens/guru/main_shell.dart';
 import '../screens/guru/dashboard_screen.dart';
 import 'profile_photo_view.dart';
@@ -151,22 +152,13 @@ class GuruDrawerPanel extends StatelessWidget {
     final authProvider = context.watch<AuthProvider>();
     final currentUser = authProvider.currentUser;
     final warningProvider = context.watch<WarningLetterProvider>();
+    final scheduleProvider = context.watch<ScheduleProvider>();
 
-    final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(
-      authProvider.activeSchoolId,
+    final unreadWarnings = WarningLetterGrouper.countPendingGroups(
+      warnings: warningProvider.warningLetters,
+      activeSchoolId: authProvider.activeSchoolId,
+      schedules: scheduleProvider.cachedTeacherSchedules,
     );
-    final unreadWarnings = warningProvider.warningLetters.where((w) {
-      if (w.status != 'unread') {
-        return false;
-      }
-      if (cleanActiveSchoolId == null || cleanActiveSchoolId.isEmpty) {
-        return true;
-      }
-      final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
-      return wSchoolId == null ||
-          wSchoolId.isEmpty ||
-          wSchoolId == cleanActiveSchoolId;
-    }).length;
 
     final isProfileReady = currentUser != null;
     final name = currentUser?.fullName ?? '';
