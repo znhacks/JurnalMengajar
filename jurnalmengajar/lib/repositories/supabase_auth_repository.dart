@@ -1107,8 +1107,9 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<String> uploadProfilePhoto(
     List<int> imageBytes,
     String fileName,
-    String userId,
-  ) async {
+    String userId, {
+    bool upsert = true,
+  }) async {
     try {
       // Compress to WebP before uploading
       final compressed = await ImageCompressor.compressToWebp(
@@ -1132,9 +1133,9 @@ class SupabaseAuthRepository implements AuthRepository {
             compressed.bytes,
             // URL avatar memakai cache buster (?t=...) saat foto diganti,
             // jadi aman menyimpan cache lama di browser/perangkat.
-            fileOptions: const FileOptions(
+            fileOptions: FileOptions(
               cacheControl: '31536000',
-              upsert: true,
+              upsert: upsert,
             ),
           );
 
@@ -1146,6 +1147,50 @@ class SupabaseAuthRepository implements AuthRepository {
       return '$publicUrl?t=$cacheBuster';
     } catch (e) {
       throw Exception('Gagal mengunggah foto profil: $e');
+    }
+  }
+
+  /// Upload logo sekolah ke bucket `school-assets` dan kembalikan public URL.
+  /// Mempertahankan transparansi PNG agar rapi pada kop surat PDF maupun avatar.
+  Future<String> uploadSchoolLogo(
+    List<int> imageBytes,
+    String fileName,
+    String schoolId,
+  ) async {
+    try {
+      final compressed = await ImageCompressor.compressSchoolLogo(
+        bytes: imageBytes,
+        originalFileName: fileName,
+        maxWidth: 512,
+        maxHeight: 512,
+      );
+
+      final ext = compressed.fileName.contains('.')
+          ? compressed.fileName.split('.').last.toLowerCase()
+          : 'png';
+      final filePath = 'schools/$schoolId/logo.$ext';
+      final contentType = ext == 'png' ? 'image/png' : 'image/jpeg';
+
+      await _supabase.storage
+          .from('school-assets')
+          .uploadBinary(
+            filePath,
+            compressed.bytes,
+            fileOptions: FileOptions(
+              cacheControl: '31536000',
+              upsert: true,
+              contentType: contentType,
+            ),
+          );
+
+      final publicUrl = _supabase.storage
+          .from('school-assets')
+          .getPublicUrl(filePath);
+
+      final cacheBuster = DateTime.now().millisecondsSinceEpoch;
+      return '$publicUrl?t=$cacheBuster';
+    } catch (e) {
+      throw Exception('Gagal mengunggah logo sekolah: $e');
     }
   }
 

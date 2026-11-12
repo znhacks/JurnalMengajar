@@ -281,7 +281,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Text(
-                                'Selamat Datang Kembali',
+                                'Login',
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: kIsWeb ? 22 : 24.sp,
                                   fontWeight: FontWeight.bold,
@@ -291,6 +292,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               SizedBox(height: 6.h),
                               Text(
                                 'Silakan masuk ke akun Anda',
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: kIsWeb ? 14 : 14.5.sp,
                                   color: Theme.of(context).colorScheme.onSurfaceVariant,

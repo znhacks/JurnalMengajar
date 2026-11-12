@@ -504,41 +504,6 @@ class AuthProvider with ChangeNotifier {
 
         var schoolModel = SchoolModel.fromJson(res);
 
-        // Otomatis: jika logo_url kosong, ambil dari foto profil akun khusus admin (bukan guru yang switch)
-        String? resolvedLogo = schoolModel.logoUrl;
-        if (resolvedLogo == null || resolvedLogo.trim().isEmpty) {
-          try {
-            final adminUsers = await supabase
-                .from('users')
-                .select('id, photo_url, role')
-                .eq('school_id', _activeSchoolId!)
-                .eq('role', 'admin')
-                .timeout(NetworkResilience.defaultQueryTimeout);
-
-            for (final u in (adminUsers as List)) {
-              if (u['photo_url'] != null &&
-                  (u['photo_url'] as String).trim().isNotEmpty) {
-                resolvedLogo = (u['photo_url'] as String).trim();
-                await supabase
-                    .from('schools')
-                    .update({'logo_url': resolvedLogo})
-                    .eq('id', _activeSchoolId!);
-                break;
-              }
-            }
-          } catch (adminPhotoErr) {
-            debugPrint(
-              'Note resolving dedicated admin photo for school logo: $adminPhotoErr',
-            );
-          }
-        }
-
-        if (resolvedLogo != null &&
-            resolvedLogo.trim().isNotEmpty &&
-            resolvedLogo != schoolModel.logoUrl) {
-          schoolModel = schoolModel.copyWith(logoUrl: resolvedLogo);
-        }
-
         try {
           final prefs = await SharedPreferences.getInstance();
           final localTz = prefs.getString('school_timezone_$_activeSchoolId');
@@ -1361,35 +1326,6 @@ class AuthProvider with ChangeNotifier {
             } catch (_) {}
           }
 
-          // Fallback logo: jika logo_url sekolah kosong, ambil dari foto profil admin sekolah tersebut
-          String? currentLogo;
-          if (m['schools'] != null && m['schools'] is Map) {
-            currentLogo = m['schools']['logo_url']?.toString();
-          }
-          if (currentLogo == null || currentLogo.trim().isEmpty) {
-            try {
-              final adminRes = await supabase
-                  .from('users')
-                  .select('photo_url')
-                  .eq('school_id', sId)
-                  .eq('role', 'admin')
-                  .not('photo_url', 'is', null)
-                  .limit(1)
-                  .maybeSingle()
-                  .timeout(const Duration(seconds: 2));
-              if (adminRes != null &&
-                  adminRes['photo_url'] != null &&
-                  adminRes['photo_url'].toString().trim().isNotEmpty) {
-                final adminPhoto = adminRes['photo_url'].toString().trim();
-                if (m['schools'] != null && m['schools'] is Map) {
-                  m['schools']['logo_url'] = adminPhoto;
-                } else {
-                  m['logo_url'] = adminPhoto;
-                }
-              }
-            } catch (_) {}
-          }
-
           final parsed = UserSchoolModel.fromJson(m);
 
           if (status == 'pending') {
@@ -1474,25 +1410,7 @@ class AuthProvider with ChangeNotifier {
                   .maybeSingle()
                   .timeout(NetworkResilience.defaultQueryTimeout);
               if (sRes != null) {
-                String? schoolLogo = sRes['logo_url']?.toString();
-                if (schoolLogo == null || schoolLogo.trim().isEmpty) {
-                  try {
-                    final adminRes = await supabase
-                        .from('users')
-                        .select('photo_url')
-                        .eq('school_id', cleanId)
-                        .eq('role', 'admin')
-                        .not('photo_url', 'is', null)
-                        .limit(1)
-                        .maybeSingle()
-                        .timeout(const Duration(seconds: 2));
-                    if (adminRes != null &&
-                        adminRes['photo_url'] != null &&
-                        adminRes['photo_url'].toString().trim().isNotEmpty) {
-                      schoolLogo = adminRes['photo_url'].toString().trim();
-                    }
-                  } catch (_) {}
-                }
+                final String? schoolLogo = sRes['logo_url']?.toString();
                 membershipMap[key] = UserSchoolModel(
                   id: 'us_$cleanId',
                   userId: _currentUser!.id,
@@ -1897,31 +1815,6 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     try {
       _currentUser = await authRepository.updateProfile(updatedUser);
-
-      // Hanya sinkronkan ke logo sekolah jika user adalah KHUSUS ADMIN (bukan guru yang bisa switch)
-      if (updatedUser.photoUrl != null && updatedUser.photoUrl!.isNotEmpty) {
-        final isDedicatedAdmin =
-            _currentUser?.role == 'admin' &&
-            !_userMemberships.any((m) => m.role == 'guru');
-        if (isDedicatedAdmin &&
-            _activeSchoolId != null &&
-            _activeSchoolId!.isNotEmpty) {
-          try {
-            await Supabase.instance.client
-                .from('schools')
-                .update({'logo_url': updatedUser.photoUrl})
-                .eq('id', _activeSchoolId!);
-
-            if (_activeSchool != null) {
-              _activeSchool = _activeSchool!.copyWith(
-                logoUrl: updatedUser.photoUrl,
-              );
-            }
-          } catch (syncErr) {
-            debugPrint('Note syncing school logo: $syncErr');
-          }
-        }
-      }
 
       // Evict Flutter memory image cache to guarantee instant refresh of avatars
       PaintingBinding.instance.imageCache.clear();

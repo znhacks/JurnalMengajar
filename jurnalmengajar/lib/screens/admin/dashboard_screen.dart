@@ -504,7 +504,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               ),
                             ],
                           ),
-                          SizedBox(height: 16.h),
+                          SizedBox(height: 10.h),
 
                           // Baris tautan cepat ke Laporan & Statistik
                           Row(
@@ -622,7 +622,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               ),
                             ],
                           ),
-                          SizedBox(height: 18.h),
+                          SizedBox(height: 12.h),
 
                           // 4. Banner Hari Libur / Minggu / Cuti Guru (Jika Tanggal Terpilih Libur atau Izin)
                           Builder(
@@ -650,7 +650,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               if (holiday != null) {
                                 return Container(
                                   width: double.infinity,
-                                  margin: EdgeInsets.only(bottom: 14.h),
+                                  margin: EdgeInsets.only(bottom: 10.h),
                                   padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.2 : 0.08),
@@ -709,7 +709,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               } else if (absenceJournal != null) {
                                 return Container(
                                   width: double.infinity,
-                                  margin: EdgeInsets.only(bottom: 14.h),
+                                  margin: EdgeInsets.only(bottom: 10.h),
                                   padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.2 : 0.08),
@@ -767,7 +767,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               } else if (isSunday) {
                                 return Container(
                                   width: double.infinity,
-                                  margin: EdgeInsets.only(bottom: 14.h),
+                                  margin: EdgeInsets.only(bottom: 10.h),
                                   padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.15 : 0.06),

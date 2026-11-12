@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -11,6 +12,7 @@ import '../../models/settings_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/master_data_provider.dart';
+import '../../repositories/supabase_auth_repository.dart';
 import '../../widgets/admin_drawer.dart';
 import '../../core/utils/helper.dart';
 import '../../core/services/cache_service.dart';
@@ -54,6 +56,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   final _schoolNssController = TextEditingController();
   bool _isSavingSchoolIdentity = false;
   bool _syncedFromFullSchool = false;
+  Uint8List? _pendingLogoBytes;
+  String? _pendingLogoFileName;
+  bool _removeSchoolLogo = false;
 
   // ── Kode Gabung Guru (1 tabel berisi kode agar guru bisa
   // bergabung tanpa kode asli) ──
@@ -422,6 +427,78 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     return value.isEmpty ? null : value;
   }
 
+  Future<void> _pickSchoolLogo(ImageSource source) async {
+    try {
+      final XFile? picked = await ImagePicker().pickImage(
+        source: source,
+        imageQuality: 95,
+      );
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
+      if (bytes.isEmpty || !mounted) return;
+      setState(() {
+        _pendingLogoBytes = bytes;
+        _pendingLogoFileName = picked.name;
+        _removeSchoolLogo = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        AppHelper.showSnackBar(
+          context,
+          'Gagal memilih logo sekolah: $e',
+          isError: true,
+        );
+      }
+    }
+  }
+
+  void _showLogoSourcePicker() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 16.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Pilih Logo Sekolah',
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              SizedBox(height: 12.h),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Galeri'),
+                subtitle: const Text('Disarankan PNG transparan atau JPG'),
+                onTap: () {
+                  Navigator.pop(sheetCtx);
+                  _pickSchoolLogo(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.camera_alt_outlined),
+                title: const Text('Kamera'),
+                onTap: () {
+                  Navigator.pop(sheetCtx);
+                  _pickSchoolLogo(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _handleSaveSchoolIdentity(String? schoolId) async {
     if (_isSavingSchoolIdentity) return;
     if (!(_schoolIdentityFormKey.currentState?.validate() ?? true)) return;
@@ -443,10 +520,26 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     final newName = _schoolNameController.text.trim();
 
     try {
+      String? nextLogoUrl;
+      bool shouldUpdateLogo = false;
+      if (_pendingLogoBytes != null) {
+        final repo = SupabaseAuthRepository(Supabase.instance.client);
+        nextLogoUrl = await repo.uploadSchoolLogo(
+          _pendingLogoBytes!,
+          _pendingLogoFileName ?? 'logo.png',
+          schoolId,
+        );
+        shouldUpdateLogo = true;
+      } else if (_removeSchoolLogo) {
+        nextLogoUrl = null;
+        shouldUpdateLogo = true;
+      }
+
       await Supabase.instance.client
           .from('schools')
           .update({
             'name': newName,
+            if (shouldUpdateLogo) 'logo_url': nextLogoUrl,
             'government_header': _trimmedOrNull(_governmentHeaderController),
             'department_header': _trimmedOrNull(_departmentHeaderController),
             'address': _trimmedOrNull(_schoolAddressController),
@@ -468,9 +561,21 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         } catch (_) {}
       }
 
+      if (shouldUpdateLogo) {
+        PaintingBinding.instance.imageCache.clear();
+        PaintingBinding.instance.imageCache.clearLiveImages();
+        if (mounted) {
+          setState(() {
+            _pendingLogoBytes = null;
+            _pendingLogoFileName = null;
+            _removeSchoolLogo = false;
+          });
+        }
+      }
+
       await CacheService().remove('active_school_$schoolId');
       await authProvider.fetchActiveSchoolDetails();
-      if (newName != previousName) {
+      if (newName != previousName || shouldUpdateLogo) {
         await authProvider.loadUserMemberships();
       }
 
@@ -1156,14 +1261,19 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     // penuh sekolah selesai dimuat (sekali saja agar ketikan admin aman).
     final tpSchool = school;
     final hasFullSchool = authProvider.activeSchool != null;
+    final isSchoolChanged = tpSchool != null && tpSchool.id != _teachingPlaceSchoolId;
     if (tpSchool != null &&
-        (tpSchool.id != _teachingPlaceSchoolId ||
-            (hasFullSchool && !_syncedFromFullSchool))) {
+        (isSchoolChanged || (hasFullSchool && !_syncedFromFullSchool))) {
       _teachingPlaceSchoolId = tpSchool.id;
       _syncedFromFullSchool = hasFullSchool;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {
+            if (isSchoolChanged) {
+              _pendingLogoBytes = null;
+              _pendingLogoFileName = null;
+              _removeSchoolLogo = false;
+            }
             _syncTeachingPlaceControllers(tpSchool);
           });
         }
@@ -1225,13 +1335,17 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _buildSchoolCodeCard(isLoading, activeSchoolId),
-                          SizedBox(height: 18.h),
-                          _buildSchoolIdentityCard(isLoading, activeSchoolId),
-                          SizedBox(height: 18.h),
+                          SizedBox(height: 12.h),
+                          _buildSchoolIdentityCard(
+                            isLoading,
+                            activeSchoolId,
+                            school?.logoUrl,
+                          ),
+                          SizedBox(height: 12.h),
                           _buildJournalInputCard(isLoading),
-                          SizedBox(height: 18.h),
+                          SizedBox(height: 12.h),
                           _buildTimezoneCard(isLoading, activeSchoolId),
-                          SizedBox(height: 18.h),
+                          SizedBox(height: 12.h),
                           _buildSupervisorCard(isLoading),
                         ],
                       ),
@@ -1769,7 +1883,145 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   }
 
   // ─── 1B. IDENTITAS SEKOLAH SECTION ───────────────────────────────
-  Widget _buildSchoolIdentityCard(bool isLoading, String? activeSchoolId) {
+  Widget _buildSchoolLogoField(String? currentLogoUrl) {
+    final trimmedCurrent = currentLogoUrl?.trim();
+    final hasCurrentUrl = trimmedCurrent != null && trimmedCurrent.isNotEmpty;
+    final hasLogo = _pendingLogoBytes != null || (!_removeSchoolLogo && hasCurrentUrl);
+
+    Widget preview;
+    if (_pendingLogoBytes != null) {
+      preview = Image.memory(
+        _pendingLogoBytes!,
+        fit: BoxFit.contain,
+      );
+    } else if (!_removeSchoolLogo && hasCurrentUrl) {
+      preview = Image.network(
+        trimmedCurrent,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => Icon(
+          Icons.school_outlined,
+          size: 28,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      );
+    } else {
+      preview = Icon(
+        Icons.school_outlined,
+        size: 28,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      );
+    }
+
+    final statusHint = _pendingLogoBytes != null
+        ? 'Logo baru siap disimpan.'
+        : _removeSchoolLogo
+            ? 'Logo akan dihapus saat disimpan.'
+            : 'Dipakai untuk kop surat PDF dan profil sekolah.';
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 64.w,
+          height: 64.w,
+          padding: EdgeInsets.all(6.w),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(
+              color: Colors.grey.withValues(alpha: 0.28),
+              width: 1,
+            ),
+          ),
+          child: Center(child: preview),
+        ),
+        SizedBox(width: 14.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Logo Sekolah',
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 13.5.sp,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              SizedBox(height: 2.h),
+              Text(
+                statusHint,
+                style: TextStyle(
+                  fontSize: 11.5.sp,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Wrap(
+                spacing: 8.w,
+                runSpacing: 6.h,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _isSavingSchoolIdentity
+                        ? null
+                        : _showLogoSourcePicker,
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 6.h,
+                      ),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    icon: const Icon(Icons.photo_library_outlined, size: 16),
+                    label: Text(
+                      hasLogo ? 'Ganti' : 'Pilih',
+                      style: TextStyle(fontSize: 12.sp),
+                    ),
+                  ),
+                  if (hasLogo)
+                    OutlinedButton.icon(
+                      onPressed: _isSavingSchoolIdentity
+                          ? null
+                          : () {
+                              setState(() {
+                                _pendingLogoBytes = null;
+                                _pendingLogoFileName = null;
+                                _removeSchoolLogo = true;
+                              });
+                            },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        side: BorderSide(
+                          color: Colors.red.withValues(alpha: 0.55),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 6.h,
+                        ),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      icon: const Icon(Icons.delete_outline, size: 16),
+                      label: Text('Hapus', style: TextStyle(fontSize: 12.sp)),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSchoolIdentityCard(
+    bool isLoading,
+    String? activeSchoolId,
+    String? currentLogoUrl,
+  ) {
     return Form(
       key: _schoolIdentityFormKey,
       child: Card(
@@ -1824,6 +2076,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 ),
               ),
               const Divider(height: 24),
+              _buildSchoolLogoField(currentLogoUrl),
+              SizedBox(height: 14.h),
               _buildIdentityTextField(
                 label: 'Pemerintah Daerah / Instansi',
                 controller: _governmentHeaderController,

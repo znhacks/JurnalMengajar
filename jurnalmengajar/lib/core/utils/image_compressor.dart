@@ -71,4 +71,70 @@ class ImageCompressor {
     // 3. Encode to JPG (quality 80)
     return img.encodeJpg(resizedImage, quality: 80);
   }
+
+  /// Compress logo sekolah sambil mempertahankan transparansi PNG jika ada.
+  static Future<({Uint8List bytes, String fileName})> compressSchoolLogo({
+    required List<int> bytes,
+    required String originalFileName,
+    int maxWidth = 512,
+    int maxHeight = 512,
+  }) async {
+    try {
+      final result = await compute(_compressLogoTask, {
+        'bytes': bytes,
+        'originalFileName': originalFileName,
+        'maxWidth': maxWidth,
+        'maxHeight': maxHeight,
+      });
+
+      if (result != null) {
+        final nameWithoutExt = originalFileName.contains('.')
+            ? originalFileName.substring(0, originalFileName.lastIndexOf('.'))
+            : originalFileName;
+        return (
+          bytes: result.bytes,
+          fileName: '$nameWithoutExt.${result.ext}',
+        );
+      }
+    } catch (e) {
+      debugPrint('Failed to compress school logo: $e');
+    }
+
+    return (bytes: Uint8List.fromList(bytes), fileName: originalFileName);
+  }
+
+  static ({Uint8List bytes, String ext})? _compressLogoTask(
+    Map<String, dynamic> params,
+  ) {
+    final List<int> bytes = params['bytes'];
+    final String originalFileName = (params['originalFileName'] as String?) ?? '';
+    final int maxWidth = params['maxWidth'];
+    final int maxHeight = params['maxHeight'];
+
+    final img.Image? decodedImage = img.decodeImage(Uint8List.fromList(bytes));
+    if (decodedImage == null) return null;
+
+    img.Image resizedImage = decodedImage;
+    if (decodedImage.width > maxWidth || decodedImage.height > maxHeight) {
+      resizedImage = img.copyResize(
+        decodedImage,
+        width: decodedImage.width >= decodedImage.height ? maxWidth : null,
+        height: decodedImage.height > decodedImage.width ? maxHeight : null,
+        interpolation: img.Interpolation.average,
+      );
+    }
+
+    final isPngInput = originalFileName.toLowerCase().endsWith('.png');
+    if (isPngInput || resizedImage.hasAlpha) {
+      return (
+        bytes: Uint8List.fromList(img.encodePng(resizedImage)),
+        ext: 'png',
+      );
+    }
+
+    return (
+      bytes: Uint8List.fromList(img.encodeJpg(resizedImage, quality: 85)),
+      ext: 'jpg',
+    );
+  }
 }

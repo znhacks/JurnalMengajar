@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -12,6 +12,22 @@ import '../models/schedule_model.dart';
 import '../models/class_attendance_recap_model.dart';
 
 class JournalPdfService {
+  static Future<pw.ImageProvider?> _loadSchoolLogo(
+    SchoolModel? school,
+    Future<pw.ImageProvider?> Function(String url)? logoImageLoader,
+  ) async {
+    final rawUrl = school?.logoUrl?.trim();
+    if (rawUrl == null || rawUrl.isEmpty) return null;
+    try {
+      if (logoImageLoader != null) {
+        return await logoImageLoader(rawUrl);
+      }
+      return await networkImage(rawUrl).timeout(const Duration(seconds: 8));
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Generates a PDF byte array for teaching journals report tailored for supervisors.
   static Future<Uint8List> generateJournalReportPdf({
     required TeacherModel teacher,
@@ -29,16 +45,16 @@ class JournalPdfService {
     String? selectedSubjectName,
     String schoolName = 'Jurnal Mengajar Guru',
     List<ScheduleModel>? schedules,
+    @visibleForTesting
+    Future<pw.ImageProvider?> Function(String url)? logoImageLoader,
+    @visibleForTesting pw.Font? regularFontOverride,
+    @visibleForTesting pw.Font? boldFontOverride,
+    @visibleForTesting bool compress = true,
   }) async {
-    final pdf = pw.Document();
+    final pdf = pw.Document(compress: compress);
 
     // Fetch logo if available
-    pw.ImageProvider? logoImage;
-    if (school?.logoUrl != null && school!.logoUrl!.isNotEmpty) {
-      try {
-        logoImage = await networkImage(school.logoUrl!);
-      } catch (_) {}
-    }
+    final logoImage = await _loadSchoolLogo(school, logoImageLoader);
 
     // Setup Indonesian Date Formatters
     final dateFormat = DateFormat('dd-MM-yyyy');
@@ -66,8 +82,9 @@ class JournalPdfService {
     final totalAlpha = journals.fold<int>(0, (sum, j) => sum + j.alphaCount);
 
     // Font setup using Printing Google Fonts for clean Indonesian typography
-    final ttfRegular = await PdfGoogleFonts.interRegular();
-    final ttfBold = await PdfGoogleFonts.interBold();
+    final ttfRegular =
+        regularFontOverride ?? await PdfGoogleFonts.interRegular();
+    final ttfBold = boldFontOverride ?? await PdfGoogleFonts.interBold();
 
     final theme = pw.ThemeData.withFont(base: ttfRegular, bold: ttfBold);
 
@@ -782,20 +799,23 @@ class JournalPdfService {
     String? homeroomTeacherNip,
     String? principalName,
     String? principalNip,
+    @visibleForTesting
+    Future<pw.ImageProvider?> Function(String url)? logoImageLoader,
+    @visibleForTesting pw.Font? regularFontOverride,
+    @visibleForTesting pw.Font? boldFontOverride,
+    @visibleForTesting pw.Font? semiBoldFontOverride,
+    @visibleForTesting bool compress = true,
   }) async {
-    final pdf = pw.Document();
+    final pdf = pw.Document(compress: compress);
 
     // Fetch logo if available
-    pw.ImageProvider? logoImage;
-    if (school?.logoUrl != null && school!.logoUrl!.isNotEmpty) {
-      try {
-        logoImage = await networkImage(school.logoUrl!);
-      } catch (_) {}
-    }
+    final logoImage = await _loadSchoolLogo(school, logoImageLoader);
 
-    final ttfRegular = await PdfGoogleFonts.interRegular();
-    final ttfBold = await PdfGoogleFonts.interBold();
-    final ttfSemiBold = await PdfGoogleFonts.interSemiBold();
+    final ttfRegular =
+        regularFontOverride ?? await PdfGoogleFonts.interRegular();
+    final ttfBold = boldFontOverride ?? await PdfGoogleFonts.interBold();
+    final ttfSemiBold =
+        semiBoldFontOverride ?? await PdfGoogleFonts.interSemiBold();
 
     final fullDateFormat = DateFormat('d MMMM yyyy', 'id_ID');
     final printDateStr = fullDateFormat.format(DateTime.now());

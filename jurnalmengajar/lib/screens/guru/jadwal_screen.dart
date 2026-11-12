@@ -752,7 +752,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                         if (holiday != null) ...[
                           Container(
                             padding: EdgeInsets.all(12.w),
-                            margin: EdgeInsets.only(bottom: 12.h),
+                            margin: EdgeInsets.only(bottom: 8.h),
                             decoration: BoxDecoration(
                               color: const Color(
                                 0xFFDC2626,
@@ -1034,7 +1034,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       ),
       borderRadius: BorderRadius.circular(12.r),
       child: Container(
-        margin: EdgeInsets.only(bottom: 12.h),
+        margin: EdgeInsets.only(bottom: 8.h),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF0F172A) : Colors.white,
           borderRadius: BorderRadius.circular(12.r),

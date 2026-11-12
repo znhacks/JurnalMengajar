@@ -1330,7 +1330,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                 ),
               ),
 
-              SizedBox(height: 16.h),
+              SizedBox(height: 12.h),
 
               // ── Multi-Tenant / Daftar Sekolah Section ───────────────────────
               Builder(
@@ -1977,7 +1977,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   );
                 },
               ),
-              SizedBox(height: 16.h),
+              SizedBox(height: 12.h),
 
               // Detail List Section
               Text(

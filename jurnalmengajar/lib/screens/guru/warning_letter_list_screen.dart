@@ -448,7 +448,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
       ),
       borderRadius: BorderRadius.circular(12.r),
       child: Container(
-        margin: EdgeInsets.only(bottom: 12.h),
+        margin: EdgeInsets.only(bottom: 8.h),
         padding: EdgeInsets.all(12.w),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF0F172A) : Colors.white,
@@ -604,7 +604,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
       },
       borderRadius: BorderRadius.circular(12.r),
       child: Container(
-        margin: EdgeInsets.only(bottom: 12.h),
+        margin: EdgeInsets.only(bottom: 8.h),
         padding: EdgeInsets.all(12.w),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF0F172A) : Colors.white,
@@ -1460,7 +1460,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                                         itemCount: visibleGroups.length + (_isLoadingMore || hasMore ? 1 : 0),
                                         separatorBuilder: (context, index) {
                               if (index >= visibleGroups.length - 1) return const SizedBox.shrink();
-                              return SizedBox(height: 16.h);
+                              return SizedBox(height: 10.h);
                             },
                             itemBuilder: (context, index) {
                               if (index == visibleGroups.length) {

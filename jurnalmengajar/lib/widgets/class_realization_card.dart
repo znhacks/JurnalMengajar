@@ -291,7 +291,7 @@ class _ClassRealizationCardState extends State<ClassRealizationCard> {
                   label: Text(
                     _isExpanded
                         ? 'Tampilkan Lebih Sedikit'
-                        : 'Lihat Semua (${widget.classes.length} Kelas)',
+                        : 'Semua (${widget.classes.length} Kelas)',
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w700,

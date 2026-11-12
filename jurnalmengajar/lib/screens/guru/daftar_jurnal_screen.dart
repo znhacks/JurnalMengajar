@@ -770,7 +770,7 @@ class _InfiniteJournalListViewState extends State<_InfiniteJournalListView> {
         itemCount: visibleItems.length + (_isLoadingMore || hasMore ? 1 : 0),
         separatorBuilder: (context, index) {
           if (index >= visibleItems.length - 1) return const SizedBox.shrink();
-          return SizedBox(height: 12.h);
+          return SizedBox(height: 8.h);
         },
         itemBuilder: (context, index) {
           if (index == visibleItems.length) {

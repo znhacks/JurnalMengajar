@@ -343,6 +343,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               _profileImageBytes!,
               'profile_$tempId.webp',
               tempId,
+              upsert: false,
             );
           }
         } catch (uploadErr) {

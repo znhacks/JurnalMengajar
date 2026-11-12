@@ -641,7 +641,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 10.h),
 
                       // ── 2. KARTU KALENDER (Atas) ────────────────────────────
                       _buildCalendarCard(
@@ -654,12 +654,12 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         teacherAbsenceDateKeys: teacherAbsenceDateKeys,
                       ),
 
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 10.h),
 
                       // ── 3. TAB FILTER (Di bawah Kalender) ──────────────────
                       _buildFilterChips(),
 
-                      SizedBox(height: 20.h),
+                      SizedBox(height: 12.h),
 
                       // ── Holiday Banner (If Holiday on selected date) ───────
                       Builder(
@@ -675,7 +675,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
                           return Container(
                             width: double.infinity,
-                            margin: EdgeInsets.only(bottom: 16.h),
+                            margin: EdgeInsets.only(bottom: 12.h),
                             padding: EdgeInsets.all(14.w),
                             decoration: BoxDecoration(
                               color: isDark
@@ -744,7 +744,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
                       // ── 5. SECTION JADWAL MENGAJAR ─────────────────────────
                       _buildScheduleSectionHeader(),
-                      SizedBox(height: 10.h),
+                      SizedBox(height: 8.h),
                       _buildScheduleListSection(
                         masterProvider,
                         scheduleProvider,
@@ -754,7 +754,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         journalsByScheduleId: journalsByScheduleId,
                       ),
 
-                      SizedBox(height: 20.h),
+                      SizedBox(height: 14.h),
 
                       // ── 6. SECTION JURNAL TERBARU SAYA ────────────────────
                       _buildRecentJournalsSection(
@@ -764,7 +764,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         subjectMap: subjectMap,
                       ),
 
-                      SizedBox(height: 24.h),
+                      SizedBox(height: 16.h),
                     ],
                   ),
                 ),
@@ -781,7 +781,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     return Container(
       width: double.infinity,
       color: Theme.of(context).scaffoldBackgroundColor,
-      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 8.h),
+      padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 4.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -919,7 +919,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
             ],
           ),
 
-          SizedBox(height: 18.h),
+          SizedBox(height: 12.h),
 
           // Greeting Subtitle
           Text(
@@ -969,7 +969,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
               ),
             ),
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 10.h),
 
           // Active School & Role Switcher Banner
           Builder(
@@ -1790,7 +1790,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
             child: Text(
-              'Lihat Semua',
+              'Semua',
               style: GoogleFonts.hankenGrotesk(
                 fontSize: 13.sp,
                 fontWeight: FontWeight.w700,
@@ -1879,7 +1879,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Tidak ada jadwal mengajar hari ini',
+                    'Tidak ada',
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 13.5.sp,
                       fontWeight: FontWeight.w800,
@@ -2325,7 +2325,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
                 child: Text(
-                  'Lihat Semua',
+                  'Semua',
                   style: GoogleFonts.hankenGrotesk(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w700,
@@ -2337,7 +2337,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           ],
         ),
 
-        SizedBox(height: 10.h),
+        SizedBox(height: 8.h),
 
         if (journals.isEmpty)
           Container(
