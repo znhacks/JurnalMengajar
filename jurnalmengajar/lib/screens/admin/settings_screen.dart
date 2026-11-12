@@ -1912,11 +1912,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       );
     }
 
-    final statusHint = _pendingLogoBytes != null
-        ? 'Logo baru siap disimpan.'
-        : _removeSchoolLogo
-            ? 'Logo akan dihapus saat disimpan.'
-            : 'Dipakai untuk kop surat PDF dan profil sekolah.';
+    final buttonPadding = EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -1948,41 +1944,28 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
-              SizedBox(height: 2.h),
-              Text(
-                statusHint,
-                style: TextStyle(
-                  fontSize: 11.5.sp,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              SizedBox(height: 8.h),
+              SizedBox(height: 10.h),
               Wrap(
                 spacing: 8.w,
-                runSpacing: 6.h,
+                runSpacing: 8.h,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  OutlinedButton.icon(
+                  OutlinedButton(
                     onPressed: _isSavingSchoolIdentity
                         ? null
                         : _showLogoSourcePicker,
                     style: OutlinedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 6.h,
-                      ),
+                      padding: buttonPadding,
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
                     ),
-                    icon: const Icon(Icons.photo_library_outlined, size: 16),
-                    label: Text(
+                    child: Text(
                       hasLogo ? 'Ganti' : 'Pilih',
-                      style: TextStyle(fontSize: 12.sp),
+                      style: TextStyle(fontSize: 12.5.sp),
                     ),
                   ),
                   if (hasLogo)
-                    OutlinedButton.icon(
+                    OutlinedButton(
                       onPressed: _isSavingSchoolIdentity
                           ? null
                           : () {
@@ -1997,16 +1980,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                         side: BorderSide(
                           color: Colors.red.withValues(alpha: 0.55),
                         ),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 6.h,
-                        ),
+                        padding: buttonPadding,
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
                       ),
-                      icon: const Icon(Icons.delete_outline, size: 16),
-                      label: Text('Hapus', style: TextStyle(fontSize: 12.sp)),
+                      child: Text(
+                        'Hapus',
+                        style: TextStyle(fontSize: 12.5.sp),
+                      ),
                     ),
                 ],
               ),
