@@ -327,67 +327,72 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
           j.date.month == _selectedMonth.month;
     }).toList();
 
-    // 3. Jurnal Terisi calculations (Grouped by unique session: date + classId + subjectId)
+    // ── Pre-index classes for O(1) lookups ─────────────────────────────
+    final classMap = <String, ClassModel>{
+      for (final c in masterProvider.classes) c.id: c,
+    };
+
+    // 3. Jurnal Terisi & Sesi Terjadwal calculations
     final Set<String> uniqueScheduledSessions = {};
+    final Map<String, Set<String>> scheduledSessionsByClass = {};
     for (final s in schedulesInMonth) {
       uniqueScheduledSessions.add(
         '${s.date.year}-${s.date.month}-${s.date.day}|${s.classId}|${s.subjectId}',
       );
+      scheduledSessionsByClass
+          .putIfAbsent(s.classId, () => {})
+          .add('${s.date.year}-${s.date.month}-${s.date.day}|${s.subjectId}');
     }
     final int totalMeetings = uniqueScheduledSessions.length;
 
+    // Single pass calculation over journalsInMonth
     final Set<String> uniqueFilledSessions = {};
+    final Map<String, Set<String>> filledSessionsByClass = {};
+    int totalPresents = 0;
+    int totalStudents = 0;
+    int disetujuiCount = 0;
+    int pendingCount = 0;
+    int ditolakCount = 0;
+    int sakitCount = 0;
+    int izinCount = 0;
+    int alphaCount = 0;
+
     for (final j in journalsInMonth) {
       uniqueFilledSessions.add(
         '${j.date.year}-${j.date.month}-${j.date.day}|${j.classId}|${j.subjectId}',
       );
-    }
-    final int filledMeetings = uniqueFilledSessions.length;
+      filledSessionsByClass
+          .putIfAbsent(j.classId, () => {})
+          .add('${j.date.year}-${j.date.month}-${j.date.day}|${j.subjectId}');
 
-    final double fillRate = totalMeetings > 0
-        ? (filledMeetings / totalMeetings) * 100
-        : 0.0;
-
-    // 4. Kehadiran Siswa calculations
-    int totalPresents = 0;
-    int totalStudents = 0;
-    for (final j in journalsInMonth) {
-      final cls = masterProvider.classes.firstWhere(
-        (c) => c.id == j.classId,
-        orElse: () =>
-            ClassModel(id: '', name: '', periodId: '', studentCount: 0),
-      );
-      if (cls.id.isNotEmpty && cls.studentCount > 0) {
+      final cls = classMap[j.classId];
+      if (cls != null && cls.studentCount > 0) {
         final absents = j.sickCount + j.permissionCount + j.alphaCount;
         final presents = cls.studentCount - absents;
         totalPresents += presents > 0 ? presents : 0;
         totalStudents += cls.studentCount;
       }
-    }
-    final double attendanceRate = totalStudents > 0
-        ? (totalPresents / totalStudents) * 100
-        : 100.0;
 
-    // 5. Status Verifikasi
-    final int disetujuiCount = journalsInMonth
-        .where((j) => j.status == 'verified')
-        .length;
-    final int pendingCount = journalsInMonth
-        .where((j) => j.status == 'pending')
-        .length;
-    final int ditolakCount = journalsInMonth
-        .where((j) => j.status == 'rejected')
-        .length;
+      if (j.status == 'verified') {
+        disetujuiCount++;
+      } else if (j.status == 'pending') {
+        pendingCount++;
+      } else if (j.status == 'rejected') {
+        ditolakCount++;
+      }
 
-    // 6. Ketidakhadiran
-    int sakitCount = 0;
-    int izinCount = 0;
-    int alphaCount = 0;
-    for (final j in journalsInMonth) {
       sakitCount += j.sickCount;
       izinCount += j.permissionCount;
       alphaCount += j.alphaCount;
     }
+
+    final int filledMeetings = uniqueFilledSessions.length;
+    final double fillRate = totalMeetings > 0
+        ? (filledMeetings / totalMeetings) * 100
+        : 0.0;
+    final double attendanceRate = totalStudents > 0
+        ? (totalPresents / totalStudents) * 100
+        : 100.0;
 
     // 7. per Kelas
     final classIds = {
@@ -396,11 +401,8 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
     }.toList();
 
     final List<ClassModel> classesInMonth = classIds.map((cid) {
-      return masterProvider.classes.firstWhere(
-        (c) => c.id == cid,
-        orElse: () =>
-            ClassModel(id: cid, name: 'Kelas--', periodId: '', studentCount: 0),
-      );
+      return classMap[cid] ??
+          ClassModel(id: cid, name: 'Kelas--', periodId: '', studentCount: 0);
     }).toList()..sort((a, b) => a.name.compareTo(b.name));
 
     return AppScaffold(
@@ -822,25 +824,10 @@ class _GuruStatistikScreenState extends State<GuruStatistikScreen> {
                             SizedBox(height: 10.h),
                         itemBuilder: (context, index) {
                           final cls = classesInMonth[index];
-                          final Set<String> clsScheduledSessions = {};
-                          for (final s in schedulesInMonth.where(
-                            (s) => s.classId == cls.id,
-                          )) {
-                            clsScheduledSessions.add(
-                              '${s.date.year}-${s.date.month}-${s.date.day}|${s.subjectId}',
-                            );
-                          }
-                          final scheduledCount = clsScheduledSessions.length;
-
-                          final Set<String> clsFilledSessions = {};
-                          for (final j in journalsInMonth.where(
-                            (j) => j.classId == cls.id,
-                          )) {
-                            clsFilledSessions.add(
-                              '${j.date.year}-${j.date.month}-${j.date.day}|${j.subjectId}',
-                            );
-                          }
-                          final filledCount = clsFilledSessions.length;
+                          final scheduledCount =
+                              scheduledSessionsByClass[cls.id]?.length ?? 0;
+                          final filledCount =
+                              filledSessionsByClass[cls.id]?.length ?? 0;
 
                           final double rate = scheduledCount > 0
                               ? (filledCount / scheduledCount)

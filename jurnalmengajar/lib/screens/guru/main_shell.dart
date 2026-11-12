@@ -29,11 +29,13 @@ class GuruMainShell extends StatefulWidget {
 class GuruMainShellState extends State<GuruMainShell> {
   late int _currentIndex;
   DateTime? _lastBackPressTime;
+  final Set<int> _visitedTabs = {};
 
   void switchToTab(int index) {
     if (_currentIndex != index) {
       setState(() {
         _currentIndex = index;
+        _visitedTabs.add(index);
       });
     }
     // Synchronize browser route so reload preserves this tab
@@ -77,6 +79,7 @@ class GuruMainShellState extends State<GuruMainShell> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex ?? 0;
+    _visitedTabs.add(_currentIndex);
   }
 
   Future<void> _loadUserData(UserModel currentUser) async {
@@ -112,6 +115,7 @@ class GuruMainShellState extends State<GuruMainShell> {
     if (widget.initialIndex != null && widget.initialIndex != _currentIndex) {
       setState(() {
         _currentIndex = widget.initialIndex!;
+        _visitedTabs.add(_currentIndex);
       });
     }
   }
@@ -184,7 +188,15 @@ class GuruMainShellState extends State<GuruMainShell> {
       },
       child: AppScaffold(
         drawer: GuruDrawer(selectedIndex: _currentIndex),
-        body: IndexedStack(index: _currentIndex, children: _screens),
+        body: IndexedStack(
+          index: _currentIndex,
+          children: List.generate(
+            _screens.length,
+            (i) => _visitedTabs.contains(i)
+                ? _screens[i]
+                : const SizedBox.shrink(),
+          ),
+        ),
       ),
     );
   }

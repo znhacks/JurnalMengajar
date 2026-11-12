@@ -57,7 +57,7 @@ class RoleBadge extends StatelessWidget {
       textColor = isDark
           ? const Color(0xFFDBEAFE)
           : const Color(0xFF1E40AF);
-      label = 'TENANT';
+      label = 'SEKOLAH';
     }
 
     final badgeWidget = Container(

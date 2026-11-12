@@ -40,6 +40,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
 
   late CrCalendarController _calendarController;
   final List<CalendarEventModel> _calendarEvents = [];
+  String _lastEventsSyncKey = '';
 
   // Theme colors for event bars:
   // 1. Belum diisi (unfilled, date <= today) -> Merah Pastel
@@ -214,6 +215,21 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     required MasterDataProvider master,
     required bool isDark,
   }) {
+    final activeSchoolId = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).activeSchoolId;
+    final cleanActiveSchoolId =
+        AppHelper.parseSingleCleanSchoolId(activeSchoolId) ??
+        activeSchoolId?.trim();
+
+    final currentSyncKey =
+        '$cleanActiveSchoolId|${schedules.length}|${journals.length}|${holidays.length}|$isDark|${_focusedMonth.year}-${_focusedMonth.month}';
+    if (currentSyncKey == _lastEventsSyncKey && _calendarEvents.isNotEmpty) {
+      return;
+    }
+    _lastEventsSyncKey = currentSyncKey;
+
     _calendarEvents.clear();
 
     // 1. Add Holidays as event bars
@@ -229,14 +245,6 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     }
 
     // 2. Add Teaching Schedules (grouped by day, showing count instead of lesson names)
-    final activeSchoolId = Provider.of<AuthProvider>(
-      context,
-      listen: false,
-    ).activeSchoolId;
-    final cleanActiveSchoolId =
-        AppHelper.parseSingleCleanSchoolId(activeSchoolId) ??
-        activeSchoolId?.trim();
-
     final validSchedules = schedules.where((s) {
       if (!s.isActive) return false;
       if (cleanActiveSchoolId != null && cleanActiveSchoolId.isNotEmpty) {
@@ -251,6 +259,20 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       }
       return true;
     }).toList();
+
+    // Pre-index valid journals for fast O(1) checks
+    final validJournalScheduleIds = <String>{};
+    final validJournalDateClassSubject = <String>{};
+    for (final j in journals) {
+      if (j.status == 'rejected') continue;
+      if (j.scheduleId.isNotEmpty) {
+        validJournalScheduleIds.add(j.scheduleId);
+      }
+      if (j.classId.isNotEmpty && j.subjectId.isNotEmpty) {
+        final dKey = '${j.date.year}-${j.date.month}-${j.date.day}';
+        validJournalDateClassSubject.add('$dKey|${j.classId}|${j.subjectId}');
+      }
+    }
 
     // Group schedules by date
     final Map<DateTime, List<ScheduleModel>> schedulesByDay = {};
@@ -286,18 +308,16 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
 
       final bool allFilled = dayGroups.every((g) {
         final primarySched = g.primarySchedule;
-        return journals.any((j) {
-          final sameDate =
-              j.date.year == g.date.year &&
-              j.date.month == g.date.month &&
-              j.date.day == g.date.day;
-          final sameSchedule =
-              j.scheduleId == primarySched.id ||
-              g.scheduleIds.contains(j.scheduleId) ||
-              (j.classId == primarySched.classId &&
-                  j.subjectId == primarySched.subjectId);
-          return sameDate && sameSchedule && j.status != 'rejected';
-        });
+        if (validJournalScheduleIds.contains(primarySched.id)) return true;
+        for (final sid in g.scheduleIds) {
+          if (validJournalScheduleIds.contains(sid)) return true;
+        }
+        final dKey = '${g.date.year}-${g.date.month}-${g.date.day}';
+        if (validJournalDateClassSubject.contains(
+            '$dKey|${primarySched.classId}|${primarySched.subjectId}')) {
+          return true;
+        }
+        return false;
       });
 
       // Color rules requested by user:
@@ -338,10 +358,14 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     required JournalProvider journalProvider,
     required MasterDataProvider masterProvider,
     required HolidayProvider holidayProvider,
+    Set<String>? teacherAbsenceDateKeys,
   }) {
     final day = properties.date;
     final holiday = holidayProvider.getHolidayForDate(day);
-    final isHoliday = holiday != null || _hasTeacherAbsenceOnDay(journals, day);
+    final isHoliday = holiday != null ||
+        (teacherAbsenceDateKeys != null
+            ? teacherAbsenceDateKeys.contains('${day.year}-${day.month}-${day.day}')
+            : _hasTeacherAbsenceOnDay(journals, day));
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final isSunday = day.weekday == DateTime.sunday;
@@ -1498,6 +1522,14 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       ),
     );
 
+    // Precompute teacher absence dates for instant O(1) day cell rendering
+    final teacherAbsenceDateKeys = <String>{};
+    for (final j in journalProvider.teacherJournals) {
+      if (j.isTeacherAbsence && j.status != 'rejected') {
+        teacherAbsenceDateKeys.add('${j.date.year}-${j.date.month}-${j.date.day}');
+      }
+    }
+
     // Sync event items into CrCalendar with status colors:
     // Belum diisi -> Merah pastel
     // Sudah diisi -> Hijau
@@ -1772,6 +1804,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                                 journalProvider: journalProvider,
                                 masterProvider: masterProvider,
                                 holidayProvider: holidayProvider,
+                                teacherAbsenceDateKeys: teacherAbsenceDateKeys,
                               ),
                               weekDaysBuilder: (day) =>
                                   _buildWeekDayHeader(day),

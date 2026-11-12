@@ -40,6 +40,21 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   bool _isEditingApiKey = false;
   bool _isEditingAccountId = false;
 
+  // ── Identitas Sekolah & Kop Surat ──
+  final _schoolIdentityFormKey = GlobalKey<FormState>();
+  final _governmentHeaderController = TextEditingController();
+  final _departmentHeaderController = TextEditingController();
+  final _schoolNameController = TextEditingController();
+  final _schoolAddressController = TextEditingController();
+  final _schoolPostalCodeController = TextEditingController();
+  final _schoolPhoneController = TextEditingController();
+  final _schoolEmailController = TextEditingController();
+  final _schoolWebsiteController = TextEditingController();
+  final _schoolNpsnController = TextEditingController();
+  final _schoolNssController = TextEditingController();
+  bool _isSavingSchoolIdentity = false;
+  bool _syncedFromFullSchool = false;
+
   // ── Kode Gabung Guru (1 tabel berisi kode agar guru bisa
   // bergabung tanpa kode asli) ──
   final _joinCodeController = TextEditingController();
@@ -199,6 +214,16 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     _noboxAccountIdController.dispose();
     _supervisorNameController.dispose();
     _supervisorNipController.dispose();
+    _governmentHeaderController.dispose();
+    _departmentHeaderController.dispose();
+    _schoolNameController.dispose();
+    _schoolAddressController.dispose();
+    _schoolPostalCodeController.dispose();
+    _schoolPhoneController.dispose();
+    _schoolEmailController.dispose();
+    _schoolWebsiteController.dispose();
+    _schoolNpsnController.dispose();
+    _schoolNssController.dispose();
     _joinCodeController.dispose();
     super.dispose();
   }
@@ -376,10 +401,100 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     }
   }
 
-  /// Isi field Kode Gabung Guru dari data sekolah aktif.
+  /// Isi field Identitas Sekolah & Kode Gabung Guru dari data sekolah aktif.
   /// Dipanggil sekali setiap ganti sekolah agar ketikan admin tidak tertimpa.
   void _syncTeachingPlaceControllers(SchoolModel s) {
     _joinCodeController.text = s.joinCode ?? '';
+    _governmentHeaderController.text = s.governmentHeader ?? '';
+    _departmentHeaderController.text = s.departmentHeader ?? '';
+    _schoolNameController.text = s.name;
+    _schoolAddressController.text = s.address ?? '';
+    _schoolPostalCodeController.text = s.postalCode ?? '';
+    _schoolPhoneController.text = s.phone ?? '';
+    _schoolEmailController.text = s.email ?? '';
+    _schoolWebsiteController.text = s.website ?? '';
+    _schoolNpsnController.text = s.npsn ?? '';
+    _schoolNssController.text = s.nss ?? '';
+  }
+
+  String? _trimmedOrNull(TextEditingController controller) {
+    final value = controller.text.trim();
+    return value.isEmpty ? null : value;
+  }
+
+  Future<void> _handleSaveSchoolIdentity(String? schoolId) async {
+    if (_isSavingSchoolIdentity) return;
+    if (!(_schoolIdentityFormKey.currentState?.validate() ?? true)) return;
+    if (schoolId == null || schoolId.isEmpty) {
+      AppHelper.showSnackBar(
+        context,
+        'Data sekolah belum tersedia.',
+        isError: true,
+      );
+      return;
+    }
+
+    setState(() {
+      _isSavingSchoolIdentity = true;
+    });
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final previousName = authProvider.activeSchool?.name.trim() ?? '';
+    final newName = _schoolNameController.text.trim();
+
+    try {
+      await Supabase.instance.client
+          .from('schools')
+          .update({
+            'name': newName,
+            'government_header': _trimmedOrNull(_governmentHeaderController),
+            'department_header': _trimmedOrNull(_departmentHeaderController),
+            'address': _trimmedOrNull(_schoolAddressController),
+            'postal_code': _trimmedOrNull(_schoolPostalCodeController),
+            'phone': _trimmedOrNull(_schoolPhoneController),
+            'email': _trimmedOrNull(_schoolEmailController),
+            'website': _trimmedOrNull(_schoolWebsiteController),
+            'npsn': _trimmedOrNull(_schoolNpsnController),
+            'nss': _trimmedOrNull(_schoolNssController),
+          })
+          .eq('id', schoolId);
+
+      if (newName != previousName) {
+        try {
+          await Supabase.instance.client
+              .from('users')
+              .update({'school_name': newName})
+              .eq('school_id', schoolId);
+        } catch (_) {}
+      }
+
+      await CacheService().remove('active_school_$schoolId');
+      await authProvider.fetchActiveSchoolDetails();
+      if (newName != previousName) {
+        await authProvider.loadUserMemberships();
+      }
+
+      if (mounted) {
+        AppHelper.showSnackBar(
+          context,
+          'Identitas sekolah berhasil disimpan!',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AppHelper.showSnackBar(
+          context,
+          'Gagal menyimpan identitas sekolah: $e',
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingSchoolIdentity = false;
+        });
+      }
+    }
   }
 
   Future<void> _handleSaveTeachingPlace(String? schoolId) async {
@@ -1037,11 +1152,15 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       });
     }
 
-    // Sinkronkan tabel Tempat Mengajar setiap ganti sekolah (sekali saja
-    // agar ketikan admin tidak tertimpa saat rebuild).
+    // Sinkronkan identitas & kode gabung setiap ganti sekolah atau ketika detail
+    // penuh sekolah selesai dimuat (sekali saja agar ketikan admin aman).
     final tpSchool = school;
-    if (tpSchool != null && tpSchool.id != _teachingPlaceSchoolId) {
+    final hasFullSchool = authProvider.activeSchool != null;
+    if (tpSchool != null &&
+        (tpSchool.id != _teachingPlaceSchoolId ||
+            (hasFullSchool && !_syncedFromFullSchool))) {
       _teachingPlaceSchoolId = tpSchool.id;
+      _syncedFromFullSchool = hasFullSchool;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {
@@ -1099,13 +1218,15 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               ? const Center(child: CircularProgressIndicator())
               : TabBarView(
                   children: [
-                    // TAB 1: Sekolah (Kode Sekolah, Batasan Input, Supervisor)
+                    // TAB 1: Sekolah (Kode Sekolah, Identitas & Kop, Input, Supervisor)
                     SingleChildScrollView(
                       padding: EdgeInsets.all(18.w),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _buildSchoolCodeCard(isLoading, activeSchoolId),
+                          SizedBox(height: 18.h),
+                          _buildSchoolIdentityCard(isLoading, activeSchoolId),
                           SizedBox(height: 18.h),
                           _buildJournalInputCard(isLoading),
                           SizedBox(height: 18.h),
@@ -1596,6 +1717,240 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIdentityTextField({
+    required String label,
+    required TextEditingController controller,
+    required String hint,
+    TextInputType keyboardType = TextInputType.text,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
+        ),
+        SizedBox(height: 6.h),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          textCapitalization: textCapitalization,
+          maxLines: maxLines,
+          validator: validator,
+          style: TextStyle(fontSize: 13.5.sp),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(
+              fontSize: 12.5.sp,
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+            ),
+            isDense: true,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 12.w,
+              vertical: 11.h,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── 1B. IDENTITAS SEKOLAH SECTION ───────────────────────────────
+  Widget _buildSchoolIdentityCard(bool isLoading, String? activeSchoolId) {
+    return Form(
+      key: _schoolIdentityFormKey,
+      child: Card(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18.r),
+          side: BorderSide(
+            color: Colors.grey.withValues(alpha: 0.25),
+            width: 1,
+          ),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(18.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(8.w),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    child: const Icon(
+                      Icons.account_balance_outlined,
+                      color: Color(0xFF2563EB),
+                      size: 20,
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: Text(
+                      'Identitas Sekolah',
+                      style: GoogleFonts.hankenGrotesk(
+                        fontSize: 15.5.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10.h),
+              Text(
+                'Informasi sekolah dan header instansi untuk profil serta laporan cetak.',
+                style: TextStyle(
+                  fontSize: 12.5.sp,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  height: 1.4,
+                ),
+              ),
+              const Divider(height: 24),
+              _buildIdentityTextField(
+                label: 'Pemerintah Daerah / Instansi',
+                controller: _governmentHeaderController,
+                hint: 'Mis. PEMERINTAH PROVINSI JAWA TIMUR',
+                textCapitalization: TextCapitalization.characters,
+              ),
+              SizedBox(height: 12.h),
+              _buildIdentityTextField(
+                label: 'Dinas Terkait',
+                controller: _departmentHeaderController,
+                hint: 'Mis. DINAS PENDIDIKAN',
+                textCapitalization: TextCapitalization.characters,
+              ),
+              const Divider(height: 24),
+              _buildIdentityTextField(
+                label: 'Nama Sekolah *',
+                controller: _schoolNameController,
+                hint: 'Mis. SMKN 11 Malang',
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Nama sekolah wajib diisi';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 12.h),
+              _buildIdentityTextField(
+                label: 'Alamat',
+                controller: _schoolAddressController,
+                hint: 'Jl. Raya Pelabuhan No. 1, Malang',
+                maxLines: 2,
+              ),
+              SizedBox(height: 12.h),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _buildIdentityTextField(
+                      label: 'Kode Pos',
+                      controller: _schoolPostalCodeController,
+                      hint: '65148',
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: _buildIdentityTextField(
+                      label: 'Telepon',
+                      controller: _schoolPhoneController,
+                      hint: '0341-801395',
+                      keyboardType: TextInputType.phone,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12.h),
+              _buildIdentityTextField(
+                label: 'Email',
+                controller: _schoolEmailController,
+                hint: 'info@sekolah.sch.id',
+                keyboardType: TextInputType.emailAddress,
+              ),
+              SizedBox(height: 12.h),
+              _buildIdentityTextField(
+                label: 'Website',
+                controller: _schoolWebsiteController,
+                hint: 'https://sekolah.sch.id',
+                keyboardType: TextInputType.url,
+              ),
+              SizedBox(height: 12.h),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _buildIdentityTextField(
+                      label: 'NPSN',
+                      controller: _schoolNpsnController,
+                      hint: '20533814',
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: _buildIdentityTextField(
+                      label: 'NSS',
+                      controller: _schoolNssController,
+                      hint: 'Opsional',
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16.h),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: (_isSavingSchoolIdentity || isLoading)
+                      ? null
+                      : () => _handleSaveSchoolIdentity(activeSchoolId),
+                  icon: _isSavingSchoolIdentity
+                      ? SizedBox(
+                          width: 18.w,
+                          height: 18.w,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.save_rounded),
+                  label: Text(
+                    _isSavingSchoolIdentity ? 'Menyimpan...' : 'Simpan',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1352,23 +1352,29 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.apartment_rounded,
-                                  color: Color(0xFF2563EB),
-                                  size: 20,
-                                ),
-                                SizedBox(width: 8.w),
-                                Text(
-                                  'Sekolah / Tenant Anda',
-                                  style: TextStyle(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.apartment_rounded,
+                                    color: Color(0xFF2563EB),
+                                    size: 20,
                                   ),
-                                ),
-                              ],
+                                  SizedBox(width: 8.w),
+                                  Flexible(
+                                    child: Text(
+                                      'Sekolah Anda',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                             TextButton.icon(
                               onPressed: () => _showJoinSchoolDialog(authProvider),
@@ -1917,19 +1923,49 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                         height: 16,
                                         color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                                       ),
-                                      if (authProvider.activeSchool!.address != null && authProvider.activeSchool!.address!.isNotEmpty)
-                                        _buildSchoolMetaItem(Icons.location_on_outlined, 'Alamat', authProvider.activeSchool!.address!),
-                                      if (authProvider.activeSchool!.postalCode != null && authProvider.activeSchool!.postalCode!.isNotEmpty)
-                                        _buildSchoolMetaItem(Icons.local_post_office_outlined, 'Kode Pos', authProvider.activeSchool!.postalCode!),
+                                      if (_formatSchoolAddress(
+                                            authProvider.activeSchool!.address,
+                                            authProvider.activeSchool!.postalCode,
+                                          ).isNotEmpty)
+                                        _buildSchoolMetaItem(
+                                          Icons.location_on_outlined,
+                                          _formatSchoolAddress(
+                                            authProvider.activeSchool!.address,
+                                            authProvider.activeSchool!.postalCode,
+                                          ),
+                                          tooltip: 'Alamat',
+                                        ),
                                       if (authProvider.activeSchool!.phone != null && authProvider.activeSchool!.phone!.isNotEmpty)
-                                        _buildSchoolMetaItem(Icons.phone_outlined, 'Telepon', authProvider.activeSchool!.phone!),
+                                        _buildSchoolMetaItem(
+                                          Icons.phone_outlined,
+                                          authProvider.activeSchool!.phone!,
+                                          tooltip: 'Telepon',
+                                        ),
                                       if (authProvider.activeSchool!.email != null && authProvider.activeSchool!.email!.isNotEmpty)
-                                        _buildSchoolMetaItem(Icons.email_outlined, 'Email', authProvider.activeSchool!.email!),
+                                        _buildSchoolMetaItem(
+                                          Icons.email_outlined,
+                                          authProvider.activeSchool!.email!,
+                                          tooltip: 'Email',
+                                        ),
                                       if (authProvider.activeSchool!.website != null && authProvider.activeSchool!.website!.isNotEmpty)
-                                        _buildSchoolMetaItem(Icons.language_outlined, 'Website', authProvider.activeSchool!.website!),
-                                      _buildSchoolMetaItem(Icons.fingerprint_rounded, 'NPSN', authProvider.activeSchool!.npsn ?? '-'),
+                                        _buildSchoolMetaItem(
+                                          Icons.language_outlined,
+                                          authProvider.activeSchool!.website!,
+                                          tooltip: 'Website',
+                                        ),
+                                      _buildSchoolMetaItem(
+                                        Icons.fingerprint_rounded,
+                                        authProvider.activeSchool!.npsn ?? '-',
+                                        prefixLabel: 'NPSN',
+                                        tooltip: 'NPSN',
+                                      ),
                                       if (authProvider.activeSchool!.nss != null && authProvider.activeSchool!.nss!.isNotEmpty)
-                                        _buildSchoolMetaItem(Icons.numbers_rounded, 'NSS', authProvider.activeSchool!.nss!),
+                                        _buildSchoolMetaItem(
+                                          Icons.numbers_rounded,
+                                          authProvider.activeSchool!.nss!,
+                                          prefixLabel: 'NSS',
+                                          tooltip: 'NSS',
+                                        ),
                                     ],
                                   ),
                                 ),
@@ -2492,18 +2528,50 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
     );
   }
 
-  Widget _buildSchoolMetaItem(IconData icon, String label, String value) {
+  String _formatSchoolAddress(String? address, String? postalCode) {
+    final addr = (address ?? '').trim();
+    final post = (postalCode ?? '').trim();
+    if (addr.isEmpty) return post;
+    if (post.isEmpty || addr.contains(post)) return addr;
+    final cleanAddr = addr.endsWith(',')
+        ? addr.substring(0, addr.length - 1).trimRight()
+        : addr;
+    return '$cleanAddr, $post';
+  }
+
+  Widget _buildSchoolMetaItem(
+    IconData icon,
+    String value, {
+    String? prefixLabel,
+    String? tooltip,
+  }) {
+    final iconWidget = Padding(
+      padding: EdgeInsets.only(top: 2.h),
+      child: Icon(
+        icon,
+        size: 13.sp,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    );
     return Padding(
-      padding: EdgeInsets.only(bottom: 4.h),
+      padding: EdgeInsets.only(bottom: 5.h),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 12.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
-          SizedBox(width: 6.w),
-          Text(
-            '$label: ',
-            style: GoogleFonts.hankenGrotesk(fontSize: 11.sp, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ),
+          if (tooltip != null)
+            Tooltip(message: tooltip, child: iconWidget)
+          else
+            iconWidget,
+          SizedBox(width: 8.w),
+          if (prefixLabel != null && prefixLabel.isNotEmpty)
+            Text(
+              '$prefixLabel: ',
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
           Expanded(
             child: Text(
               value,

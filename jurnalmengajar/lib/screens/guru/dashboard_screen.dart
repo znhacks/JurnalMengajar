@@ -50,6 +50,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
   String? _lastLoadedSchoolId;
   String? _lastLoadedUserId;
+  bool _isCheckingWarnings = false;
 
   @override
   void initState() {
@@ -189,21 +190,27 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
           }).toList()
         : journalProvider.teacherJournals;
 
-    warningProvider
-        .checkAndIssueWarnings(
-          schedules: targetSchedules,
-          journals: targetJournals,
-          maxDays: maxDays,
-          masterProvider: masterProvider,
-        )
-        .then((_) {
-          if (mounted) {
-            warningProvider.loadTeacherWarningLetters(teacher.id, schoolId);
-          }
-        })
-        .catchError((err) {
-          debugPrint('[GURU_DASHBOARD] Background warning check error: $err');
-        });
+    if (!_isCheckingWarnings) {
+      _isCheckingWarnings = true;
+      warningProvider
+          .checkAndIssueWarnings(
+            schedules: targetSchedules,
+            journals: targetJournals,
+            maxDays: maxDays,
+            masterProvider: masterProvider,
+          )
+          .then((_) {
+            if (mounted) {
+              warningProvider.loadTeacherWarningLetters(teacher.id, schoolId);
+            }
+          })
+          .catchError((err) {
+            debugPrint('[GURU_DASHBOARD] Background warning check error: $err');
+          })
+          .whenComplete(() {
+            _isCheckingWarnings = false;
+          });
+    }
 
     if (!_hasCheckedReminder) {
       _hasCheckedReminder = true;
@@ -475,6 +482,41 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
         authProvider.activeSchoolId?.trim();
 
+    // ── Pre-index master data for O(1) lookups ──────────────────────────
+    final classMap = <String, ClassModel>{
+      for (final c in masterProvider.classes) c.id: c,
+    };
+    final subjectMap = <String, SubjectModel>{
+      for (final s in masterProvider.subjects) s.id: s,
+    };
+
+    // ── Pre-index teacher journals in a single pass ───────────────────────
+    final journalsByScheduleId = <String, JournalModel>{};
+    final validJournalScheduleIds = <String>{};
+    final journalDateClassSubject = <String>{};
+    final teacherAbsenceDateKeys = <String>{};
+    final journalsByDate = <String, List<JournalModel>>{};
+
+    for (final j in journalProvider.teacherJournals) {
+      final dKey =
+          '${j.date.year}-${j.date.month.toString().padLeft(2, '0')}-${j.date.day.toString().padLeft(2, '0')}';
+      journalsByDate.putIfAbsent(dKey, () => []).add(j);
+      if (j.scheduleId.isNotEmpty) {
+        journalsByScheduleId[j.scheduleId] = j;
+        if (j.status == 'pending' ||
+            j.status == 'verified' ||
+            j.isTeacherAbsence) {
+          validJournalScheduleIds.add(j.scheduleId);
+        }
+      }
+      if (j.classId.isNotEmpty && j.subjectId.isNotEmpty) {
+        journalDateClassSubject.add('$dKey|${j.classId}|${j.subjectId}');
+      }
+      if (j.isTeacherAbsence && j.status != 'rejected') {
+        teacherAbsenceDateKeys.add(dKey);
+      }
+    }
+
     final scheduledDateKeys = <String>{};
     final completedDateKeys = <String>{};
     final Map<String, List<ScheduleModel>> schedulesByDate = {};
@@ -504,20 +546,26 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       if (grouped.isNotEmpty) {
         final allFilled = grouped.every((group) {
           final s = group.primarySchedule;
-          return journalProvider.teacherJournals.any((j) {
-            final sameDate =
-                '${j.date.year}-${j.date.month.toString().padLeft(2, '0')}-${j.date.day.toString().padLeft(2, '0')}' ==
-                key;
-            final sameSchedule =
-                j.scheduleId == s.id ||
-                group.scheduleIds.contains(j.scheduleId) ||
-                (j.classId == s.classId && j.subjectId == s.subjectId);
-            return sameDate &&
-                sameSchedule &&
-                (j.status == 'pending' ||
-                    j.status == 'verified' ||
-                    j.isTeacherAbsence);
-          });
+          if (validJournalScheduleIds.contains(s.id)) return true;
+          for (final sid in group.scheduleIds) {
+            if (validJournalScheduleIds.contains(sid)) return true;
+          }
+          if (journalDateClassSubject.contains('$key|${s.classId}|${s.subjectId}')) {
+            return true;
+          }
+          final dateJournals = journalsByDate[key];
+          if (dateJournals != null) {
+            for (final j in dateJournals) {
+              if (j.classId == s.classId &&
+                  j.subjectId == s.subjectId &&
+                  (j.status == 'pending' ||
+                      j.status == 'verified' ||
+                      j.isTeacherAbsence)) {
+                return true;
+              }
+            }
+          }
+          return false;
         });
         if (allFilled) {
           completedDateKeys.add(key);
@@ -549,16 +597,24 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
     final unfinishedMonthSchedules = groupedMonthSchedules.where((group) {
       final s = group.primarySchedule;
-      final hasJournal = journalProvider.teacherJournals.any((j) {
-        return j.scheduleId == s.id ||
-            group.scheduleIds.contains(j.scheduleId) ||
-            (j.date.year == group.date.year &&
-                j.date.month == group.date.month &&
-                j.date.day == group.date.day &&
-                j.classId == group.classId &&
-                j.subjectId == group.subjectId);
-      });
-      return !hasJournal;
+      if (journalsByScheduleId.containsKey(s.id)) return false;
+      for (final sid in group.scheduleIds) {
+        if (journalsByScheduleId.containsKey(sid)) return false;
+      }
+      final gKey =
+          '${group.date.year}-${group.date.month.toString().padLeft(2, '0')}-${group.date.day.toString().padLeft(2, '0')}';
+      if (journalDateClassSubject.contains('$gKey|${group.classId}|${group.subjectId}')) {
+        return false;
+      }
+      final dateJournals = journalsByDate[gKey];
+      if (dateJournals != null) {
+        for (final j in dateJournals) {
+          if (j.classId == group.classId && j.subjectId == group.subjectId) {
+            return false;
+          }
+        }
+      }
+      return true;
     }).toList();
 
     final monthScheduleCount = unfinishedMonthSchedules.length;
@@ -595,6 +651,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         scheduleProvider,
                         journalProvider,
                         holidayProvider,
+                        teacherAbsenceDateKeys: teacherAbsenceDateKeys,
                       ),
 
                       SizedBox(height: 16.h),
@@ -692,6 +749,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                         masterProvider,
                         scheduleProvider,
                         journalProvider,
+                        classMap: classMap,
+                        subjectMap: subjectMap,
+                        journalsByScheduleId: journalsByScheduleId,
                       ),
 
                       SizedBox(height: 20.h),
@@ -700,6 +760,8 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                       _buildRecentJournalsSection(
                         journalProvider,
                         masterProvider,
+                        classMap: classMap,
+                        subjectMap: subjectMap,
                       ),
 
                       SizedBox(height: 24.h),
@@ -1046,8 +1108,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     TeacherModel teacher,
     ScheduleProvider scheduleProvider,
     JournalProvider journalProvider,
-    HolidayProvider holidayProvider,
-  ) {
+    HolidayProvider holidayProvider, {
+    Set<String>? teacherAbsenceDateKeys,
+  }) {
     final monthYearStr = DateFormat('MMMM yyyy', 'id_ID').format(_focusedDay);
 
     // Calculate current week days starting from Monday of the focused day's week
@@ -1106,6 +1169,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                   completedDateKeys,
                   holidayProvider,
                   journalProvider,
+                  teacherAbsenceDateKeys: teacherAbsenceDateKeys,
                 ),
                 borderRadius: BorderRadius.circular(10.r),
                 child: Padding(
@@ -1199,13 +1263,15 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
               final isAllFilled = completedDateKeys.contains(dateKey);
               final isHoliday =
                   holidayProvider.getHolidayForDate(date) != null ||
-                  journalProvider.teacherJournals.any(
-                    (j) =>
-                        j.date.year == date.year &&
-                        j.date.month == date.month &&
-                        j.date.day == date.day &&
-                        j.isTeacherAbsence,
-                  );
+                  (teacherAbsenceDateKeys != null
+                      ? teacherAbsenceDateKeys.contains(dateKey)
+                      : journalProvider.teacherJournals.any(
+                          (j) =>
+                              j.date.year == date.year &&
+                              j.date.month == date.month &&
+                              j.date.day == date.day &&
+                              j.isTeacherAbsence,
+                        ));
 
               BoxDecoration circleDecoration;
               Color textColor;
@@ -1370,8 +1436,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     Set<String> scheduledDateKeys,
     Set<String> completedDateKeys,
     HolidayProvider holidayProvider,
-    JournalProvider journalProvider,
-  ) {
+    JournalProvider journalProvider, {
+    Set<String>? teacherAbsenceDateKeys,
+  }) {
     showDialog(
       context: context,
       builder: (dialogCtx) {
@@ -1495,6 +1562,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             completedDateKeys: completedDateKeys,
                             holidayProvider: holidayProvider,
                             journalProvider: journalProvider,
+                            teacherAbsenceDateKeys: teacherAbsenceDateKeys,
                           );
                         },
                         outsideBuilder: (ctx, day, focDay) {
@@ -1507,6 +1575,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             completedDateKeys: completedDateKeys,
                             holidayProvider: holidayProvider,
                             journalProvider: journalProvider,
+                            teacherAbsenceDateKeys: teacherAbsenceDateKeys,
                           );
                         },
                         todayBuilder: (ctx, day, focDay) {
@@ -1520,6 +1589,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             completedDateKeys: completedDateKeys,
                             holidayProvider: holidayProvider,
                             journalProvider: journalProvider,
+                            teacherAbsenceDateKeys: teacherAbsenceDateKeys,
                           );
                         },
                         selectedBuilder: (ctx, day, focDay) {
@@ -1532,6 +1602,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                             completedDateKeys: completedDateKeys,
                             holidayProvider: holidayProvider,
                             journalProvider: journalProvider,
+                            teacherAbsenceDateKeys: teacherAbsenceDateKeys,
                           );
                         },
                       ),
@@ -1584,6 +1655,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     required Set<String> completedDateKeys,
     required HolidayProvider holidayProvider,
     required JournalProvider journalProvider,
+    Set<String>? teacherAbsenceDateKeys,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final dateKey =
@@ -1592,13 +1664,15 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     final isAllFilled = completedDateKeys.contains(dateKey);
     final isHoliday =
         holidayProvider.getHolidayForDate(day) != null ||
-        journalProvider.teacherJournals.any(
-          (j) =>
-              j.date.year == day.year &&
-              j.date.month == day.month &&
-              j.date.day == day.day &&
-              j.isTeacherAbsence,
-        );
+        (teacherAbsenceDateKeys != null
+            ? teacherAbsenceDateKeys.contains(dateKey)
+            : journalProvider.teacherJournals.any(
+                (j) =>
+                    j.date.year == day.year &&
+                    j.date.month == day.month &&
+                    j.date.day == day.day &&
+                    j.isTeacherAbsence,
+              ));
     final isSunday = day.weekday == DateTime.sunday;
 
     Color bgColor = Colors.transparent;
@@ -1732,8 +1806,11 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   Widget _buildScheduleListSection(
     MasterDataProvider master,
     ScheduleProvider scheduleProvider,
-    JournalProvider journalProvider,
-  ) {
+    JournalProvider journalProvider, {
+    Map<String, ClassModel>? classMap,
+    Map<String, SubjectModel>? subjectMap,
+    Map<String, JournalModel>? journalsByScheduleId,
+  }) {
     if (scheduleProvider.isLoading) {
       return const Center(
         child: Padding(
@@ -1831,25 +1908,33 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     if (_searchQuery.isNotEmpty || _activeTabFilter != 'Semua') {
       groupedSchedules = groupedSchedules.where((group) {
         final s = group.primarySchedule;
-        final cls = master.classes.firstWhere(
-          (c) => c.id == s.classId,
-          orElse: () =>
-              ClassModel(id: '', name: '', periodId: '', studentCount: 0),
-        );
-        final subject = master.subjects.firstWhere(
-          (sb) => sb.id == s.subjectId,
-          orElse: () => SubjectModel(id: '', name: '', isActive: false),
-        );
+        final cls = classMap?[s.classId] ??
+            master.classes.firstWhere(
+              (c) => c.id == s.classId,
+              orElse: () =>
+                  ClassModel(id: '', name: '', periodId: '', studentCount: 0),
+            );
+        final subject = subjectMap?[s.subjectId] ??
+            master.subjects.firstWhere(
+              (sb) => sb.id == s.subjectId,
+              orElse: () => SubjectModel(id: '', name: '', isActive: false),
+            );
 
         final matchesSearch =
             _searchQuery.isEmpty ||
             cls.name.toLowerCase().contains(_searchQuery) ||
             subject.name.toLowerCase().contains(_searchQuery);
 
-        final hasJournal = journalProvider.teacherJournals.any(
-          (j) =>
-              j.scheduleId == s.id || group.scheduleIds.contains(j.scheduleId),
-        );
+        final bool hasJournal;
+        if (journalsByScheduleId != null) {
+          hasJournal = journalsByScheduleId.containsKey(s.id) ||
+              group.scheduleIds.any((id) => journalsByScheduleId.containsKey(id));
+        } else {
+          hasJournal = journalProvider.teacherJournals.any(
+            (j) =>
+                j.scheduleId == s.id || group.scheduleIds.contains(j.scheduleId),
+          );
+        }
 
         if (_activeTabFilter == 'Belum Diisi' && hasJournal) return false;
         if (_activeTabFilter == 'Selesai' && !hasJournal) return false;
@@ -1894,6 +1979,9 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
             master,
             journalProvider,
             index,
+            classMap: classMap,
+            subjectMap: subjectMap,
+            journalsByScheduleId: journalsByScheduleId,
           ),
         );
       }),
@@ -1904,32 +1992,49 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
     GroupedDailySchedule scheduleGroup,
     MasterDataProvider master,
     JournalProvider journalProvider,
-    int index,
-  ) {
+    int index, {
+    Map<String, ClassModel>? classMap,
+    Map<String, SubjectModel>? subjectMap,
+    Map<String, JournalModel>? journalsByScheduleId,
+  }) {
     final schedule = scheduleGroup.primarySchedule;
-    final cls = master.classes.firstWhere(
-      (c) => c.id == schedule.classId,
-      orElse: () =>
-          ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
-    );
-    final subject = master.subjects.firstWhere(
-      (s) => s.id == schedule.subjectId,
-      orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
-    );
+    final cls = classMap?[schedule.classId] ??
+        master.classes.firstWhere(
+          (c) => c.id == schedule.classId,
+          orElse: () =>
+              ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
+        );
+    final subject = subjectMap?[schedule.subjectId] ??
+        master.subjects.firstWhere(
+          (s) => s.id == schedule.subjectId,
+          orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
+        );
 
     final hoursStr = AppHelper.formatTeachingHours(scheduleGroup.teachingHours);
 
     JournalModel? matchingJournal;
-    for (final j in journalProvider.teacherJournals) {
-      final sameDate =
-          j.date.year == _selectedDay.year &&
-          j.date.month == _selectedDay.month &&
-          j.date.day == _selectedDay.day;
-      if (sameDate &&
-          (j.scheduleId == schedule.id ||
-              scheduleGroup.scheduleIds.contains(j.scheduleId))) {
-        matchingJournal = j;
-        break;
+    if (journalsByScheduleId != null) {
+      matchingJournal = journalsByScheduleId[schedule.id];
+      if (matchingJournal == null) {
+        for (final sid in scheduleGroup.scheduleIds) {
+          if (journalsByScheduleId.containsKey(sid)) {
+            matchingJournal = journalsByScheduleId[sid];
+            break;
+          }
+        }
+      }
+    } else {
+      for (final j in journalProvider.teacherJournals) {
+        final sameDate =
+            j.date.year == _selectedDay.year &&
+            j.date.month == _selectedDay.month &&
+            j.date.day == _selectedDay.day;
+        if (sameDate &&
+            (j.scheduleId == schedule.id ||
+                scheduleGroup.scheduleIds.contains(j.scheduleId))) {
+          matchingJournal = j;
+          break;
+        }
       }
     }
 
@@ -2105,8 +2210,10 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   // ─── 6. SECTION JURNAL TERBARU SAYA ────────────────────────────────────────
   Widget _buildRecentJournalsSection(
     JournalProvider journalProvider,
-    MasterDataProvider masterProvider,
-  ) {
+    MasterDataProvider masterProvider, {
+    Map<String, ClassModel>? classMap,
+    Map<String, SubjectModel>? subjectMap,
+  }) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final cleanActiveSchoolId =
         AppHelper.parseSingleCleanSchoolId(authProvider.activeSchoolId) ??
@@ -2128,15 +2235,17 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
     if (_searchQuery.isNotEmpty) {
       journals = journals.where((j) {
-        final cls = masterProvider.classes.firstWhere(
-          (c) => c.id == j.classId,
-          orElse: () =>
-              ClassModel(id: '', name: '', periodId: '', studentCount: 0),
-        );
-        final subject = masterProvider.subjects.firstWhere(
-          (s) => s.id == j.subjectId,
-          orElse: () => SubjectModel(id: '', name: '', isActive: false),
-        );
+        final cls = classMap?[j.classId] ??
+            masterProvider.classes.firstWhere(
+              (c) => c.id == j.classId,
+              orElse: () =>
+                  ClassModel(id: '', name: '', periodId: '', studentCount: 0),
+            );
+        final subject = subjectMap?[j.subjectId] ??
+            masterProvider.subjects.firstWhere(
+              (s) => s.id == j.subjectId,
+              orElse: () => SubjectModel(id: '', name: '', isActive: false),
+            );
 
         return cls.name.toLowerCase().contains(_searchQuery) ||
             subject.name.toLowerCase().contains(_searchQuery) ||
@@ -2287,7 +2396,12 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
                   return Padding(
                     padding: EdgeInsets.only(bottom: isLast ? 0 : 8.h),
-                    child: _buildLatestTimelineCard(journal, masterProvider),
+                    child: _buildLatestTimelineCard(
+                      journal,
+                      masterProvider,
+                      classMap: classMap,
+                      subjectMap: subjectMap,
+                    ),
                   );
                 }),
               );
@@ -2301,17 +2415,21 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   // ─── Latest Journal Card (Prominent & Detailed) ───────────────────────────
   Widget _buildLatestTimelineCard(
     JournalModel journal,
-    MasterDataProvider master,
-  ) {
-    final cls = master.classes.firstWhere(
-      (c) => c.id == journal.classId,
-      orElse: () =>
-          ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
-    );
-    final subject = master.subjects.firstWhere(
-      (s) => s.id == journal.subjectId,
-      orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
-    );
+    MasterDataProvider master, {
+    Map<String, ClassModel>? classMap,
+    Map<String, SubjectModel>? subjectMap,
+  }) {
+    final cls = classMap?[journal.classId] ??
+        master.classes.firstWhere(
+          (c) => c.id == journal.classId,
+          orElse: () =>
+              ClassModel(id: '', name: 'Kelas--', periodId: '', studentCount: 0),
+        );
+    final subject = subjectMap?[journal.subjectId] ??
+        master.subjects.firstWhere(
+          (s) => s.id == journal.subjectId,
+          orElse: () => SubjectModel(id: '', name: 'Mapel--', isActive: false),
+        );
 
     final statusColor = AppHelper.getStatusColor(journal.status);
 
