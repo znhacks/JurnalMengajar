@@ -742,35 +742,6 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          SizedBox(height: 6.h),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 10.w,
-                              vertical: 4.h,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            child: Text(
-                              'ROLE: ADMIN SEKOLAH (${authProvider.activeSchoolName.toUpperCase()})',
-                              style: TextStyle(
-                                fontSize: 9.sp,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 4.h),
-                          Text(
-                            'Mengelola operasional guru & data ${authProvider.activeSchoolName}',
-                            style: TextStyle(
-                              fontSize: 10.sp,
-                              color: Colors.white.withValues(alpha: 0.75),
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
                         ],
                       ),
                     ),
