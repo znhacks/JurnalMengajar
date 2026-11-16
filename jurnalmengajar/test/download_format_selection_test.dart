@@ -151,18 +151,22 @@ class FakeClassRepo implements ClassRepository {
 }
 
 class FakeTeacherRepo implements TeacherRepository {
+  final List<TeacherModel> teachers;
+  FakeTeacherRepo([List<TeacherModel>? initial]) : teachers = initial ?? [];
+
   @override
-  Future<List<TeacherModel>> getAll() async => [];
+  Future<List<TeacherModel>> getAll() async => teachers;
   @override
-  Future<List<TeacherModel>> getAllForSchool(String schoolId) async => [];
+  Future<List<TeacherModel>> getAllForSchool(String schoolId) async => teachers;
   @override
-  Future<void> create(TeacherModel teacher) async {}
+  Future<void> create(TeacherModel teacher) async => teachers.add(teacher);
   @override
   Future<void> update(TeacherModel teacher) async {}
   @override
-  Future<void> delete(String id) async {}
+  Future<void> delete(String id) async => teachers.removeWhere((t) => t.id == id);
   @override
-  Future<void> deleteMultiple(List<String> ids) async {}
+  Future<void> deleteMultiple(List<String> ids) async =>
+      teachers.removeWhere((t) => ids.contains(t.id));
 }
 
 class FakeStudentRepo implements StudentRepository {
@@ -287,6 +291,7 @@ void main() {
       classId: 'class-1',
       subjectId: 'sub-1',
       scheduleId: 'sch-1',
+      schoolId: 'school-1',
       date: DateTime.now(),
       teachingHour: 1,
       material: 'Materi Test',
@@ -305,7 +310,7 @@ void main() {
       subjectRepository: FakeSubjectRepo(),
       hourRepository: FakeHourRepo(),
       classRepository: FakeClassRepo(),
-      teacherRepository: FakeTeacherRepo(),
+      teacherRepository: FakeTeacherRepo([teacher]),
       studentRepository: FakeStudentRepo(),
     );
     masterProvider.teachers.add(teacher);

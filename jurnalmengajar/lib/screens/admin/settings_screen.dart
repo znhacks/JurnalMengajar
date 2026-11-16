@@ -1091,16 +1091,25 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
                 if (mounted) {
                   setState(() {});
+                  final displayName = updatedSchool.name.trim().isNotEmpty
+                      ? updatedSchool.name
+                      : (authProvider.activeSchoolName.trim().isNotEmpty
+                          ? authProvider.activeSchoolName
+                          : 'Sekolah');
                   AppHelper.showSnackBar(
                     context,
-                    'Selamat! Paket ${updatedSchool.plan.toUpperCase()} untuk ${updatedSchool.name} berhasil diaktifkan.',
+                    'Selamat! Paket ${updatedSchool.plan.toUpperCase()} untuk $displayName berhasil diaktifkan.',
                   );
                 }
               } catch (e) {
                 if (mounted) {
+                  String errorMsg = e.toString();
+                  if (errorMsg.startsWith('Exception: ')) {
+                    errorMsg = errorMsg.substring('Exception: '.length);
+                  }
                   AppHelper.showSnackBar(
                     context,
-                    'Gagal mengaktifkan paket: $e',
+                    'Gagal mengaktifkan paket: $errorMsg',
                     isError: true,
                   );
                 }

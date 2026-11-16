@@ -107,7 +107,13 @@ class SupabaseSchoolRepository implements SchoolRepository {
             .eq('status', 'active');
 
         if ((schoolResponse as List).isNotEmpty) {
-          return SchoolModel.fromJson((schoolResponse as List).first);
+          final sRow = (schoolResponse as List).first as Map<String, dynamic>;
+          final sName = (sRow['name'] as String? ?? '').trim();
+          // Only return directly if it has an actual school name.
+          // If name is empty, it is a dummy voucher placeholder row; continue to tenant query.
+          if (sName.isNotEmpty) {
+            return SchoolModel.fromJson(sRow);
+          }
         }
       } catch (_) {}
 
@@ -200,14 +206,18 @@ class SupabaseSchoolRepository implements SchoolRepository {
                 ? 999
                 : (tenantPlan == 'pro' ? 50 : 30));
 
-        // Check if school already exists by code in schools table before upserting
+        // Check if school already exists by code in schools table before returning
         final existingByCode = await _supabase
             .from('schools')
             .select()
             .ilike('code', cleanCode);
 
         if ((existingByCode as List).isNotEmpty) {
-          return SchoolModel.fromJson((existingByCode as List).first);
+          final sRow = (existingByCode as List).first as Map<String, dynamic>;
+          final sName = (sRow['name'] as String? ?? '').trim();
+          if (sName.isNotEmpty) {
+            return SchoolModel.fromJson(sRow);
+          }
         }
 
         return SchoolModel(
@@ -524,11 +534,69 @@ class SupabaseSchoolRepository implements SchoolRepository {
       } catch (_) {}
     }
 
+    final targetId = existingSchool != null
+        ? (existingSchool['id'] as String)
+        : ((currentSchoolId.isNotEmpty && currentSchoolId != tenantRes?['id'])
+            ? currentSchoolId
+            : (tenantRes?['id'] as String? ?? currentSchoolId));
+
+    // CRITICAL: Prevent Postgres 23505 duplicate key error on UNIQUE constraint "schools_code_key".
+    // When JM-Panel or voucher generators create activation codes, they often insert a placeholder row
+    // with an empty name or temporary ID. If another row in schools holds chosenCode with an ID different
+    // from targetId, we must resolve it.
+    try {
+      final conflictingRows = await _supabase
+          .from('schools')
+          .select('id, name')
+          .ilike('code', chosenCode)
+          .neq('id', targetId);
+
+      if ((conflictingRows as List).isNotEmpty) {
+        for (final item in (conflictingRows as List)) {
+          final conflictId = item['id'] as String;
+          final conflictName = (item['name'] as String? ?? '').trim();
+
+          // Check whether the conflicting row has actual registered users
+          final members = await _supabase
+              .from('user_schools')
+              .select('id')
+              .eq('school_id', conflictId)
+              .limit(1);
+
+          if ((members as List).isEmpty) {
+            // It's an orphan/placeholder row with no users. Safely delete it so targetId can claim chosenCode.
+            try {
+              await _supabase.from('schools').delete().eq('id', conflictId);
+            } catch (_) {
+              await _supabase
+                  .from('schools')
+                  .update({'code': '$conflictId-archived'})
+                  .eq('id', conflictId);
+            }
+          } else {
+            throw Exception(
+              'Kode aktivasi "$chosenCode" sudah digunakan oleh sekolah lain'
+              '${conflictName.isNotEmpty ? ' ($conflictName)' : ''}.',
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (e.toString().contains('sudah digunakan oleh sekolah lain')) {
+        rethrow;
+      }
+      debugPrint('Note resolving code uniqueness: $e');
+    }
+
     Map<String, dynamic>? updatedRow;
 
     if (existingSchool != null) {
+      final existingName = (existingSchool['name'] as String? ?? '').trim();
+      if (existingName.isEmpty && tenantRes?['name'] != null) {
+        updateData['name'] = tenantRes!['name'];
+      }
+
       // School exists: UPDATE it safely without single()
-      final targetId = existingSchool['id'] as String;
       final updateRes = await _supabase
           .from('schools')
           .update(updateData)
@@ -543,14 +611,10 @@ class SupabaseSchoolRepository implements SchoolRepository {
     } else {
       // School does NOT exist in schools table yet:
       // Mobile app responsibility: create/upsert it so the mobile app has the school registered
-      final targetSchoolId =
-          (currentSchoolId.isNotEmpty && currentSchoolId != tenantRes?['id'])
-          ? currentSchoolId
-          : (tenantRes?['id'] as String? ?? currentSchoolId);
       final schoolName = tenantRes?['name'] as String? ?? 'Sekolah';
 
       final upsertPayload = <String, dynamic>{
-        'id': targetSchoolId,
+        'id': targetId,
         'name': schoolName,
         ...updateData,
       };
@@ -587,6 +651,35 @@ class SupabaseSchoolRepository implements SchoolRepository {
           : (normalizedPlan == 'pro'
               ? 50
               : (normalizedPlan == 'enterprise' ? 999 : 30));
+
+      // Resolve potential conflict on schools_code_key
+      try {
+        final conflictingRows = await _supabase
+            .from('schools')
+            .select('id, name')
+            .ilike('code', activationCode)
+            .neq('id', schoolId);
+        if ((conflictingRows as List).isNotEmpty) {
+          for (final item in (conflictingRows as List)) {
+            final conflictId = item['id'] as String;
+            final members = await _supabase
+                .from('user_schools')
+                .select('id')
+                .eq('school_id', conflictId)
+                .limit(1);
+            if ((members as List).isEmpty) {
+              try {
+                await _supabase.from('schools').delete().eq('id', conflictId);
+              } catch (_) {
+                await _supabase
+                    .from('schools')
+                    .update({'code': '$conflictId-archived'})
+                    .eq('id', conflictId);
+              }
+            }
+          }
+        }
+      } catch (_) {}
 
       await _supabase
           .from('schools')
