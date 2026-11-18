@@ -18,6 +18,8 @@ class UserModel {
   final String? nip;
   final String?
   registeredRole; // role saat registrasi: 'admin' | 'guru' | 'pending_guru'
+  final String? city; // Tempat tinggal / kota / kabupaten
+  final String timezone; // Zona waktu personal: 'WIB' | 'WITA' | 'WIT'
 
   bool get isPending =>
       (status != null && status!.toLowerCase() == 'pending') ||
@@ -50,6 +52,8 @@ class UserModel {
     this.membershipRole,
     this.nip,
     this.registeredRole,
+    this.city,
+    this.timezone = 'WIB',
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -111,6 +115,11 @@ class UserModel {
           json['registeredRole']?.toString() ??
           json['meta_role']?.toString() ??
           json['auth_role']?.toString(),
+      city: json['city']?.toString() ?? json['address_city']?.toString(),
+      timezone: (json['timezone']?.toString() ??
+              json['time_zone']?.toString() ??
+              'WIB')
+          .toUpperCase(),
     );
   }
 
@@ -126,7 +135,11 @@ class UserModel {
       'address': address,
       'school_name': schoolName,
       'school_ids': schoolIds,
+      'timezone': timezone,
     };
+    if (city != null) {
+      map['city'] = city;
+    }
     if (nip != null && nip!.isNotEmpty) {
       map['nip'] = nip;
     }
@@ -171,6 +184,9 @@ class UserModel {
     String? nip,
     bool clearNip = false,
     String? registeredRole,
+    String? city,
+    bool clearCity = false,
+    String? timezone,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -188,6 +204,8 @@ class UserModel {
       membershipRole: membershipRole ?? this.membershipRole,
       nip: clearNip ? null : (nip ?? this.nip),
       registeredRole: registeredRole ?? this.registeredRole,
+      city: clearCity ? null : (city ?? this.city),
+      timezone: timezone ?? this.timezone,
     );
   }
 }

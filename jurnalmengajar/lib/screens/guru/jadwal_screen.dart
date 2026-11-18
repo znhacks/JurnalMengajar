@@ -973,7 +973,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       cardColor = _colorPastelRed;
     }
 
-    String statusText = 'Belum Diisi';
+    String statusText = 'Belum';
     Color statusBg = isDark
         ? const Color(0xFF334155).withValues(alpha: 0.6)
         : const Color(0xFFF1F5F9);
@@ -985,33 +985,33 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
       if (matchingJournal.isTeacherAbsence) {
         if (matchingJournal.status == 'verified') {
           statusText = matchingJournal.isTeacherSick
-              ? 'Sakit (Disetujui)'
-              : 'Izin (Disetujui)';
+              ? 'Sakit'
+              : 'Izin';
           statusBg = const Color(
             0xFF10B981,
           ).withValues(alpha: isDark ? 0.22 : 0.12);
           statusTextColor = const Color(0xFF10B981);
         } else if (matchingJournal.status == 'rejected') {
-          statusText = 'Surat Ditolak';
+          statusText = 'Ditolak';
           statusBg = Colors.red.withValues(alpha: isDark ? 0.22 : 0.12);
           statusTextColor = Colors.red;
         } else {
           statusText = matchingJournal.isTeacherSick
-              ? 'Sakit (Pending)'
-              : 'Izin (Pending)';
+              ? 'Sakit'
+              : 'Izin';
           statusBg = const Color(
             0xFFF59E0B,
           ).withValues(alpha: isDark ? 0.22 : 0.12);
           statusTextColor = const Color(0xFFF59E0B);
         }
       } else if (matchingJournal.status == 'verified' || matchingJournal.status == 'approved') {
-        statusText = 'Diterima';
+        statusText = 'Selesai';
         statusBg = const Color(
           0xFF10B981,
         ).withValues(alpha: isDark ? 0.22 : 0.12);
         statusTextColor = const Color(0xFF10B981);
       } else if (matchingJournal.status == 'pending') {
-        statusText = 'Pending';
+        statusText = 'Menunggu';
         statusBg = const Color(
           0xFFF59E0B,
         ).withValues(alpha: isDark ? 0.22 : 0.12);
@@ -1164,48 +1164,25 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
                                           )),
                               borderRadius: BorderRadius.circular(8.r),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  matchingJournal == null
-                                      ? Icons.edit_note_rounded
-                                      : (matchingJournal.status == 'rejected'
-                                            ? Icons.edit_note_rounded
-                                            : Icons.visibility_rounded),
-                                  size: 14.sp,
-                                  color: matchingJournal == null
-                                      ? (isFuture
-                                            ? (isDark
-                                                  ? const Color(0xFF94A3B8)
-                                                  : const Color(0xFF64748B))
-                                            : Colors.white)
-                                      : (matchingJournal.status == 'rejected'
-                                            ? Colors.red
-                                            : const Color(0xFF2563EB)),
-                                ),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  matchingJournal == null
-                                      ? 'Isi Jurnal'
-                                      : (matchingJournal.status == 'rejected'
-                                            ? 'Revisi Jurnal'
-                                            : 'Lihat Jurnal'),
-                                  style: GoogleFonts.hankenGrotesk(
-                                    fontSize: 11.5.sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: matchingJournal == null
-                                        ? (isFuture
-                                              ? (isDark
-                                                    ? const Color(0xFF94A3B8)
-                                                    : const Color(0xFF64748B))
-                                              : Colors.white)
-                                        : (matchingJournal.status == 'rejected'
-                                              ? Colors.red
-                                              : const Color(0xFF2563EB)),
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              matchingJournal == null
+                                  ? 'Isi'
+                                  : (matchingJournal.status == 'rejected'
+                                        ? 'Revisi'
+                                        : 'Lihat'),
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 11.5.sp,
+                                fontWeight: FontWeight.w700,
+                                color: matchingJournal == null
+                                    ? (isFuture
+                                          ? (isDark
+                                                ? const Color(0xFF94A3B8)
+                                                : const Color(0xFF64748B))
+                                          : Colors.white)
+                                    : (matchingJournal.status == 'rejected'
+                                          ? Colors.red
+                                          : const Color(0xFF2563EB)),
+                              ),
                             ),
                           ),
                         ),

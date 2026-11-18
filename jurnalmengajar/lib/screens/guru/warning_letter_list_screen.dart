@@ -524,30 +524,15 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                         : const Color(0xFF2563EB).withValues(alpha: isDark ? 0.25 : 0.15),
                     borderRadius: BorderRadius.circular(8.r),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        matchingJournal == null
-                            ? Icons.edit_note_rounded
-                            : (matchingJournal.status == 'rejected'
-                                ? Icons.edit_note_rounded
-                                : Icons.visibility_rounded),
-                        size: 14.sp,
-                        color: matchingJournal == null ? Colors.white : const Color(0xFF2563EB),
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        matchingJournal == null
-                            ? 'Isi Jurnal'
-                            : (matchingJournal.status == 'rejected' ? 'Revisi Jurnal' : 'Lihat Jurnal'),
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 11.5.sp,
-                          fontWeight: FontWeight.w700,
-                          color: matchingJournal == null ? Colors.white : const Color(0xFF2563EB),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    matchingJournal == null
+                        ? 'Isi'
+                        : (matchingJournal.status == 'rejected' ? 'Revisi' : 'Lihat'),
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 11.5.sp,
+                      fontWeight: FontWeight.w700,
+                      color: matchingJournal == null ? Colors.white : const Color(0xFF2563EB),
+                    ),
                   ),
                 ),
               ],
@@ -637,7 +622,7 @@ class _GuruWarningLetterListScreenState extends State<GuruWarningLetterListScree
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Text(
-                    resolvedMatching == null ? 'Isi Jurnal' : 'Lihat Jurnal',
+                    resolvedMatching == null ? 'Isi' : 'Lihat',
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 11.5.sp,
                       fontWeight: FontWeight.w700,

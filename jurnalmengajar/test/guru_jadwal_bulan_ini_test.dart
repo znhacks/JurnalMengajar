@@ -380,6 +380,7 @@ void main() {
         teachingHour: 1,
         material: 'HTML Basics',
         status: 'verified',
+        schoolId: 'school-1',
       );
 
       final authProvider = MockAuthProvider(user);
@@ -438,40 +439,41 @@ void main() {
 
       // Verify Summary Cards
       expect(find.text('Jadwal'), findsOneWidget);
-      expect(find.text('Belum Diisi'), findsWidgets);
+      expect(find.text('Belum Diisi'), findsOneWidget);
       expect(find.text('Sudah Terisi'), findsOneWidget);
 
       // Total should be 2 schedules
       expect(find.text('2'), findsWidgets);
 
-      // Verify both items are shown on the screen
-      expect(find.text('Sudah Diisi (Disetujui)'), findsOneWidget);
-      expect(
-        find.text('Belum Diisi'),
-        findsWidgets,
-      ); // Status chip and card badge
+      // By default, "Belum Diisi" filter is active
+      expect(find.text('Semua'), findsNothing);
+      final belumDiisiFilter = find.text('Belum Diisi (1)');
+      final sudahTerisiFilter = find.text('Sudah Terisi (1)');
+      expect(belumDiisiFilter, findsOneWidget);
+      expect(sudahTerisiFilter, findsOneWidget);
+
+      // Only the unfilled item is shown with action "Isi"
+      expect(find.text('Isi'), findsOneWidget);
+      expect(find.text('Lihat'), findsNothing);
       expect(find.text('Pemrograman Web'), findsWidgets);
 
-      // Test filter tapping: Tap "Belum Diisi" filter chip
-      final belumDiisiFilter = find.text('Belum Diisi (1)');
-      expect(belumDiisiFilter, findsOneWidget);
-      await tester.tap(belumDiisiFilter);
-      await tester.pumpAndSettle();
-
-      // Now only 1 card should be visible (the unfilled one)
-      expect(find.text('Sudah Diisi (Disetujui)'), findsNothing);
-      expect(find.text('Isi Jurnal'), findsOneWidget);
-
       // Tap "Sudah Terisi" filter chip
-      final sudahTerisiFilter = find.text('Sudah Terisi (1)');
-      expect(sudahTerisiFilter, findsOneWidget);
       await tester.ensureVisible(sudahTerisiFilter);
       await tester.tap(sudahTerisiFilter);
       await tester.pumpAndSettle();
 
-      // Now only the filled card should be visible
-      expect(find.text('Sudah Diisi (Disetujui)'), findsOneWidget);
-      expect(find.text('Lihat Jurnal'), findsOneWidget);
+      // Now only the filled card should be visible with action "Lihat"
+      expect(find.text('Lihat'), findsOneWidget);
+      expect(find.text('Isi'), findsNothing);
+
+      // Tap back to "Belum Diisi" filter chip
+      await tester.ensureVisible(belumDiisiFilter);
+      await tester.tap(belumDiisiFilter);
+      await tester.pumpAndSettle();
+
+      // Now unfilled card is visible again
+      expect(find.text('Isi'), findsOneWidget);
+      expect(find.text('Lihat'), findsNothing);
 
       await tester.pumpWidget(const SizedBox.shrink());
     },

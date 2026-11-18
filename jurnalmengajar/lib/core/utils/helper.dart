@@ -27,6 +27,119 @@ class AppHelper {
 
   static const List<String> supportedTimezones = ['WIB', 'WITA', 'WIT'];
 
+  static String getTimezoneLabel(String? timezone) {
+    switch (timezone?.toUpperCase()) {
+      case 'WITA':
+        return 'WITA (UTC+8) - Waktu Indonesia Tengah';
+      case 'WIT':
+        return 'WIT (UTC+9) - Waktu Indonesia Timur';
+      case 'WIB':
+      default:
+        return 'WIB (UTC+7) - Waktu Indonesia Barat';
+    }
+  }
+
+  static String getTimezoneShortLabel(String? timezone) {
+    switch (timezone?.toUpperCase()) {
+      case 'WITA':
+        return 'WITA (UTC+8)';
+      case 'WIT':
+        return 'WIT (UTC+9)';
+      case 'WIB':
+      default:
+        return 'WIB (UTC+7)';
+    }
+  }
+
+  /// Otomatis mendeteksi zona waktu (WIB, WITA, WIT) berdasarkan nama kota/kabupaten atau provinsi
+  static String detectTimezoneFromCity(String? city, {String? province}) {
+    final search = '${province ?? ''} ${city ?? ''}'.toLowerCase();
+    if (search.trim().isEmpty) return 'WIB';
+
+    // 1. Cek zona waktu WIT (Papua & Maluku)
+    if (search.contains('papua') ||
+        search.contains('maluku') ||
+        search.contains('jayapura') ||
+        search.contains('ambon') ||
+        search.contains('ternate') ||
+        search.contains('merauke') ||
+        search.contains('sorong') ||
+        search.contains('manokwari') ||
+        search.contains('biak') ||
+        search.contains('timika') ||
+        search.contains('mimika') ||
+        search.contains('nabire') ||
+        search.contains('wamena') ||
+        search.contains('tidore') ||
+        search.contains('tual') ||
+        search.contains('seram')) {
+      return 'WIT';
+    }
+
+    // 2. Cek zona waktu WITA (Bali, NTB, NTT, Sulawesi, Kalsel, Kaltim, Kaltara)
+    if (search.contains('bali') ||
+        search.contains('denpasar') ||
+        search.contains('badung') ||
+        search.contains('gianyar') ||
+        search.contains('klungkung') ||
+        search.contains('tabanan') ||
+        search.contains('buleleng') ||
+        search.contains('singaraja') ||
+        search.contains('karangasem') ||
+        search.contains('jembrana') ||
+        search.contains('bangli') ||
+        search.contains('nusa tenggara') ||
+        search.contains('ntb') ||
+        search.contains('ntt') ||
+        search.contains('lombok') ||
+        search.contains('mataram') ||
+        search.contains('sumbawa') ||
+        search.contains('bima') ||
+        search.contains('kupang') ||
+        search.contains('flores') ||
+        search.contains('sumba') ||
+        search.contains('alor') ||
+        search.contains('labuan bajo') ||
+        search.contains('ende') ||
+        search.contains('sulawesi') ||
+        search.contains('makassar') ||
+        search.contains('gowa') ||
+        search.contains('maros') ||
+        search.contains('bone') ||
+        search.contains('palopo') ||
+        search.contains('parepare') ||
+        search.contains('manado') ||
+        search.contains('bitung') ||
+        search.contains('tomohon') ||
+        search.contains('minahasa') ||
+        search.contains('palu') ||
+        search.contains('poso') ||
+        search.contains('kendari') ||
+        search.contains('baubau') ||
+        search.contains('gorontalo') ||
+        search.contains('mamuju') ||
+        search.contains('kalimantan selatan') ||
+        search.contains('kalsel') ||
+        search.contains('banjarmasin') ||
+        search.contains('banjarbaru') ||
+        search.contains('kalimantan timur') ||
+        search.contains('kaltim') ||
+        search.contains('samarinda') ||
+        search.contains('balikpapan') ||
+        search.contains('bontang') ||
+        search.contains('kutai') ||
+        search.contains('berau') ||
+        search.contains('kalimantan utara') ||
+        search.contains('kaltara') ||
+        search.contains('tarakan') ||
+        search.contains('nunukan')) {
+      return 'WITA';
+    }
+
+    // 3. Default ke WIB (Sumatera [termasuk Bungo, Jambi, Medan, Padang], Jawa [termasuk Malang, Surabaya, Jakarta], Kalbar, Kalteng)
+    return 'WIB';
+  }
+
   static int getTimezoneOffset(String? timezone) {
     switch (timezone?.toUpperCase()) {
       case 'WITA':

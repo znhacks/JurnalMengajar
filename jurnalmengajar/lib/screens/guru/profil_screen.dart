@@ -20,6 +20,7 @@ import '../../widgets/school_avatar.dart';
 import '../../providers/warning_letter_provider.dart';
 import '../../widgets/app_scaffold.dart';
 import '../../widgets/app_dialog_actions.dart';
+import '../../widgets/city_picker_sheet.dart';
 
 class GuruProfilScreen extends StatefulWidget {
   const GuruProfilScreen({super.key});
@@ -176,6 +177,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
     final addrController = TextEditingController(
       text: user.address ?? teacher.address,
     );
+    final cityController = TextEditingController(text: user.city ?? '');
+    String selectedTimezone = user.timezone;
     final initialSchoolName = user.schoolName ?? authProvider.activeSchoolName;
     final selectedSchools = initialSchoolName
         .split(',')
@@ -472,6 +475,109 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                       prefixIcon: Icon(Icons.home_outlined),
                     ),
                   ),
+                  SizedBox(height: 16.h),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(12.r),
+                    onTap: isSaving
+                        ? null
+                        : () {
+                            CityPickerSheet.show(
+                              context: context,
+                              initialCity: cityController.text,
+                              onCitySelected: (loc) {
+                                setDialogState(() {
+                                  cityController.text = loc.name;
+                                  selectedTimezone = loc.timezone;
+                                });
+                              },
+                            );
+                          },
+                    child: IgnorePointer(
+                      child: TextField(
+                        controller: cityController,
+                        enabled: !isSaving,
+                        decoration: InputDecoration(
+                          labelText: 'Tempat Tinggal (Kota / Kabupaten)',
+                          hintText: 'Pilih kota domisili...',
+                          prefixIcon: const Icon(Icons.location_city_outlined),
+                          suffixIcon: cityController.text.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear, size: 18),
+                                  onPressed: () {
+                                    setDialogState(() {
+                                      cityController.clear();
+                                    });
+                                  },
+                                )
+                              : const Icon(Icons.arrow_drop_down),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.schedule_outlined,
+                            size: 16.r,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          SizedBox(width: 6.w),
+                          Text(
+                            'Zona Waktu Personal',
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            'Auto-sync dari kota',
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8.h),
+                      Wrap(
+                        spacing: 8.w,
+                        children: ['WIB', 'WITA', 'WIT'].map((tz) {
+                          final isSelected = selectedTimezone == tz;
+                          return ChoiceChip(
+                            label: Text(
+                              '$tz (${tz == 'WIB' ? 'UTC+7' : tz == 'WITA' ? 'UTC+8' : 'UTC+9'})',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            selected: isSelected,
+                            selectedColor: const Color(0xFF2563EB),
+                            onSelected: isSaving
+                                ? null
+                                : (selected) {
+                                    if (selected) {
+                                      setDialogState(() {
+                                        selectedTimezone = tz;
+                                      });
+                                    }
+                                  },
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
                   SizedBox(height: 28.h),
 
                   ElevatedButton(
@@ -558,6 +664,11 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               position: posController.text.trim(),
                               phoneNumber: phoneController.text.trim(),
                               address: addrController.text.trim(),
+                              city: cityController.text.trim().isEmpty
+                                  ? null
+                                  : cityController.text.trim(),
+                              clearCity: cityController.text.trim().isEmpty,
+                              timezone: selectedTimezone,
                               photoUrl: uploadedPhotoUrl,
                               schoolName: selectedSchools.isEmpty
                                   ? authProvider.activeSchoolName
@@ -2027,6 +2138,20 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                           Icons.home_outlined,
                           'Alamat Lengkap',
                           teacher.address.isNotEmpty ? teacher.address : (currentUser.address ?? 'Belum Diisi'),
+                        ),
+                        Divider(height: 1, color: dividerColor),
+                        _buildProfileDetailItem(
+                          Icons.location_city_outlined,
+                          'Tempat Tinggal',
+                          currentUser.city?.isNotEmpty == true
+                              ? currentUser.city!
+                              : 'Belum Diisi',
+                        ),
+                        Divider(height: 1, color: dividerColor),
+                        _buildProfileDetailItem(
+                          Icons.schedule_outlined,
+                          'Zona Waktu Personal',
+                          '${currentUser.timezone} (${AppHelper.getTimezoneLabel(currentUser.timezone)})',
                         ),
                       ],
                     ),

@@ -629,6 +629,8 @@ class SupabaseAuthRepository implements AuthRepository {
         'address': user.address,
         'photo_url': validPhotoUrl,
         'nip': user.nip,
+        'city': user.city,
+        'timezone': user.timezone,
       };
 
       if (user.schoolName != null && user.schoolName!.isNotEmpty) {
@@ -636,6 +638,13 @@ class SupabaseAuthRepository implements AuthRepository {
       }
 
       await _supabase.from('users').update(updatePayload).eq('id', user.id);
+
+      try {
+        await _supabase.from('profiles').update({
+          'address_city': user.city,
+          'timezone': user.timezone,
+        }).eq('id', user.id);
+      } catch (_) {}
 
       // Invalidate old caches
       await CacheService().remove('user_profile_${user.id}');

@@ -28,7 +28,7 @@ class GuruJadwalBulanIniScreen extends StatefulWidget {
 
 class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
   late DateTime _currentMonth;
-  String _selectedFilter = 'all'; // 'all', 'unfilled', 'filled'
+  String _selectedFilter = 'unfilled'; // 'unfilled', 'filled'
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _isLoading = false;
@@ -551,28 +551,27 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
 
         SizedBox(height: 12.h),
 
-        // Filter Chips Row
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _buildFilterChip('all', 'Semua ($total)', isDark),
-              SizedBox(width: 8.w),
-              _buildFilterChip(
+        // Filter Chips Row (Belum Diisi & Sudah Terisi)
+        Row(
+          children: [
+            Expanded(
+              child: _buildFilterChip(
                 'unfilled',
                 'Belum Diisi ($unfilled)',
                 isDark,
                 color: const Color(0xFFF59E0B),
               ),
-              SizedBox(width: 8.w),
-              _buildFilterChip(
+            ),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: _buildFilterChip(
                 'filled',
                 'Sudah Terisi ($filled)',
                 isDark,
                 color: const Color(0xFF10B981),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
     );
@@ -591,7 +590,8 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
       onTap: () => setState(() => _selectedFilter = key),
       borderRadius: BorderRadius.circular(20.r),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 7.h),
+        alignment: Alignment.center,
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
         decoration: BoxDecoration(
           color: isSelected
               ? activeColor.withValues(alpha: isDark ? 0.25 : 0.15)
@@ -606,6 +606,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
         ),
         child: Text(
           label,
+          textAlign: TextAlign.center,
           style: GoogleFonts.hankenGrotesk(
             fontSize: 12.sp,
             fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
@@ -655,67 +656,9 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
     ).format(group.date);
 
     final isFilled = matchingJournal != null;
-    Color statusBg;
-    Color statusText;
-    String statusTitle;
-    IconData statusIcon;
-
-    if (isFilled) {
-      if (matchingJournal.isTeacherAbsence) {
-        if (matchingJournal.status == 'verified') {
-          statusBg = const Color(
-            0xFF10B981,
-          ).withValues(alpha: isDark ? 0.2 : 0.12);
-          statusText = const Color(0xFF10B981);
-          statusTitle = matchingJournal.isTeacherSick
-              ? 'Sakit (Disetujui)'
-              : 'Izin (Disetujui)';
-          statusIcon = Icons.check_circle_rounded;
-        } else if (matchingJournal.status == 'rejected') {
-          statusBg = Colors.red.withValues(alpha: isDark ? 0.2 : 0.12);
-          statusText = Colors.red;
-          statusTitle = 'Surat Ditolak';
-          statusIcon = Icons.cancel_rounded;
-        } else {
-          statusBg = const Color(
-            0xFFF59E0B,
-          ).withValues(alpha: isDark ? 0.2 : 0.12);
-          statusText = const Color(0xFFF59E0B);
-          statusTitle = matchingJournal.isTeacherSick
-              ? 'Sakit (Menunggu)'
-              : 'Izin (Menunggu)';
-          statusIcon = Icons.access_time_rounded;
-        }
-      } else if (matchingJournal.status == 'verified') {
-        statusBg = const Color(
-          0xFF10B981,
-        ).withValues(alpha: isDark ? 0.2 : 0.12);
-        statusText = const Color(0xFF10B981);
-        statusTitle = 'Sudah Diisi (Disetujui)';
-        statusIcon = Icons.check_circle_rounded;
-      } else if (matchingJournal.status == 'rejected') {
-        statusBg = Colors.red.withValues(alpha: isDark ? 0.2 : 0.12);
-        statusText = Colors.red;
-        statusTitle = 'Perlu Revisi';
-        statusIcon = Icons.error_rounded;
-      } else {
-        statusBg = const Color(
-          0xFF3B82F6,
-        ).withValues(alpha: isDark ? 0.2 : 0.12);
-        statusText = const Color(0xFF3B82F6);
-        statusTitle = 'Sudah Diisi (Menunggu)';
-        statusIcon = Icons.hourglass_top_rounded;
-      }
-    } else {
-      statusBg = const Color(0xFFF59E0B).withValues(alpha: isDark ? 0.2 : 0.12);
-      statusText = const Color(0xFFF59E0B);
-      statusTitle = 'Belum Diisi';
-      statusIcon = Icons.pending_actions_rounded;
-    }
-
     final dateStr = DateFormat('yyyy-MM-dd').format(group.date);
 
-    Widget? actionButton;
+    Widget actionButton;
     if (isFilled) {
       actionButton = InkWell(
         onTap: () async {
@@ -730,7 +673,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
         },
         borderRadius: BorderRadius.circular(8.r),
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
           decoration: BoxDecoration(
             color:
                 (matchingJournal.status == 'rejected'
@@ -739,32 +682,15 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
                     .withValues(alpha: isDark ? 0.2 : 0.1),
             borderRadius: BorderRadius.circular(8.r),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                matchingJournal.status == 'rejected'
-                    ? Icons.edit_note_rounded
-                    : Icons.visibility_rounded,
-                size: 13.sp,
-                color: matchingJournal.status == 'rejected'
-                    ? Colors.red
-                    : const Color(0xFF2563EB),
-              ),
-              SizedBox(width: 4.w),
-              Text(
-                matchingJournal.status == 'rejected'
-                    ? 'Revisi Jurnal'
-                    : 'Lihat Jurnal',
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 11.5.sp,
-                  fontWeight: FontWeight.w700,
-                  color: matchingJournal.status == 'rejected'
-                      ? Colors.red
-                      : const Color(0xFF2563EB),
-                ),
-              ),
-            ],
+          child: Text(
+            matchingJournal.status == 'rejected' ? 'Revisi' : 'Lihat',
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 11.5.sp,
+              fontWeight: FontWeight.w700,
+              color: matchingJournal.status == 'rejected'
+                  ? Colors.red
+                  : const Color(0xFF2563EB),
+            ),
           ),
         ),
       );
@@ -776,46 +702,53 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
         group.date.month,
         group.date.day,
       );
-      if (!groupDateOnly.isAfter(todayOnly)) {
-        actionButton = InkWell(
-          onTap: () async {
-            await context.push(
-              '/guru/journal-form?scheduleId=${schedule.id}&date=$dateStr',
+      final isFuture = groupDateOnly.isAfter(todayOnly);
+
+      actionButton = InkWell(
+        onTap: () async {
+          if (isFuture) {
+            AppHelper.showSnackBar(
+              context,
+              'Belum bisa mengisi jurnal mengajar, tunggu sampai hari tersebut tiba.',
+              isError: false,
             );
-            if (mounted) _loadData();
-          },
-          borderRadius: BorderRadius.circular(8.r),
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 11.w, vertical: 6.h),
-            decoration: BoxDecoration(
-              color: const Color(0xFF2563EB),
-              borderRadius: BorderRadius.circular(8.r),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF2563EB).withValues(alpha: 0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.add_task_rounded, size: 13.sp, color: Colors.white),
-                SizedBox(width: 4.w),
-                Text(
-                  'Isi Jurnal',
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 11.5.sp,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
+            return;
+          }
+          await context.push(
+            '/guru/journal-form?scheduleId=${schedule.id}&date=$dateStr',
+          );
+          if (mounted) _loadData();
+        },
+        borderRadius: BorderRadius.circular(8.r),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
+          decoration: BoxDecoration(
+            color: isFuture
+                ? (isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0))
+                : const Color(0xFF2563EB),
+            borderRadius: BorderRadius.circular(8.r),
+            boxShadow: isFuture
+                ? null
+                : [
+                    BoxShadow(
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+          ),
+          child: Text(
+            'Isi',
+            style: GoogleFonts.hankenGrotesk(
+              fontSize: 11.5.sp,
+              fontWeight: FontWeight.w800,
+              color: isFuture
+                  ? (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
+                  : Colors.white,
             ),
           ),
-        );
-      }
+        ),
+      );
     }
 
     return InkWell(
@@ -870,7 +803,7 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
           ],
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Left content: Date, Subject, Class & Hours
             Expanded(
@@ -982,39 +915,8 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
               ),
             ),
             SizedBox(width: 10.w),
-            // Right content: Status badge at top, and Action button directly below it!
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                  decoration: BoxDecoration(
-                    color: statusBg,
-                    borderRadius: BorderRadius.circular(6.r),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(statusIcon, size: 12.sp, color: statusText),
-                      SizedBox(width: 4.w),
-                      Text(
-                        statusTitle,
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 10.5.sp,
-                          fontWeight: FontWeight.w800,
-                          color: statusText,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (actionButton != null) ...[
-                  SizedBox(height: 8.h),
-                  actionButton,
-                ],
-              ],
-            ),
+            // Right content: Action button (Isi jika belum / Lihat jika sudah)
+            actionButton,
           ],
         ),
       ),

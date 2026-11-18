@@ -507,79 +507,82 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                       ),
                               ),
-                              SizedBox(height: kIsWeb ? 14 : 24.h),
+                              // Google login disembunyikan sementara
+                              if (const bool.fromEnvironment('ENABLE_GOOGLE_LOGIN', defaultValue: false)) ...[
+                                SizedBox(height: kIsWeb ? 14 : 24.h),
 
-                              // Divider
-                              Row(
-                                children: [
-                                  const Expanded(
-                                    child: Divider(
-                                      color: Color(0xFFF1F5F9),
-                                      thickness: 1.5,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 12.w,
-                                    ),
-                                    child: Text(
-                                      'Atau masuk dengan',
-                                      style: TextStyle(
-                                        fontSize: kIsWeb ? 12.5 : 13.sp,
-                                        color: const Color(0xFF94A3B8),
-                                        fontWeight: FontWeight.w500,
+                                // Divider
+                                Row(
+                                  children: [
+                                    const Expanded(
+                                      child: Divider(
+                                        color: Color(0xFFF1F5F9),
+                                        thickness: 1.5,
                                       ),
                                     ),
-                                  ),
-                                  const Expanded(
-                                    child: Divider(
-                                      color: Color(0xFFF1F5F9),
-                                      thickness: 1.5,
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 12.w,
+                                      ),
+                                      child: Text(
+                                        'Atau masuk dengan',
+                                        style: TextStyle(
+                                          fontSize: kIsWeb ? 12.5 : 13.sp,
+                                          color: const Color(0xFF94A3B8),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: kIsWeb ? 12 : 20.h),
-
-                              // Google Social Login
-                              OutlinedButton(
-                                onPressed: isLoading
-                                    ? null
-                                    : _handleGoogleLogin,
-                                style: OutlinedButton.styleFrom(
-                                  side: BorderSide(
-                                    color: Theme.of(context).colorScheme.outlineVariant,
-                                    width: 1.5,
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: kIsWeb ? 8 : 10.h,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16.r),
-                                  ),
-                                  backgroundColor: Theme.of(context).colorScheme.surface,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Image.asset(
-                                      'assets/google_logo.png',
-                                      height: 20,
-                                      width: 20,
-                                      fit: BoxFit.contain,
-                                    ),
-                                    SizedBox(width: 12.w),
-                                    Text(
-                                      'Google',
-                                      style: TextStyle(
-                                        fontSize: kIsWeb ? 14.5 : 15.sp,
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.onSurface,
+                                    const Expanded(
+                                      child: Divider(
+                                        color: Color(0xFFF1F5F9),
+                                        thickness: 1.5,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
+                                SizedBox(height: kIsWeb ? 12 : 20.h),
+
+                                // Google Social Login
+                                OutlinedButton(
+                                  onPressed: isLoading
+                                      ? null
+                                      : _handleGoogleLogin,
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(
+                                      color: Theme.of(context).colorScheme.outlineVariant,
+                                      width: 1.5,
+                                    ),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: kIsWeb ? 8 : 10.h,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                    ),
+                                    backgroundColor: Theme.of(context).colorScheme.surface,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Image.asset(
+                                        'assets/google_logo.png',
+                                        height: 20,
+                                        width: 20,
+                                        fit: BoxFit.contain,
+                                      ),
+                                      SizedBox(width: 12.w),
+                                      Text(
+                                        'Google',
+                                        style: TextStyle(
+                                          fontSize: kIsWeb ? 14.5 : 15.sp,
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                               SizedBox(height: kIsWeb ? 14 : 24.h),
 
                               // Register Link
