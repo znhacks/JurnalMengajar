@@ -51,6 +51,31 @@ class AppHelper {
     }
   }
 
+  /// Membersihkan nama provinsi dari format dwibahasa di database (misal: "East Java (Jawa Timur)" -> "Jawa Timur")
+  static String cleanProvinceName(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return '';
+    final trimmed = raw.trim();
+    final parenMatch = RegExp(r'\((.+?)\)').firstMatch(trimmed);
+    if (parenMatch != null) {
+      final inside = parenMatch.group(1)?.trim() ?? '';
+      if (inside.isNotEmpty) return inside;
+    }
+    if (trimmed == 'Sumatra Utara') return 'Sumatera Utara';
+    if (trimmed == 'Sumatra Barat') return 'Sumatera Barat';
+    if (trimmed == 'Sumatra Selatan') return 'Sumatera Selatan';
+    return trimmed;
+  }
+
+  /// Membersihkan nama kota agar konsisten dalam penulisan
+  static String cleanCityName(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return '';
+    final trimmed = raw.trim();
+    if (trimmed == 'Amlapura city') return 'Amlapura';
+    if (trimmed == 'City of Balikpapan') return 'Kota Balikpapan';
+    if (trimmed == 'Jambi City') return 'Kota Jambi';
+    return trimmed;
+  }
+
   /// Otomatis mendeteksi zona waktu (WIB, WITA, WIT) berdasarkan nama kota/kabupaten atau provinsi
   static String detectTimezoneFromCity(String? city, {String? province}) {
     final search = '${province ?? ''} ${city ?? ''}'.toLowerCase();

@@ -18,8 +18,12 @@ class CityLocation {
   });
 
   factory CityLocation.fromJson(Map<String, dynamic> json) {
-    final cityName = json['city']?.toString() ?? json['name']?.toString() ?? '';
-    final provName = json['province']?.toString() ?? json['state_name']?.toString() ?? '';
+    final cityName = AppHelper.cleanCityName(
+      json['city']?.toString() ?? json['name']?.toString() ?? '',
+    );
+    final provName = AppHelper.cleanProvinceName(
+      json['province']?.toString() ?? json['state_name']?.toString() ?? '',
+    );
     final rawTz = json['timezone']?.toString().toUpperCase().trim();
     final tz = (rawTz == 'WIB' || rawTz == 'WITA' || rawTz == 'WIT')
         ? rawTz!
@@ -33,7 +37,7 @@ class CityLocation {
   }
 
   factory CityLocation.fromMap(Map<String, dynamic> map) {
-    final cityName = map['name']?.toString() ?? '';
+    final cityName = AppHelper.cleanCityName(map['name']?.toString() ?? '');
     String provName = '';
     final stateData = map['states'];
     if (stateData is Map) {
@@ -41,6 +45,7 @@ class CityLocation {
     } else if (map['state_name'] != null) {
       provName = map['state_name'].toString();
     }
+    provName = AppHelper.cleanProvinceName(provName);
 
     final tz = AppHelper.detectTimezoneFromCity(cityName, province: provName);
     return CityLocation(

@@ -497,8 +497,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         controller: cityController,
                         enabled: !isSaving,
                         decoration: InputDecoration(
-                          labelText: 'Tempat Tinggal (Kota / Kabupaten)',
-                          hintText: 'Pilih kota domisili...',
+                          labelText: 'Kota Domisili',
+                          hintText: 'Pilih kota tempat tinggal',
                           prefixIcon: const Icon(Icons.location_city_outlined),
                           suffixIcon: cityController.text.isNotEmpty
                               ? IconButton(
@@ -506,6 +506,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                   onPressed: () {
                                     setDialogState(() {
                                       cityController.clear();
+                                      selectedTimezone = 'WIB';
                                     });
                                   },
                                 )
@@ -515,68 +516,70 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     ),
                   ),
                   SizedBox(height: 16.h),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.schedule_outlined,
-                            size: 16.r,
-                            color: Theme.of(context).colorScheme.primary,
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF1E293B)
+                          : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12.r),
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.schedule_outlined,
+                          size: 20.sp,
+                          color: const Color(0xFF2563EB),
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Zona Waktu',
+                                style: TextStyle(
+                                  fontSize: 11.5.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? const Color(0xFF94A3B8)
+                                      : const Color(0xFF64748B),
+                                ),
+                              ),
+                              SizedBox(height: 2.h),
+                              Text(
+                                AppHelper.getTimezoneLabel(selectedTimezone),
+                                style: TextStyle(
+                                  fontSize: 13.5.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
                           ),
-                          SizedBox(width: 6.w),
-                          Text(
-                            'Zona Waktu Personal',
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
+                        ),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6.r),
                           ),
-                          const Spacer(),
-                          Text(
-                            'Auto-sync dari kota',
+                          child: Text(
+                            'Otomatis',
                             style: TextStyle(
                               fontSize: 11.sp,
-                              color: Colors.grey[500],
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF2563EB),
                             ),
                           ),
-                        ],
-                      ),
-                      SizedBox(height: 8.h),
-                      Wrap(
-                        spacing: 8.w,
-                        children: ['WIB', 'WITA', 'WIT'].map((tz) {
-                          final isSelected = selectedTimezone == tz;
-                          return ChoiceChip(
-                            label: Text(
-                              '$tz (${tz == 'WIB' ? 'UTC+7' : tz == 'WITA' ? 'UTC+8' : 'UTC+9'})',
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                                color: isSelected
-                                    ? Colors.white
-                                    : Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                            selected: isSelected,
-                            selectedColor: const Color(0xFF2563EB),
-                            onSelected: isSaving
-                                ? null
-                                : (selected) {
-                                    if (selected) {
-                                      setDialogState(() {
-                                        selectedTimezone = tz;
-                                      });
-                                    }
-                                  },
-                          );
-                        }).toList(),
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                   SizedBox(height: 28.h),
 
@@ -2142,16 +2145,16 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         Divider(height: 1, color: dividerColor),
                         _buildProfileDetailItem(
                           Icons.location_city_outlined,
-                          'Tempat Tinggal',
+                          'Kota Domisili',
                           currentUser.city?.isNotEmpty == true
                               ? currentUser.city!
-                              : 'Belum Diisi',
+                              : 'Belum diisi',
                         ),
                         Divider(height: 1, color: dividerColor),
                         _buildProfileDetailItem(
                           Icons.schedule_outlined,
-                          'Zona Waktu Personal',
-                          '${currentUser.timezone} (${AppHelper.getTimezoneLabel(currentUser.timezone)})',
+                          'Zona Waktu',
+                          AppHelper.getTimezoneLabel(currentUser.timezone),
                         ),
                       ],
                     ),
