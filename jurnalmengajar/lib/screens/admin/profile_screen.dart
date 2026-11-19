@@ -150,107 +150,118 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
             );
           }
 
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-              top: 12.h,
-              left: 24.w,
-              right: 24.w,
+          final screenHeight = MediaQuery.of(context).size.height;
+          return Container(
+            constraints: BoxConstraints(
+              maxHeight: screenHeight * 0.85,
             ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40.w,
-                      height: 4.h,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF475569)
-                            : Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2.r),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(
-                    'Edit Profil Admin',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 20.h),
-
-                  // Avatar edit
-                  Center(
-                    child: Stack(
-                      children: [
-                        Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(24.w, 12.h, 24.w, 20.h),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 36.w,
+                          height: 4.h,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFFE2E8F0),
-                              width: 3.r,
-                            ),
-                          ),
-                          child: CircleAvatar(
-                            radius: 48.r,
-                            backgroundColor: const Color(0xFFF1F5F9),
-                            backgroundImage: tempImageBytes != null
-                                ? MemoryImage(tempImageBytes!)
-                                : (user.photoUrl != null &&
-                                              user.photoUrl!.startsWith('http')
-                                          ? CachedNetworkImageProvider(
-                                              user.photoUrl!,
-                                            )
-                                          : null)
-                                      as ImageProvider?,
-                            onBackgroundImageError: (exception, stackTrace) {
-                              debugPrint('Error loading admin edit avatar: $exception');
-                            },
-                            child:
-                                tempImageBytes == null &&
-                                    (user.photoUrl == null ||
-                                        !user.photoUrl!.startsWith('http'))
-                                ? Icon(
-                                    Icons.person,
-                                    size: 48.r,
-                                    color: Colors.grey[400],
-                                  )
-                                : null,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF475569)
+                                : const Color(0xFFCBD5E1),
+                            borderRadius: BorderRadius.circular(2.r),
                           ),
                         ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            child: GestureDetector(
-                              onTap: showImageSourceSheet,
-                              child: Container(
-                                padding: EdgeInsets.all(8.w),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF2563EB),
-                                  shape: BoxShape.circle,
+                      ),
+                      SizedBox(height: 14.h),
+                      Text(
+                        'Edit Profil Admin',
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 17.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 16.h),
+
+                      // Avatar edit
+                      Center(
+                        child: Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0xFFE2E8F0),
+                                  width: 2.5.r,
                                 ),
-                                child: Icon(
-                                  Icons.camera_alt,
-                                  size: 16.r,
-                                  color: Colors.white,
+                              ),
+                              child: CircleAvatar(
+                                radius: 40.r,
+                                backgroundColor: const Color(0xFFF1F5F9),
+                                backgroundImage: tempImageBytes != null
+                                    ? MemoryImage(tempImageBytes!)
+                                    : (user.photoUrl != null &&
+                                                  user.photoUrl!.startsWith('http')
+                                              ? CachedNetworkImageProvider(
+                                                  user.photoUrl!,
+                                                )
+                                              : null)
+                                          as ImageProvider?,
+                                onBackgroundImageError: (exception, stackTrace) {
+                                  debugPrint(
+                                    'Error loading admin edit avatar: $exception',
+                                  );
+                                },
+                                child:
+                                    tempImageBytes == null &&
+                                        (user.photoUrl == null ||
+                                            !user.photoUrl!.startsWith('http'))
+                                    ? Icon(
+                                        Icons.person,
+                                        size: 40.r,
+                                        color: Colors.grey[400],
+                                      )
+                                    : null,
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: MouseRegion(
+                                cursor: SystemMouseCursors.click,
+                                child: GestureDetector(
+                                  onTap: showImageSourceSheet,
+                                  child: Container(
+                                    padding: EdgeInsets.all(7.w),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF2563EB),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.camera_alt,
+                                      size: 14.r,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 24.h),
+                      ),
+                      SizedBox(height: 18.h),
 
                   // Fields
                   TextField(
@@ -337,7 +348,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         controller: cityController,
                         enabled: !isSaving,
                         decoration: InputDecoration(
-                          labelText: 'Kota Domisili',
+                          labelText: 'Tempat Tinggal',
                           hintText: 'Pilih kota tempat tinggal',
                           prefixIcon: const Icon(Icons.location_city_outlined),
                           suffixIcon: cityController.text.isNotEmpty
@@ -357,7 +368,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   ),
                   SizedBox(height: 16.h),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 14.w,
+                      vertical: 12.h,
+                    ),
                     decoration: BoxDecoration(
                       color: Theme.of(context).brightness == Brightness.dark
                           ? const Color(0xFF1E293B)
@@ -386,7 +400,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                 style: TextStyle(
                                   fontSize: 11.5.sp,
                                   fontWeight: FontWeight.w500,
-                                  color: Theme.of(context).brightness == Brightness.dark
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
                                       ? const Color(0xFF94A3B8)
                                       : const Color(0xFF64748B),
                                 ),
@@ -397,16 +413,23 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                 style: TextStyle(
                                   fontSize: 13.5.sp,
                                   fontWeight: FontWeight.w600,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                 ),
                               ),
                             ],
                           ),
                         ),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 4.h,
+                          ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                            color: const Color(
+                              0xFF2563EB,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6.r),
                           ),
                           child: Text(
@@ -572,12 +595,14 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                           )
                         : const Text('Simpan'),
                   ),
-                  SizedBox(height: 24.h),
+                  SizedBox(height: 16.h),
                 ],
               ),
             ),
-          );
-        },
+          ),
+        ),
+      );
+    },
       ),
     );
   }
@@ -777,7 +802,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                             'http',
                                           )
                                       ? (exception, stackTrace) {
-                                          debugPrint('Error loading admin avatar: $exception');
+                                          debugPrint(
+                                            'Error loading admin avatar: $exception',
+                                          );
                                         }
                                       : null,
                                   child:
@@ -1000,7 +1027,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         _buildProfileDetailItem(
                           context,
                           Icons.location_city_outlined,
-                          'Kota Domisili',
+                          'Tempat Tinggal',
                           currentUser.city?.isNotEmpty == true
                               ? currentUser.city!
                               : 'Belum diisi',

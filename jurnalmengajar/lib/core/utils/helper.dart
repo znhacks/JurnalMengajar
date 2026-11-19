@@ -28,27 +28,115 @@ class AppHelper {
   static const List<String> supportedTimezones = ['WIB', 'WITA', 'WIT'];
 
   static String getTimezoneLabel(String? timezone) {
-    switch (timezone?.toUpperCase()) {
-      case 'WITA':
-        return 'WITA (UTC+8) - Waktu Indonesia Tengah';
-      case 'WIT':
-        return 'WIT (UTC+9) - Waktu Indonesia Timur';
-      case 'WIB':
-      default:
-        return 'WIB (UTC+7) - Waktu Indonesia Barat';
+    final offset = getTimezoneOffsetHours(timezone);
+    if (offset == 8) {
+      return 'WITA';
+    } else if (offset == 9) {
+      return 'WIT';
+    } else if (offset == 7) {
+      return 'WIB';
+    } else {
+      final sign = offset >= 0 ? '+' : '';
+      return 'UTC$sign$offset';
     }
   }
 
   static String getTimezoneShortLabel(String? timezone) {
-    switch (timezone?.toUpperCase()) {
-      case 'WITA':
-        return 'WITA (UTC+8)';
-      case 'WIT':
-        return 'WIT (UTC+9)';
-      case 'WIB':
-      default:
-        return 'WIB (UTC+7)';
+    final offset = getTimezoneOffsetHours(timezone);
+    if (offset == 8) {
+      return 'WITA';
+    } else if (offset == 9) {
+      return 'WIT';
+    } else if (offset == 7) {
+      return 'WIB';
+    } else {
+      final sign = offset >= 0 ? '+' : '';
+      return 'UTC$sign$offset';
     }
+  }
+
+  /// Menghitung offset jam zona waktu (fleksibel: mendukung WIB/WITA/WIT, UTC/GMT offsets, nama IANA, dll.)
+  static int getTimezoneOffsetHours(String? timezone) {
+    if (timezone == null || timezone.trim().isEmpty) return 7;
+    final tz = timezone.trim().toUpperCase();
+
+    // 1. Pencocokan langsung kode dan kota utama IANA
+    if (tz == 'WIB' || tz.contains('ASIA/JAKARTA') || tz.contains('ASIA/PONTIANAK')) return 7;
+    if (tz == 'WITA' || tz.contains('ASIA/MAKASSAR') || tz.contains('ASIA/UJUNG_PANDANG') || tz.contains('ASIA/BALI') || tz.contains('ASIA/MANADO')) return 8;
+    if (tz == 'WIT' || tz.contains('ASIA/JAYAPURA')) return 9;
+
+    // 2. Format offset eksplisit (e.g. UTC+7, UTC+08:00, GMT+9, +07:00, +8, -5)
+    final match = RegExp(r'(?:UTC|GMT)?\s*([+-])\s*(\d{1,2})(?::(\d{2}))?').firstMatch(tz);
+    if (match != null) {
+      final sign = match.group(1) == '-' ? -1 : 1;
+      final hours = int.tryParse(match.group(2) ?? '') ?? 7;
+      return sign * hours;
+    }
+
+    // 3. Fallback pencarian kata kunci
+    if (tz.contains('WITA') || tz.contains('UTC+8') || tz.contains('GMT+8')) return 8;
+    if (tz.contains('WIT') || tz.contains('UTC+9') || tz.contains('GMT+9')) return 9;
+    return 7;
+  }
+
+  /// Mengonversi format jam 'HH:mm' atau 'HH.mm' dari satu zona waktu ke zona waktu lain
+  static String convertTimeString(String timeStr, {required String fromTz, required String toTz}) {
+    if (timeStr.isEmpty) return timeStr;
+    final normalizedFrom = fromTz.trim();
+    final normalizedTo = toTz.trim();
+    if (normalizedFrom.toUpperCase() == normalizedTo.toUpperCase()) return timeStr;
+
+    final separator = timeStr.contains(':') ? ':' : (timeStr.contains('.') ? '.' : null);
+    if (separator == null) return timeStr;
+
+    final parts = timeStr.split(separator);
+    if (parts.length != 2) return timeStr;
+
+    final hour = int.tryParse(parts[0].trim());
+    final minute = int.tryParse(parts[1].trim());
+    if (hour == null || minute == null) return timeStr;
+
+    final diff = getTimezoneOffsetHours(normalizedTo) - getTimezoneOffsetHours(normalizedFrom);
+    var newHour = (hour + diff) % 24;
+    if (newHour < 0) newHour += 24;
+
+    final hStr = newHour.toString().padLeft(2, '0');
+    final mStr = minute.toString().padLeft(2, '0');
+    return '$hStr$separator$mStr';
+  }
+
+  /// Format rentang jam jadwal dengan memperhitungkan zona waktu pengguna vs zona waktu sekolah
+  static String formatScheduleTimeRange({
+    required String hrStart,
+    required String hrEnd,
+    required String schoolTz,
+    String? userTz,
+  }) {
+    if (hrStart.isEmpty) return '';
+
+    final sOffset = getTimezoneOffsetHours(schoolTz);
+    final uOffset = (userTz == null || userTz.trim().isEmpty) ? sOffset : getTimezoneOffsetHours(userTz);
+
+    final uShort = (userTz == null || userTz.trim().isEmpty)
+        ? getTimezoneShortLabel(schoolTz)
+        : getTimezoneShortLabel(userTz);
+
+    // Jika timezone user sama dengan sekolah (atau offset selisih 0)
+    if (sOffset == uOffset) {
+      if (hrEnd.isNotEmpty) {
+        return '$hrStart - $hrEnd $uShort';
+      }
+      return '$hrStart $uShort';
+    }
+
+    // Jika zona waktu tempat tinggal user berbeda dari zona sekolah:
+    final convertedStart = convertTimeString(hrStart, fromTz: schoolTz, toTz: userTz!);
+    final convertedEnd = hrEnd.isNotEmpty ? convertTimeString(hrEnd, fromTz: schoolTz, toTz: userTz) : '';
+
+    if (convertedEnd.isNotEmpty) {
+      return '$convertedStart - $convertedEnd $uShort';
+    }
+    return '$convertedStart $uShort';
   }
 
   /// Membersihkan nama provinsi dari format dwibahasa di database (misal: "East Java (Jawa Timur)" -> "Jawa Timur")
@@ -165,17 +253,7 @@ class AppHelper {
     return 'WIB';
   }
 
-  static int getTimezoneOffset(String? timezone) {
-    switch (timezone?.toUpperCase()) {
-      case 'WITA':
-        return 8;
-      case 'WIT':
-        return 9;
-      case 'WIB':
-      default:
-        return 7;
-    }
-  }
+  static int getTimezoneOffset(String? timezone) => getTimezoneOffsetHours(timezone);
 
   static DateTime nowInTimezone(String? timezone) {
     final offset = getTimezoneOffset(timezone);

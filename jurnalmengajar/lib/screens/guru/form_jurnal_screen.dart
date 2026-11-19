@@ -1411,9 +1411,22 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
             .where((h) => groupTeachingHours.contains(h.teachingHour))
             .toList()
           ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
-    final jamTimeRange = matchedJamHours.isNotEmpty
-        ? '${matchedJamHours.first.startTime} - ${matchedJamHours.last.endTime}'
-        : '${hr.startTime} - ${hr.endTime}';
+    final hrStart = matchedJamHours.isNotEmpty
+        ? matchedJamHours.first.startTime
+        : hr.startTime;
+    final hrEnd = matchedJamHours.isNotEmpty
+        ? matchedJamHours.last.endTime
+        : hr.endTime;
+
+    final authProv = Provider.of<AuthProvider>(context, listen: false);
+    final schoolTz = authProv.activeSchool?.timezone ?? 'WIB';
+    final userTz = authProv.currentUser?.timezone;
+    final jamTimeRange = AppHelper.formatScheduleTimeRange(
+      hrStart: hrStart,
+      hrEnd: hrEnd,
+      schoolTz: schoolTz,
+      userTz: userTz,
+    );
 
     final isLoading = journalProvider.isLoading;
     final isBusy = isLoading || _isSaving;

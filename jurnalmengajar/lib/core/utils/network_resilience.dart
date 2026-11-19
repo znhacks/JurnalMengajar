@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import '../services/connectivity_service.dart';
 
 /// Helper utilitas untuk memastikan request jaringan tidak menggantung tanpa batas
 /// saat sinyal internet lemah atau terputus-putus.
@@ -21,13 +22,15 @@ class NetworkResilience {
     String operationName = 'NetworkOperation',
   }) async {
     try {
-      return await networkTask().timeout(
+      final result = await networkTask().timeout(
         timeout,
         onTimeout: () {
           debugPrint('[NetworkResilience] TIMEOUT ($timeout) reached for $operationName (Weak Internet Signal)');
           throw TimeoutException('Koneksi internet sangat lambat atau tidak stabil.', timeout);
         },
       );
+      ConnectivityService.instance.reportOnline();
+      return result;
     } catch (e) {
       final errStr = e.toString().toLowerCase();
       final isNetworkIssue = e is TimeoutException ||
@@ -50,6 +53,7 @@ class NetworkResilience {
           errStr.contains('koneksi internet sangat lambat');
 
       if (isNetworkIssue) {
+        ConnectivityService.instance.reportOffline();
         debugPrint('[NetworkResilience] Weak internet / offline detected in $operationName: $e');
         if (fallback != null) {
           debugPrint('[NetworkResilience] Using local cached fallback for $operationName');

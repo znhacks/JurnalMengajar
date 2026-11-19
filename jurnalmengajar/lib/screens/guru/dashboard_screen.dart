@@ -2011,6 +2011,21 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         );
 
     final hoursStr = AppHelper.formatTeachingHours(scheduleGroup.teachingHours);
+    final matchedHours = master.hours
+        .where((h) => scheduleGroup.teachingHours.contains(h.teachingHour))
+        .toList()
+      ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
+    final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '';
+    final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '';
+    final authProv = Provider.of<AuthProvider>(context, listen: false);
+    final schoolTz = authProv.activeSchool?.timezone ?? 'WIB';
+    final userTz = authProv.currentUser?.timezone;
+    final timeRange = AppHelper.formatScheduleTimeRange(
+      hrStart: hrStart,
+      hrEnd: hrEnd,
+      schoolTz: schoolTz,
+      userTz: userTz,
+    );
 
     JournalModel? matchingJournal;
     if (journalsByScheduleId != null) {
@@ -2103,7 +2118,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          '${cls.name} • Jam Ke-$hoursStr',
+                          '${cls.name} • Jam Ke-$hoursStr${timeRange.isNotEmpty ? ' ($timeRange)' : ''}',
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w800,

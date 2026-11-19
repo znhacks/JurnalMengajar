@@ -2316,17 +2316,17 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     final timezones = [
       {
         'code': 'WIB',
-        'label': 'WIB (UTC+7)',
+        'label': 'WIB',
         'desc': 'Waktu Indonesia Barat (Sumatera, Jawa, Kalbar, Kalteng)',
       },
       {
         'code': 'WITA',
-        'label': 'WITA (UTC+8)',
+        'label': 'WITA',
         'desc': 'Waktu Indonesia Tengah (Sulawesi, Bali, NTB, NTT, Kalsel, Kaltim, Kaltara)',
       },
       {
         'code': 'WIT',
-        'label': 'WIT (UTC+9)',
+        'label': 'WIT',
         'desc': 'Waktu Indonesia Timur (Maluku, Papua)',
       },
     ];

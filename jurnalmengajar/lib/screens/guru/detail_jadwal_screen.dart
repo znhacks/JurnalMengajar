@@ -178,8 +178,17 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
         .where((h) => groupSchedules.map((s) => s.teachingHour).contains(h.teachingHour))
         .toList()
       ..sort((a, b) => a.teachingHour.compareTo(b.teachingHour));
-    final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '00:00';
-    final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '00:00';
+    final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '';
+    final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '';
+    final authProv = Provider.of<AuthProvider>(context, listen: false);
+    final schoolTz = authProv.activeSchool?.timezone ?? 'WIB';
+    final userTz = authProv.currentUser?.timezone;
+    final jamRangeFormatted = AppHelper.formatScheduleTimeRange(
+      hrStart: hrStart,
+      hrEnd: hrEnd,
+      schoolTz: schoolTz,
+      userTz: userTz,
+    );
 
     // Resolve entities
     final teacher = masterProvider.teachers.firstWhere(
@@ -255,7 +264,9 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                           context,
                           Icons.access_time,
                           'Jam Pelajaran',
-                          'Jam Ke-$hoursStr ($hrStart - $hrEnd)',
+                          jamRangeFormatted.isNotEmpty
+                              ? 'Jam Ke-$hoursStr ($jamRangeFormatted)'
+                              : 'Jam Ke-$hoursStr',
                         ),
                         _buildDetailRow(context, Icons.date_range, 'Periode Akademik', period.name),
                         _buildDetailRow(

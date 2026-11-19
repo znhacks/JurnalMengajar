@@ -41,6 +41,8 @@ import '../../widgets/swipe_back_wrapper.dart';
 import '../../widgets/desktop_sidebar_shell.dart';
 
 class AppRouter {
+  static final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
   static CustomTransitionPage<void> _buildCustomTransition(
     BuildContext context,
     GoRouterState state,
@@ -75,6 +77,7 @@ class AppRouter {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     return GoRouter(
+      navigatorKey: rootNavigatorKey,
       initialLocation: '/',
       refreshListenable: authProvider,
       redirect: (context, state) {

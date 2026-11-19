@@ -64,12 +64,21 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
         );
         if (teacher.id.isNotEmpty) {
           final activeSchoolId = authProvider.activeSchoolId;
-          final schedProv = Provider.of<ScheduleProvider>(context, listen: false);
-          final journProv = Provider.of<JournalProvider>(context, listen: false);
+          final schedProv = Provider.of<ScheduleProvider>(
+            context,
+            listen: false,
+          );
+          final journProv = Provider.of<JournalProvider>(
+            context,
+            listen: false,
+          );
           schedProv.setSchoolId(activeSchoolId);
           journProv.setSchoolId(activeSchoolId);
           await Future.wait([
-            warningProvider.loadTeacherWarningLetters(teacher.id, activeSchoolId),
+            warningProvider.loadTeacherWarningLetters(
+              teacher.id,
+              activeSchoolId,
+            ),
             schedProv.loadTeacherSchedules(teacher.id, DateTime.now()),
             journProv.loadTeacherJournals(teacher.id),
           ]);
@@ -80,7 +89,9 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
 
   Future<void> _handleDeleteAccount(UserModel user) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final isSchoolAdmin = user.role == 'admin' || authProvider.userMemberships.any((s) => s.role == 'admin');
+    final isSchoolAdmin =
+        user.role == 'admin' ||
+        authProvider.userMemberships.any((s) => s.role == 'admin');
     if (isSchoolAdmin) {
       AppHelper.showSnackBar(
         context,
@@ -281,105 +292,118 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
             );
           }
 
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-              top: 12.h,
-              left: 24.w,
-              right: 24.w,
+          final screenHeight = MediaQuery.of(context).size.height;
+          return Container(
+            constraints: BoxConstraints(
+              maxHeight: screenHeight * 0.85,
             ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40.w,
-                      height: 4.h,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2.r),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(
-                    'Edit Profil Anda',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 20.h),
-
-                  // Avatar edit
-                  Center(
-                    child: Stack(
-                      children: [
-                        Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(24.w, 12.h, 24.w, 20.h),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 36.w,
+                          height: 4.h,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFFE2E8F0),
-                              width: 3.r,
-                            ),
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF475569)
+                                : const Color(0xFFCBD5E1),
+                            borderRadius: BorderRadius.circular(2.r),
                           ),
-                          child: CircleAvatar(
-                            radius: 48.r,
-                            backgroundColor: const Color(0xFFF1F5F9),
-                            backgroundImage: tempImageBytes != null
-                                ? MemoryImage(tempImageBytes!)
-                                : (user.photoUrl != null &&
-                                              user.photoUrl!.startsWith('http')
-                                          ? CachedNetworkImageProvider(
-                                              user.photoUrl!,
-                                            )
-                                          : null)
-                                      as ImageProvider?,
-                            onBackgroundImageError: (exception, stackTrace) {
-                              debugPrint('Error loading profile avatar: $exception');
-                            },
-                            child:
-                                tempImageBytes == null &&
+                        ),
+                      ),
+                      SizedBox(height: 14.h),
+                      Text(
+                        'Edit Profil Anda',
+                        style: GoogleFonts.hankenGrotesk(
+                          fontSize: 17.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 16.h),
+
+                      // Avatar edit
+                      Center(
+                        child: Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0xFFE2E8F0),
+                                  width: 2.5.r,
+                                ),
+                              ),
+                              child: CircleAvatar(
+                                radius: 40.r,
+                                backgroundColor: const Color(0xFFF1F5F9),
+                                backgroundImage: tempImageBytes != null
+                                    ? MemoryImage(tempImageBytes!)
+                                    : (user.photoUrl != null &&
+                                                  user.photoUrl!.startsWith('http')
+                                              ? CachedNetworkImageProvider(
+                                                  user.photoUrl!,
+                                                )
+                                              : null)
+                                          as ImageProvider?,
+                                onBackgroundImageError: (exception, stackTrace) {
+                                  debugPrint(
+                                    'Error loading profile avatar: $exception',
+                                  );
+                                },
+                                child:
+                                    tempImageBytes == null &&
                                         (user.photoUrl == null ||
                                             !user.photoUrl!.startsWith('http'))
                                     ? Icon(
                                         Icons.person,
-                                        size: 48.r,
+                                        size: 40.r,
                                         color: Colors.grey[400],
                                       )
                                     : null,
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            child: GestureDetector(
-                              onTap: showImageSourceSheet,
-                              child: Container(
-                                padding: EdgeInsets.all(8.w),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF2563EB),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.camera_alt,
-                                  size: 16.r,
-                                  color: Colors.white,
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: MouseRegion(
+                                cursor: SystemMouseCursors.click,
+                                child: GestureDetector(
+                                  onTap: showImageSourceSheet,
+                                  child: Container(
+                                    padding: EdgeInsets.all(7.w),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF2563EB),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.camera_alt,
+                                      size: 14.r,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 24.h),
+                      ),
+                      SizedBox(height: 18.h),
 
                   // Fields
                   TextField(
@@ -415,7 +439,9 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   ),
                   SizedBox(height: 16.h),
                   MouseRegion(
-                    cursor: isSaving ? MouseCursor.defer : SystemMouseCursors.click,
+                    cursor: isSaving
+                        ? MouseCursor.defer
+                        : SystemMouseCursors.click,
                     child: GestureDetector(
                       onTap: isSaving
                           ? null
@@ -497,7 +523,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         controller: cityController,
                         enabled: !isSaving,
                         decoration: InputDecoration(
-                          labelText: 'Kota Domisili',
+                          labelText: 'Tempat Tinggal',
                           hintText: 'Pilih kota tempat tinggal',
                           prefixIcon: const Icon(Icons.location_city_outlined),
                           suffixIcon: cityController.text.isNotEmpty
@@ -517,7 +543,10 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                   ),
                   SizedBox(height: 16.h),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 14.w,
+                      vertical: 12.h,
+                    ),
                     decoration: BoxDecoration(
                       color: Theme.of(context).brightness == Brightness.dark
                           ? const Color(0xFF1E293B)
@@ -546,7 +575,9 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                 style: TextStyle(
                                   fontSize: 11.5.sp,
                                   fontWeight: FontWeight.w500,
-                                  color: Theme.of(context).brightness == Brightness.dark
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
                                       ? const Color(0xFF94A3B8)
                                       : const Color(0xFF64748B),
                                 ),
@@ -557,16 +588,23 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                 style: TextStyle(
                                   fontSize: 13.5.sp,
                                   fontWeight: FontWeight.w600,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                 ),
                               ),
                             ],
                           ),
                         ),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 4.h,
+                          ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                            color: const Color(
+                              0xFF2563EB,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6.r),
                           ),
                           child: Text(
@@ -683,10 +721,14 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                             );
                             if (success) {
                               bool emailSuccess = true;
-                              final isEmailChanged = newEmail.toLowerCase() != user.email.toLowerCase();
-                              
+                              final isEmailChanged =
+                                  newEmail.toLowerCase() !=
+                                  user.email.toLowerCase();
+
                               if (isEmailChanged) {
-                                emailSuccess = await authProvider.changeEmail(newEmail);
+                                emailSuccess = await authProvider.changeEmail(
+                                  newEmail,
+                                );
                               }
 
                               // Optimistically update local teacher details cache without reloading everything
@@ -699,7 +741,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                   updatedUser,
                                 );
                               }
-                              
+
                               if (context.mounted) {
                                 if (isEmailChanged && emailSuccess) {
                                   AppHelper.showSnackBar(
@@ -746,12 +788,14 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                           )
                         : const Text('Simpan'),
                   ),
-                  SizedBox(height: 24.h),
+                  SizedBox(height: 16.h),
                 ],
               ),
             ),
-          );
-        },
+          ),
+        ),
+      );
+    },
       ),
     );
   }
@@ -809,7 +853,10 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                 children: [
                   Text(
                     'Masukkan Kode Sekolah atau NPSN untuk bergabung:',
-                    style: TextStyle(fontSize: 13.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   SizedBox(height: 14.h),
                   TextField(
@@ -818,26 +865,38 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                     decoration: InputDecoration(
                       labelText: 'Kode Aktivasi (UUID) / NPSN',
                       hintText: 'Contoh: e4d585a7-... atau NPSN',
-                      prefixIcon: const Icon(Icons.vpn_key_rounded, color: Color(0xFF2563EB)),
+                      prefixIcon: const Icon(
+                        Icons.vpn_key_rounded,
+                        color: Color(0xFF2563EB),
+                      ),
                       filled: true,
                       fillColor: isDark
-                          ? Theme.of(context).colorScheme.surfaceContainerHighest
+                          ? Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest
                           : const Color(0xFFF8FAFC),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14.r),
                         borderSide: BorderSide(
-                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFE2E8F0),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14.r),
                         borderSide: BorderSide(
-                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFE2E8F0),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14.r),
-                        borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF2563EB),
+                          width: 1.5,
+                        ),
                       ),
                     ),
                   ),
@@ -856,123 +915,161 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                       // Role Card: Guru
                       Expanded(
                         child: MouseRegion(
-                          cursor: isSubmitting ? MouseCursor.defer : SystemMouseCursors.click,
+                          cursor: isSubmitting
+                              ? MouseCursor.defer
+                              : SystemMouseCursors.click,
                           child: GestureDetector(
                             onTap: isSubmitting
                                 ? null
-                                : () => setDialogState(() => requestedRole = 'guru'),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
-                            decoration: BoxDecoration(
-                              color: requestedRole == 'guru'
-                                  ? (isDark
-                                      ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
-                                      : const Color(0xFFEFF6FF))
-                                  : (isDark
-                                      ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                      : const Color(0xFFF8FAFC)),
-                              borderRadius: BorderRadius.circular(14.r),
-                              border: Border.all(
-                                color: requestedRole == 'guru'
-                                    ? const Color(0xFF2563EB)
-                                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                                width: requestedRole == 'guru' ? 1.5 : 1.0,
+                                : () => setDialogState(
+                                    () => requestedRole = 'guru',
+                                  ),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: EdgeInsets.symmetric(
+                                vertical: 12.h,
+                                horizontal: 8.w,
                               ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  requestedRole == 'guru'
-                                      ? Icons.check_circle_rounded
-                                      : Icons.person_outline_rounded,
-                                  size: 16.sp,
+                              decoration: BoxDecoration(
+                                color: requestedRole == 'guru'
+                                    ? (isDark
+                                          ? const Color(
+                                              0xFF1E3A8A,
+                                            ).withValues(alpha: 0.35)
+                                          : const Color(0xFFEFF6FF))
+                                    : (isDark
+                                          ? Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest
+                                          : const Color(0xFFF8FAFC)),
+                                borderRadius: BorderRadius.circular(14.r),
+                                border: Border.all(
                                   color: requestedRole == 'guru'
                                       ? const Color(0xFF2563EB)
-                                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                                      : (isDark
+                                            ? const Color(0xFF334155)
+                                            : const Color(0xFFE2E8F0)),
+                                  width: requestedRole == 'guru' ? 1.5 : 1.0,
                                 ),
-                                SizedBox(width: 6.w),
-                                Flexible(
-                                  child: Text(
-                                    'Guru',
-                                    style: TextStyle(
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.bold,
-                                      color: requestedRole == 'guru'
-                                          ? (isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E40AF))
-                                          : Theme.of(context).colorScheme.onSurfaceVariant,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    requestedRole == 'guru'
+                                        ? Icons.check_circle_rounded
+                                        : Icons.person_outline_rounded,
+                                    size: 16.sp,
+                                    color: requestedRole == 'guru'
+                                        ? const Color(0xFF2563EB)
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
                                   ),
-                                ),
-                              ],
+                                  SizedBox(width: 6.w),
+                                  Flexible(
+                                    child: Text(
+                                      'Guru',
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: requestedRole == 'guru'
+                                            ? (isDark
+                                                  ? const Color(0xFF93C5FD)
+                                                  : const Color(0xFF1E40AF))
+                                            : Theme.of(
+                                                context,
+                                              ).colorScheme.onSurfaceVariant,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(width: 10.w),
+                      SizedBox(width: 10.w),
                       // Role Card: Admin Sekolah
                       Expanded(
                         child: MouseRegion(
-                          cursor: isSubmitting ? MouseCursor.defer : SystemMouseCursors.click,
+                          cursor: isSubmitting
+                              ? MouseCursor.defer
+                              : SystemMouseCursors.click,
                           child: GestureDetector(
                             onTap: isSubmitting
                                 ? null
-                                : () => setDialogState(() => requestedRole = 'admin'),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
-                            decoration: BoxDecoration(
-                              color: requestedRole == 'admin'
-                                  ? (isDark
-                                      ? const Color(0xFF7C2D12).withValues(alpha: 0.35)
-                                      : const Color(0xFFFFF7ED))
-                                  : (isDark
-                                      ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                      : const Color(0xFFF8FAFC)),
-                              borderRadius: BorderRadius.circular(14.r),
-                              border: Border.all(
-                                color: requestedRole == 'admin'
-                                    ? const Color(0xFFEA580C)
-                                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                                width: requestedRole == 'admin' ? 1.5 : 1.0,
+                                : () => setDialogState(
+                                    () => requestedRole = 'admin',
+                                  ),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: EdgeInsets.symmetric(
+                                vertical: 12.h,
+                                horizontal: 8.w,
                               ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  requestedRole == 'admin'
-                                      ? Icons.check_circle_rounded
-                                      : Icons.admin_panel_settings_outlined,
-                                  size: 16.sp,
+                              decoration: BoxDecoration(
+                                color: requestedRole == 'admin'
+                                    ? (isDark
+                                          ? const Color(
+                                              0xFF7C2D12,
+                                            ).withValues(alpha: 0.35)
+                                          : const Color(0xFFFFF7ED))
+                                    : (isDark
+                                          ? Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest
+                                          : const Color(0xFFF8FAFC)),
+                                borderRadius: BorderRadius.circular(14.r),
+                                border: Border.all(
                                   color: requestedRole == 'admin'
                                       ? const Color(0xFFEA580C)
-                                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                                      : (isDark
+                                            ? const Color(0xFF334155)
+                                            : const Color(0xFFE2E8F0)),
+                                  width: requestedRole == 'admin' ? 1.5 : 1.0,
                                 ),
-                                SizedBox(width: 6.w),
-                                Flexible(
-                                  child: Text(
-                                    'Admin Sekolah',
-                                    style: TextStyle(
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.bold,
-                                      color: requestedRole == 'admin'
-                                          ? (isDark ? const Color(0xFFFDBA74) : const Color(0xFFC2410C))
-                                          : Theme.of(context).colorScheme.onSurfaceVariant,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    requestedRole == 'admin'
+                                        ? Icons.check_circle_rounded
+                                        : Icons.admin_panel_settings_outlined,
+                                    size: 16.sp,
+                                    color: requestedRole == 'admin'
+                                        ? const Color(0xFFEA580C)
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
                                   ),
-                                ),
-                              ],
+                                  SizedBox(width: 6.w),
+                                  Flexible(
+                                    child: Text(
+                                      'Admin Sekolah',
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: requestedRole == 'admin'
+                                            ? (isDark
+                                                  ? const Color(0xFFFDBA74)
+                                                  : const Color(0xFFC2410C))
+                                            : Theme.of(
+                                                context,
+                                              ).colorScheme.onSurfaceVariant,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
                   ),
                   if (requestedRole == 'admin') ...[
                     SizedBox(height: 12.h),
@@ -984,19 +1081,27 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                             : const Color(0xFFFFF7ED),
                         borderRadius: BorderRadius.circular(12.r),
                         border: Border.all(
-                          color: isDark ? const Color(0xFF9A3412) : const Color(0xFFFFEDD5),
+                          color: isDark
+                              ? const Color(0xFF9A3412)
+                              : const Color(0xFFFFEDD5),
                         ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.info_outline_rounded, color: Color(0xFFEA580C), size: 18),
+                          const Icon(
+                            Icons.info_outline_rounded,
+                            color: Color(0xFFEA580C),
+                            size: 18,
+                          ),
                           SizedBox(width: 8.w),
                           Expanded(
                             child: Text(
                               'Untuk akses Admin Sekolah, akun Anda memerlukan verifikasi & persetujuan Superadmin.',
                               style: TextStyle(
                                 fontSize: 11.sp,
-                                color: isDark ? const Color(0xFFFED7AA) : const Color(0xFF9A3412),
+                                color: isDark
+                                    ? const Color(0xFFFED7AA)
+                                    : const Color(0xFF9A3412),
                               ),
                             ),
                           ),
@@ -1013,11 +1118,15 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
+                      onPressed: isSubmitting
+                          ? null
+                          : () => Navigator.pop(dialogCtx),
                       style: OutlinedButton.styleFrom(
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                         side: BorderSide(
-                          color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFCBD5E1),
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14.r),
@@ -1051,10 +1160,15 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                               final messenger = ScaffoldMessenger.of(context);
                               final navigator = Navigator.of(dialogCtx);
                               setDialogState(() => isSubmitting = true);
-                              final success = await authProvider.joinSchoolWithCode(code, role: requestedRole);
+                              final success = await authProvider
+                                  .joinSchoolWithCode(
+                                    code,
+                                    role: requestedRole,
+                                  );
                               if (mounted) {
                                 if (success) {
-                                  final isAdminDirect = authProvider.activeRole == 'admin';
+                                  final isAdminDirect =
+                                      authProvider.activeRole == 'admin';
                                   messenger.showSnackBar(
                                     SnackBar(
                                       content: Text(
@@ -1072,7 +1186,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                                   messenger.showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        authProvider.errorMessage ?? 'Gagal bergabung ke sekolah.',
+                                        authProvider.errorMessage ??
+                                            'Gagal bergabung ke sekolah.',
                                       ),
                                       backgroundColor: Colors.red,
                                     ),
@@ -1132,11 +1247,13 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
       );
     }
 
-    final isLoading = masterProvider.isLoading ||
+    final isLoading =
+        masterProvider.isLoading ||
         scheduleProvider.isLoading ||
         journalProvider.isLoading;
 
-    final errorMessage = masterProvider.errorMessage ??
+    final errorMessage =
+        masterProvider.errorMessage ??
         scheduleProvider.errorMessage ??
         journalProvider.errorMessage;
 
@@ -1156,11 +1273,7 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
     final isFirstLoad = teacher.id.isEmpty && masterProvider.teachers.isEmpty;
 
     if (isFirstLoad && isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (isFirstLoad && errorMessage != null) {
@@ -1175,7 +1288,10 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                 SizedBox(height: 16.h),
                 Text(
                   'Gagal Memuat Profil',
-                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 SizedBox(height: 8.h),
                 Text(
@@ -1215,7 +1331,8 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded),
               onPressed: () {
-                final rootScaffold = ctx.findRootAncestorStateOfType<ScaffoldState>();
+                final rootScaffold = ctx
+                    .findRootAncestorStateOfType<ScaffoldState>();
                 if (rootScaffold != null && rootScaffold.hasDrawer) {
                   rootScaffold.openDrawer();
                 } else {
@@ -1241,10 +1358,22 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
         child: RefreshIndicator(
           onRefresh: () async {
             final auth = Provider.of<AuthProvider>(context, listen: false);
-            final master = Provider.of<MasterDataProvider>(context, listen: false);
-            final warning = Provider.of<WarningLetterProvider>(context, listen: false);
-            final schedule = Provider.of<ScheduleProvider>(context, listen: false);
-            final journal = Provider.of<JournalProvider>(context, listen: false);
+            final master = Provider.of<MasterDataProvider>(
+              context,
+              listen: false,
+            );
+            final warning = Provider.of<WarningLetterProvider>(
+              context,
+              listen: false,
+            );
+            final schedule = Provider.of<ScheduleProvider>(
+              context,
+              listen: false,
+            );
+            final journal = Provider.of<JournalProvider>(
+              context,
+              listen: false,
+            );
 
             await auth.loadUserMemberships();
             if (teacher.id.isNotEmpty) {
@@ -1252,7 +1381,10 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
               journal.setSchoolId(auth.activeSchoolId);
               await Future.wait([
                 master.loadAllData(auth.activeSchoolId),
-                warning.loadTeacherWarningLetters(teacher.id, auth.activeSchoolId),
+                warning.loadTeacherWarningLetters(
+                  teacher.id,
+                  auth.activeSchoolId,
+                ),
                 schedule.loadTeacherSchedules(teacher.id, DateTime.now()),
                 journal.loadTeacherJournals(teacher.id),
               ]);
@@ -1264,1119 +1396,1521 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.all(20.w),
             child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Profile Card Header with Gradient
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(16.w),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E40AF),
-                  borderRadius: BorderRadius.circular(16.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF2563EB).withValues(alpha: 0.15),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Builder(
-                          builder: (context) {
-                            final displayUrl = (currentUser.photoUrl != null &&
-                                    currentUser.photoUrl!.startsWith('http'))
-                                ? currentUser.photoUrl
-                                : (teacher.photoUrl != null &&
-                                        teacher.photoUrl!.startsWith('http')
-                                    ? teacher.photoUrl
-                                    : null);
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Profile Card Header with Gradient
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(16.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E40AF),
+                    borderRadius: BorderRadius.circular(16.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.15),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Builder(
+                            builder: (context) {
+                              final displayUrl =
+                                  (currentUser.photoUrl != null &&
+                                      currentUser.photoUrl!.startsWith('http'))
+                                  ? currentUser.photoUrl
+                                  : (teacher.photoUrl != null &&
+                                            teacher.photoUrl!.startsWith('http')
+                                        ? teacher.photoUrl
+                                        : null);
 
-                            return MouseRegion(
-                              cursor: displayUrl != null ? SystemMouseCursors.click : MouseCursor.defer,
-                              child: GestureDetector(
-                                onTap: displayUrl != null
-                                    ? () {
-                                        FullScreenImageViewer.show(
-                                          context,
-                                          displayUrl,
-                                          'guru_profile_avatar',
-                                        );
-                                      }
-                                    : null,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2.5.r,
-                                    ),
-                                  ),
-                                  child: Hero(
-                                    tag: 'guru_profile_avatar',
-                                    child: CircleAvatar(
-                                      radius: 36.r,
-                                      backgroundColor: Colors.white.withValues(
-                                        alpha: 0.2,
+                              return MouseRegion(
+                                cursor: displayUrl != null
+                                    ? SystemMouseCursors.click
+                                    : MouseCursor.defer,
+                                child: GestureDetector(
+                                  onTap: displayUrl != null
+                                      ? () {
+                                          FullScreenImageViewer.show(
+                                            context,
+                                            displayUrl,
+                                            'guru_profile_avatar',
+                                          );
+                                        }
+                                      : null,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2.5.r,
                                       ),
-                                      backgroundImage: displayUrl != null
-                                          ? CachedNetworkImageProvider(displayUrl)
-                                          : null,
-                                      onBackgroundImageError: displayUrl != null
-                                          ? (exception, stackTrace) {
-                                              debugPrint('Error loading guru avatar: $exception');
-                                            }
-                                          : null,
-                                      child: displayUrl == null
-                                          ? const Icon(
-                                              Icons.person,
-                                              size: 36,
-                                              color: Colors.white,
-                                            )
-                                          : null,
+                                    ),
+                                    child: Hero(
+                                      tag: 'guru_profile_avatar',
+                                      child: CircleAvatar(
+                                        radius: 36.r,
+                                        backgroundColor: Colors.white
+                                            .withValues(alpha: 0.2),
+                                        backgroundImage: displayUrl != null
+                                            ? CachedNetworkImageProvider(
+                                                displayUrl,
+                                              )
+                                            : null,
+                                        onBackgroundImageError:
+                                            displayUrl != null
+                                            ? (exception, stackTrace) {
+                                                debugPrint(
+                                                  'Error loading guru avatar: $exception',
+                                                );
+                                              }
+                                            : null,
+                                        child: displayUrl == null
+                                            ? const Icon(
+                                                Icons.person,
+                                                size: 36,
+                                                color: Colors.white,
+                                              )
+                                            : null,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            child: GestureDetector(
-                              onTap: () =>
-                                  _showEditProfileDialog(currentUser, teacher),
-                              child: Container(
-                                padding: EdgeInsets.all(5.w),
-                                decoration: const BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
+                              );
+                            },
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: () => _showEditProfileDialog(
+                                  currentUser,
+                                  teacher,
                                 ),
-                                child: Icon(
-                                  Icons.camera_alt,
-                                  size: 12.r,
-                                  color: const Color(0xFF2563EB),
+                                child: Container(
+                                  padding: EdgeInsets.all(5.w),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.camera_alt,
+                                    size: 12.r,
+                                    color: const Color(0xFF2563EB),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
+                        ],
+                      ),
+                      SizedBox(width: 16.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _showFullName = !_showFullName;
+                                  });
+                                },
+                                child: Text(
+                                  teacher.name.isNotEmpty
+                                      ? teacher.name
+                                      : currentUser.fullName,
+                                  maxLines: _showFullName ? null : 1,
+                                  overflow: _showFullName
+                                      ? TextOverflow.visible
+                                      : TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 18.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              teacher.position.isNotEmpty
+                                  ? teacher.position
+                                  : (currentUser.position ?? 'Guru'),
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if ((currentUser.nip != null &&
+                                    currentUser.nip!.isNotEmpty) ||
+                                (teacher.nip != null &&
+                                    teacher.nip!.isNotEmpty)) ...[
+                              SizedBox(height: 2.h),
+                              Text(
+                                'NIP. ${(currentUser.nip != null && currentUser.nip!.isNotEmpty) ? currentUser.nip : teacher.nip}',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                      ],
-                    ),
-                    SizedBox(width: 16.w),
-                    Expanded(
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: 12.h),
+
+                // ── Multi-Tenant / Daftar Sekolah Section ───────────────────────
+                Builder(
+                  builder: (context) {
+                    final isDark =
+                        Theme.of(context).brightness == Brightness.dark;
+
+                    return Container(
+                      padding: EdgeInsets.all(16.w),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(16.r),
+                        border: Border.all(
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFE2E8F0),
+                        ),
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _showFullName = !_showFullName;
-                                });
-                              },
-                              child: Text(
-                                teacher.name.isNotEmpty ? teacher.name : currentUser.fullName,
-                                maxLines: _showFullName ? null : 1,
-                                overflow: _showFullName
-                                    ? TextOverflow.visible
-                                    : TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 18.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 2.h),
-                          Text(
-                            teacher.position.isNotEmpty ? teacher.position : (currentUser.position ?? 'Guru'),
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              color: Colors.white.withValues(alpha: 0.8),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          if ((currentUser.nip != null && currentUser.nip!.isNotEmpty) ||
-                              (teacher.nip != null && teacher.nip!.isNotEmpty)) ...[
-                            SizedBox(height: 2.h),
-                            Text(
-                              'NIP. ${(currentUser.nip != null && currentUser.nip!.isNotEmpty) ? currentUser.nip : teacher.nip}',
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: Colors.white.withValues(alpha: 0.9),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 12.h),
-
-              // ── Multi-Tenant / Daftar Sekolah Section ───────────────────────
-              Builder(
-                builder: (context) {
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
-
-                  return Container(
-                    padding: EdgeInsets.all(16.w),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16.r),
-                      border: Border.all(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.apartment_rounded,
-                                    color: Color(0xFF2563EB),
-                                    size: 20,
-                                  ),
-                                  SizedBox(width: 8.w),
-                                  Flexible(
-                                    child: Text(
-                                      'Sekolah Anda',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 14.sp,
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.onSurface,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.apartment_rounded,
+                                      color: Color(0xFF2563EB),
+                                      size: 20,
+                                    ),
+                                    SizedBox(width: 8.w),
+                                    Flexible(
+                                      child: Text(
+                                        'Sekolah Anda',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 14.sp,
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            TextButton.icon(
-                              onPressed: () => _showJoinSchoolDialog(authProvider),
-                              icon: const Icon(Icons.add_link_rounded, size: 16),
-                              label: Text(
-                                '+ Gabung Kode',
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.bold,
+                                  ],
                                 ),
                               ),
-                              style: TextButton.styleFrom(
-                                foregroundColor: const Color(0xFF2563EB),
-                                padding: EdgeInsets.symmetric(horizontal: 8.w),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 8.h),
-                        if (authProvider.userMemberships.isEmpty)
-                          if (authProvider.isLoadingMemberships)
-                            Container(
-                              width: double.infinity,
-                              padding: EdgeInsets.symmetric(vertical: 20.h),
-                              alignment: Alignment.center,
-                              child: const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2563EB)),
-                              ),
-                            )
-                          else
-                            Container(
-                              width: double.infinity,
-                              padding: EdgeInsets.all(12.w),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                  : const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.school, color: Color(0xFF2563EB)),
-                                SizedBox(width: 10.w),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        authProvider.activeSchoolName,
-                                        style: TextStyle(
-                                          fontSize: 13.sp,
-                                          fontWeight: FontWeight.bold,
-                                          color: Theme.of(context).colorScheme.onSurface,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Peran: ${authProvider.activeRole.toUpperCase()}',
-                                        style: TextStyle(
-                                          fontSize: 11.sp,
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                              TextButton.icon(
+                                onPressed: () =>
+                                    _showJoinSchoolDialog(authProvider),
+                                icon: const Icon(
+                                  Icons.add_link_rounded,
+                                  size: 16,
                                 ),
-                                Chip(
-                                  label: const Text('Aktif'),
-                                  backgroundColor: const Color(0xFFDBEAFE),
-                                  labelStyle: TextStyle(
-                                    fontSize: 10.sp,
-                                    color: const Color(0xFF1E40AF),
+                                label: Text(
+                                  '+ Gabung Kode',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              ],
-                            ),
-                          )
-                        else
-                          Column(
-                            children: [
-                              ...() {
-                                final List<SchoolRoleOption> list = [];
-                                final Set<String> seen = {};
-
-                                for (final m in authProvider.userMemberships) {
-                                  final mRole = m.role.toLowerCase();
-
-                                  // RULE: Pure Guru (non-admin) can NEVER see or select ADMIN context!
-                                  if (!authProvider.isAdminAsli && !authProvider.isAdminCadangan && (mRole == 'admin' || mRole == 'superadmin')) {
-                                    continue;
-                                  }
-
-                                  // RULE: Admin Asli can NEVER see or select GURU context!
-                                  if (authProvider.isAdminAsli && mRole == 'guru') {
-                                    continue;
-                                  }
-
-                                  final baseKey = '${m.schoolId}_$mRole';
-                                  if (!seen.contains(baseKey)) {
-                                    seen.add(baseKey);
-                                    list.add(SchoolRoleOption(
-                                      schoolId: m.schoolId,
-                                      schoolName: m.schoolName,
-                                      role: m.role,
-                                      membershipId: m.id,
-                                      status: m.status ?? 'active',
-                                      logoUrl: m.logoUrl,
-                                    ));
-                                  }
-
-                                  // ONLY for Guru with Admin rights (isAdminCadangan):
-                                  // If they have an admin membership at this school, ensure they can ALSO switch to GURU!
-                                  if (!authProvider.isAdminAsli && authProvider.isAdminCadangan && (mRole == 'admin' || mRole == 'superadmin')) {
-                                    final guruKey = '${m.schoolId}_guru';
-                                    if (!seen.contains(guruKey)) {
-                                      seen.add(guruKey);
-                                      list.add(SchoolRoleOption(
-                                        schoolId: m.schoolId,
-                                        schoolName: m.schoolName,
-                                        role: 'guru',
-                                        membershipId: m.id,
-                                        status: m.status ?? 'active',
-                                        logoUrl: m.logoUrl,
-                                      ));
-                                    }
-                                  }
-                                }
-
-                                // Fallback options for Admin Asli: ensure their primary admin school is present, but NEVER guru!
-                                final activeSchoolId = authProvider.activeSchoolId;
-                                if (authProvider.isAdminAsli && activeSchoolId != null && activeSchoolId.isNotEmpty) {
-                                  final adminKey = '${activeSchoolId}_admin';
-                                  if (!seen.contains(adminKey)) {
-                                    seen.add(adminKey);
-                                    list.add(SchoolRoleOption(
-                                      schoolId: activeSchoolId,
-                                      schoolName: authProvider.activeSchoolName,
-                                      role: 'admin',
-                                      logoUrl: authProvider.activeSchool?.logoUrl,
-                                      status: 'active',
-                                    ));
-                                  }
-                                }
-
-                                if (authProvider.isAdminAsli) {
-                                  final primarySchoolId = AppHelper.parseSingleCleanSchoolId(authProvider.currentUser?.schoolId);
-                                  if (primarySchoolId != null && primarySchoolId.isNotEmpty) {
-                                    final adminKey = '${primarySchoolId}_admin';
-                                    final pSchoolName = (authProvider.currentUser?.schoolName != null && authProvider.currentUser!.schoolName!.isNotEmpty)
-                                        ? authProvider.currentUser!.schoolName!
-                                        : authProvider.activeSchoolName;
-                                    if (!seen.contains(adminKey)) {
-                                      seen.add(adminKey);
-                                      list.add(SchoolRoleOption(
-                                        schoolId: primarySchoolId,
-                                        schoolName: pSchoolName,
-                                        role: 'admin',
-                                        logoUrl: authProvider.activeSchool?.logoUrl,
-                                        status: 'active',
-                                      ));
-                                    }
-                                  }
-                                }
-
-                                // Fallback options for Admin Cadangan: if in active school they have admin access, ensure both admin & guru options exist
-                                if (!authProvider.isAdminAsli && authProvider.isAdminCadangan && activeSchoolId != null && activeSchoolId.isNotEmpty) {
-                                  final hasAdminAccessInActiveSchool = authProvider.userMemberships.any((m) =>
-                                      m.schoolId == activeSchoolId &&
-                                      m.role.toLowerCase() == 'admin' &&
-                                      m.status?.toLowerCase() == 'active');
-                                  if (hasAdminAccessInActiveSchool) {
-                                    final adminKey = '${activeSchoolId}_admin';
-                                    final guruKey = '${activeSchoolId}_guru';
-                                    if (!seen.contains(adminKey)) {
-                                      seen.add(adminKey);
-                                      list.add(SchoolRoleOption(
-                                        schoolId: activeSchoolId,
-                                        schoolName: authProvider.activeSchoolName,
-                                        role: 'admin',
-                                        logoUrl: authProvider.activeSchool?.logoUrl,
-                                        status: 'active',
-                                      ));
-                                    }
-                                    if (!seen.contains(guruKey)) {
-                                      seen.add(guruKey);
-                                      list.add(SchoolRoleOption(
-                                        schoolId: activeSchoolId,
-                                        schoolName: authProvider.activeSchoolName,
-                                        role: 'guru',
-                                        logoUrl: authProvider.activeSchool?.logoUrl,
-                                        status: 'active',
-                                      ));
-                                    }
-                                  }
-                                }
-
-                                for (final m in authProvider.pendingMemberships) {
-                                  final baseKey = '${m.schoolId}_${m.role.toLowerCase()}';
-                                  if (!seen.contains(baseKey)) {
-                                    seen.add(baseKey);
-                                    list.add(SchoolRoleOption(
-                                      schoolId: m.schoolId,
-                                      schoolName: m.schoolName,
-                                      role: m.role,
-                                      membershipId: m.id,
-                                      status: 'pending',
-                                      logoUrl: m.logoUrl,
-                                    ));
-                                  }
-                                }
-
-                                // Inactive/exited schools are strictly suppressed from teacher profile & history
-                                return list;
-                              }().map((item) {
-                                final sName = item.schoolName;
-                                final sRole = item.role;
-                                final sId = item.schoolId;
-                                final membershipId = item.membershipId;
-                                final status = item.status;
-                                final isPendingJoin = status == 'pending';
-                                final isPendingExit = status == 'requested_exit';
-                                final isActive = !isPendingJoin && sId == authProvider.activeSchoolId &&
-                                    sRole.toLowerCase() == authProvider.activeRole.toLowerCase();
-
-                                return InkWell(
-                                  onTap: () {
-                                    if (isPendingJoin) {
-                                      AppHelper.showSnackBar(
-                                        context,
-                                        'Permintaan bergabung ke $sName sedang menunggu persetujuan dari Admin sekolah.',
-                                      );
-                                      return;
-                                    }
-                                    if (isActive) return;
-                                    final messenger = ScaffoldMessenger.of(context);
-                                    final scheduleProvider = Provider.of<ScheduleProvider>(context, listen: false);
-                                    final journalProvider = Provider.of<JournalProvider>(context, listen: false);
-                                    
-                                    scheduleProvider.clearTeacherSchedulesCache();
-                                    journalProvider.clearTeacherJournalsCache();
-                                    
-                                    messenger.hideCurrentSnackBar();
-                                    messenger.showSnackBar(
-                                      SnackBar(
-                                        content: Text('Berhasil beralih ke $sName (${sRole.toUpperCase()})'),
-                                        behavior: SnackBarBehavior.floating,
-                                        duration: const Duration(seconds: 2),
-                                      ),
-                                    );
-
-                                    authProvider.switchActiveSchool(sId, sName, sRole);
-                                    masterProvider.loadAllData(sId);
-                                    if (sRole.toLowerCase() == 'admin' || sRole.toLowerCase() == 'superadmin') {
-                                      if (context.mounted) {
-                                        context.go('/admin/dashboard');
-                                      }
-                                    } else {
-                                      scheduleProvider.loadAllSchedules(sId);
-                                      journalProvider.loadAllJournals(sId);
-                                    }
-                                  },
+                                style: TextButton.styleFrom(
+                                  foregroundColor: const Color(0xFF2563EB),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8.w,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 8.h),
+                          if (authProvider.userMemberships.isEmpty)
+                            if (authProvider.isLoadingMemberships)
+                              Container(
+                                width: double.infinity,
+                                padding: EdgeInsets.symmetric(vertical: 20.h),
+                                alignment: Alignment.center,
+                                child: const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFF2563EB),
+                                  ),
+                                ),
+                              )
+                            else
+                              Container(
+                                width: double.infinity,
+                                padding: EdgeInsets.all(12.w),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? Theme.of(
+                                          context,
+                                        ).colorScheme.surfaceContainerHighest
+                                      : const Color(0xFFF8FAFC),
                                   borderRadius: BorderRadius.circular(12.r),
-                                  child: Container(
-                                    margin: EdgeInsets.only(bottom: 8.h),
-                                    padding: EdgeInsets.all(12.w),
-                                    decoration: BoxDecoration(
-                                      color: isActive
-                                          ? (isDark
-                                              ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
-                                              : const Color(0xFFEFF6FF))
-                                          : isPendingExit
-                                              ? (isDark
-                                                  ? const Color(0xFF78350F).withValues(alpha: 0.2)
-                                                  : const Color(0xFFFFFBEB))
-                                              : (isDark
-                                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                                  : const Color(0xFFF8FAFC)),
-                                      borderRadius: BorderRadius.circular(12.r),
-                                      border: Border.all(
-                                        color: isActive
-                                            ? const Color(0xFF3B82F6)
-                                            : isPendingExit
-                                                ? (isDark ? const Color(0xFFD97706) : const Color(0xFFFCD34D))
-                                                : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
-                                        width: (isActive || isPendingExit) ? 1.5.r : 1.r,
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.school,
+                                      color: Color(0xFF2563EB),
+                                    ),
+                                    SizedBox(width: 10.w),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            authProvider.activeSchoolName,
+                                            style: TextStyle(
+                                              fontSize: 13.sp,
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Peran: ${authProvider.activeRole.toUpperCase()}',
+                                            style: TextStyle(
+                                              fontSize: 11.sp,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurfaceVariant,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            SchoolAvatar(
-                                              logoUrl: item.logoUrl,
-                                              schoolName: sName,
-                                              radius: 18,
-                                              isSelected: isActive,
-                                            ),
-                                            SizedBox(width: 10.w),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
+                                    Chip(
+                                      label: const Text('Aktif'),
+                                      backgroundColor: const Color(0xFFDBEAFE),
+                                      labelStyle: TextStyle(
+                                        fontSize: 10.sp,
+                                        color: const Color(0xFF1E40AF),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                          else
+                            Column(
+                              children: [
+                                ...() {
+                                  final List<SchoolRoleOption> list = [];
+                                  final Set<String> seen = {};
+
+                                  for (final m
+                                      in authProvider.userMemberships) {
+                                    final mRole = m.role.toLowerCase();
+
+                                    // RULE: Pure Guru (non-admin) can NEVER see or select ADMIN context!
+                                    if (!authProvider.isAdminAsli &&
+                                        !authProvider.isAdminCadangan &&
+                                        (mRole == 'admin' ||
+                                            mRole == 'superadmin')) {
+                                      continue;
+                                    }
+
+                                    // RULE: Admin Asli can NEVER see or select GURU context!
+                                    if (authProvider.isAdminAsli &&
+                                        mRole == 'guru') {
+                                      continue;
+                                    }
+
+                                    final baseKey = '${m.schoolId}_$mRole';
+                                    if (!seen.contains(baseKey)) {
+                                      seen.add(baseKey);
+                                      list.add(
+                                        SchoolRoleOption(
+                                          schoolId: m.schoolId,
+                                          schoolName: m.schoolName,
+                                          role: m.role,
+                                          membershipId: m.id,
+                                          status: m.status ?? 'active',
+                                          logoUrl: m.logoUrl,
+                                        ),
+                                      );
+                                    }
+
+                                    // ONLY for Guru with Admin rights (isAdminCadangan):
+                                    // If they have an admin membership at this school, ensure they can ALSO switch to GURU!
+                                    if (!authProvider.isAdminAsli &&
+                                        authProvider.isAdminCadangan &&
+                                        (mRole == 'admin' ||
+                                            mRole == 'superadmin')) {
+                                      final guruKey = '${m.schoolId}_guru';
+                                      if (!seen.contains(guruKey)) {
+                                        seen.add(guruKey);
+                                        list.add(
+                                          SchoolRoleOption(
+                                            schoolId: m.schoolId,
+                                            schoolName: m.schoolName,
+                                            role: 'guru',
+                                            membershipId: m.id,
+                                            status: m.status ?? 'active',
+                                            logoUrl: m.logoUrl,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  }
+
+                                  // Fallback options for Admin Asli: ensure their primary admin school is present, but NEVER guru!
+                                  final activeSchoolId =
+                                      authProvider.activeSchoolId;
+                                  if (authProvider.isAdminAsli &&
+                                      activeSchoolId != null &&
+                                      activeSchoolId.isNotEmpty) {
+                                    final adminKey = '${activeSchoolId}_admin';
+                                    if (!seen.contains(adminKey)) {
+                                      seen.add(adminKey);
+                                      list.add(
+                                        SchoolRoleOption(
+                                          schoolId: activeSchoolId,
+                                          schoolName:
+                                              authProvider.activeSchoolName,
+                                          role: 'admin',
+                                          logoUrl: authProvider
+                                              .activeSchool
+                                              ?.logoUrl,
+                                          status: 'active',
+                                        ),
+                                      );
+                                    }
+                                  }
+
+                                  if (authProvider.isAdminAsli) {
+                                    final primarySchoolId =
+                                        AppHelper.parseSingleCleanSchoolId(
+                                          authProvider.currentUser?.schoolId,
+                                        );
+                                    if (primarySchoolId != null &&
+                                        primarySchoolId.isNotEmpty) {
+                                      final adminKey =
+                                          '${primarySchoolId}_admin';
+                                      final pSchoolName =
+                                          (authProvider
+                                                      .currentUser
+                                                      ?.schoolName !=
+                                                  null &&
+                                              authProvider
+                                                  .currentUser!
+                                                  .schoolName!
+                                                  .isNotEmpty)
+                                          ? authProvider
+                                                .currentUser!
+                                                .schoolName!
+                                          : authProvider.activeSchoolName;
+                                      if (!seen.contains(adminKey)) {
+                                        seen.add(adminKey);
+                                        list.add(
+                                          SchoolRoleOption(
+                                            schoolId: primarySchoolId,
+                                            schoolName: pSchoolName,
+                                            role: 'admin',
+                                            logoUrl: authProvider
+                                                .activeSchool
+                                                ?.logoUrl,
+                                            status: 'active',
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  }
+
+                                  // Fallback options for Admin Cadangan: if in active school they have admin access, ensure both admin & guru options exist
+                                  if (!authProvider.isAdminAsli &&
+                                      authProvider.isAdminCadangan &&
+                                      activeSchoolId != null &&
+                                      activeSchoolId.isNotEmpty) {
+                                    final hasAdminAccessInActiveSchool =
+                                        authProvider.userMemberships.any(
+                                          (m) =>
+                                              m.schoolId == activeSchoolId &&
+                                              m.role.toLowerCase() == 'admin' &&
+                                              m.status?.toLowerCase() ==
+                                                  'active',
+                                        );
+                                    if (hasAdminAccessInActiveSchool) {
+                                      final adminKey =
+                                          '${activeSchoolId}_admin';
+                                      final guruKey = '${activeSchoolId}_guru';
+                                      if (!seen.contains(adminKey)) {
+                                        seen.add(adminKey);
+                                        list.add(
+                                          SchoolRoleOption(
+                                            schoolId: activeSchoolId,
+                                            schoolName:
+                                                authProvider.activeSchoolName,
+                                            role: 'admin',
+                                            logoUrl: authProvider
+                                                .activeSchool
+                                                ?.logoUrl,
+                                            status: 'active',
+                                          ),
+                                        );
+                                      }
+                                      if (!seen.contains(guruKey)) {
+                                        seen.add(guruKey);
+                                        list.add(
+                                          SchoolRoleOption(
+                                            schoolId: activeSchoolId,
+                                            schoolName:
+                                                authProvider.activeSchoolName,
+                                            role: 'guru',
+                                            logoUrl: authProvider
+                                                .activeSchool
+                                                ?.logoUrl,
+                                            status: 'active',
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  }
+
+                                  for (final m
+                                      in authProvider.pendingMemberships) {
+                                    final baseKey =
+                                        '${m.schoolId}_${m.role.toLowerCase()}';
+                                    if (!seen.contains(baseKey)) {
+                                      seen.add(baseKey);
+                                      list.add(
+                                        SchoolRoleOption(
+                                          schoolId: m.schoolId,
+                                          schoolName: m.schoolName,
+                                          role: m.role,
+                                          membershipId: m.id,
+                                          status: 'pending',
+                                          logoUrl: m.logoUrl,
+                                        ),
+                                      );
+                                    }
+                                  }
+
+                                  // Inactive/exited schools are strictly suppressed from teacher profile & history
+                                  return list;
+                                }().map((item) {
+                                  final sName = item.schoolName;
+                                  final sRole = item.role;
+                                  final sId = item.schoolId;
+                                  final membershipId = item.membershipId;
+                                  final status = item.status;
+                                  final isPendingJoin = status == 'pending';
+                                  final isPendingExit =
+                                      status == 'requested_exit';
+                                  final isActive =
+                                      !isPendingJoin &&
+                                      sId == authProvider.activeSchoolId &&
+                                      sRole.toLowerCase() ==
+                                          authProvider.activeRole.toLowerCase();
+
+                                  return InkWell(
+                                    onTap: () {
+                                      if (isPendingJoin) {
+                                        AppHelper.showSnackBar(
+                                          context,
+                                          'Permintaan bergabung ke $sName sedang menunggu persetujuan dari Admin sekolah.',
+                                        );
+                                        return;
+                                      }
+                                      if (isActive) return;
+                                      final messenger = ScaffoldMessenger.of(
+                                        context,
+                                      );
+                                      final scheduleProvider =
+                                          Provider.of<ScheduleProvider>(
+                                            context,
+                                            listen: false,
+                                          );
+                                      final journalProvider =
+                                          Provider.of<JournalProvider>(
+                                            context,
+                                            listen: false,
+                                          );
+
+                                      scheduleProvider
+                                          .clearTeacherSchedulesCache();
+                                      journalProvider
+                                          .clearTeacherJournalsCache();
+
+                                      messenger.hideCurrentSnackBar();
+                                      messenger.showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Berhasil beralih ke $sName (${sRole.toUpperCase()})',
+                                          ),
+                                          behavior: SnackBarBehavior.floating,
+                                          duration: const Duration(seconds: 2),
+                                        ),
+                                      );
+
+                                      authProvider.switchActiveSchool(
+                                        sId,
+                                        sName,
+                                        sRole,
+                                      );
+                                      masterProvider.loadAllData(sId);
+                                      if (sRole.toLowerCase() == 'admin' ||
+                                          sRole.toLowerCase() == 'superadmin') {
+                                        if (context.mounted) {
+                                          context.go('/admin/dashboard');
+                                        }
+                                      } else {
+                                        scheduleProvider.loadAllSchedules(sId);
+                                        journalProvider.loadAllJournals(sId);
+                                      }
+                                    },
+                                    borderRadius: BorderRadius.circular(12.r),
+                                    child: Container(
+                                      margin: EdgeInsets.only(bottom: 8.h),
+                                      padding: EdgeInsets.all(12.w),
+                                      decoration: BoxDecoration(
+                                        color: isActive
+                                            ? (isDark
+                                                  ? const Color(
+                                                      0xFF1E3A8A,
+                                                    ).withValues(alpha: 0.35)
+                                                  : const Color(0xFFEFF6FF))
+                                            : isPendingExit
+                                            ? (isDark
+                                                  ? const Color(
+                                                      0xFF78350F,
+                                                    ).withValues(alpha: 0.2)
+                                                  : const Color(0xFFFFFBEB))
+                                            : (isDark
+                                                  ? Theme.of(context)
+                                                        .colorScheme
+                                                        .surfaceContainerHighest
+                                                  : const Color(0xFFF8FAFC)),
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
+                                        border: Border.all(
+                                          color: isActive
+                                              ? const Color(0xFF3B82F6)
+                                              : isPendingExit
+                                              ? (isDark
+                                                    ? const Color(0xFFD97706)
+                                                    : const Color(0xFFFCD34D))
+                                              : (isDark
+                                                    ? const Color(0xFF334155)
+                                                    : const Color(0xFFCBD5E1)),
+                                          width: (isActive || isPendingExit)
+                                              ? 1.5.r
+                                              : 1.r,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              SchoolAvatar(
+                                                logoUrl: item.logoUrl,
+                                                schoolName: sName,
+                                                radius: 18,
+                                                isSelected: isActive,
+                                              ),
+                                              SizedBox(width: 10.w),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      sName,
+                                                      style: TextStyle(
+                                                        fontSize: 13.sp,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Theme.of(
+                                                          context,
+                                                        ).colorScheme.onSurface,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      'Peran: ${sRole.toUpperCase()}',
+                                                      style: TextStyle(
+                                                        fontSize: 11.sp,
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurfaceVariant,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              if (isPendingJoin)
+                                                Chip(
+                                                  avatar: const Icon(
+                                                    Icons.hourglass_top_rounded,
+                                                    size: 14,
+                                                    color: Color(0xFFB45309),
+                                                  ),
+                                                  label: const Text(
+                                                    'Menunggu Persetujuan',
+                                                  ),
+                                                  backgroundColor: const Color(
+                                                    0xFFFEF3C7,
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    fontSize: 10.sp,
+                                                    color: const Color(
+                                                      0xFFB45309,
+                                                    ),
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                )
+                                              else ...[
+                                                if (isActive)
+                                                  Chip(
+                                                    avatar: const Icon(
+                                                      Icons
+                                                          .check_circle_rounded,
+                                                      size: 14,
+                                                      color: Color(0xFF1E40AF),
+                                                    ),
+                                                    label: const Text('Aktif'),
+                                                    backgroundColor:
+                                                        const Color(0xFFDBEAFE),
+                                                    labelStyle: TextStyle(
+                                                      fontSize: 10.sp,
+                                                      color: const Color(
+                                                        0xFF1E40AF,
+                                                      ),
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  )
+                                                else
                                                   Text(
-                                                    sName,
+                                                    'Pilih',
                                                     style: TextStyle(
-                                                      fontSize: 13.sp,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Theme.of(context).colorScheme.onSurface,
+                                                      color: isDark
+                                                          ? const Color(
+                                                              0xFF60A5FA,
+                                                            )
+                                                          : const Color(
+                                                              0xFF2563EB,
+                                                            ),
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
-                                                  Text(
-                                                    'Peran: ${sRole.toUpperCase()}',
-                                                    style: TextStyle(
-                                                      fontSize: 11.sp,
-                                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                if (!isPendingExit &&
+                                                    sRole.toLowerCase() !=
+                                                        'admin' &&
+                                                    sRole.toLowerCase() !=
+                                                        'superadmin' &&
+                                                    !(authProvider
+                                                            .isAdminAsli &&
+                                                        sId ==
+                                                            authProvider
+                                                                .currentUser
+                                                                ?.schoolId)) ...[
+                                                  SizedBox(width: 8.w),
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                      Icons.exit_to_app_rounded,
+                                                      color: Colors.redAccent,
+                                                    ),
+                                                    tooltip:
+                                                        'Keluar dari Sekolah',
+                                                    onPressed: () async {
+                                                      final confirmed = await showDialog<bool>(
+                                                        context: context,
+                                                        builder: (context) => AlertDialog(
+                                                          title: const Text(
+                                                            'Ajukan Keluar dari Sekolah?',
+                                                          ),
+                                                          content: const Text(
+                                                            'Permintaan keluar harus disetujui oleh Admin sekolah.',
+                                                          ),
+                                                          actionsPadding:
+                                                              EdgeInsets.zero,
+                                                          actions: [
+                                                            AppDialogActions(
+                                                              cancelText:
+                                                                  'Batal',
+                                                              confirmText:
+                                                                  'Ajukan Keluar',
+                                                              isDestructive:
+                                                                  true,
+                                                              onCancel: () =>
+                                                                  Navigator.pop(
+                                                                    context,
+                                                                    false,
+                                                                  ),
+                                                              onConfirm: () =>
+                                                                  Navigator.pop(
+                                                                    context,
+                                                                    true,
+                                                                  ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      );
+                                                      if (confirmed == true) {
+                                                        final success =
+                                                            await authProvider
+                                                                .requestExitFromSchool(
+                                                                  membershipId,
+                                                                  schoolId: sId,
+                                                                  role: sRole,
+                                                                );
+                                                        if (!context.mounted) {
+                                                          return;
+                                                        }
+                                                        if (success) {
+                                                          AppHelper.showSnackBar(
+                                                            context,
+                                                            'Permintaan keluar berhasil dikirim. Menunggu persetujuan Admin sekolah.',
+                                                          );
+                                                        } else {
+                                                          AppHelper.showSnackBar(
+                                                            context,
+                                                            authProvider
+                                                                    .errorMessage ??
+                                                                'Gagal mengajukan permohonan keluar dari sekolah.',
+                                                            isError: true,
+                                                          );
+                                                        }
+                                                      }
+                                                    },
+                                                  ),
+                                                ],
+                                              ],
+                                            ],
+                                          ),
+                                          if (isPendingExit) ...[
+                                            SizedBox(height: 8.h),
+                                            Container(
+                                              width: double.infinity,
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 10.w,
+                                                vertical: 6.h,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: isDark
+                                                    ? const Color(
+                                                        0xFF78350F,
+                                                      ).withValues(alpha: 0.35)
+                                                    : const Color(0xFFFEF3C7),
+                                                borderRadius:
+                                                    BorderRadius.circular(8.r),
+                                                border: Border.all(
+                                                  color: isDark
+                                                      ? const Color(
+                                                          0xFFF59E0B,
+                                                        ).withValues(alpha: 0.5)
+                                                      : const Color(0xFFFCD34D),
+                                                ),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.hourglass_top_rounded,
+                                                    size: 14.sp,
+                                                    color: isDark
+                                                        ? const Color(
+                                                            0xFFFDE68A,
+                                                          )
+                                                        : const Color(
+                                                            0xFFB45309,
+                                                          ),
+                                                  ),
+                                                  SizedBox(width: 6.w),
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Menunggu persetujuan Admin',
+                                                      style:
+                                                          GoogleFonts.hankenGrotesk(
+                                                            fontSize: 11.sp,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                            color: isDark
+                                                                ? const Color(
+                                                                    0xFFFDE68A,
+                                                                  )
+                                                                : const Color(
+                                                                    0xFFB45309,
+                                                                  ),
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: 8.w),
+                                                  OutlinedButton(
+                                                    style: OutlinedButton.styleFrom(
+                                                      foregroundColor: Colors
+                                                          .orange
+                                                          .shade800,
+                                                      side: BorderSide(
+                                                        color: Colors
+                                                            .orange
+                                                            .shade400,
+                                                      ),
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                            horizontal: 10.w,
+                                                            vertical: 4.h,
+                                                          ),
+                                                      minimumSize: Size.zero,
+                                                      tapTargetSize:
+                                                          MaterialTapTargetSize
+                                                              .shrinkWrap,
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8.r,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                    onPressed: () async {
+                                                      final success =
+                                                          await authProvider
+                                                              .cancelExitRequest(
+                                                                membershipId,
+                                                                schoolId: sId,
+                                                                role: sRole,
+                                                              );
+                                                      if (!context.mounted) {
+                                                        return;
+                                                      }
+                                                      if (success) {
+                                                        AppHelper.showSnackBar(
+                                                          context,
+                                                          'Pengajuan keluar dari $sName berhasil dibatalkan.',
+                                                        );
+                                                      } else {
+                                                        AppHelper.showSnackBar(
+                                                          context,
+                                                          authProvider
+                                                                  .errorMessage ??
+                                                              'Gagal membatalkan pengajuan keluar.',
+                                                          isError: true,
+                                                        );
+                                                      }
+                                                    },
+                                                    child: Text(
+                                                      'Batalkan',
+                                                      style: TextStyle(
+                                                        fontSize: 11.sp,
+                                                      ),
                                                     ),
                                                   ),
                                                 ],
                                               ),
                                             ),
-                                            if (isPendingJoin)
-                                              Chip(
-                                                avatar: const Icon(
-                                                  Icons.hourglass_top_rounded,
-                                                  size: 14,
-                                                  color: Color(0xFFB45309),
-                                                ),
-                                                label: const Text('Menunggu Persetujuan'),
-                                                backgroundColor: const Color(0xFFFEF3C7),
-                                                labelStyle: TextStyle(
-                                                  fontSize: 10.sp,
-                                                  color: const Color(0xFFB45309),
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              )
-                                            else ...[
-                                              if (isActive)
-                                                Chip(
-                                                  avatar: const Icon(
-                                                    Icons.check_circle_rounded,
-                                                    size: 14,
-                                                    color: Color(0xFF1E40AF),
-                                                  ),
-                                                  label: const Text('Aktif'),
-                                                  backgroundColor: const Color(0xFFDBEAFE),
-                                                  labelStyle: TextStyle(
-                                                    fontSize: 10.sp,
-                                                    color: const Color(0xFF1E40AF),
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                )
-                                              else
-                                                Text(
-                                                  'Pilih',
-                                                  style: TextStyle(
-                                                    color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              if (!isPendingExit && sRole.toLowerCase() != 'admin' && sRole.toLowerCase() != 'superadmin' && !(authProvider.isAdminAsli && sId == authProvider.currentUser?.schoolId)) ...[
-                                                SizedBox(width: 8.w),
-                                                IconButton(
-                                                  icon: const Icon(Icons.exit_to_app_rounded, color: Colors.redAccent),
-                                                  tooltip: 'Keluar dari Sekolah',
-                                                  onPressed: () async {
-                                                    final confirmed = await showDialog<bool>(
-                                                      context: context,
-                                                      builder: (context) => AlertDialog(
-                                                        title: const Text('Ajukan Keluar dari Sekolah?'),
-                                                        content: const Text('Permintaan keluar harus disetujui oleh Admin sekolah.'),
-                                                        actionsPadding: EdgeInsets.zero,
-                                                        actions: [
-                                                          AppDialogActions(
-                                                            cancelText: 'Batal',
-                                                            confirmText: 'Ajukan Keluar',
-                                                            isDestructive: true,
-                                                            onCancel: () => Navigator.pop(context, false),
-                                                            onConfirm: () => Navigator.pop(context, true),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    );
-                                                    if (confirmed == true) {
-                                                      final success = await authProvider.requestExitFromSchool(
-                                                        membershipId,
-                                                        schoolId: sId,
-                                                        role: sRole,
-                                                      );
-                                                      if (!context.mounted) return;
-                                                      if (success) {
-                                                        AppHelper.showSnackBar(
-                                                          context,
-                                                          'Permintaan keluar berhasil dikirim. Menunggu persetujuan Admin sekolah.',
-                                                        );
-                                                      } else {
-                                                        AppHelper.showSnackBar(
-                                                          context,
-                                                          authProvider.errorMessage ?? 'Gagal mengajukan permohonan keluar dari sekolah.',
-                                                          isError: true,
-                                                        );
-                                                      }
-                                                    }
-                                                  },
-                                                ),
-                                              ],
-                                            ],
                                           ],
-                                        ),
-                                        if (isPendingExit) ...[
-                                          SizedBox(height: 8.h),
-                                          Container(
-                                            width: double.infinity,
-                                            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                                            decoration: BoxDecoration(
-                                              color: isDark
-                                                  ? const Color(0xFF78350F).withValues(alpha: 0.35)
-                                                  : const Color(0xFFFEF3C7),
-                                              borderRadius: BorderRadius.circular(8.r),
-                                              border: Border.all(
-                                                color: isDark
-                                                    ? const Color(0xFFF59E0B).withValues(alpha: 0.5)
-                                                    : const Color(0xFFFCD34D),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }),
+                                if (authProvider.activeSchool != null) ...[
+                                  SizedBox(height: 12.h),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: EdgeInsets.all(12.w),
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest
+                                          : const Color(0xFFEFF6FF),
+                                      borderRadius: BorderRadius.circular(12.r),
+                                      border: Border.all(
+                                        color: isDark
+                                            ? const Color(0xFF334155)
+                                            : const Color(0xFFCBD5E1),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            SchoolAvatar(
+                                              logoUrl: authProvider
+                                                  .activeSchool
+                                                  ?.logoUrl,
+                                              schoolName:
+                                                  authProvider
+                                                      .activeSchool
+                                                      ?.name ??
+                                                  'Sekolah',
+                                              radius: 18,
+                                              isSelected: true,
+                                            ),
+                                            SizedBox(width: 8.w),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  if (authProvider
+                                                              .activeSchool!
+                                                              .governmentHeader !=
+                                                          null &&
+                                                      authProvider
+                                                          .activeSchool!
+                                                          .governmentHeader!
+                                                          .isNotEmpty)
+                                                    Text(
+                                                      authProvider
+                                                          .activeSchool!
+                                                          .governmentHeader!
+                                                          .toUpperCase(),
+                                                      style: GoogleFonts.hankenGrotesk(
+                                                        fontSize: 9.sp,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurfaceVariant,
+                                                      ),
+                                                    ),
+                                                  if (authProvider
+                                                              .activeSchool!
+                                                              .departmentHeader !=
+                                                          null &&
+                                                      authProvider
+                                                          .activeSchool!
+                                                          .departmentHeader!
+                                                          .isNotEmpty)
+                                                    Text(
+                                                      authProvider
+                                                          .activeSchool!
+                                                          .departmentHeader!
+                                                          .toUpperCase(),
+                                                      style:
+                                                          GoogleFonts.hankenGrotesk(
+                                                            fontSize: 10.sp,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                            color: isDark
+                                                                ? const Color(
+                                                                    0xFF94A3B8,
+                                                                  )
+                                                                : const Color(
+                                                                    0xFF475569,
+                                                                  ),
+                                                          ),
+                                                    ),
+                                                  Text(
+                                                    authProvider
+                                                        .activeSchool!
+                                                        .name,
+                                                    style:
+                                                        GoogleFonts.hankenGrotesk(
+                                                          fontSize: 13.sp,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .onSurface,
+                                                        ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.hourglass_top_rounded,
-                                                  size: 14.sp,
-                                                  color: isDark
-                                                      ? const Color(0xFFFDE68A)
-                                                      : const Color(0xFFB45309),
-                                                ),
-                                                SizedBox(width: 6.w),
-                                                Expanded(
-                                                  child: Text(
-                                                    'Menunggu persetujuan Admin',
-                                                    style: GoogleFonts.hankenGrotesk(
-                                                      fontSize: 11.sp,
-                                                      fontWeight: FontWeight.w700,
-                                                      color: isDark ? const Color(0xFFFDE68A) : const Color(0xFFB45309),
-                                                    ),
-                                                  ),
-                                                ),
-                                                SizedBox(width: 8.w),
-                                                OutlinedButton(
-                                                  style: OutlinedButton.styleFrom(
-                                                    foregroundColor: Colors.orange.shade800,
-                                                    side: BorderSide(color: Colors.orange.shade400),
-                                                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                                                    minimumSize: Size.zero,
-                                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius: BorderRadius.circular(8.r),
-                                                    ),
-                                                  ),
-                                                  onPressed: () async {
-                                                    final success = await authProvider.cancelExitRequest(
-                                                      membershipId,
-                                                      schoolId: sId,
-                                                      role: sRole,
-                                                    );
-                                                    if (!context.mounted) return;
-                                                    if (success) {
-                                                      AppHelper.showSnackBar(
-                                                        context,
-                                                        'Pengajuan keluar dari $sName berhasil dibatalkan.',
-                                                      );
-                                                    } else {
-                                                      AppHelper.showSnackBar(
-                                                        context,
-                                                        authProvider.errorMessage ?? 'Gagal membatalkan pengajuan keluar.',
-                                                        isError: true,
-                                                      );
-                                                    }
-                                                  },
-                                                  child: Text('Batalkan', style: TextStyle(fontSize: 11.sp)),
-                                                ),
-                                              ],
+                                          ],
+                                        ),
+                                        Divider(
+                                          height: 16,
+                                          color: isDark
+                                              ? const Color(0xFF334155)
+                                              : const Color(0xFFE2E8F0),
+                                        ),
+                                        if (_formatSchoolAddress(
+                                          authProvider.activeSchool!.address,
+                                          authProvider.activeSchool!.postalCode,
+                                        ).isNotEmpty)
+                                          _buildSchoolMetaItem(
+                                            Icons.location_on_outlined,
+                                            _formatSchoolAddress(
+                                              authProvider
+                                                  .activeSchool!
+                                                  .address,
+                                              authProvider
+                                                  .activeSchool!
+                                                  .postalCode,
                                             ),
+                                            tooltip: 'Alamat',
                                           ),
-                                        ],
+                                        if (authProvider.activeSchool!.phone !=
+                                                null &&
+                                            authProvider
+                                                .activeSchool!
+                                                .phone!
+                                                .isNotEmpty)
+                                          _buildSchoolMetaItem(
+                                            Icons.phone_outlined,
+                                            authProvider.activeSchool!.phone!,
+                                            tooltip: 'Telepon',
+                                          ),
+                                        if (authProvider.activeSchool!.email !=
+                                                null &&
+                                            authProvider
+                                                .activeSchool!
+                                                .email!
+                                                .isNotEmpty)
+                                          _buildSchoolMetaItem(
+                                            Icons.email_outlined,
+                                            authProvider.activeSchool!.email!,
+                                            tooltip: 'Email',
+                                          ),
+                                        if (authProvider
+                                                    .activeSchool!
+                                                    .website !=
+                                                null &&
+                                            authProvider
+                                                .activeSchool!
+                                                .website!
+                                                .isNotEmpty)
+                                          _buildSchoolMetaItem(
+                                            Icons.language_outlined,
+                                            authProvider.activeSchool!.website!,
+                                            tooltip: 'Website',
+                                          ),
+                                        _buildSchoolMetaItem(
+                                          Icons.fingerprint_rounded,
+                                          authProvider.activeSchool!.npsn ??
+                                              '-',
+                                          prefixLabel: 'NPSN',
+                                          tooltip: 'NPSN',
+                                        ),
+                                        if (authProvider.activeSchool!.nss !=
+                                                null &&
+                                            authProvider
+                                                .activeSchool!
+                                                .nss!
+                                                .isNotEmpty)
+                                          _buildSchoolMetaItem(
+                                            Icons.numbers_rounded,
+                                            authProvider.activeSchool!.nss!,
+                                            prefixLabel: 'NSS',
+                                            tooltip: 'NSS',
+                                          ),
                                       ],
                                     ),
                                   ),
-                                );
-                              }),
-                              if (authProvider.activeSchool != null) ...[
-                                SizedBox(height: 12.h),
-                                Container(
-                                  width: double.infinity,
-                                  padding: EdgeInsets.all(12.w),
-                                  decoration: BoxDecoration(
-                                    color: isDark
-                                        ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                        : const Color(0xFFEFF6FF),
-                                    borderRadius: BorderRadius.circular(12.r),
-                                    border: Border.all(
-                                      color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          SchoolAvatar(
-                                            logoUrl: authProvider.activeSchool?.logoUrl,
-                                            schoolName: authProvider.activeSchool?.name ?? 'Sekolah',
-                                            radius: 18,
-                                            isSelected: true,
-                                          ),
-                                          SizedBox(width: 8.w),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                if (authProvider.activeSchool!.governmentHeader != null && authProvider.activeSchool!.governmentHeader!.isNotEmpty)
-                                                  Text(
-                                                    authProvider.activeSchool!.governmentHeader!.toUpperCase(),
-                                                    style: GoogleFonts.hankenGrotesk(fontSize: 9.sp, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                                                  ),
-                                                if (authProvider.activeSchool!.departmentHeader != null && authProvider.activeSchool!.departmentHeader!.isNotEmpty)
-                                                  Text(
-                                                    authProvider.activeSchool!.departmentHeader!.toUpperCase(),
-                                                    style: GoogleFonts.hankenGrotesk(
-                                                      fontSize: 10.sp,
-                                                      fontWeight: FontWeight.w700,
-                                                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                                                    ),
-                                                  ),
-                                                Text(
-                                                  authProvider.activeSchool!.name,
-                                                  style: GoogleFonts.hankenGrotesk(fontSize: 13.sp, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Divider(
-                                        height: 16,
-                                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                                      ),
-                                      if (_formatSchoolAddress(
-                                            authProvider.activeSchool!.address,
-                                            authProvider.activeSchool!.postalCode,
-                                          ).isNotEmpty)
-                                        _buildSchoolMetaItem(
-                                          Icons.location_on_outlined,
-                                          _formatSchoolAddress(
-                                            authProvider.activeSchool!.address,
-                                            authProvider.activeSchool!.postalCode,
-                                          ),
-                                          tooltip: 'Alamat',
-                                        ),
-                                      if (authProvider.activeSchool!.phone != null && authProvider.activeSchool!.phone!.isNotEmpty)
-                                        _buildSchoolMetaItem(
-                                          Icons.phone_outlined,
-                                          authProvider.activeSchool!.phone!,
-                                          tooltip: 'Telepon',
-                                        ),
-                                      if (authProvider.activeSchool!.email != null && authProvider.activeSchool!.email!.isNotEmpty)
-                                        _buildSchoolMetaItem(
-                                          Icons.email_outlined,
-                                          authProvider.activeSchool!.email!,
-                                          tooltip: 'Email',
-                                        ),
-                                      if (authProvider.activeSchool!.website != null && authProvider.activeSchool!.website!.isNotEmpty)
-                                        _buildSchoolMetaItem(
-                                          Icons.language_outlined,
-                                          authProvider.activeSchool!.website!,
-                                          tooltip: 'Website',
-                                        ),
-                                      _buildSchoolMetaItem(
-                                        Icons.fingerprint_rounded,
-                                        authProvider.activeSchool!.npsn ?? '-',
-                                        prefixLabel: 'NPSN',
-                                        tooltip: 'NPSN',
-                                      ),
-                                      if (authProvider.activeSchool!.nss != null && authProvider.activeSchool!.nss!.isNotEmpty)
-                                        _buildSchoolMetaItem(
-                                          Icons.numbers_rounded,
-                                          authProvider.activeSchool!.nss!,
-                                          prefixLabel: 'NSS',
-                                          tooltip: 'NSS',
-                                        ),
-                                    ],
-                                  ),
-                                ),
+                                ],
                               ],
-                            ],
-                          ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-              SizedBox(height: 12.h),
-
-              // Detail List Section
-              Text(
-                'INFORMASI AKUN',
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[500],
-                  letterSpacing: 1.2,
-                ),
-              ),
-              SizedBox(height: 6.h),
-              Builder(
-                builder: (context) {
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
-                  final dividerColor = isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9);
-
-                  return Card(
-                    margin: EdgeInsets.zero,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16.r),
-                      side: BorderSide(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildProfileDetailItem(
-                          Icons.badge_outlined,
-                          'Jabatan',
-                          teacher.position.isNotEmpty ? teacher.position : (currentUser.position ?? 'Guru'),
-                        ),
-                        Divider(height: 1, color: dividerColor),
-                        _buildProfileDetailItem(
-                          Icons.assignment_ind_outlined,
-                          'NIP',
-                          (currentUser.nip != null && currentUser.nip!.isNotEmpty)
-                              ? currentUser.nip!
-                              : ((teacher.nip != null && teacher.nip!.isNotEmpty)
-                                  ? teacher.nip!
-                                  : 'Belum Diisi'),
-                        ),
-                        Divider(height: 1, color: dividerColor),
-                        _buildProfileDetailItem(
-                          Icons.school_outlined,
-                          'Sekolah Mengajar',
-                          authProvider.activeSchoolName,
-                        ),
-                        Divider(height: 1, color: dividerColor),
-                        _buildProfileDetailItem(
-                          Icons.email_outlined,
-                          'Email',
-                          teacher.email.isNotEmpty ? teacher.email : currentUser.email,
-                          isEmail: true,
-                        ),
-                        Divider(height: 1, color: dividerColor),
-                        _buildProfileDetailItem(
-                          Icons.phone_outlined,
-                          'No. Telepon',
-                          teacher.phoneNumber.isNotEmpty ? teacher.phoneNumber : (currentUser.phoneNumber ?? 'Belum Diisi'),
-                        ),
-                        Divider(height: 1, color: dividerColor),
-                        _buildProfileDetailItem(
-                          Icons.home_outlined,
-                          'Alamat Lengkap',
-                          teacher.address.isNotEmpty ? teacher.address : (currentUser.address ?? 'Belum Diisi'),
-                        ),
-                        Divider(height: 1, color: dividerColor),
-                        _buildProfileDetailItem(
-                          Icons.location_city_outlined,
-                          'Kota Domisili',
-                          currentUser.city?.isNotEmpty == true
-                              ? currentUser.city!
-                              : 'Belum diisi',
-                        ),
-                        Divider(height: 1, color: dividerColor),
-                        _buildProfileDetailItem(
-                          Icons.schedule_outlined,
-                          'Zona Waktu',
-                          AppHelper.getTimezoneLabel(currentUser.timezone),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-              SizedBox(height: 20.h),
-              Text(
-                'PENGATURAN AKUN',
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[500],
-                  letterSpacing: 1.2,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Consumer<WarningLetterProvider>(
-                builder: (context, warningProvider, child) {
-                  final cleanActiveSchoolId = AppHelper.parseSingleCleanSchoolId(
-                    Provider.of<AuthProvider>(context, listen: false).activeSchoolId,
-                  );
-                  final unreadCount = warningProvider.warningLetters.where((w) {
-                    if (w.status != 'unread') return false;
-                    if (cleanActiveSchoolId == null || cleanActiveSchoolId.isEmpty) return true;
-                    final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
-                    return wSchoolId == null || wSchoolId.isEmpty || wSchoolId == cleanActiveSchoolId;
-                  }).length;
-
-                  return Row(
-                    children: [
-                      // 1. Edit Profil
-                      _buildHorizontalAction(
-                        icon: Icons.edit_rounded,
-                        label: 'Edit Profil',
-                        color: const Color(0xFF2563EB),
-                        bgColor: const Color(0xFFEFF6FF),
-                        onTap: () => _showEditProfileDialog(currentUser, teacher),
-                      ),
-                      // 2. Pengingat
-                      _buildHorizontalAction(
-                        icon: Icons.mail_rounded,
-                        label: 'Pengingat',
-                        color: const Color(0xFFBA1A1A),
-                        bgColor: unreadCount > 0 ? const Color(0xFFFEE2E2) : const Color(0xFFF8FAFC),
-                        badgeCount: unreadCount,
-                        onTap: () => context.push('/guru/warning-letters'),
-                      ),
-                      // 3. Tentang Aplikasi
-                      _buildHorizontalAction(
-                        icon: Icons.info_outline_rounded,
-                        label: 'Tentang',
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        bgColor: const Color(0xFFF1F5F9),
-                        onTap: () => context.push('/about'),
-                      ),
-                    ],
-                  );
-                },
-              ),
-              SizedBox(height: 12.h),
-
-              // Theme Switcher Card
-              Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.r),
-                  side: BorderSide(
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                    width: 1,
-                  ),
-                ),
-                color: Theme.of(context).colorScheme.surface,
-                child: Consumer<ThemeProvider>(
-                  builder: (context, themeProvider, child) {
-                    return ListTile(
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 2.h),
-                      onTap: () {
-                        themeProvider.toggleTheme(!themeProvider.isDarkMode);
-                      },
-                      leading: Icon(
-                        themeProvider.isDarkMode
-                            ? Icons.dark_mode_rounded
-                            : Icons.light_mode_rounded,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      title: Text(
-                        'Tema Aplikasi',
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      subtitle: Text(
-                        themeProvider.isDarkMode
-                            ? 'Mode Gelap Aktif'
-                            : 'Mode Terang Aktif',
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 12.sp,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      trailing: Transform.scale(
-                        scale: 0.8,
-                        child: Switch(
-                          value: themeProvider.isDarkMode,
-                          onChanged: (val) {
-                            themeProvider.toggleTheme(val);
-                          },
-                        ),
+                            ),
+                        ],
                       ),
                     );
                   },
                 ),
-              ),
-              SizedBox(height: 20.h),
+                SizedBox(height: 12.h),
 
-              // Danger Zone Panel (Compact & Elegant)
-              Builder(
-                builder: (context) {
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
-                  final isSchoolAdmin = currentUser.role == 'admin' ||
-                      authProvider.userMemberships.any((s) => s.role == 'admin');
+                // Detail List Section
+                Text(
+                  'INFORMASI AKUN',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[500],
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                SizedBox(height: 6.h),
+                Builder(
+                  builder: (context) {
+                    final isDark =
+                        Theme.of(context).brightness == Brightness.dark;
+                    final dividerColor = isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFF1F5F9);
 
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF450A0A).withValues(alpha: isSchoolAdmin ? 0.25 : 0.3)
-                          : const Color(0xFFFFF5F5),
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(
-                        color: Colors.red.withValues(alpha: isDark ? (isSchoolAdmin ? 0.3 : 0.35) : 0.15),
-                        width: 1.r,
+                    return Card(
+                      margin: EdgeInsets.zero,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                        side: BorderSide(
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFE2E8F0),
+                          width: 1,
+                        ),
                       ),
+                      child: Column(
+                        children: [
+                          _buildProfileDetailItem(
+                            Icons.badge_outlined,
+                            'Jabatan',
+                            teacher.position.isNotEmpty
+                                ? teacher.position
+                                : (currentUser.position ?? 'Guru'),
+                          ),
+                          Divider(height: 1, color: dividerColor),
+                          _buildProfileDetailItem(
+                            Icons.assignment_ind_outlined,
+                            'NIP',
+                            (currentUser.nip != null &&
+                                    currentUser.nip!.isNotEmpty)
+                                ? currentUser.nip!
+                                : ((teacher.nip != null &&
+                                          teacher.nip!.isNotEmpty)
+                                      ? teacher.nip!
+                                      : 'Belum Diisi'),
+                          ),
+                          Divider(height: 1, color: dividerColor),
+                          _buildProfileDetailItem(
+                            Icons.school_outlined,
+                            'Sekolah Mengajar',
+                            authProvider.activeSchoolName,
+                          ),
+                          Divider(height: 1, color: dividerColor),
+                          _buildProfileDetailItem(
+                            Icons.email_outlined,
+                            'Email',
+                            teacher.email.isNotEmpty
+                                ? teacher.email
+                                : currentUser.email,
+                            isEmail: true,
+                          ),
+                          Divider(height: 1, color: dividerColor),
+                          _buildProfileDetailItem(
+                            Icons.phone_outlined,
+                            'No. Telepon',
+                            teacher.phoneNumber.isNotEmpty
+                                ? teacher.phoneNumber
+                                : (currentUser.phoneNumber ?? 'Belum Diisi'),
+                          ),
+                          Divider(height: 1, color: dividerColor),
+                          _buildProfileDetailItem(
+                            Icons.home_outlined,
+                            'Alamat Lengkap',
+                            teacher.address.isNotEmpty
+                                ? teacher.address
+                                : (currentUser.address ?? 'Belum Diisi'),
+                          ),
+                          Divider(height: 1, color: dividerColor),
+                          _buildProfileDetailItem(
+                            Icons.location_city_outlined,
+                            'Tempat Tinggal',
+                            currentUser.city?.isNotEmpty == true
+                                ? currentUser.city!
+                                : 'Belum diisi',
+                          ),
+                          Divider(height: 1, color: dividerColor),
+                          _buildProfileDetailItem(
+                            Icons.schedule_outlined,
+                            'Zona Waktu',
+                            AppHelper.getTimezoneLabel(currentUser.timezone),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(height: 20.h),
+                Text(
+                  'PENGATURAN AKUN',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[500],
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Consumer<WarningLetterProvider>(
+                  builder: (context, warningProvider, child) {
+                    final cleanActiveSchoolId =
+                        AppHelper.parseSingleCleanSchoolId(
+                          Provider.of<AuthProvider>(
+                            context,
+                            listen: false,
+                          ).activeSchoolId,
+                        );
+                    final unreadCount = warningProvider.warningLetters.where((
+                      w,
+                    ) {
+                      if (w.status != 'unread') return false;
+                      if (cleanActiveSchoolId == null ||
+                          cleanActiveSchoolId.isEmpty) {
+                        return true;
+                      }
+                      final wSchoolId = AppHelper.parseSingleCleanSchoolId(
+                        w.schoolId,
+                      );
+                      return wSchoolId == null ||
+                          wSchoolId.isEmpty ||
+                          wSchoolId == cleanActiveSchoolId;
+                    }).length;
+
+                    return Row(
+                      children: [
+                        // 1. Edit Profil
+                        _buildHorizontalAction(
+                          icon: Icons.edit_rounded,
+                          label: 'Edit Profil',
+                          color: const Color(0xFF2563EB),
+                          bgColor: const Color(0xFFEFF6FF),
+                          onTap: () =>
+                              _showEditProfileDialog(currentUser, teacher),
+                        ),
+                        // 2. Pengingat
+                        _buildHorizontalAction(
+                          icon: Icons.mail_rounded,
+                          label: 'Pengingat',
+                          color: const Color(0xFFBA1A1A),
+                          bgColor: unreadCount > 0
+                              ? const Color(0xFFFEE2E2)
+                              : const Color(0xFFF8FAFC),
+                          badgeCount: unreadCount,
+                          onTap: () => context.push('/guru/warning-letters'),
+                        ),
+                        // 3. Tentang Aplikasi
+                        _buildHorizontalAction(
+                          icon: Icons.info_outline_rounded,
+                          label: 'Tentang',
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          bgColor: const Color(0xFFF1F5F9),
+                          onTap: () => context.push('/about'),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                SizedBox(height: 12.h),
+
+                // Theme Switcher Card
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                      width: 1,
                     ),
-                    child: ListTile(
-                      contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
-                      leading: Container(
-                        padding: EdgeInsets.all(6.w),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
+                  ),
+                  color: Theme.of(context).colorScheme.surface,
+                  child: Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, child) {
+                      return ListTile(
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 2.h,
                         ),
-                        child: Icon(
-                          isSchoolAdmin ? Icons.lock_outline_rounded : Icons.warning_amber_rounded,
-                          color: Colors.red,
-                          size: 20,
+                        onTap: () {
+                          themeProvider.toggleTheme(!themeProvider.isDarkMode);
+                        },
+                        leading: Icon(
+                          themeProvider.isDarkMode
+                              ? Icons.dark_mode_rounded
+                              : Icons.light_mode_rounded,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        title: Text(
+                          'Tema Aplikasi',
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        subtitle: Text(
+                          themeProvider.isDarkMode
+                              ? 'Mode Gelap Aktif'
+                              : 'Mode Terang Aktif',
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 12.sp,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        trailing: Transform.scale(
+                          scale: 0.8,
+                          child: Switch(
+                            value: themeProvider.isDarkMode,
+                            onChanged: (val) {
+                              themeProvider.toggleTheme(val);
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                SizedBox(height: 20.h),
+
+                // Danger Zone Panel (Compact & Elegant)
+                Builder(
+                  builder: (context) {
+                    final isDark =
+                        Theme.of(context).brightness == Brightness.dark;
+                    final isSchoolAdmin =
+                        currentUser.role == 'admin' ||
+                        authProvider.userMemberships.any(
+                          (s) => s.role == 'admin',
+                        );
+
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(
+                                0xFF450A0A,
+                              ).withValues(alpha: isSchoolAdmin ? 0.25 : 0.3)
+                            : const Color(0xFFFFF5F5),
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(
+                          color: Colors.red.withValues(
+                            alpha: isDark ? (isSchoolAdmin ? 0.3 : 0.35) : 0.15,
+                          ),
+                          width: 1.r,
                         ),
                       ),
-                      title: Text(
-                        'Zona Bahaya',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? const Color(0xFFFCA5A5) : Colors.red[800],
+                      child: ListTile(
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 14.w,
+                          vertical: 4.h,
                         ),
-                      ),
-                      subtitle: Text(
-                        isSchoolAdmin
-                            ? 'Akun admin sekolah dilindungi sistem'
-                            : 'Hapus akun guru secara permanen',
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          color: isDark ? const Color(0xFFF87171) : Colors.red[700],
+                        leading: Container(
+                          padding: EdgeInsets.all(6.w),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isSchoolAdmin
+                                ? Icons.lock_outline_rounded
+                                : Icons.warning_amber_rounded,
+                            color: Colors.red,
+                            size: 20,
+                          ),
                         ),
+                        title: Text(
+                          'Zona Bahaya',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.bold,
+                            color: isDark
+                                ? const Color(0xFFFCA5A5)
+                                : Colors.red[800],
+                          ),
+                        ),
+                        subtitle: Text(
+                          isSchoolAdmin
+                              ? 'Akun admin sekolah dilindungi sistem'
+                              : 'Hapus akun guru secara permanen',
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            color: isDark
+                                ? const Color(0xFFF87171)
+                                : Colors.red[700],
+                          ),
+                        ),
+                        trailing: isSchoolAdmin
+                            ? TextButton.icon(
+                                onPressed: null,
+                                style: TextButton.styleFrom(
+                                  foregroundColor: isDark
+                                      ? const Color(0xFF94A3B8)
+                                      : Colors.grey[500],
+                                  backgroundColor: isDark
+                                      ? const Color(0xFF334155)
+                                      : Colors.grey[200],
+                                  disabledBackgroundColor: isDark
+                                      ? const Color(0xFF334155)
+                                      : Colors.grey[200],
+                                  disabledForegroundColor: isDark
+                                      ? const Color(0xFF94A3B8)
+                                      : Colors.grey[500],
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 12.w,
+                                    vertical: 8.h,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                ),
+                                icon: Icon(
+                                  Icons.lock_rounded,
+                                  size: 13.r,
+                                  color: isDark
+                                      ? const Color(0xFF94A3B8)
+                                      : Colors.grey[500],
+                                ),
+                                label: Text(
+                                  'Terkunci',
+                                  style: TextStyle(
+                                    fontSize: 11.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark
+                                        ? const Color(0xFF94A3B8)
+                                        : Colors.grey[500],
+                                  ),
+                                ),
+                              )
+                            : TextButton(
+                                onPressed: () =>
+                                    _handleDeleteAccount(currentUser),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  backgroundColor: Colors.red,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 12.w,
+                                    vertical: 8.h,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Hapus Akun',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                       ),
-                      trailing: isSchoolAdmin
-                          ? TextButton.icon(
-                              onPressed: null,
-                              style: TextButton.styleFrom(
-                                foregroundColor: isDark ? const Color(0xFF94A3B8) : Colors.grey[500],
-                                backgroundColor: isDark ? const Color(0xFF334155) : Colors.grey[200],
-                                disabledBackgroundColor: isDark ? const Color(0xFF334155) : Colors.grey[200],
-                                disabledForegroundColor: isDark ? const Color(0xFF94A3B8) : Colors.grey[500],
-                                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.r),
-                                ),
-                              ),
-                              icon: Icon(
-                                Icons.lock_rounded,
-                                size: 13.r,
-                                color: isDark ? const Color(0xFF94A3B8) : Colors.grey[500],
-                              ),
-                              label: Text(
-                                'Terkunci',
-                                style: TextStyle(
-                                  fontSize: 11.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? const Color(0xFF94A3B8) : Colors.grey[500],
-                                ),
-                              ),
-                            )
-                          : TextButton(
-                              onPressed: () => _handleDeleteAccount(currentUser),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                backgroundColor: Colors.red,
-                                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.r),
-                                ),
-                              ),
-                              child: const Text(
-                                'Hapus Akun',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                    ),
-                  );
-                },
-              ),
-            ],
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildProfileDetailItem(
     IconData icon,
@@ -2468,7 +3002,9 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
       child: Card(
         margin: EdgeInsets.symmetric(horizontal: 2.w),
         elevation: 0,
-        color: isDark ? Theme.of(context).colorScheme.surfaceContainerHighest : bgColor,
+        color: isDark
+            ? Theme.of(context).colorScheme.surfaceContainerHighest
+            : bgColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.r),
           side: BorderSide(
@@ -2495,7 +3031,10 @@ class _GuruProfilScreenState extends State<GuruProfilScreen> {
                         top: -4.h,
                         right: -4.w,
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 4.w,
+                            vertical: 2.h,
+                          ),
                           decoration: const BoxDecoration(
                             color: Colors.red,
                             shape: BoxShape.circle,
@@ -2713,5 +3252,3 @@ class SchoolRoleOption {
     this.logoUrl,
   });
 }
-
-

@@ -646,9 +646,15 @@ class _GuruJadwalBulanIniScreenState extends State<GuruJadwalBulanIniScreen> {
 
     final hrStart = matchedHours.isNotEmpty ? matchedHours.first.startTime : '';
     final hrEnd = matchedHours.isNotEmpty ? matchedHours.last.endTime : '';
-    final timeStr = hrStart.isNotEmpty
-        ? (hrEnd.isNotEmpty ? '$hrStart - $hrEnd WIB' : '$hrStart WIB')
-        : '';
+    final authProv = Provider.of<AuthProvider>(context, listen: false);
+    final schoolTz = authProv.activeSchool?.timezone ?? 'WIB';
+    final userTz = authProv.currentUser?.timezone;
+    final timeStr = AppHelper.formatScheduleTimeRange(
+      hrStart: hrStart,
+      hrEnd: hrEnd,
+      schoolTz: schoolTz,
+      userTz: userTz,
+    );
     final hoursStr = AppHelper.formatTeachingHours(group.teachingHours);
     final dateFormatted = DateFormat(
       'EEEE, dd MMM yyyy',
