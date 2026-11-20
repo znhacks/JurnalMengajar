@@ -92,6 +92,12 @@ class ConnectivityService with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Membatalkan timer background (berguna saat test teardown)
+  void cancelTimersForTest() {
+    _periodicTimer?.cancel();
+    _reconnectedResetTimer?.cancel();
+  }
+
   @override
   void dispose() {
     _periodicTimer?.cancel();
