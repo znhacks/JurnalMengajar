@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/router/app_router.dart';
 import '../core/services/connectivity_service.dart';
+import '../core/services/sync_queue_service.dart';
 import 'app_dialog_actions.dart';
 
 /// Pembungkus global yang memantau status koneksi internet,
@@ -24,12 +25,18 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
   void initState() {
     super.initState();
     _connectivity.addListener(_handleConnectivityChange);
+    SyncQueueService.instance.addListener(_handleSyncQueueChange);
   }
 
   @override
   void dispose() {
     _connectivity.removeListener(_handleConnectivityChange);
+    SyncQueueService.instance.removeListener(_handleSyncQueueChange);
     super.dispose();
+  }
+
+  void _handleSyncQueueChange() {
+    if (mounted) setState(() {});
   }
 
   void _handleConnectivityChange() {
@@ -163,9 +170,16 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
         ? (isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E))
         : (isDark ? const Color(0xFFA7F3D0) : const Color(0xFF065F46));
 
+    final syncQueue = SyncQueueService.instance;
+    final queueCount = syncQueue.queueCount;
+
     final text = isOffline
-        ? 'Mode Offline • Aplikasi mungkin tidak berjalan optimal'
-        : 'Koneksi Pulih • Anda kembali online';
+        ? (queueCount > 0
+            ? 'Mode Offline • $queueCount data menunggu sinkronisasi'
+            : 'Mode Offline • Aplikasi mungkin tidak berjalan optimal')
+        : (syncQueue.isSyncing
+            ? 'Koneksi Pulih • Menyinkronkan data...'
+            : 'Koneksi Pulih • Anda kembali online');
 
     final icon = isOffline
         ? Icons.wifi_off_rounded

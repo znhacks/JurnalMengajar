@@ -21,6 +21,8 @@ import '../../core/utils/helper.dart';
 import '../../core/utils/schedule_grouper.dart';
 import '../../services/nobox_wa_service.dart';
 import '../../core/services/cache_service.dart';
+import '../../core/services/connectivity_service.dart';
+import '../../core/services/sync_queue_service.dart';
 
 class FormJurnalScreen extends StatefulWidget {
   final String scheduleId;
@@ -673,6 +675,18 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
         }
 
         if (success && mounted) {
+          if (SyncQueueService.instance.isSchedulePendingSync(schedule.id) ||
+              ConnectivityService.instance.isOffline) {
+            AppHelper.showSnackBar(
+              context,
+              'Mode Offline: Jurnal disimpan di antrean perangkat dan akan otomatis diunggah saat internet terhubung kembali.',
+            );
+            CacheService().remove('draft_journal_${schedule.id}');
+            if (context.canPop()) {
+              context.pop();
+            }
+            return;
+          }
           // Jika lampiran gagal sebagian, provider mengisi errorMessage walau return true.
           // Jangan klaim sukses penuh sebelum cek ini.
           final primaryPartialError = journalProvider.errorMessage;
@@ -1053,7 +1067,13 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
             if (!mounted) return;
 
-            if (journalProvider.errorMessage != null) {
+            if (SyncQueueService.instance.isSchedulePendingSync(schedule.id) ||
+                ConnectivityService.instance.isOffline) {
+              AppHelper.showSnackBar(
+                context,
+                'Mode Offline: Jurnal disimpan di antrean perangkat dan akan otomatis diunggah saat internet terhubung kembali.',
+              );
+            } else if (journalProvider.errorMessage != null) {
               AppHelper.showSnackBar(
                 context,
                 journalProvider.errorMessage!,
@@ -1177,7 +1197,13 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
 
             if (!mounted) return;
 
-            if (journalProvider.errorMessage != null) {
+            if (SyncQueueService.instance.isSchedulePendingSync(schedule.id) ||
+                ConnectivityService.instance.isOffline) {
+              AppHelper.showSnackBar(
+                context,
+                'Mode Offline: Jurnal disimpan di antrean perangkat dan akan otomatis diunggah saat internet terhubung kembali.',
+              );
+            } else if (journalProvider.errorMessage != null) {
               AppHelper.showSnackBar(
                 context,
                 journalProvider.errorMessage!,

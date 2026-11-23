@@ -4,6 +4,8 @@ import '../models/journal_model.dart';
 import '../repositories/journal_repository.dart';
 import '../repositories/supabase_journal_repository.dart';
 import '../core/services/cache_service.dart';
+import '../core/services/connectivity_service.dart';
+import '../core/services/sync_queue_service.dart';
 import '../core/utils/helper.dart';
 
 class JournalProvider with ChangeNotifier {
@@ -15,7 +17,22 @@ class JournalProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  JournalProvider({required this.journalRepository});
+  JournalProvider({required this.journalRepository}) {
+    SyncQueueService.instance.registerRepository(journalRepository);
+    SyncQueueService.instance.addListener(_handleSyncQueueUpdate);
+  }
+
+  void _handleSyncQueueUpdate() {
+    if (!SyncQueueService.instance.isSyncing && !SyncQueueService.instance.hasPendingItems) {
+      if (_currentSchoolId != null) loadAllJournals(_currentSchoolId);
+    }
+  }
+
+  @override
+  void dispose() {
+    SyncQueueService.instance.removeListener(_handleSyncQueueUpdate);
+    super.dispose();
+  }
 
   int _loadSequence = 0;
   Future<void>? _inFlightLoadAll;
@@ -242,6 +259,23 @@ class JournalProvider with ChangeNotifier {
       final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
           ? model.copyWith(schoolId: _currentSchoolId)
           : model;
+
+      // Jika offline, simpan langsung ke antrean Outbox
+      if (ConnectivityService.instance.isOffline) {
+        final pendingModel = finalModel.copyWith(
+          id: finalModel.id.isNotEmpty ? finalModel.id : 'offline_${DateTime.now().millisecondsSinceEpoch}',
+          isSyncPending: true,
+        );
+        await SyncQueueService.instance.enqueueJournal(
+          journal: pendingModel,
+          isUpdate: false,
+          imageBytesList: imageBytesList,
+          imageNamesList: imageNamesList,
+        );
+        _addOptimisticJournal(pendingModel);
+        return true;
+      }
+
       await journalRepository.create(finalModel);
 
       // Upload foto lampiran jika ada (max 3, web-compatible)
@@ -284,6 +318,31 @@ class JournalProvider with ChangeNotifier {
       }
       return true;
     } catch (e) {
+      final errStr = e.toString().toLowerCase();
+      final isNetworkIssue = errStr.contains('socketexception') ||
+          errStr.contains('clientexception') ||
+          errStr.contains('timeout') ||
+          errStr.contains('network') ||
+          errStr.contains('failed host lookup') ||
+          errStr.contains('handshake');
+
+      if (isNetworkIssue) {
+        ConnectivityService.instance.reportOffline();
+        final pendingModel = model.copyWith(
+          id: model.id.isNotEmpty ? model.id : 'offline_${DateTime.now().millisecondsSinceEpoch}',
+          schoolId: _currentSchoolId ?? model.schoolId,
+          isSyncPending: true,
+        );
+        await SyncQueueService.instance.enqueueJournal(
+          journal: pendingModel,
+          isUpdate: false,
+          imageBytesList: imageBytesList,
+          imageNamesList: imageNamesList,
+        );
+        _addOptimisticJournal(pendingModel);
+        return true;
+      }
+
       String msg = e.toString().replaceAll('Exception: ', '');
       if (msg.contains('journals_schedule_id_fkey') || msg.contains('23503')) {
         msg = 'Jadwal ini tidak ditemukan di database (ID jadwal tidak terdaftar atau sudah dihapus). Silakan refresh halaman jadwal Anda.';
@@ -308,6 +367,19 @@ class JournalProvider with ChangeNotifier {
       final finalModel = (_currentSchoolId != null && _currentSchoolId!.isNotEmpty && (model.schoolId == null || model.schoolId!.isEmpty))
           ? model.copyWith(schoolId: _currentSchoolId)
           : model;
+
+      if (ConnectivityService.instance.isOffline) {
+        final pendingModel = finalModel.copyWith(isSyncPending: true);
+        await SyncQueueService.instance.enqueueJournal(
+          journal: pendingModel,
+          isUpdate: true,
+          imageBytesList: imageBytesList,
+          imageNamesList: imageNamesList,
+        );
+        _addOptimisticJournal(pendingModel);
+        return true;
+      }
+
       await journalRepository.update(finalModel);
 
       // Upload foto lampiran baru jika ada (max 3)
@@ -357,6 +429,30 @@ class JournalProvider with ChangeNotifier {
       }
       return true;
     } catch (e) {
+      final errStr = e.toString().toLowerCase();
+      final isNetworkIssue = errStr.contains('socketexception') ||
+          errStr.contains('clientexception') ||
+          errStr.contains('timeout') ||
+          errStr.contains('network') ||
+          errStr.contains('failed host lookup') ||
+          errStr.contains('handshake');
+
+      if (isNetworkIssue) {
+        ConnectivityService.instance.reportOffline();
+        final pendingModel = model.copyWith(
+          schoolId: _currentSchoolId ?? model.schoolId,
+          isSyncPending: true,
+        );
+        await SyncQueueService.instance.enqueueJournal(
+          journal: pendingModel,
+          isUpdate: true,
+          imageBytesList: imageBytesList,
+          imageNamesList: imageNamesList,
+        );
+        _addOptimisticJournal(pendingModel);
+        return true;
+      }
+
       String msg = e.toString().replaceAll('Exception: ', '');
       if (msg.contains('journals_schedule_id_fkey') || msg.contains('23503')) {
         msg = 'Jadwal ini tidak ditemukan di database (ID jadwal tidak terdaftar atau sudah dihapus). Silakan refresh halaman jadwal Anda.';
@@ -367,6 +463,28 @@ class JournalProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  void _addOptimisticJournal(JournalModel journal) {
+    final tIdx = _teacherJournals.indexWhere((j) => j.scheduleId == journal.scheduleId);
+    if (tIdx != -1) {
+      _teacherJournals[tIdx] = journal;
+    } else {
+      _teacherJournals.insert(0, journal);
+    }
+    final jIdx = _journals.indexWhere((j) => j.scheduleId == journal.scheduleId);
+    if (jIdx != -1) {
+      _journals[jIdx] = journal;
+    } else {
+      _journals.insert(0, journal);
+    }
+    if (journal.teacherId.isNotEmpty) {
+      CacheService().save(
+        'journals_teacher_${journal.teacherId}',
+        _teacherJournals.map((e) => e.toJson()).toList(),
+      );
+    }
+    notifyListeners();
   }
 
   Future<bool> deleteJournal(String id, String teacherId) async {

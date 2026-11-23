@@ -1009,6 +1009,12 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
           ).withValues(alpha: isDark ? 0.22 : 0.12);
           statusTextColor = const Color(0xFFF59E0B);
         }
+      } else if (matchingJournal.isSyncPending) {
+        statusText = 'Antrean Offline';
+        statusBg = const Color(
+          0xFFD97706,
+        ).withValues(alpha: isDark ? 0.22 : 0.12);
+        statusTextColor = const Color(0xFFD97706);
       } else if (matchingJournal.status == 'verified' || matchingJournal.status == 'approved') {
         statusText = 'Selesai';
         statusBg = const Color(

@@ -25,6 +25,7 @@ class JournalModel {
   final DateTime? createdAt;
   final String teacherAttendanceStatus; // 'hadir' | 'sakit' | 'izin'
   final String? periodId;
+  final bool isSyncPending;
 
   bool get isTeacherAbsence => teacherAttendanceStatus == 'sakit' || teacherAttendanceStatus == 'izin';
   bool get isTeacherSick => teacherAttendanceStatus == 'sakit';
@@ -53,6 +54,7 @@ class JournalModel {
     this.createdAt,
     this.teacherAttendanceStatus = 'hadir',
     this.periodId,
+    this.isSyncPending = false,
   });
 
   factory JournalModel.fromJson(Map<String, dynamic> json) {
@@ -167,6 +169,7 @@ class JournalModel {
       createdAt: createdAt,
       teacherAttendanceStatus: json['teacher_attendance_status']?.toString() ?? 'hadir',
       periodId: json['period_id']?.toString() ?? json['periodId']?.toString(),
+      isSyncPending: json['is_sync_pending'] == true || json['isSyncPending'] == true,
     );
   }
 
@@ -190,6 +193,7 @@ class JournalModel {
       'is_soft_deleted': isSoftDeleted,
       'deleted_at': deletedAt?.toIso8601String(),
       'teacher_attendance_status': teacherAttendanceStatus,
+      'is_sync_pending': isSyncPending,
     };
     if (createdAt != null) {
       map['created_at'] = createdAt!.toIso8601String();
@@ -226,6 +230,7 @@ class JournalModel {
     DateTime? createdAt,
     String? teacherAttendanceStatus,
     String? periodId,
+    bool? isSyncPending,
   }) {
     return JournalModel(
       id: id ?? this.id,
@@ -250,6 +255,7 @@ class JournalModel {
       createdAt: createdAt ?? this.createdAt,
       teacherAttendanceStatus: teacherAttendanceStatus ?? this.teacherAttendanceStatus,
       periodId: periodId ?? this.periodId,
+      isSyncPending: isSyncPending ?? this.isSyncPending,
     );
   }
 }
