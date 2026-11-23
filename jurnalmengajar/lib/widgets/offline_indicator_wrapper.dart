@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/router/app_router.dart';
 import '../core/services/connectivity_service.dart';
+import 'app_dialog_actions.dart';
 
 /// Pembungkus global yang memantau status koneksi internet,
 /// menampilkan label/banner peringatan offline, serta dialog peringatan.
@@ -62,7 +63,7 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
           backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
           titlePadding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 8.h),
           contentPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-          actionsPadding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
+          actionsPadding: EdgeInsets.zero,
           title: Row(
             children: [
               Container(
@@ -98,19 +99,11 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(
-                'Mengerti',
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 13.5.sp,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
+            AppDialogActions(
+              cancelText: 'Mengerti',
+              onCancel: () => Navigator.of(ctx).pop(),
+              confirmText: 'Coba Hubungkan',
+              onConfirm: () async {
                 Navigator.of(ctx).pop();
                 final online = await _connectivity.checkConnectivity();
                 if (mounted && !online) {
@@ -125,21 +118,6 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
                   );
                 }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.r),
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-              ),
-              child: Text(
-                'Coba Hubungkan',
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 13.5.sp,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
             ),
           ],
         );

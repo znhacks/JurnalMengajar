@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'web_connectivity.dart';
 
 /// Service pendeteksi koneksi internet global (lintas platform Web, Android, iOS, Desktop)
 /// tanpa ketergantungan plugin native eksternal.
@@ -24,6 +25,12 @@ class ConnectivityService with ChangeNotifier {
   bool get justReconnected => _justReconnected;
 
   void _startPeriodicCheck() {
+    if (kIsWeb) {
+      initWebOnlineListeners((online) {
+        _updateState(!online);
+      });
+    }
+
     // Cek awal setelah aplikasi mulai
     checkConnectivity();
 
@@ -42,16 +49,38 @@ class ConnectivityService with ChangeNotifier {
     bool online = false;
     try {
       if (kIsWeb) {
-        // Pada Web: Lakukan ping request ringan
-        final response = await http
-            .head(Uri.parse('https://www.google.com/generate_204'))
-            .timeout(const Duration(seconds: 3));
-        online = response.statusCode == 204 || (response.statusCode >= 200 && response.statusCode < 400);
+        // Pada Web:
+        // 1. Cek status perangkat di browser (navigator.onLine)
+        if (!isWebBrowserOnline) {
+          online = false;
+        } else {
+          // 2. Ping same-origin asset (manifest.json) untuk menghindari error CORS
+          try {
+            final uri = Uri.base.resolve('manifest.json?_t=${DateTime.now().millisecondsSinceEpoch}');
+            final response = await http
+                .get(uri, headers: {'Cache-Control': 'no-cache'})
+                .timeout(const Duration(seconds: 3));
+            online = response.statusCode >= 200 && response.statusCode < 400;
+          } catch (_) {
+            // Jika ping lokal gagal/terkendala di testing, percaya pada status browser online
+            online = isWebBrowserOnline;
+          }
+        }
       } else {
-        // Pada Native (Mobile & Desktop): Lookup DNS cepat
-        final result = await InternetAddress.lookup('google.com')
-            .timeout(const Duration(seconds: 3));
-        online = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+        // Pada Native (Mobile & Desktop): Lookup DNS cepat dengan fallback multi-host
+        try {
+          final result = await InternetAddress.lookup('google.com')
+              .timeout(const Duration(seconds: 3));
+          online = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+        } catch (_) {
+          try {
+            final fallbackResult = await InternetAddress.lookup('cloudflare.com')
+                .timeout(const Duration(seconds: 3));
+            online = fallbackResult.isNotEmpty && fallbackResult[0].rawAddress.isNotEmpty;
+          } catch (_) {
+            online = false;
+          }
+        }
       }
     } catch (_) {
       online = false;

@@ -10,6 +10,7 @@ import '../models/subject_model.dart';
 import '../models/school_model.dart';
 import '../models/schedule_model.dart';
 import '../models/class_attendance_recap_model.dart';
+import '../core/utils/helper.dart';
 
 class JournalPdfService {
   static Future<pw.ImageProvider?> _loadSchoolLogo(
@@ -60,7 +61,7 @@ class JournalPdfService {
     final dateFormat = DateFormat('dd-MM-yyyy');
     final periodDateFormat = DateFormat('dd-MM-yyyy');
     final fullDateFormat = DateFormat('d MMMM yyyy', 'id_ID');
-    final printDateStr = fullDateFormat.format(DateTime.now());
+    final printDateStr = fullDateFormat.format(AppHelper.nowInTimezone(school?.timezone));
     final periodStr =
         '${periodDateFormat.format(startDate)} - ${periodDateFormat.format(endDate)}';
 
@@ -818,7 +819,7 @@ class JournalPdfService {
         semiBoldFontOverride ?? await PdfGoogleFonts.interSemiBold();
 
     final fullDateFormat = DateFormat('d MMMM yyyy', 'id_ID');
-    final printDateStr = fullDateFormat.format(DateTime.now());
+    final printDateStr = fullDateFormat.format(AppHelper.nowInTimezone(school?.timezone));
 
     pdf.addPage(
       pw.MultiPage(

@@ -83,6 +83,47 @@ void main() {
       );
       expect(diffTz, '07:00 - 08:30 WIB');
     });
+
+    test('Opsi 1: Adaptive Smart Display dengan Jangkar Institusi', () {
+      // 1. Label singkat dan bersih (tanpa embel-embel UTC/GMT)
+      expect(AppHelper.getTimezoneShortLabel('WIB'), 'WIB');
+      expect(AppHelper.getTimezoneShortLabel('WITA'), 'WITA');
+      expect(AppHelper.getTimezoneShortLabel('WIT'), 'WIT');
+      expect(AppHelper.getTimezoneShortLabel('Asia/Jakarta'), 'WIB');
+      expect(AppHelper.getTimezoneShortLabel('Asia/Makassar'), 'WITA');
+      expect(AppHelper.getTimezoneShortLabel('UTC+7'), 'WIB');
+
+      // 2. Deteksi perbedaan zona waktu antara guru dan sekolah
+      const schoolTz = 'WIB';
+      const teacherTzWita = 'WITA';
+      const teacherTzWib = 'WIB';
+
+      final isDifferent = AppHelper.getTimezoneOffsetHours(teacherTzWita) !=
+          AppHelper.getTimezoneOffsetHours(schoolTz);
+      expect(isDifferent, isTrue);
+
+      final isSame = AppHelper.getTimezoneOffsetHours(teacherTzWib) !=
+          AppHelper.getTimezoneOffsetHours(schoolTz);
+      expect(isSame, isFalse);
+
+      // 3. Tampilan adaptif pada kartu guru (ditampilkan dalam waktu lokal guru)
+      final teacherScheduleDisplay = AppHelper.formatScheduleTimeRange(
+        hrStart: '09:50',
+        hrEnd: '11:50',
+        schoolTz: schoolTz,
+        userTz: teacherTzWita,
+      );
+      expect(teacherScheduleDisplay, '10:50 - 12:50 WITA');
+
+      // 4. Baris sekunder waktu sekolah di detail/form jika berbeda zona
+      final schoolSecondaryDisplay = '09:50 - 11:50 ${AppHelper.getTimezoneShortLabel(schoolTz)}';
+      expect(schoolSecondaryDisplay, '09:50 - 11:50 WIB');
+
+      // 5. Jangkar institusi dokumen resmi (nowInTimezone)
+      final nowWib = AppHelper.nowInTimezone('WIB');
+      final nowWita = AppHelper.nowInTimezone('WITA');
+      expect(nowWita.difference(nowWib).inHours, 1);
+    });
   });
 
   group('Keadaan Riil Dataset Kota & Offline Support', () {

@@ -183,6 +183,9 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
     final authProv = Provider.of<AuthProvider>(context, listen: false);
     final schoolTz = authProv.activeSchool?.timezone ?? 'WIB';
     final userTz = authProv.currentUser?.timezone;
+    final isDifferentTz = userTz != null &&
+        AppHelper.getTimezoneOffsetHours(userTz) != AppHelper.getTimezoneOffsetHours(schoolTz);
+    final schoolTzLabel = AppHelper.getTimezoneShortLabel(schoolTz);
     final jamRangeFormatted = AppHelper.formatScheduleTimeRange(
       hrStart: hrStart,
       hrEnd: hrEnd,
@@ -268,6 +271,13 @@ class _DetailJadwalScreenState extends State<DetailJadwalScreen> {
                               ? 'Jam Ke-$hoursStr ($jamRangeFormatted)'
                               : 'Jam Ke-$hoursStr',
                         ),
+                        if (isDifferentTz && hrStart.isNotEmpty)
+                          _buildDetailRow(
+                            context,
+                            Icons.schedule_outlined,
+                            'Waktu Sekolah',
+                            '$hrStart - $hrEnd $schoolTzLabel',
+                          ),
                         _buildDetailRow(context, Icons.date_range, 'Periode Akademik', period.name),
                         _buildDetailRow(
                           context,

@@ -1421,6 +1421,9 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
     final authProv = Provider.of<AuthProvider>(context, listen: false);
     final schoolTz = authProv.activeSchool?.timezone ?? 'WIB';
     final userTz = authProv.currentUser?.timezone;
+    final isDifferentTz = userTz != null &&
+        AppHelper.getTimezoneOffsetHours(userTz) != AppHelper.getTimezoneOffsetHours(schoolTz);
+    final schoolTzLabel = AppHelper.getTimezoneShortLabel(schoolTz);
     final jamTimeRange = AppHelper.formatScheduleTimeRange(
       hrStart: hrStart,
       hrEnd: hrEnd,
@@ -1556,6 +1559,14 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                               'Jam Pelajaran',
                               'Jam Ke-$jamLabel ($jamTimeRange)',
                             ),
+                            if (isDifferentTz && hrStart.isNotEmpty) ...[
+                              const Divider(height: 16),
+                              _buildSummaryRow(
+                                context,
+                                'Waktu Sekolah',
+                                '$hrStart - $hrEnd $schoolTzLabel',
+                              ),
+                            ],
                           ],
                         ),
                       ),

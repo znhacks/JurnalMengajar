@@ -12,6 +12,7 @@ import '../services/fcm_service.dart';
 import '../core/utils/helper.dart';
 import '../core/services/cache_service.dart';
 import '../core/services/profile_photo_cache.dart';
+import '../core/services/connectivity_service.dart';
 import '../core/utils/network_resilience.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -291,16 +292,28 @@ class AuthProvider with ChangeNotifier {
   bool get hasMultipleSchools => _userMemberships.length > 1;
 
   /// True jika user memiliki sekolah aktif yang sah dan tidak nonaktif.
-  bool get hasActiveSchool =>
-      _activeSchoolId != null &&
-      _activeSchoolId!.isNotEmpty &&
-      _userMemberships.any((m) =>
+  bool get hasActiveSchool {
+    if (_activeSchoolId == null || _activeSchoolId!.isEmpty) return false;
+
+    // Jika membership lokal terisi, validasi statusnya
+    if (_userMemberships.isNotEmpty) {
+      return _userMemberships.any((m) =>
           (AppHelper.parseSingleCleanSchoolId(m.schoolId) ?? m.schoolId) ==
               (AppHelper.parseSingleCleanSchoolId(_activeSchoolId) ??
                   _activeSchoolId) &&
           m.status != 'inactive' &&
           m.status != 'deactivated' &&
           !TeacherRoles.isSoftDeleted(m.role));
+    }
+
+    // Jika membership lokal sementara kosong (misal saat boot offline / network timeout),
+    // tetapi user memiliki schoolId pada profil atau ID sekolah aktif tersimpan, jangan anggap jobless!
+    if (_currentUser?.schoolId != null && _currentUser!.schoolId!.isNotEmpty) {
+      return true;
+    }
+
+    return false;
+  }
 
   /// True jika user adalah non-admin asli yang tidak memiliki sekolah aktif (jobless / akun kosong).
   bool get isJobless => !isAdminAsli && !hasActiveSchool;
@@ -367,6 +380,10 @@ class AuthProvider with ChangeNotifier {
           notifyListeners();
         }
       } catch (_) {}
+    }
+
+    if (ConnectivityService.instance.isOffline) {
+      return;
     }
 
     try {
@@ -1067,18 +1084,20 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> _applyActiveMembershipFromPreferences() async {
     if (_userMemberships.isEmpty || _currentUser == null) {
-      _activeSchool = null;
-      _activeSchoolId = null;
-      _activeSchoolName = '';
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        if (_currentUser != null) {
-          await prefs.remove(_userSchoolKey(_currentUser!.id));
-          await prefs.remove(_userRoleKey(_currentUser!.id));
-        }
-        await prefs.remove(_kActiveSchoolIdKey);
-        await prefs.remove(_kActiveRoleKey);
-      } catch (_) {}
+      if (_activeSchoolId == null || _activeSchoolId!.isEmpty) {
+        _activeSchool = null;
+        _activeSchoolId = null;
+        _activeSchoolName = '';
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          if (_currentUser != null) {
+            await prefs.remove(_userSchoolKey(_currentUser!.id));
+            await prefs.remove(_userRoleKey(_currentUser!.id));
+          }
+          await prefs.remove(_kActiveSchoolIdKey);
+          await prefs.remove(_kActiveRoleKey);
+        } catch (_) {}
+      }
       return;
     }
 
@@ -1280,12 +1299,19 @@ class AuthProvider with ChangeNotifier {
       } catch (_) {}
     }
 
+    if (ConnectivityService.instance.isOffline) {
+      _isLoadingMemberships = false;
+      return;
+    }
+
     try {
       final supabase = Supabase.instance.client;
       final Map<String, UserSchoolModel> membershipMap = {};
       final List<UserSchoolModel> pendingList = [];
       final List<UserSchoolModel> inactiveList = [];
       final Set<String> inactiveSchoolIds = {};
+      bool networkAttemptSucceeded = false;
+      bool networkErrorEncountered = false;
 
       // 1. Fetch from user_schools (ALL MEMBERSHIPS: active, pending, inactive)
       try {
@@ -1294,6 +1320,7 @@ class AuthProvider with ChangeNotifier {
             .select('*, schools(id, name, code, logo_url, npsn, status)')
             .eq('user_id', _currentUser!.id)
             .timeout(NetworkResilience.defaultQueryTimeout);
+        networkAttemptSucceeded = true;
 
         for (final item in (res as List)) {
           final m = Map<String, dynamic>.from(item as Map);
@@ -1348,6 +1375,15 @@ class AuthProvider with ChangeNotifier {
           }
         }
       } catch (err) {
+        final errStr = err.toString().toLowerCase();
+        if (errStr.contains('socketexception') ||
+            errStr.contains('clientexception') ||
+            errStr.contains('timeout') ||
+            errStr.contains('network') ||
+            errStr.contains('failed host lookup') ||
+            errStr.contains('handshake')) {
+          networkErrorEncountered = true;
+        }
         debugPrint('Error loading user_schools in memberships: $err');
       }
 
@@ -1358,6 +1394,7 @@ class AuthProvider with ChangeNotifier {
             .select('*, schools(id, name, code, logo_url, npsn, status)')
             .eq('user_id', _currentUser!.id)
             .timeout(NetworkResilience.defaultQueryTimeout);
+        networkAttemptSucceeded = true;
 
         for (final item in (memRes as List)) {
           final m = Map<String, dynamic>.from(item as Map);
@@ -1377,7 +1414,17 @@ class AuthProvider with ChangeNotifier {
             }
           }
         }
-      } catch (_) {}
+      } catch (err) {
+        final errStr = err.toString().toLowerCase();
+        if (errStr.contains('socketexception') ||
+            errStr.contains('clientexception') ||
+            errStr.contains('timeout') ||
+            errStr.contains('network') ||
+            errStr.contains('failed host lookup') ||
+            errStr.contains('handshake')) {
+          networkErrorEncountered = true;
+        }
+      }
 
       // 3. Check for any schools listed in _currentUser.schoolIds
       final allowedSchoolIds = _currentUser!.schoolIds.isNotEmpty
@@ -1438,7 +1485,8 @@ class AuthProvider with ChangeNotifier {
           _userMemberships.map((m) => m.toJson()).toList(),
         );
         await _applyActiveMembershipFromPreferences();
-      } else {
+      } else if (networkAttemptSucceeded && !networkErrorEncountered) {
+        // HANYA jika server benar-benar merespon 200 OK dan menyatakan user memang tidak punya keanggotaan
         _activeSchool = null;
         _activeSchoolId = null;
         _activeSchoolName = '';
@@ -1448,6 +1496,21 @@ class AuthProvider with ChangeNotifier {
           await prefs.remove(_userSchoolKey(_currentUser!.id));
           await prefs.remove(_kActiveSchoolIdKey);
         } catch (_) {}
+      } else {
+        // Terjadi network issue / timeout / offline: JANGAN HAPUS APAPUN! Pertahankan data offline/cache
+        debugPrint('[AuthProvider] Preserving offline membership state due to network failure');
+        ConnectivityService.instance.reportOffline();
+        if (_userMemberships.isEmpty) {
+          final cached = await CacheService().loadList(
+            'user_memberships_${_currentUser!.id}',
+          );
+          if (cached != null && cached.isNotEmpty) {
+            _userMemberships = cached
+                .map((m) => UserSchoolModel.fromJson(m))
+                .toList();
+            await _applyActiveMembershipFromPreferences();
+          }
+        }
       }
       notifyListeners();
     } catch (e) {
