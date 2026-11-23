@@ -1071,7 +1071,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 ConnectivityService.instance.isOffline) {
               AppHelper.showSnackBar(
                 context,
-                'Mode Offline: Jurnal disimpan di antrean perangkat dan akan otomatis diunggah saat internet terhubung kembali.',
+                'Jurnal tersimpan offline. Akan diunggah otomatis saat kembali online.',
               );
             } else if (journalProvider.errorMessage != null) {
               AppHelper.showSnackBar(
@@ -1201,7 +1201,7 @@ class _FormJurnalScreenState extends State<FormJurnalScreen> {
                 ConnectivityService.instance.isOffline) {
               AppHelper.showSnackBar(
                 context,
-                'Mode Offline: Jurnal disimpan di antrean perangkat dan akan otomatis diunggah saat internet terhubung kembali.',
+                'Jurnal tersimpan offline. Akan diunggah otomatis saat kembali online.',
               );
             } else if (journalProvider.errorMessage != null) {
               AppHelper.showSnackBar(

@@ -71,7 +71,6 @@ class SyncQueueService with ChangeNotifier {
 
   SyncQueueService._internal() {
     _initQueue();
-    // Dengarkan pemulihan koneksi internet untuk memicu sinkronisasi otomatis
     ConnectivityService.instance.addListener(_handleConnectivityChange);
   }
 
@@ -154,13 +153,12 @@ class SyncQueueService with ChangeNotifier {
       status: 'pending',
     );
 
-    // Hapus antrean lama untuk schedule yang sama jika ada (replace dengan mutasi terbaru)
+    // Replace previous queued mutation for the same schedule.
     _queue.removeWhere((q) => q.scheduleId == journal.scheduleId);
     _queue.add(item);
     await _persistQueue();
     notifyListeners();
 
-    // Jika kebetulan online saat dipanggil, langsung proses
     if (ConnectivityService.instance.isOnline && _registeredRepository != null) {
       unawaited(processQueue(_registeredRepository!));
     }
@@ -242,7 +240,6 @@ class SyncQueueService with ChangeNotifier {
           await repo.create(readyModel);
         }
 
-        // Sukses: Hapus dari antrean
         _queue.removeWhere((q) => q.id == item.id);
         await _persistQueue();
         debugPrint('[SyncQueueService] Successfully synced journal for schedule ${item.scheduleId}');

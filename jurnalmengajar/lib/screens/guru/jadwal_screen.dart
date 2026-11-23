@@ -1010,7 +1010,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
           statusTextColor = const Color(0xFFF59E0B);
         }
       } else if (matchingJournal.isSyncPending) {
-        statusText = 'Antrean Offline';
+        statusText = 'Menunggu Sinkron';
         statusBg = const Color(
           0xFFD97706,
         ).withValues(alpha: isDark ? 0.22 : 0.12);

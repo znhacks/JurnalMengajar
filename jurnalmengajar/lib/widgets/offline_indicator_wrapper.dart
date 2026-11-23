@@ -98,7 +98,7 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
             ],
           ),
           content: Text(
-            'Perangkat Anda saat ini tidak terhubung ke internet. Aplikasi mungkin tidak dapat berjalan optimal saat offline. Data perubahan akan disinkronkan saat koneksi kembali aktif.',
+            'Perangkat Anda saat ini tidak terhubung ke internet. Jurnal yang Anda isi tetap tersimpan di perangkat dan disinkronkan otomatis saat online kembali.',
             style: GoogleFonts.hankenGrotesk(
               fontSize: 13.sp,
               color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
@@ -117,7 +117,7 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'Masih belum terhubung ke internet. Memeriksa kembali...',
+                        'Belum terhubung ke internet. Silakan periksa koneksi Anda.',
                         style: GoogleFonts.hankenGrotesk(fontSize: 12.5.sp),
                       ),
                       duration: const Duration(seconds: 2),
@@ -175,10 +175,10 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
 
     final text = isOffline
         ? (queueCount > 0
-            ? 'Mode Offline • $queueCount data menunggu sinkronisasi'
+            ? 'Offline • $queueCount jurnal menunggu sinkronisasi'
             : 'Mode Offline • Aplikasi mungkin tidak berjalan optimal')
         : (syncQueue.isSyncing
-            ? 'Koneksi Pulih • Menyinkronkan data...'
+            ? 'Menyinkronkan data...'
             : 'Koneksi Pulih • Anda kembali online');
 
     final icon = isOffline
