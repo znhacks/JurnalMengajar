@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:jurnalmengajar/core/services/cache_service.dart';
 import 'package:jurnalmengajar/core/services/connectivity_service.dart';
 import 'package:jurnalmengajar/core/services/sync_queue_service.dart';
 import 'package:jurnalmengajar/models/journal_model.dart';
@@ -163,6 +162,67 @@ void main() {
       // Data TIDAK boleh hilang, harus tetap ada di antrean
       expect(syncQueue.queueCount, 1);
       expect(syncQueue.queue.first.retryCount, greaterThan(0));
+    });
+
+    test('4. Mengubah ID non-UUID menjadi valid UUID dan menghapus flag isSyncPending saat dikirim ke repository', () async {
+      connectivity.reportOffline();
+
+      final offlineJournal = JournalModel(
+        id: 'offline_1795491083443',
+        scheduleId: 'sch_offline_uuid',
+        date: DateTime(2026, 11, 24),
+        teachingHour: 1,
+        classId: 'cls_1',
+        subjectId: 'sub_1',
+        teacherId: 'tch_1',
+        material: 'Materi Uji UUID',
+        status: 'pending',
+        isSyncPending: true,
+      );
+
+      await syncQueue.enqueueJournal(journal: offlineJournal, isUpdate: false);
+      expect(syncQueue.queueCount, 1);
+
+      connectivity.reportOnline();
+      await syncQueue.processQueue(fakeRepo);
+
+      expect(syncQueue.queueCount, 0);
+      expect(fakeRepo.created.length, 1);
+      final synced = fakeRepo.created.first;
+      expect(synced.id.startsWith('offline_'), isFalse);
+      expect(RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$').hasMatch(synced.id), isTrue);
+      expect(synced.isSyncPending, isFalse);
+    });
+
+    test('5. Otomatis sinkronisasi saat konektivitas berpindah dari offline ke online', () async {
+      syncQueue.registerRepository(fakeRepo);
+      connectivity.reportOffline();
+
+      final offlineJournal = JournalModel(
+        id: 'offline_auto_sync_test',
+        scheduleId: 'sch_auto_sync',
+        date: DateTime(2026, 11, 24),
+        teachingHour: 2,
+        classId: 'cls_2',
+        subjectId: 'sub_2',
+        teacherId: 'tch_2',
+        material: 'Materi Auto Sync',
+        status: 'pending',
+        isSyncPending: true,
+      );
+
+      await syncQueue.enqueueJournal(journal: offlineJournal, isUpdate: false);
+      expect(syncQueue.queueCount, 1);
+      expect(fakeRepo.created.isEmpty, isTrue);
+
+      // Simulasi koneksi kembali pulih (offline -> online)
+      connectivity.reportOnline();
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Harus otomatis tersinkron dan antrean menjadi bersih
+      expect(syncQueue.queueCount, 0);
+      expect(fakeRepo.created.length, 1);
+      expect(fakeRepo.created.first.material, 'Materi Auto Sync');
     });
   });
 }

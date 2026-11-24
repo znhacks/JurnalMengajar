@@ -4,6 +4,7 @@ import '../models/schedule_model.dart';
 import '../repositories/schedule_repository.dart';
 import '../repositories/supabase_schedule_repository.dart';
 import '../core/services/cache_service.dart';
+import '../core/services/connectivity_service.dart';
 import '../core/utils/helper.dart';
 
 const _uuid = Uuid();
@@ -20,8 +21,31 @@ class ScheduleProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   bool _isAllSchedulesLoaded = false;
+  bool _wasOffline = false;
 
-  ScheduleProvider({required this.scheduleRepository});
+  ScheduleProvider({required this.scheduleRepository}) {
+    ConnectivityService.instance.addListener(_handleConnectivityChange);
+    _wasOffline = ConnectivityService.instance.isOffline;
+  }
+
+  void _handleConnectivityChange() {
+    final isOffline = ConnectivityService.instance.isOffline;
+    if (_wasOffline && !isOffline) {
+      if (_cachedTeacherId != null && _cachedTeacherId!.isNotEmpty && _cachedSelectedDate != null) {
+        loadTeacherSchedules(_cachedTeacherId!, _cachedSelectedDate!, forceRefresh: true);
+      }
+      if (_isAllSchedulesLoaded && _currentSchoolId != null && _currentSchoolId!.isNotEmpty) {
+        refreshAllSchedules(_currentSchoolId!);
+      }
+    }
+    _wasOffline = isOffline;
+  }
+
+  @override
+  void dispose() {
+    ConnectivityService.instance.removeListener(_handleConnectivityChange);
+    super.dispose();
+  }
 
   List<ScheduleModel> get schedules => _schedules;
   List<ScheduleModel> get teacherSchedulesForSelectedDate => _teacherSchedulesForSelectedDate;
@@ -161,6 +185,12 @@ class ScheduleProvider with ChangeNotifier {
     }
     // CRITICAL: If _schedules is already populated in memory, NEVER set _isLoading = true!
     // This completely prevents UI flickering / loading spinners on page transitions!
+
+    if (ConnectivityService.instance.isOffline) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
 
     try {
       final repo = scheduleRepository;
@@ -312,6 +342,13 @@ class ScheduleProvider with ChangeNotifier {
     }
 
     if (forceRefresh || _cachedTeacherId != teacherId || _cachedTeacherSchedules.isEmpty) {
+      if (ConnectivityService.instance.isOffline) {
+        _updateTeacherSchedulesForDate(date, shouldNotify: false);
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+
       // Only set isLoading = true if we have no in-memory data to display
       if (_cachedTeacherSchedules.isEmpty) {
         _isLoading = true;

@@ -14,7 +14,8 @@ class OfflineIndicatorWrapper extends StatefulWidget {
   const OfflineIndicatorWrapper({super.key, required this.child});
 
   @override
-  State<OfflineIndicatorWrapper> createState() => _OfflineIndicatorWrapperState();
+  State<OfflineIndicatorWrapper> createState() =>
+      _OfflineIndicatorWrapperState();
 }
 
 class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
@@ -51,6 +52,10 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
       }
     } else {
       _dialogShownForCurrentOfflineSession = false;
+      final repo = SyncQueueService.instance.registeredRepository;
+      if (repo != null && SyncQueueService.instance.hasPendingItems) {
+        SyncQueueService.instance.processQueue(repo);
+      }
     }
   }
 
@@ -109,11 +114,17 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
             AppDialogActions(
               cancelText: 'Mengerti',
               onCancel: () => Navigator.of(ctx).pop(),
-              confirmText: 'Coba Hubungkan',
+              confirmText: 'Coba Lagi',
               onConfirm: () async {
                 Navigator.of(ctx).pop();
                 final online = await _connectivity.checkConnectivity();
-                if (mounted && !online) {
+                if (online) {
+                  final repo = SyncQueueService.instance.registeredRepository;
+                  if (repo != null &&
+                      SyncQueueService.instance.hasPendingItems) {
+                    SyncQueueService.instance.processQueue(repo);
+                  }
+                } else if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
@@ -175,15 +186,13 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
 
     final text = isOffline
         ? (queueCount > 0
-            ? 'Offline • $queueCount jurnal menunggu sinkronisasi'
-            : 'Mode Offline • Aplikasi mungkin tidak berjalan optimal')
+              ? 'Offline • $queueCount jurnal menunggu sinkronisasi'
+              : 'Mode Offline • Aplikasi mungkin tidak berjalan optimal')
         : (syncQueue.isSyncing
-            ? 'Menyinkronkan data...'
-            : 'Koneksi Pulih • Anda kembali online');
+              ? 'Menyinkronkan data...'
+              : 'Koneksi Pulih • Anda kembali online');
 
-    final icon = isOffline
-        ? Icons.wifi_off_rounded
-        : Icons.wifi_rounded;
+    final icon = isOffline ? Icons.wifi_off_rounded : Icons.wifi_rounded;
 
     return Material(
       color: bgColor,
@@ -215,10 +224,23 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
               if (isOffline) ...[
                 SizedBox(width: 10.w),
                 InkWell(
-                  onTap: () => _connectivity.checkConnectivity(),
+                  onTap: () async {
+                    final online = await _connectivity.checkConnectivity();
+                    if (online) {
+                      final repo =
+                          SyncQueueService.instance.registeredRepository;
+                      if (repo != null &&
+                          SyncQueueService.instance.hasPendingItems) {
+                        SyncQueueService.instance.processQueue(repo);
+                      }
+                    }
+                  },
                   borderRadius: BorderRadius.circular(6.r),
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 6.w,
+                      vertical: 2.h,
+                    ),
                     child: Text(
                       'Coba Lagi',
                       style: GoogleFonts.hankenGrotesk(

@@ -233,10 +233,12 @@ class SupabaseJournalRepository implements JournalRepository {
   Future<void> create(JournalModel model) async {
     try {
       final payload = model.toJson();
-      // Remove attachment from payload (will be handled separately)
+      // Remove attachment and local-only fields
       payload.remove('attachment');
-      // Generate a UUID client-side if id is empty
-      if ((payload['id'] as String?)?.isEmpty ?? true) {
+      payload.remove('is_sync_pending');
+      // Generate a UUID client-side if id is empty or not a valid UUID
+      final currentId = payload['id']?.toString();
+      if (!AppHelper.isValidUuid(currentId)) {
         payload['id'] = _uuid.v4();
       }
 
@@ -308,8 +310,9 @@ class SupabaseJournalRepository implements JournalRepository {
   Future<void> update(JournalModel model) async {
     try {
       final payload = model.toJson();
-      // Remove attachment from payload (will be handled separately)
+      // Remove attachment and local-only fields
       payload.remove('attachment');
+      payload.remove('is_sync_pending');
 
       // Preserve or resolve school_id if missing
       final cleanSchoolId = AppHelper.parseSingleCleanSchoolId(

@@ -412,5 +412,11 @@ class AppHelper {
 
     return trimmed;
   }
+
+  static bool isValidUuid(String? id) {
+    if (id == null || id.isEmpty) return false;
+    final regex = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+    return regex.hasMatch(id);
+  }
 }
 

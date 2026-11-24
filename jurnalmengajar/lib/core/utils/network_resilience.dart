@@ -21,6 +21,14 @@ class NetworkResilience {
     Duration timeout = defaultQueryTimeout,
     String operationName = 'NetworkOperation',
   }) async {
+    if (ConnectivityService.instance.isOffline && fallback != null) {
+      try {
+        return await fallback();
+      } catch (fallbackError) {
+        debugPrint('[NetworkResilience] Fallback error while offline in $operationName: $fallbackError');
+      }
+    }
+
     try {
       final result = await networkTask().timeout(
         timeout,

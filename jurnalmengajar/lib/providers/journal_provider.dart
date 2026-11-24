@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
+import 'package:uuid/uuid.dart';
 import '../models/journal_model.dart';
 import '../repositories/journal_repository.dart';
 import '../repositories/supabase_journal_repository.dart';
@@ -9,6 +10,7 @@ import '../core/services/sync_queue_service.dart';
 import '../core/utils/helper.dart';
 
 class JournalProvider with ChangeNotifier {
+  static const _uuid = Uuid();
   final JournalRepository journalRepository;
 
   List<JournalModel> _journals = [];
@@ -16,21 +18,60 @@ class JournalProvider with ChangeNotifier {
   String? _currentSchoolId;
   bool _isLoading = false;
   String? _errorMessage;
+  String? _lastTeacherId;
+  bool _wasOffline = false;
 
   JournalProvider({required this.journalRepository}) {
     SyncQueueService.instance.registerRepository(journalRepository);
     SyncQueueService.instance.addListener(_handleSyncQueueUpdate);
+    ConnectivityService.instance.addListener(_handleConnectivityChange);
+    _wasOffline = ConnectivityService.instance.isOffline;
+  }
+
+  void _handleConnectivityChange() {
+    final isOffline = ConnectivityService.instance.isOffline;
+    if (_wasOffline && !isOffline) {
+      if (_lastTeacherId != null && _lastTeacherId!.isNotEmpty) {
+        loadTeacherJournals(_lastTeacherId!);
+      }
+      if (_currentSchoolId != null && _currentSchoolId!.isNotEmpty) {
+        loadAllJournals(_currentSchoolId);
+      }
+    }
+    _wasOffline = isOffline;
   }
 
   void _handleSyncQueueUpdate() {
-    if (!SyncQueueService.instance.isSyncing && !SyncQueueService.instance.hasPendingItems) {
-      if (_currentSchoolId != null) loadAllJournals(_currentSchoolId);
+    final syncQueue = SyncQueueService.instance;
+    bool changed = false;
+    for (int i = 0; i < _teacherJournals.length; i++) {
+      if (_teacherJournals[i].isSyncPending && !syncQueue.isSchedulePendingSync(_teacherJournals[i].scheduleId)) {
+        _teacherJournals[i] = _teacherJournals[i].copyWith(isSyncPending: false);
+        changed = true;
+      }
+    }
+    for (int i = 0; i < _journals.length; i++) {
+      if (_journals[i].isSyncPending && !syncQueue.isSchedulePendingSync(_journals[i].scheduleId)) {
+        _journals[i] = _journals[i].copyWith(isSyncPending: false);
+        changed = true;
+      }
+    }
+    if (changed) {
+      notifyListeners();
+    }
+    if (!syncQueue.isSyncing && !syncQueue.hasPendingItems) {
+      if (_lastTeacherId != null && _lastTeacherId!.isNotEmpty) {
+        loadTeacherJournals(_lastTeacherId!);
+      } else if (_currentSchoolId != null) {
+        loadAllJournals(_currentSchoolId);
+      }
     }
   }
 
   @override
   void dispose() {
     SyncQueueService.instance.removeListener(_handleSyncQueueUpdate);
+    ConnectivityService.instance.removeListener(_handleConnectivityChange);
     super.dispose();
   }
 
@@ -108,6 +149,12 @@ class JournalProvider with ChangeNotifier {
       }
     }
 
+    if (ConnectivityService.instance.isOffline) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
     try {
       final repo = journalRepository;
       final fresh = (repo is SupabaseJournalRepository)
@@ -161,6 +208,7 @@ class JournalProvider with ChangeNotifier {
   }
 
   Future<void> loadTeacherJournals(String teacherId) async {
+    _lastTeacherId = teacherId;
     final teacherKey = '${_currentSchoolId ?? "all"}_$teacherId';
     if (_inFlightTeacherLoad != null && _inFlightTeacherId == teacherKey) {
       return _inFlightTeacherLoad!;
@@ -211,6 +259,12 @@ class JournalProvider with ChangeNotifier {
       }
     }
 
+    if (ConnectivityService.instance.isOffline) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
     try {
       final fresh = await journalRepository.getJournalsForTeacher(teacherId);
       final filteredFresh = (cleanSchoolId != null && cleanSchoolId.isNotEmpty)
@@ -240,6 +294,24 @@ class JournalProvider with ChangeNotifier {
   }
 
   Future<JournalModel?> getJournalForSchedule(String scheduleId, {DateTime? date}) async {
+    for (final j in _teacherJournals) {
+      if (j.scheduleId == scheduleId) {
+        if (date != null) {
+          if (j.date.year == date.year &&
+              j.date.month == date.month &&
+              j.date.day == date.day) {
+            return j;
+          }
+        } else {
+          return j;
+        }
+      }
+    }
+
+    if (ConnectivityService.instance.isOffline) {
+      return null;
+    }
+
     try {
       return await journalRepository.getJournalForSchedule(scheduleId, date: date);
     } catch (_) {
@@ -262,8 +334,11 @@ class JournalProvider with ChangeNotifier {
 
       // Jika offline, simpan langsung ke antrean Outbox
       if (ConnectivityService.instance.isOffline) {
+        final pendingId = (finalModel.id.isNotEmpty && AppHelper.isValidUuid(finalModel.id))
+            ? finalModel.id
+            : _uuid.v4();
         final pendingModel = finalModel.copyWith(
-          id: finalModel.id.isNotEmpty ? finalModel.id : 'offline_${DateTime.now().millisecondsSinceEpoch}',
+          id: pendingId,
           isSyncPending: true,
         );
         await SyncQueueService.instance.enqueueJournal(
@@ -328,8 +403,11 @@ class JournalProvider with ChangeNotifier {
 
       if (isNetworkIssue) {
         ConnectivityService.instance.reportOffline();
+        final pendingId = (model.id.isNotEmpty && AppHelper.isValidUuid(model.id))
+            ? model.id
+            : _uuid.v4();
         final pendingModel = model.copyWith(
-          id: model.id.isNotEmpty ? model.id : 'offline_${DateTime.now().millisecondsSinceEpoch}',
+          id: pendingId,
           schoolId: _currentSchoolId ?? model.schoolId,
           isSyncPending: true,
         );

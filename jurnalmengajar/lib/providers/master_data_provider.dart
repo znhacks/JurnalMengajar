@@ -18,6 +18,7 @@ import '../repositories/student_repository.dart';
 import '../repositories/supabase_student_repository.dart';
 import '../repositories/school_repository.dart';
 import '../core/services/cache_service.dart';
+import '../core/services/connectivity_service.dart';
 import '../core/utils/helper.dart';
 
 class MasterDataProvider with ChangeNotifier {
@@ -40,6 +41,7 @@ class MasterDataProvider with ChangeNotifier {
 
   bool _isLoading = false;
   String? _errorMessage;
+  bool _wasOffline = false;
 
   MasterDataProvider({
     required this.periodRepository,
@@ -49,7 +51,26 @@ class MasterDataProvider with ChangeNotifier {
     required this.teacherRepository,
     required this.studentRepository,
     this.schoolRepository,
-  });
+  }) {
+    ConnectivityService.instance.addListener(_handleConnectivityChange);
+    _wasOffline = ConnectivityService.instance.isOffline;
+  }
+
+  void _handleConnectivityChange() {
+    final isOffline = ConnectivityService.instance.isOffline;
+    if (_wasOffline && !isOffline) {
+      if (_currentSchoolId != null && _currentSchoolId!.isNotEmpty) {
+        loadAllData(_currentSchoolId!);
+      }
+    }
+    _wasOffline = isOffline;
+  }
+
+  @override
+  void dispose() {
+    ConnectivityService.instance.removeListener(_handleConnectivityChange);
+    super.dispose();
+  }
 
   // Getters
   List<PeriodModel> get periods => _periods;
@@ -184,6 +205,12 @@ class MasterDataProvider with ChangeNotifier {
         _isLoading = true;
         notifyListeners();
       }
+    }
+
+    if (ConnectivityService.instance.isOffline) {
+      _isLoading = false;
+      notifyListeners();
+      return;
     }
 
     try {
@@ -837,11 +864,35 @@ class MasterDataProvider with ChangeNotifier {
 
   // Students.
   Future<void> loadStudentsForClass(String classId) async {
-    _isLoading = true;
+    final cacheKey = 'students_$classId';
+    if (_students.isEmpty) {
+      try {
+        final cached = await CacheService().loadList(cacheKey);
+        if (cached != null && cached.isNotEmpty) {
+          _students = cached.map((s) => StudentModel.fromJson(s)).toList();
+          _students.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+          _isLoading = false;
+          notifyListeners();
+        }
+      } catch (_) {}
+    }
+
+    if (ConnectivityService.instance.isOffline) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    _isLoading = _students.isEmpty;
     _errorMessage = null;
     notifyListeners();
     try {
-      _students = await studentRepository.getAllByClass(classId);
+      final fresh = await studentRepository.getAllByClass(classId);
+      _students = fresh;
+      _students.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      try {
+        CacheService().save(cacheKey, _students.map((e) => e.toJson()).toList());
+      } catch (_) {}
     } catch (e) {
       _errorMessage = e.toString();
     } finally {

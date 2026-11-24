@@ -8,6 +8,8 @@ import '../repositories/warning_letter_repository.dart';
 import 'master_data_provider.dart';
 import '../core/utils/helper.dart';
 import '../core/utils/schedule_grouper.dart';
+import '../core/services/cache_service.dart';
+import '../core/services/connectivity_service.dart';
 
 class WarningLetterProvider with ChangeNotifier {
   final WarningLetterRepository warningLetterRepository;
@@ -86,7 +88,26 @@ class WarningLetterProvider with ChangeNotifier {
     final int sequence = ++_loadSequence;
 
     final hasExistingData = _warningLetters.isNotEmpty;
+    final cacheKey = 'warning_letters_${teacherId}_${cleanSchoolId ?? "all"}';
+
     if (!hasExistingData) {
+      try {
+        final cached = await CacheService().loadList(cacheKey);
+        if (cached != null && cached.isNotEmpty && _warningLetters.isEmpty) {
+          _warningLetters = cached.map((e) => WarningLetterModel.fromJson(e)).toList();
+          _isLoading = false;
+          notifyListeners();
+        }
+      } catch (_) {}
+    }
+
+    if (ConnectivityService.instance.isOffline) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    if (_warningLetters.isEmpty) {
       _isLoading = true;
       _errorMessage = null;
       notifyListeners();
@@ -102,6 +123,10 @@ class WarningLetterProvider with ChangeNotifier {
         final wSchoolId = AppHelper.parseSingleCleanSchoolId(w.schoolId);
         return wSchoolId == cleanSchoolId;
       }).toList();
+
+      try {
+        CacheService().save(cacheKey, _warningLetters.map((e) => e.toJson()).toList());
+      } catch (_) {}
     } catch (e) {
       if (sequence != _loadSequence) return;
       _errorMessage = e.toString();

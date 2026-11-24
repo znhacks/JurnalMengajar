@@ -1,16 +1,18 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'web_connectivity.dart';
 
 /// Service pendeteksi koneksi internet global (lintas platform Web, Android, iOS, Desktop)
 /// tanpa ketergantungan plugin native eksternal.
-class ConnectivityService with ChangeNotifier {
+class ConnectivityService with ChangeNotifier, WidgetsBindingObserver {
   static final ConnectivityService instance = ConnectivityService._internal();
   factory ConnectivityService() => instance;
 
   ConnectivityService._internal() {
+    WidgetsBinding.instance.addObserver(this);
     _startPeriodicCheck();
   }
 
@@ -24,6 +26,13 @@ class ConnectivityService with ChangeNotifier {
   bool get isOnline => !_isOffline;
   bool get justReconnected => _justReconnected;
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      checkConnectivity();
+    }
+  }
+
   void _startPeriodicCheck() {
     if (kIsWeb) {
       initWebOnlineListeners((online) {
@@ -34,9 +43,15 @@ class ConnectivityService with ChangeNotifier {
     // Cek awal setelah aplikasi mulai
     checkConnectivity();
 
-    // Cek berkala setiap 8 detik
+    _scheduleNextCheck();
+  }
+
+  void _scheduleNextCheck() {
     _periodicTimer?.cancel();
-    _periodicTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+    final interval = _isOffline
+        ? const Duration(seconds: 3)
+        : const Duration(seconds: 12);
+    _periodicTimer = Timer.periodic(interval, (_) {
       checkConnectivity();
     });
   }
@@ -108,8 +123,9 @@ class ConnectivityService with ChangeNotifier {
     final wasOfflineBefore = _isOffline;
     _isOffline = isOfflineNow;
 
+    _scheduleNextCheck();
+
     if (wasOfflineBefore && !_isOffline) {
-      // Baru saja pulih dari offline
       _justReconnected = true;
       _reconnectedResetTimer?.cancel();
       _reconnectedResetTimer = Timer(const Duration(seconds: 3), () {
@@ -129,6 +145,7 @@ class ConnectivityService with ChangeNotifier {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _periodicTimer?.cancel();
     _reconnectedResetTimer?.cancel();
     super.dispose();

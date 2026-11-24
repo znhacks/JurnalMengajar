@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import '../../models/journal_model.dart';
 import '../../repositories/journal_repository.dart';
 import '../../repositories/supabase_journal_repository.dart';
+import '../utils/helper.dart';
 import 'cache_service.dart';
 import 'connectivity_service.dart';
 
@@ -84,12 +86,21 @@ class SyncQueueService with ChangeNotifier {
   int get queueCount => _queue.length;
   bool get isSyncing => _isSyncing;
   bool get hasPendingItems => _queue.isNotEmpty;
+  JournalRepository? get registeredRepository => _registeredRepository;
 
   /// Daftarkan JournalRepository aktif untuk proses sinkronisasi otomatis
   void registerRepository(JournalRepository repo) {
     _registeredRepository = repo;
-    if (ConnectivityService.instance.isOnline && hasPendingItems && !_isSyncing) {
-      processQueue(repo);
+    if (_isInitialized) {
+      if (ConnectivityService.instance.isOnline && hasPendingItems && !_isSyncing) {
+        processQueue(repo);
+      }
+    } else {
+      _initQueue().then((_) {
+        if (ConnectivityService.instance.isOnline && hasPendingItems && !_isSyncing) {
+          processQueue(repo);
+        }
+      });
     }
   }
 
@@ -105,6 +116,10 @@ class SyncQueueService with ChangeNotifier {
       }
       _isInitialized = true;
       notifyListeners();
+
+      if (ConnectivityService.instance.isOnline && hasPendingItems && !_isSyncing && _registeredRepository != null) {
+        unawaited(processQueue(_registeredRepository!));
+      }
     } catch (e) {
       debugPrint('[SyncQueueService] Error loading queue: $e');
     }
@@ -197,7 +212,13 @@ class SyncQueueService with ChangeNotifier {
       notifyListeners();
 
       try {
-        final journalModel = JournalModel.fromJson(item.journalData).copyWith(
+        final rawMap = Map<String, dynamic>.from(item.journalData);
+        rawMap.remove('is_sync_pending');
+        final currentId = rawMap['id']?.toString() ?? '';
+        final validId = AppHelper.isValidUuid(currentId) ? currentId : const Uuid().v4();
+        rawMap['id'] = validId;
+
+        final journalModel = JournalModel.fromJson(rawMap).copyWith(
           isSyncPending: false,
         );
 
@@ -235,7 +256,11 @@ class SyncQueueService with ChangeNotifier {
         );
 
         if (item.action == 'UPDATE_JOURNAL' && readyModel.id.isNotEmpty) {
-          await repo.update(readyModel);
+          try {
+            await repo.update(readyModel);
+          } catch (_) {
+            await repo.create(readyModel);
+          }
         } else {
           await repo.create(readyModel);
         }

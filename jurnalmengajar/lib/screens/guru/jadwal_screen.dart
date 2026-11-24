@@ -23,6 +23,7 @@ import '../../providers/holiday_provider.dart';
 import '../../providers/journal_provider.dart';
 import '../../providers/master_data_provider.dart';
 import '../../providers/schedule_provider.dart';
+import '../../core/services/connectivity_service.dart';
 import '../../widgets/app_scaffold.dart';
 
 class GuruJadwalScreen extends StatefulWidget {
@@ -37,6 +38,7 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
   DateTime _focusedMonth = DateTime.now();
   String? _lastLoadedSchoolId;
   String? _lastLoadedUserId;
+  bool _wasOffline = false;
 
   late CrCalendarController _calendarController;
   final List<CalendarEventModel> _calendarEvents = [];
@@ -55,6 +57,8 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
   @override
   void initState() {
     super.initState();
+    _wasOffline = ConnectivityService.instance.isOffline;
+    ConnectivityService.instance.addListener(_handleConnectivityChange);
     _focusedMonth = DateTime(_selectedDay.year, _selectedDay.month, 1);
     _calendarController = CrCalendarController(
       events: _calendarEvents,
@@ -112,8 +116,20 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
     });
   }
 
+  void _handleConnectivityChange() {
+    if (!mounted) return;
+    final isOffline = ConnectivityService.instance.isOffline;
+    if (_wasOffline && !isOffline) {
+      if (_lastLoadedSchoolId != null && _lastLoadedSchoolId!.isNotEmpty) {
+        _loadData();
+      }
+    }
+    _wasOffline = isOffline;
+  }
+
   @override
   void dispose() {
+    ConnectivityService.instance.removeListener(_handleConnectivityChange);
     _calendarController.dispose();
     super.dispose();
   }
@@ -187,6 +203,16 @@ class _GuruJadwalScreenState extends State<GuruJadwalScreen> {
           journalProvider.loadTeacherJournals(teacher.id),
           holidayProvider.loadHolidays(targetSchoolId),
         ]);
+
+        if (ConnectivityService.instance.isOnline) {
+          final classIds = scheduleProvider.cachedTeacherSchedules
+              .map((s) => s.classId)
+              .where((c) => c.isNotEmpty)
+              .toSet();
+          for (final cId in classIds) {
+            masterProvider.loadStudentsForClass(cId);
+          }
+        }
       } else {
         scheduleProvider.clearTeacherSchedulesCache();
         journalProvider.clearTeacherJournalsCache();

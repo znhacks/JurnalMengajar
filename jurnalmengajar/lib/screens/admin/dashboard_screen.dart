@@ -20,6 +20,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/warning_letter_provider.dart';
 import '../../widgets/role_badge.dart';
 import '../../widgets/school_switcher_modal.dart';
+import '../../core/services/connectivity_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/app_scaffold.dart';
 import '../../widgets/state_widgets.dart';
@@ -40,10 +41,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   String? _lastLoadedSchoolId;
   String? _lastLoadedUserId;
+  bool _wasOffline = false;
 
   @override
   void initState() {
     super.initState();
+    _wasOffline = ConnectivityService.instance.isOffline;
+    ConnectivityService.instance.addListener(_handleConnectivityChange);
     _selectedTeacherId = widget.selectedTeacherId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -55,6 +59,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         _refreshData();
       }
     });
+  }
+
+  void _handleConnectivityChange() {
+    if (!mounted) return;
+    final isOffline = ConnectivityService.instance.isOffline;
+    if (_wasOffline && !isOffline) {
+      if (_lastLoadedSchoolId != null && _lastLoadedSchoolId!.isNotEmpty) {
+        _refreshData();
+      }
+    }
+    _wasOffline = isOffline;
+  }
+
+  @override
+  void dispose() {
+    ConnectivityService.instance.removeListener(_handleConnectivityChange);
+    super.dispose();
   }
 
   @override

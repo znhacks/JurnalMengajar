@@ -20,6 +20,7 @@ import '../../core/utils/schedule_grouper.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/warning_letter_provider.dart';
+import '../../core/services/connectivity_service.dart';
 import '../../widgets/animated_widgets.dart';
 import '../../widgets/profile_photo_view.dart';
 import '../../widgets/role_badge.dart';
@@ -51,10 +52,13 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
   String? _lastLoadedSchoolId;
   String? _lastLoadedUserId;
   bool _isCheckingWarnings = false;
+  bool _wasOffline = false;
 
   @override
   void initState() {
     super.initState();
+    _wasOffline = ConnectivityService.instance.isOffline;
+    ConnectivityService.instance.addListener(_handleConnectivityChange);
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.trim().toLowerCase();
@@ -70,6 +74,17 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
         _refreshData();
       }
     });
+  }
+
+  void _handleConnectivityChange() {
+    if (!mounted) return;
+    final isOffline = ConnectivityService.instance.isOffline;
+    if (_wasOffline && !isOffline) {
+      if (_lastLoadedSchoolId != null && _lastLoadedSchoolId!.isNotEmpty) {
+        _refreshData();
+      }
+    }
+    _wasOffline = isOffline;
   }
 
   @override
@@ -97,6 +112,7 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
 
   @override
   void dispose() {
+    ConnectivityService.instance.removeListener(_handleConnectivityChange);
     _searchController.dispose();
     super.dispose();
   }
@@ -159,6 +175,16 @@ class _GuruDashboardScreenState extends State<GuruDashboardScreen> {
       holidayProvider.loadHolidays(schoolId),
       warningProvider.loadTeacherWarningLetters(teacher.id, schoolId),
     ]);
+
+    if (ConnectivityService.instance.isOnline) {
+      final classIds = scheduleProvider.cachedTeacherSchedules
+          .map((s) => s.classId)
+          .where((c) => c.isNotEmpty)
+          .toSet();
+      for (final cId in classIds) {
+        masterProvider.loadStudentsForClass(cId);
+      }
+    }
 
     if (!mounted) return;
 
