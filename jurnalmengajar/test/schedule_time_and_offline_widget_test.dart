@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:jurnalmengajar/core/router/app_router.dart';
 import 'package:jurnalmengajar/core/services/connectivity_service.dart';
+import 'package:jurnalmengajar/core/services/sync_queue_service.dart';
 import 'package:jurnalmengajar/core/utils/helper.dart';
+import 'package:jurnalmengajar/models/journal_model.dart';
 import 'package:jurnalmengajar/widgets/offline_indicator_wrapper.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    await initializeDateFormatting('id_ID', null);
+  });
 
   group('1. Format Jam Pelajaran Jadwal (Tidak Bertumpuk & Tidak Terpotong)', () {
     test(
@@ -61,6 +70,7 @@ void main() {
     final connectivity = ConnectivityService.instance;
 
     setUp(() {
+      SharedPreferences.setMockInitialValues({});
       connectivity.cancelTimersForTest();
       connectivity.reportOnline();
     });
@@ -117,14 +127,14 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Mengerti'), findsOneWidget);
-      expect(find.text('Coba Lagi'), findsOneWidget);
+      expect(find.text('Coba Hubungkan'), findsOneWidget);
 
       final cancelCenter = tester.getCenter(find.text('Mengerti'));
-      final confirmCenter = tester.getCenter(find.text('Coba Lagi'));
+      final confirmCenter = tester.getCenter(find.text('Coba Hubungkan'));
       expect(
         cancelCenter.dx < confirmCenter.dx,
         isTrue,
-        reason: 'Mengerti harus di kiri, Coba Lagi di kanan',
+        reason: 'Mengerti harus di kiri, Coba Hubungkan di kanan',
       );
       expect(
         (cancelCenter.dy - confirmCenter.dy).abs() < 5.0,
@@ -151,6 +161,69 @@ void main() {
       // Selesaikan durasi 3 detik banner pulih
       await tester.pump(const Duration(seconds: 4));
       await tester.pumpAndSettle();
+      connectivity.cancelTimersForTest();
+    });
+
+    testWidgets('3. Menekan tombol "Lihat" pada banner membuka modal antrean offline', (tester) async {
+      connectivity.cancelTimersForTest();
+      connectivity.reportOffline();
+
+      // Enqueue 1 jurnal saat offline agar tidak memicu auto-sync background
+      await SyncQueueService.instance.enqueueJournal(
+        journal: JournalModel(
+          id: 'queue_modal_test',
+          scheduleId: 'sch_modal_test',
+          date: DateTime(2026, 11, 25),
+          teachingHour: 1,
+          classId: 'cls_1',
+          subjectId: 'sub_1',
+          teacherId: 'tch_1',
+          material: 'Materi Pengujian Modal',
+          status: 'pending',
+        ),
+        isUpdate: false,
+      );
+
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => MaterialApp(
+            navigatorKey: AppRouter.rootNavigatorKey,
+            home: const Scaffold(
+              body: OfflineIndicatorWrapper(
+                child: Center(child: Text('Konten Halaman')),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tutup dialog peringatan jika muncul agar layar utama aktif
+      if (find.text('Mengerti').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Mengerti'));
+        await tester.pumpAndSettle();
+      }
+
+      // Banner menampilkan tombol "Lihat"
+      expect(find.text('Lihat'), findsOneWidget);
+
+      // Tekan tombol "Lihat"
+      await tester.tap(find.text('Lihat'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+
+      // Modal antrean harus terbuka
+      expect(find.text('Antrean Sinkronisasi'), findsOneWidget);
+      expect(find.text('Materi Pengujian Modal'), findsOneWidget);
+
+      // Tutup modal
+      await tester.tap(find.byIcon(Icons.close_rounded));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+      expect(find.text('Antrean Sinkronisasi'), findsNothing);
+
+      await SyncQueueService.instance.clearQueue();
       connectivity.cancelTimersForTest();
     });
   });

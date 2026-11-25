@@ -5,6 +5,7 @@ import '../core/router/app_router.dart';
 import '../core/services/connectivity_service.dart';
 import '../core/services/sync_queue_service.dart';
 import 'app_dialog_actions.dart';
+import 'offline_outbox_modal.dart';
 
 /// Pembungkus global yang memantau status koneksi internet,
 /// menampilkan label/banner peringatan offline, serta dialog peringatan.
@@ -114,7 +115,7 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
             AppDialogActions(
               cancelText: 'Mengerti',
               onCancel: () => Navigator.of(ctx).pop(),
-              confirmText: 'Coba Lagi',
+              confirmText: 'Coba Hubungkan',
               onConfirm: () async {
                 Navigator.of(ctx).pop();
                 final online = await _connectivity.checkConnectivity();
@@ -160,6 +161,10 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
         );
       },
     );
+  }
+
+  void _openOutboxModal() {
+    OfflineOutboxModal.show();
   }
 
   Widget _buildBanner({required bool isOffline}) {
@@ -210,19 +215,52 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
               Icon(icon, size: 15.sp, color: iconColor),
               SizedBox(width: 8.w),
               Flexible(
-                child: Text(
-                  text,
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600,
-                    color: textColor,
+                child: GestureDetector(
+                  onTap: queueCount > 0 ? _openOutboxModal : null,
+                  behavior: HitTestBehavior.opaque,
+                  child: Text(
+                    text,
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (queueCount > 0) ...[
+                SizedBox(width: 8.w),
+                InkWell(
+                  onTap: _openOutboxModal,
+                  borderRadius: BorderRadius.circular(6.r),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                    decoration: BoxDecoration(
+                      color: textColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.visibility_outlined, size: 12.sp, color: textColor),
+                        SizedBox(width: 4.w),
+                        Text(
+                          'Lihat',
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 11.5.sp,
+                            fontWeight: FontWeight.w700,
+                            color: textColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               if (isOffline) ...[
-                SizedBox(width: 10.w),
+                SizedBox(width: 8.w),
                 InkWell(
                   onTap: () async {
                     final online = await _connectivity.checkConnectivity();

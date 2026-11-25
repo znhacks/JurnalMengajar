@@ -46,7 +46,10 @@ class ConnectivityService with ChangeNotifier, WidgetsBindingObserver {
     _scheduleNextCheck();
   }
 
+  bool _timersDisabledForTest = false;
+
   void _scheduleNextCheck() {
+    if (_timersDisabledForTest) return;
     _periodicTimer?.cancel();
     final interval = _isOffline
         ? const Duration(seconds: 3)
@@ -127,11 +130,13 @@ class ConnectivityService with ChangeNotifier, WidgetsBindingObserver {
 
     if (wasOfflineBefore && !_isOffline) {
       _justReconnected = true;
-      _reconnectedResetTimer?.cancel();
-      _reconnectedResetTimer = Timer(const Duration(seconds: 3), () {
-        _justReconnected = false;
-        notifyListeners();
-      });
+      if (!_timersDisabledForTest) {
+        _reconnectedResetTimer?.cancel();
+        _reconnectedResetTimer = Timer(const Duration(seconds: 3), () {
+          _justReconnected = false;
+          notifyListeners();
+        });
+      }
     }
 
     notifyListeners();
@@ -139,6 +144,7 @@ class ConnectivityService with ChangeNotifier, WidgetsBindingObserver {
 
   /// Membatalkan timer background (berguna saat test teardown)
   void cancelTimersForTest() {
+    _timersDisabledForTest = true;
     _periodicTimer?.cancel();
     _reconnectedResetTimer?.cancel();
   }

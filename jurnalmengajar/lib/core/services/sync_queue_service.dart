@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/journal_model.dart';
 import '../../repositories/journal_repository.dart';
@@ -14,21 +17,25 @@ class SyncQueueItem {
   final String id;
   final String action; // 'CREATE_JOURNAL' | 'UPDATE_JOURNAL'
   final Map<String, dynamic> journalData;
+  final List<String> imageFilePaths;
   final List<String> base64Images;
   final List<String> imageNames;
   final DateTime createdAt;
   int retryCount;
   String status; // 'pending' | 'syncing' | 'failed'
+  String? lastError;
 
   SyncQueueItem({
     required this.id,
     required this.action,
     required this.journalData,
+    this.imageFilePaths = const [],
     this.base64Images = const [],
     this.imageNames = const [],
     required this.createdAt,
     this.retryCount = 0,
     this.status = 'pending',
+    this.lastError,
   });
 
   String get scheduleId =>
@@ -41,6 +48,7 @@ class SyncQueueItem {
       id: json['id'] as String? ?? 'item_${DateTime.now().millisecondsSinceEpoch}',
       action: json['action'] as String? ?? 'CREATE_JOURNAL',
       journalData: Map<String, dynamic>.from(json['journal_data'] as Map? ?? {}),
+      imageFilePaths: (json['image_file_paths'] as List?)?.map((e) => e.toString()).toList() ?? [],
       base64Images: (json['base64_images'] as List?)?.map((e) => e.toString()).toList() ?? [],
       imageNames: (json['image_names'] as List?)?.map((e) => e.toString()).toList() ?? [],
       createdAt: json['created_at'] != null
@@ -48,6 +56,7 @@ class SyncQueueItem {
           : DateTime.now(),
       retryCount: json['retry_count'] as int? ?? 0,
       status: json['status'] as String? ?? 'pending',
+      lastError: json['last_error'] as String?,
     );
   }
 
@@ -56,11 +65,13 @@ class SyncQueueItem {
       'id': id,
       'action': action,
       'journal_data': journalData,
+      'image_file_paths': imageFilePaths,
       'base64_images': base64Images,
       'image_names': imageNames,
       'created_at': createdAt.toIso8601String(),
       'retry_count': retryCount,
       'status': status,
+      if (lastError != null) 'last_error': lastError,
     };
   }
 }
@@ -151,10 +162,37 @@ class SyncQueueService with ChangeNotifier {
   }) async {
     await _initQueue();
 
+    final List<String> filePaths = [];
     final List<String> base64Images = [];
+
     if (imageBytesList != null && imageBytesList.isNotEmpty) {
-      for (final bytes in imageBytesList) {
-        base64Images.add(base64Encode(bytes));
+      if (!kIsWeb) {
+        try {
+          final dir = await getApplicationDocumentsDirectory();
+          final offlineDir = Directory('${dir.path}/offline_attachments');
+          if (!await offlineDir.exists()) {
+            await offlineDir.create(recursive: true);
+          }
+          for (int i = 0; i < imageBytesList.length; i++) {
+            final rawName = (imageNamesList != null && i < imageNamesList.length)
+                ? imageNamesList[i]
+                : 'img_$i.jpg';
+            final safeName = rawName.replaceAll(RegExp(r'[^a-zA-Z0-9_.-]'), '_');
+            final filePath = '${offlineDir.path}/att_${DateTime.now().millisecondsSinceEpoch}_${i}_$safeName';
+            final file = File(filePath);
+            await file.writeAsBytes(imageBytesList[i]);
+            filePaths.add(filePath);
+          }
+        } catch (e) {
+          debugPrint('[SyncQueueService] Fallback to base64 due to file write error: $e');
+          for (final bytes in imageBytesList) {
+            base64Images.add(base64Encode(bytes));
+          }
+        }
+      } else {
+        for (final bytes in imageBytesList) {
+          base64Images.add(base64Encode(bytes));
+        }
       }
     }
 
@@ -162,6 +200,7 @@ class SyncQueueService with ChangeNotifier {
       id: 'sync_${DateTime.now().millisecondsSinceEpoch}_${journal.scheduleId}',
       action: isUpdate ? 'UPDATE_JOURNAL' : 'CREATE_JOURNAL',
       journalData: journal.toJson(),
+      imageFilePaths: filePaths,
       base64Images: base64Images,
       imageNames: imageNamesList ?? [],
       createdAt: DateTime.now(),
@@ -222,25 +261,43 @@ class SyncQueueService with ChangeNotifier {
           isSyncPending: false,
         );
 
-        // Upload lampiran gambar jika ada
+        // Upload lampiran gambar dari file fisik lokal atau fallback base64
         String? finalAttachmentUrl = journalModel.attachmentUrl;
-        if (item.base64Images.isNotEmpty && repo is SupabaseJournalRepository) {
+        final hasFiles = item.imageFilePaths.isNotEmpty;
+        final hasBase64 = item.base64Images.isNotEmpty;
+
+        if ((hasFiles || hasBase64) && repo is SupabaseJournalRepository) {
           final uploadedUrls = <String>[];
-          for (int i = 0; i < item.base64Images.length && i < 3; i++) {
+          final count = hasFiles ? item.imageFilePaths.length : item.base64Images.length;
+
+          for (int i = 0; i < count && i < 3; i++) {
             try {
-              final bytes = base64Decode(item.base64Images[i]);
+              Uint8List? bytes;
               final name = i < item.imageNames.length
                   ? item.imageNames[i]
                   : 'lampiran_${i + 1}.jpg';
-              final url = await repo.uploadAttachment(
-                bytes,
-                name,
-                journalModel.id.isNotEmpty
-                    ? journalModel.id
-                    : 'temp_${DateTime.now().millisecondsSinceEpoch}',
-                suffix: '_${i + 1}',
-              );
-              uploadedUrls.add(url);
+
+              if (hasFiles && i < item.imageFilePaths.length) {
+                final file = File(item.imageFilePaths[i]);
+                if (await file.exists()) {
+                  bytes = await file.readAsBytes();
+                }
+              }
+              if (bytes == null && hasBase64 && i < item.base64Images.length) {
+                bytes = base64Decode(item.base64Images[i]);
+              }
+
+              if (bytes != null) {
+                final url = await repo.uploadAttachment(
+                  bytes,
+                  name,
+                  journalModel.id.isNotEmpty
+                      ? journalModel.id
+                      : 'temp_${DateTime.now().millisecondsSinceEpoch}',
+                  suffix: '_${i + 1}',
+                );
+                uploadedUrls.add(url);
+              }
             } catch (imgErr) {
               debugPrint('[SyncQueueService] Error uploading queued image: $imgErr');
             }
@@ -265,6 +322,14 @@ class SyncQueueService with ChangeNotifier {
           await repo.create(readyModel);
         }
 
+        // Hapus file fisik lokal setelah berhasil terunggah
+        for (final path in item.imageFilePaths) {
+          try {
+            final f = File(path);
+            if (await f.exists()) await f.delete();
+          } catch (_) {}
+        }
+
         _queue.removeWhere((q) => q.id == item.id);
         await _persistQueue();
         debugPrint('[SyncQueueService] Successfully synced journal for schedule ${item.scheduleId}');
@@ -276,6 +341,12 @@ class SyncQueueService with ChangeNotifier {
         debugPrint('[SyncQueueService] Error syncing item ${item.id}: $e');
         item.retryCount++;
         final errStr = e.toString().toLowerCase();
+
+        final isAuthIssue = errStr.contains('401') ||
+            errStr.contains('unauthorized') ||
+            errStr.contains('jwt expired') ||
+            errStr.contains('invalid token');
+
         final isNetworkIssue = errStr.contains('socketexception') ||
             errStr.contains('clientexception') ||
             errStr.contains('timeout') ||
@@ -283,13 +354,26 @@ class SyncQueueService with ChangeNotifier {
             errStr.contains('failed host lookup') ||
             errStr.contains('handshake');
 
-        if (isNetworkIssue) {
+        if (isAuthIssue) {
+          try {
+            debugPrint('[SyncQueueService] Session expired. Attempting refreshSession...');
+            await Supabase.instance.client.auth.refreshSession();
+            item.status = 'pending';
+            item.lastError = 'Sesi diperbarui, antrean akan dicoba kembali.';
+            break;
+          } catch (authErr) {
+            item.status = 'failed';
+            item.lastError = 'Sesi masuk kedaluwarsa. Silakan login kembali.';
+          }
+        } else if (isNetworkIssue) {
           item.status = 'pending';
+          item.lastError = 'Koneksi terputus saat sinkronisasi.';
           ConnectivityService.instance.reportOffline();
           break; // Hentikan loop jika koneksi terputus
         } else {
-          // Error database (misal foreign key dihapus)
+          // Error validasi / database
           item.status = 'failed';
+          item.lastError = e.toString().replaceAll('Exception: ', '');
         }
       }
     }
@@ -297,6 +381,21 @@ class SyncQueueService with ChangeNotifier {
     _isSyncing = false;
     await _persistQueue();
     notifyListeners();
+  }
+
+  /// Mencoba ulang sinkronisasi untuk item yang berstatus gagal
+  Future<void> retryItem(String itemId, [JournalRepository? repo]) async {
+    final idx = _queue.indexWhere((q) => q.id == itemId);
+    if (idx != -1) {
+      _queue[idx].status = 'pending';
+      _queue[idx].lastError = null;
+      await _persistQueue();
+      notifyListeners();
+      final activeRepo = repo ?? _registeredRepository;
+      if (activeRepo != null && ConnectivityService.instance.isOnline) {
+        await processQueue(activeRepo);
+      }
+    }
   }
 
   /// Menghapus antrean tertentu secara manual

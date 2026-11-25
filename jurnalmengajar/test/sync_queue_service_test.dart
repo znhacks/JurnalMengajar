@@ -10,16 +10,17 @@ class FakeJournalRepository implements JournalRepository {
   final List<JournalModel> created = [];
   final List<JournalModel> updated = [];
   bool shouldThrow = false;
+  String? errorToThrow;
 
   @override
   Future<void> create(JournalModel model) async {
-    if (shouldThrow) throw Exception('Network error');
+    if (shouldThrow) throw Exception(errorToThrow ?? 'Network error');
     created.add(model);
   }
 
   @override
   Future<void> update(JournalModel model) async {
-    if (shouldThrow) throw Exception('Network error');
+    if (shouldThrow) throw Exception(errorToThrow ?? 'Network error');
     updated.add(model);
   }
 
@@ -223,6 +224,45 @@ void main() {
       expect(syncQueue.queueCount, 0);
       expect(fakeRepo.created.length, 1);
       expect(fakeRepo.created.first.material, 'Materi Auto Sync');
+    });
+
+    test('6. Dapat mencoba ulang (retry) item yang berstatus failed', () async {
+      syncQueue.registerRepository(fakeRepo);
+      connectivity.reportOffline();
+
+      final failJournal = JournalModel(
+        id: 'fail_retry_test',
+        scheduleId: 'sch_fail_retry',
+        date: DateTime(2026, 11, 24),
+        teachingHour: 1,
+        classId: 'cls_3',
+        subjectId: 'sub_3',
+        teacherId: 'tch_3',
+        material: 'Materi Gagal Awal',
+        status: 'pending',
+      );
+
+      // Simulasikan database constraint error
+      fakeRepo.shouldThrow = true;
+      fakeRepo.errorToThrow = 'PGRST204: Foreign key violation';
+      await syncQueue.enqueueJournal(journal: failJournal, isUpdate: false);
+      expect(syncQueue.queueCount, 1);
+
+      // Jalankan sync saat online dengan db error
+      connectivity.reportOnline();
+      await syncQueue.processQueue(fakeRepo);
+      expect(syncQueue.queueCount, 1);
+      expect(syncQueue.queue.first.status, 'failed');
+      expect(syncQueue.queue.first.lastError, isNotNull);
+
+      // Sembuhkan repository dan panggil retryItem
+      fakeRepo.shouldThrow = false;
+      fakeRepo.errorToThrow = null;
+      await syncQueue.retryItem(syncQueue.queue.first.id, fakeRepo);
+
+      // Antrean harus berhasil diproses dan bersih
+      expect(syncQueue.queueCount, 0);
+      expect(fakeRepo.created.length, 1);
     });
   });
 }

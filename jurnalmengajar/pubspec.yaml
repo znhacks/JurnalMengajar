@@ -57,6 +57,7 @@ dependencies:
   http: ^1.2.2
   pdf: ^3.12.0
   printing: ^5.14.3
+  path_provider: ^2.1.5
   package_info_plus: ^8.3.0
   excel: ^4.0.6
   nobox_chat_sdk:
