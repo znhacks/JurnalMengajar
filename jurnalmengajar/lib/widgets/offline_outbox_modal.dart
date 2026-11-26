@@ -17,17 +17,21 @@ import 'app_dialog_actions.dart';
 class OfflineOutboxModal extends StatelessWidget {
   const OfflineOutboxModal({super.key});
 
+  static bool _isOpen = false;
+
   static Future<void> show([BuildContext? context]) {
+    if (_isOpen) return Future.value();
     final navContext = AppRouter.rootNavigatorKey.currentContext ?? context;
     if (navContext == null) return Future.value();
 
+    _isOpen = true;
     return showModalBottomSheet<void>(
       context: navContext,
       useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => const OfflineOutboxModal(),
-    );
+    ).whenComplete(() => _isOpen = false);
   }
 
   @override
