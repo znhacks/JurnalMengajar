@@ -261,7 +261,24 @@ class SyncQueueService with ChangeNotifier {
           isSyncPending: false,
         );
 
-        // Upload lampiran gambar dari file fisik lokal atau fallback base64
+        // 1. Simpan baris data jurnal ke database Supabase terlebih dahulu
+        // Ini memastikan foreign-key dan policy RLS pada bucket storage 'journal-attachments'
+        // dapat memverifikasi kepemilikan jurnal sebelum upload foto dijalankan.
+        if (item.action == 'UPDATE_JOURNAL' && journalModel.id.isNotEmpty) {
+          try {
+            await repo.update(journalModel);
+          } catch (_) {
+            await repo.create(journalModel);
+          }
+        } else {
+          try {
+            await repo.create(journalModel);
+          } catch (_) {
+            await repo.update(journalModel);
+          }
+        }
+
+        // 2. Upload lampiran gambar dari file fisik lokal atau fallback base64
         String? finalAttachmentUrl = journalModel.attachmentUrl;
         final hasFiles = item.imageFilePaths.isNotEmpty;
         final hasBase64 = item.base64Images.isNotEmpty;
@@ -291,9 +308,7 @@ class SyncQueueService with ChangeNotifier {
                 final url = await repo.uploadAttachment(
                   bytes,
                   name,
-                  journalModel.id.isNotEmpty
-                      ? journalModel.id
-                      : 'temp_${DateTime.now().millisecondsSinceEpoch}',
+                  journalModel.id,
                   suffix: '_${i + 1}',
                 );
                 uploadedUrls.add(url);
@@ -304,25 +319,15 @@ class SyncQueueService with ChangeNotifier {
           }
           if (uploadedUrls.isNotEmpty) {
             finalAttachmentUrl = uploadedUrls.join(',');
+            try {
+              await repo.updateAttachmentUrl(journalModel.id, finalAttachmentUrl);
+            } catch (urlErr) {
+              debugPrint('[SyncQueueService] Error updating attachment URL: $urlErr');
+            }
           }
         }
 
-        final readyModel = journalModel.copyWith(
-          attachmentUrl: finalAttachmentUrl,
-          isSyncPending: false,
-        );
-
-        if (item.action == 'UPDATE_JOURNAL' && readyModel.id.isNotEmpty) {
-          try {
-            await repo.update(readyModel);
-          } catch (_) {
-            await repo.create(readyModel);
-          }
-        } else {
-          await repo.create(readyModel);
-        }
-
-        // Hapus file fisik lokal setelah berhasil terunggah
+        // Hapus file fisik lokal setelah sinkronisasi berhasil
         for (final path in item.imageFilePaths) {
           try {
             final f = File(path);
@@ -335,7 +340,7 @@ class SyncQueueService with ChangeNotifier {
         debugPrint('[SyncQueueService] Successfully synced journal for schedule ${item.scheduleId}');
 
         if (onJournalSynced != null) {
-          onJournalSynced(item.scheduleId, readyModel.id);
+          onJournalSynced(item.scheduleId, journalModel.id);
         }
       } catch (e) {
         debugPrint('[SyncQueueService] Error syncing item ${item.id}: $e');

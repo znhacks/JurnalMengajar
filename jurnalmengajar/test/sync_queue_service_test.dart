@@ -250,7 +250,7 @@ void main() {
 
       // Jalankan sync saat online dengan db error
       connectivity.reportOnline();
-      await syncQueue.processQueue(fakeRepo);
+      await Future.delayed(const Duration(milliseconds: 100));
       expect(syncQueue.queueCount, 1);
       expect(syncQueue.queue.first.status, 'failed');
       expect(syncQueue.queue.first.lastError, isNotNull);

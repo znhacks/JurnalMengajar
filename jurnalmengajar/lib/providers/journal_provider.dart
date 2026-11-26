@@ -543,6 +543,9 @@ class JournalProvider with ChangeNotifier {
     }
   }
 
+  /// Exposes optimistic journal insertion for offline modal editing
+  void addOptimisticJournal(JournalModel journal) => _addOptimisticJournal(journal);
+
   void _addOptimisticJournal(JournalModel journal) {
     final tIdx = _teacherJournals.indexWhere((j) => j.scheduleId == journal.scheduleId);
     if (tIdx != -1) {

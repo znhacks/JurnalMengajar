@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../core/router/app_router.dart';
 import '../core/services/connectivity_service.dart';
 import '../core/services/sync_queue_service.dart';
+import '../models/journal_model.dart';
+import '../providers/journal_provider.dart';
 import 'app_dialog_actions.dart';
 
 /// Modal bottom sheet untuk menampilkan rincian antrean offline (Kotak Keluar)
@@ -66,7 +70,9 @@ class OfflineOutboxModal extends StatelessWidget {
                     width: 38.w,
                     height: 4.h,
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFCBD5E1),
                       borderRadius: BorderRadius.circular(2.r),
                     ),
                   ),
@@ -74,7 +80,10 @@ class OfflineOutboxModal extends StatelessWidget {
 
                 // Header
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 20.w,
+                    vertical: 8.h,
+                  ),
                   child: Row(
                     children: [
                       Container(
@@ -99,7 +108,9 @@ class OfflineOutboxModal extends StatelessWidget {
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.w700,
-                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF0F172A),
                               ),
                             ),
                             Text(
@@ -108,7 +119,9 @@ class OfflineOutboxModal extends StatelessWidget {
                                   : '${items.length} jurnal dalam antrean lokal',
                               style: GoogleFonts.hankenGrotesk(
                                 fontSize: 12.sp,
-                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                color: isDark
+                                    ? const Color(0xFF94A3B8)
+                                    : const Color(0xFF64748B),
                               ),
                             ),
                           ],
@@ -118,7 +131,9 @@ class OfflineOutboxModal extends StatelessWidget {
                         onPressed: () => Navigator.of(context).pop(),
                         icon: Icon(
                           Icons.close_rounded,
-                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          color: isDark
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFF64748B),
                           size: 20.sp,
                         ),
                         splashRadius: 20.r,
@@ -134,7 +149,10 @@ class OfflineOutboxModal extends StatelessWidget {
                   child: items.isEmpty
                       ? _buildEmptyState(context, isDark)
                       : ListView.separated(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 12.h,
+                          ),
                           shrinkWrap: true,
                           itemCount: items.length,
                           separatorBuilder: (_, _) => SizedBox(height: 10.h),
@@ -154,9 +172,14 @@ class OfflineOutboxModal extends StatelessWidget {
                       width: double.infinity,
                       height: 44.h,
                       child: ElevatedButton.icon(
-                        onPressed: (isOnline && !isSyncing && syncQueue.registeredRepository != null)
+                        onPressed:
+                            (isOnline &&
+                                !isSyncing &&
+                                syncQueue.registeredRepository != null)
                             ? () {
-                                syncQueue.processQueue(syncQueue.registeredRepository!);
+                                syncQueue.processQueue(
+                                  syncQueue.registeredRepository!,
+                                );
                               }
                             : null,
                         style: ElevatedButton.styleFrom(
@@ -180,13 +203,17 @@ class OfflineOutboxModal extends StatelessWidget {
                                 ),
                               )
                             : Icon(
-                                isOnline ? Icons.sync_rounded : Icons.wifi_off_rounded,
+                                isOnline
+                                    ? Icons.sync_rounded
+                                    : Icons.wifi_off_rounded,
                                 size: 18.sp,
                               ),
                         label: Text(
                           isSyncing
                               ? 'Menyinkronkan...'
-                              : (isOnline ? 'Sinkronkan Semua Sekarang' : 'Menunggu Koneksi Internet'),
+                              : (isOnline
+                                    ? 'Sinkronkan Semua Sekarang'
+                                    : 'Menunggu Koneksi Internet'),
                           style: GoogleFonts.hankenGrotesk(
                             fontSize: 13.5.sp,
                             fontWeight: FontWeight.w600,
@@ -238,7 +265,9 @@ class OfflineOutboxModal extends StatelessWidget {
               textAlign: TextAlign.center,
               style: GoogleFonts.hankenGrotesk(
                 fontSize: 12.5.sp,
-                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                color: isDark
+                    ? const Color(0xFF94A3B8)
+                    : const Color(0xFF64748B),
               ),
             ),
           ],
@@ -247,7 +276,11 @@ class OfflineOutboxModal extends StatelessWidget {
     );
   }
 
-  Widget _buildQueueCard(BuildContext context, SyncQueueItem item, bool isDark) {
+  Widget _buildQueueCard(
+    BuildContext context,
+    SyncQueueItem item,
+    bool isDark,
+  ) {
     final rawData = item.journalData;
     final material = rawData['material']?.toString().trim();
     final effectiveMaterial = (material != null && material.isNotEmpty)
@@ -289,7 +322,7 @@ class OfflineOutboxModal extends StatelessWidget {
     } else {
       statusColor = const Color(0xFFD97706);
       statusBg = const Color(0xFFD97706).withValues(alpha: 0.1);
-      statusLabel = 'Menunggu Online';
+      statusLabel = 'Pending';
       statusIcon = Icons.schedule_rounded;
     }
 
@@ -360,14 +393,18 @@ class OfflineOutboxModal extends StatelessWidget {
                   Icon(
                     Icons.calendar_today_rounded,
                     size: 12.sp,
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    color: isDark
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF64748B),
                   ),
                   SizedBox(width: 4.w),
                   Text(
                     dateStr,
                     style: GoogleFonts.hankenGrotesk(
                       fontSize: 11.5.sp,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF64748B),
                     ),
                   ),
                 ],
@@ -375,21 +412,27 @@ class OfflineOutboxModal extends StatelessWidget {
               Text(
                 '•',
                 style: TextStyle(
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  color: isDark
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFF64748B),
                 ),
               ),
               Text(
                 'Jam ke-$teachingHour',
                 style: GoogleFonts.hankenGrotesk(
                   fontSize: 11.5.sp,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  color: isDark
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFF64748B),
                 ),
               ),
               if (photoCount > 0) ...[
                 Text(
                   '•',
                   style: TextStyle(
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    color: isDark
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF64748B),
                   ),
                 ),
                 Row(
@@ -440,39 +483,40 @@ class OfflineOutboxModal extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               if (item.status == 'failed') ...[
-                TextButton.icon(
+                IconButton(
+                  tooltip: 'Coba Lagi',
                   onPressed: () {
                     SyncQueueService.instance.retryItem(item.id);
                   },
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                    foregroundColor: const Color(0xFF2563EB),
-                  ),
-                  icon: const Icon(Icons.refresh_rounded, size: 14),
-                  label: Text(
-                    'Coba Lagi',
-                    style: GoogleFonts.hankenGrotesk(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  icon: const Icon(Icons.refresh_rounded),
+                  iconSize: 18.sp,
+                  color: const Color(0xFF2563EB),
+                  padding: EdgeInsets.all(6.r),
+                  constraints: const BoxConstraints(),
+                  splashRadius: 18.r,
                 ),
                 SizedBox(width: 8.w),
               ],
-              TextButton.icon(
+              IconButton(
+                tooltip: 'Edit Jurnal',
+                onPressed: () => _editQueueItem(context, item),
+                icon: const Icon(Icons.edit_outlined),
+                iconSize: 18.sp,
+                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                padding: EdgeInsets.all(6.r),
+                constraints: const BoxConstraints(),
+                splashRadius: 18.r,
+              ),
+              SizedBox(width: 4.w),
+              IconButton(
+                tooltip: 'Hapus Antrean',
                 onPressed: () => _confirmDeleteItem(context, item.id),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                  foregroundColor: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                ),
-                icon: const Icon(Icons.delete_outline_rounded, size: 14),
-                label: Text(
-                  'Hapus',
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                icon: const Icon(Icons.delete_outline_rounded),
+                iconSize: 18.sp,
+                color: isDark ? const Color(0xFFF87171) : const Color(0xFFEF4444),
+                padding: EdgeInsets.all(6.r),
+                constraints: const BoxConstraints(),
+                splashRadius: 18.r,
               ),
             ],
           ),
@@ -481,14 +525,55 @@ class OfflineOutboxModal extends StatelessWidget {
     );
   }
 
+  void _editQueueItem(BuildContext context, SyncQueueItem item) {
+    final rawData = item.journalData;
+    final scheduleId = rawData['schedule_id']?.toString() ?? '';
+    final rawDate = rawData['date']?.toString();
+    final journalId = rawData['id']?.toString() ?? '';
+
+    String? dateStr;
+    if (rawDate != null) {
+      final dt = DateTime.tryParse(rawDate);
+      if (dt != null) {
+        dateStr = DateFormat('yyyy-MM-dd').format(dt);
+      }
+    }
+
+    try {
+      final journal = JournalModel.fromJson(rawData);
+      final jp = Provider.of<JournalProvider>(context, listen: false);
+      jp.addOptimisticJournal(journal);
+    } catch (_) {}
+
+    Navigator.of(context).pop();
+
+    final navContext = AppRouter.rootNavigatorKey.currentContext ?? context;
+    final queryParams = <String, String>{
+      'scheduleId': scheduleId,
+    };
+    if (dateStr != null) queryParams['date'] = dateStr;
+    if (journalId.isNotEmpty) queryParams['journalId'] = journalId;
+
+    final uri = Uri(
+      path: '/guru/journal-form',
+      queryParameters: queryParams,
+    ).toString();
+    navContext.push(uri);
+  }
+
   void _confirmDeleteItem(BuildContext context, String itemId) {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14.r),
+        ),
         title: Text(
           'Hapus dari Antrean?',
-          style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w700, fontSize: 16.sp),
+          style: GoogleFonts.hankenGrotesk(
+            fontWeight: FontWeight.w700,
+            fontSize: 16.sp,
+          ),
         ),
         content: Text(
           'Data jurnal ini belum tersinkronkan ke server. Jika dihapus, catatan tidak akan terunggah ke database sekolah.',

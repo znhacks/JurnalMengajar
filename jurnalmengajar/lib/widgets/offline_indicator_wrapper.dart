@@ -113,9 +113,10 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
           ),
           actions: [
             AppDialogActions(
+              isVertical: true,
+              confirmText: 'Coba Lagi',
               cancelText: 'Mengerti',
               onCancel: () => Navigator.of(ctx).pop(),
-              confirmText: 'Coba Hubungkan',
               onConfirm: () async {
                 Navigator.of(ctx).pop();
                 final online = await _connectivity.checkConnectivity();
@@ -274,19 +275,33 @@ class _OfflineIndicatorWrapperState extends State<OfflineIndicatorWrapper> {
                     }
                   },
                   borderRadius: BorderRadius.circular(6.r),
-                  child: Padding(
+                  child: Container(
                     padding: EdgeInsets.symmetric(
-                      horizontal: 6.w,
-                      vertical: 2.h,
+                      horizontal: 8.w,
+                      vertical: 3.h,
                     ),
-                    child: Text(
-                      'Coba Lagi',
-                      style: GoogleFonts.hankenGrotesk(
-                        fontSize: 11.5.sp,
-                        fontWeight: FontWeight.w700,
-                        color: textColor,
-                        decoration: TextDecoration.underline,
-                      ),
+                    decoration: BoxDecoration(
+                      color: textColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.refresh_rounded,
+                          size: 12.sp,
+                          color: textColor,
+                        ),
+                        SizedBox(width: 4.w),
+                        Text(
+                          'Coba Lagi',
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 11.5.sp,
+                            fontWeight: FontWeight.w700,
+                            color: textColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

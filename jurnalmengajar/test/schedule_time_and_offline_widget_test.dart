@@ -116,7 +116,8 @@ void main() {
         find.text('Mode Offline • Aplikasi mungkin tidak berjalan optimal'),
         findsOneWidget,
       );
-      expect(find.text('Coba Lagi'), findsOneWidget);
+      // Tombol "Coba Lagi" muncul pada banner dan pop-up dialog (total 2)
+      expect(find.text('Coba Lagi'), findsNWidgets(2));
 
       // 2. Verifikasi Pop-up Dialog muncul di layar
       expect(find.text('Koneksi Terputus'), findsOneWidget);
@@ -127,20 +128,29 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Mengerti'), findsOneWidget);
-      expect(find.text('Coba Hubungkan'), findsOneWidget);
 
+      final dialogRetry = find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Coba Lagi'),
+      );
+      expect(dialogRetry, findsOneWidget);
+
+      final retryCenter = tester.getCenter(dialogRetry);
       final cancelCenter = tester.getCenter(find.text('Mengerti'));
-      final confirmCenter = tester.getCenter(find.text('Coba Hubungkan'));
       expect(
-        cancelCenter.dx < confirmCenter.dx,
+        retryCenter.dy < cancelCenter.dy,
         isTrue,
-        reason: 'Mengerti harus di kiri, Coba Hubungkan di kanan',
+        reason: 'Coba Lagi harus di atas, Mengerti di bawah (vertikal)',
       );
-      expect(
-        (cancelCenter.dy - confirmCenter.dy).abs() < 5.0,
-        isTrue,
-        reason: 'Harus sejajar horizontal',
+
+      final retryBtnSize = tester.getSize(
+        find.descendant(of: find.byType(AlertDialog), matching: find.byType(ElevatedButton)),
       );
+      final cancelBtnSize = tester.getSize(
+        find.descendant(of: find.byType(AlertDialog), matching: find.byType(OutlinedButton)),
+      );
+      expect(retryBtnSize.width, cancelBtnSize.width, reason: 'Lebar kedua tombol harus sama');
+      expect(retryBtnSize.height, cancelBtnSize.height, reason: 'Tinggi kedua tombol harus sama');
 
       // Tutup dialog dengan menekan tombol 'Mengerti'
       await tester.tap(find.text('Mengerti'));
@@ -216,6 +226,11 @@ void main() {
       // Modal antrean harus terbuka
       expect(find.text('Antrean Sinkronisasi'), findsOneWidget);
       expect(find.text('Materi Pengujian Modal'), findsOneWidget);
+
+      // Verifikasi aksi item: hanya ada ikon pensil dan sampah tanpa label teks
+      expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.delete_outline_rounded), findsOneWidget);
+      expect(find.text('Hapus'), findsNothing);
 
       // Tutup modal
       await tester.tap(find.byIcon(Icons.close_rounded));

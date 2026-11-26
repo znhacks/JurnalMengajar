@@ -80,5 +80,37 @@ void main() {
     expect(find.text('Hapus'), findsOneWidget);
     expect(find.byType(ElevatedButton), findsOneWidget);
   });
+
+  testWidgets('AppDialogActions renders vertically when isVertical is true with identical button sizes', (tester) async {
+    await tester.pumpWidget(
+      buildTestableWidget(
+        AppDialogActions(
+          isVertical: true,
+          confirmText: 'Coba Lagi',
+          cancelText: 'Mengerti',
+          onCancel: () {},
+          onConfirm: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final elevatedFinder = find.byType(ElevatedButton);
+    final outlinedFinder = find.byType(OutlinedButton);
+
+    expect(elevatedFinder, findsOneWidget);
+    expect(outlinedFinder, findsOneWidget);
+    expect(find.text('Coba Lagi'), findsOneWidget);
+    expect(find.text('Mengerti'), findsOneWidget);
+
+    final confirmCenter = tester.getCenter(elevatedFinder);
+    final cancelCenter = tester.getCenter(outlinedFinder);
+    expect(confirmCenter.dy < cancelCenter.dy, isTrue, reason: 'Coba Lagi (confirm) must be on top of Mengerti (cancel)');
+
+    final confirmSize = tester.getSize(elevatedFinder);
+    final cancelSize = tester.getSize(outlinedFinder);
+    expect(confirmSize.width, cancelSize.width, reason: 'Both buttons must have identical width');
+    expect(confirmSize.height, cancelSize.height, reason: 'Both buttons must have identical height');
+  });
 }
 
