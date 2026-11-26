@@ -237,7 +237,7 @@ class OfflineOutboxModal extends StatelessWidget {
 
   Widget _buildEmptyState(BuildContext context, bool isDark) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 40.h, horizontal: 20.w),
+      padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
