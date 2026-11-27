@@ -316,6 +316,8 @@ class ScheduleProvider with ChangeNotifier {
     final cleanSchoolId = _currentSchoolId;
     final scopedKey = 'teacher_schedules_${cleanSchoolId ?? "all"}_$teacherId';
 
+    bool loadedFromCache = false;
+
     // SWR Instant Cache Population for teacher schedules
     if (_cachedTeacherSchedules.isEmpty || _cachedTeacherId != teacherId) {
       try {
@@ -333,6 +335,7 @@ class ScheduleProvider with ChangeNotifier {
           if (filtered.isNotEmpty) {
             _cachedTeacherSchedules = filtered;
             _cachedTeacherId = teacherId;
+            loadedFromCache = true;
             _updateTeacherSchedulesForDate(date, shouldNotify: false);
             _isLoading = false;
             notifyListeners();
@@ -341,7 +344,7 @@ class ScheduleProvider with ChangeNotifier {
       } catch (_) {}
     }
 
-    if (forceRefresh || _cachedTeacherId != teacherId || _cachedTeacherSchedules.isEmpty) {
+    if (forceRefresh || loadedFromCache || _cachedTeacherId != teacherId || _cachedTeacherSchedules.isEmpty) {
       if (ConnectivityService.instance.isOffline) {
         _updateTeacherSchedulesForDate(date, shouldNotify: false);
         _isLoading = false;

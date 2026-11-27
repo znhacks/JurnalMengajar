@@ -247,16 +247,21 @@ class JournalProvider with ChangeNotifier {
                 }).toList()
               : mapped;
           _teacherJournals = filtered;
+          _mergePendingQueueIntoTeacherJournals(teacherId, cleanSchoolId);
           _isLoading = false;
           notifyListeners();
         } else {
-          _isLoading = true;
+          _mergePendingQueueIntoTeacherJournals(teacherId, cleanSchoolId);
+          _isLoading = _teacherJournals.isEmpty;
           notifyListeners();
         }
       } catch (_) {
-        _isLoading = true;
+        _mergePendingQueueIntoTeacherJournals(teacherId, cleanSchoolId);
+        _isLoading = _teacherJournals.isEmpty;
         notifyListeners();
       }
+    } else {
+      _mergePendingQueueIntoTeacherJournals(teacherId, cleanSchoolId);
     }
 
     if (ConnectivityService.instance.isOffline) {
@@ -276,8 +281,9 @@ class JournalProvider with ChangeNotifier {
 
       if (filteredFresh.isNotEmpty || _teacherJournals.isEmpty) {
         _teacherJournals = filteredFresh;
+        _mergePendingQueueIntoTeacherJournals(teacherId, cleanSchoolId);
         try {
-          CacheService().save(scopedKey, filteredFresh.map((e) => e.toJson()).toList());
+          CacheService().save(scopedKey, _teacherJournals.map((e) => e.toJson()).toList());
         } catch (_) {}
       }
     } catch (e) {
@@ -543,6 +549,46 @@ class JournalProvider with ChangeNotifier {
     }
   }
 
+  void _mergePendingQueueIntoTeacherJournals(
+    String teacherId,
+    String? cleanSchoolId,
+  ) {
+    final queueItems = SyncQueueService.instance.queue;
+    if (queueItems.isEmpty) return;
+
+    for (final item in queueItems) {
+      try {
+        final queued = JournalModel.fromJson(item.journalData).copyWith(
+          isSyncPending: true,
+        );
+        if (queued.teacherId.isNotEmpty && queued.teacherId != teacherId) {
+          continue;
+        }
+        if (cleanSchoolId != null && cleanSchoolId.isNotEmpty) {
+          final qSchoolId =
+              AppHelper.parseSingleCleanSchoolId(queued.schoolId) ??
+              queued.schoolId?.trim();
+          if (qSchoolId != null &&
+              qSchoolId.isNotEmpty &&
+              qSchoolId != cleanSchoolId) {
+            continue;
+          }
+        }
+        final existingIdx = _teacherJournals.indexWhere(
+          (j) =>
+              (queued.scheduleId.isNotEmpty &&
+                  j.scheduleId == queued.scheduleId) ||
+              j.id == queued.id,
+        );
+        if (existingIdx != -1) {
+          _teacherJournals[existingIdx] = queued;
+        } else {
+          _teacherJournals.insert(0, queued);
+        }
+      } catch (_) {}
+    }
+  }
+
   /// Exposes optimistic journal insertion for offline modal editing
   void addOptimisticJournal(JournalModel journal) => _addOptimisticJournal(journal);
 
@@ -560,9 +606,13 @@ class JournalProvider with ChangeNotifier {
       _journals.insert(0, journal);
     }
     if (journal.teacherId.isNotEmpty) {
+      final serialized = _teacherJournals.map((e) => e.toJson()).toList();
+      final scopedKey =
+          'teacher_journals_${_currentSchoolId ?? "all"}_${journal.teacherId}';
+      CacheService().save(scopedKey, serialized);
       CacheService().save(
         'journals_teacher_${journal.teacherId}',
-        _teacherJournals.map((e) => e.toJson()).toList(),
+        serialized,
       );
     }
     notifyListeners();
