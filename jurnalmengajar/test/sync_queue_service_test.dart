@@ -5,6 +5,7 @@ import 'package:jurnalmengajar/core/services/connectivity_service.dart';
 import 'package:jurnalmengajar/core/services/sync_queue_service.dart';
 import 'package:jurnalmengajar/models/journal_model.dart';
 import 'package:jurnalmengajar/repositories/journal_repository.dart';
+import 'package:jurnalmengajar/repositories/supabase_journal_repository.dart';
 
 class FakeJournalRepository implements JournalRepository {
   final List<JournalModel> created = [];
@@ -41,6 +42,38 @@ class FakeJournalRepository implements JournalRepository {
 
   @override
   Future<void> verifyJournal(String journalId, String status, {String? rejectionNote}) async {}
+}
+
+class FakeSupabaseJournalRepository extends FakeJournalRepository
+    implements SupabaseJournalRepository {
+  bool shouldThrowOnUpload = false;
+  int uploadCalls = 0;
+  final List<String> updatedAttachmentUrls = [];
+
+  @override
+  Future<List<JournalModel>> getAll([String? schoolId, String? teacherId]) async => [];
+
+  @override
+  Future<String> uploadAttachment(
+    List<int> fileBytes,
+    String fileName,
+    String journalId, {
+    String suffix = '',
+  }) async {
+    uploadCalls++;
+    if (shouldThrowOnUpload) {
+      throw Exception('Gagal mengunggah lampiran: Storage error');
+    }
+    return 'https://example.com/$journalId/$fileName$suffix.webp';
+  }
+
+  @override
+  Future<void> updateAttachmentUrl(String journalId, String attachmentUrl) async {
+    updatedAttachmentUrls.add('$journalId|$attachmentUrl');
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 void main() {
@@ -263,6 +296,50 @@ void main() {
       // Antrean harus berhasil diproses dan bersih
       expect(syncQueue.queueCount, 0);
       expect(fakeRepo.created.length, 1);
+    });
+
+    test('7. Gagal upload foto mempertahankan antrean & UUID agar retry tidak duplikat', () async {
+      final supabaseFakeRepo = FakeSupabaseJournalRepository()
+        ..shouldThrowOnUpload = true;
+      syncQueue.registerRepository(supabaseFakeRepo);
+      connectivity.reportOffline();
+
+      final journal = JournalModel(
+        id: 'offline_img_retry',
+        scheduleId: 'sch_img_fail',
+        date: DateTime(2026, 11, 25),
+        teachingHour: 1,
+        classId: 'cls_1',
+        subjectId: 'sub_1',
+        teacherId: 'tch_1',
+        material: 'Materi Dengan Foto',
+        status: 'pending',
+      );
+
+      final fakeImage = Uint8List.fromList([10, 20, 30, 40]);
+      await syncQueue.enqueueJournal(
+        journal: journal,
+        isUpdate: false,
+        imageBytesList: [fakeImage],
+        imageNamesList: ['foto.jpg'],
+      );
+
+      connectivity.reportOnline();
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Item harus tetap ada di antrean karena upload foto gagal
+      expect(syncQueue.queueCount, 1);
+      expect(syncQueue.queue.first.status, 'failed');
+      final persistedId = syncQueue.queue.first.journalData['id'] as String;
+      expect(persistedId.startsWith('offline_'), isFalse);
+
+      // Perbaiki upload dan retry: harus memakai UUID yang sama dan bersih
+      supabaseFakeRepo.shouldThrowOnUpload = false;
+      await syncQueue.retryItem(syncQueue.queue.first.id, supabaseFakeRepo);
+
+      expect(syncQueue.queueCount, 0);
+      expect(supabaseFakeRepo.created.last.id, persistedId);
+      expect(supabaseFakeRepo.updatedAttachmentUrls.length, 1);
     });
   });
 }

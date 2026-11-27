@@ -256,6 +256,7 @@ class SyncQueueService with ChangeNotifier {
         final currentId = rawMap['id']?.toString() ?? '';
         final validId = AppHelper.isValidUuid(currentId) ? currentId : const Uuid().v4();
         rawMap['id'] = validId;
+        item.journalData['id'] = validId;
 
         final journalModel = JournalModel.fromJson(rawMap).copyWith(
           isSyncPending: false,
@@ -286,6 +287,7 @@ class SyncQueueService with ChangeNotifier {
         if ((hasFiles || hasBase64) && repo is SupabaseJournalRepository) {
           final uploadedUrls = <String>[];
           final count = hasFiles ? item.imageFilePaths.length : item.base64Images.length;
+          Object? firstImageError;
 
           for (int i = 0; i < count && i < 3; i++) {
             try {
@@ -315,25 +317,20 @@ class SyncQueueService with ChangeNotifier {
               }
             } catch (imgErr) {
               debugPrint('[SyncQueueService] Error uploading queued image: $imgErr');
+              firstImageError ??= imgErr;
             }
           }
           if (uploadedUrls.isNotEmpty) {
             finalAttachmentUrl = uploadedUrls.join(',');
-            try {
-              await repo.updateAttachmentUrl(journalModel.id, finalAttachmentUrl);
-            } catch (urlErr) {
-              debugPrint('[SyncQueueService] Error updating attachment URL: $urlErr');
-            }
+            await repo.updateAttachmentUrl(journalModel.id, finalAttachmentUrl);
+          }
+          if (firstImageError != null) {
+            throw firstImageError;
           }
         }
 
-        // Hapus file fisik lokal setelah sinkronisasi berhasil
-        for (final path in item.imageFilePaths) {
-          try {
-            final f = File(path);
-            if (await f.exists()) await f.delete();
-          } catch (_) {}
-        }
+        // Hapus file fisik lokal setelah seluruh data & lampiran berhasil tersinkron
+        await _deleteLocalFiles(item.imageFilePaths);
 
         _queue.removeWhere((q) => q.id == item.id);
         await _persistQueue();
@@ -403,15 +400,31 @@ class SyncQueueService with ChangeNotifier {
     }
   }
 
+  Future<void> _deleteLocalFiles(List<String> paths) async {
+    for (final path in paths) {
+      try {
+        final f = File(path);
+        if (await f.exists()) await f.delete();
+      } catch (_) {}
+    }
+  }
+
   /// Menghapus antrean tertentu secara manual
   Future<void> removeQueueItem(String itemId) async {
+    final removed = _queue.where((q) => q.id == itemId).toList();
     _queue.removeWhere((q) => q.id == itemId);
+    for (final item in removed) {
+      await _deleteLocalFiles(item.imageFilePaths);
+    }
     await _persistQueue();
     notifyListeners();
   }
 
   /// Bersihkan seluruh antrean (berguna saat test teardown atau logout)
   Future<void> clearQueue() async {
+    for (final item in _queue) {
+      await _deleteLocalFiles(item.imageFilePaths);
+    }
     _queue.clear();
     await _persistQueue();
     notifyListeners();
